@@ -1,0 +1,87 @@
+Title: Email Examples in Python
+URL: https://docs.python.org/3/library/email.examples.html
+Summary: This page provides a collection of examples demonstrating how to use the Python email library, specifically showcasing different functionalities related to handling email content and messages.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+#### Previous topic
+[`email.contentmanager`: Managing MIME Content](https://docs.python.org/3/library/email.contentmanager.html "previous chapter")
+#### Next topic
+[`email.message.Message`: Representing an email message using the `compat32` API](https://docs.python.org/3/library/email.compat32-message.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/email.examples.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/library/email.compat32-message.html "email.message.Message: Representing an email message using the compat32 API") |
+  * [previous](https://docs.python.org/3/library/email.contentmanager.html "email.contentmanager: Managing MIME Content") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [The Python Standard Library](https://docs.python.org/3/library/index.html) »
+  * [Internet Data Handling](https://docs.python.org/3/library/netdata.html) »
+  * [`email` — An email and MIME handling package](https://docs.python.org/3/library/email.html) »
+  * [`email`: Examples](https://docs.python.org/3/library/email.examples.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# [`email`](https://docs.python.org/3/library/email.html#module-email "email: Package supporting the parsing, manipulating, and generating email messages."): Examples[¶](https://docs.python.org/3/library/email.examples.html#email-examples "Link to this heading")
+Here are a few examples of how to use the [`email`](https://docs.python.org/3/library/email.html#module-email "email: Package supporting the parsing, manipulating, and generating email messages.") package to read, write, and send simple email messages, as well as more complex MIME messages.
+First, let’s see how to create and send a simple text message (both the text content and the addresses may contain unicode characters):
+```
+# Import smtplib for the actual sending function
+importsmtplib
+# Import the email modules we'll need
+fromemail.messageimport EmailMessage
+# Open the plain text file whose name is in textfile for reading.
+with open(textfile) as fp:
+  # Create a text/plain message
+  msg = EmailMessage()
+  msg.set_content(fp.read())
+# me == the sender's email address
+# you == the recipient's email address
+msg['Subject'] = f'The contents of {textfile}'
+msg['From'] = me
+msg['To'] = you
+# Send the message via our own SMTP server.
+s = smtplib.SMTP('localhost')
+s.send_message(msg)
+s.quit()
+
+```
+
+Parsing [**RFC 822**](https://datatracker.ietf.org/doc/html/rfc822.html) headers can easily be done by the using the classes from the [`parser`](https://docs.python.org/3/library/email.parser.html#module-email.parser "email.parser: Parse flat text email messages to produce a message object structure.") module:
+```
+# Import the email modules we'll need
+#from email.parser import BytesParser
+fromemail.parserimport Parser
+fromemail.policyimport default
+# If the e-mail headers are in a file, uncomment these two lines:
+# with open(messagefile, 'rb') as fp:
+#   headers = BytesParser(policy=default).parse(fp)
+# Or for parsing headers in a string (this is an uncommon operation), use:
+headers = Parser(policy=default).parsestr(
+    'From: Foo Bar <user@example.com>\n'
+    'To: <someone_else@example.com>\n'
+    'Subject: Test message\n'
+    '\n'
+    'Body would go here\n')
+# Now the header items can be accessed as a dictionary:
+print('To: {}'.format(headers['to']))
+print('From: {}'.format(headers['from']))
+print('Subject: {}'.format(headers['subject']))
+# You can also access the parts of the addresses:
+print('Recipient username: {}'.format(headers['to'].addresses[0].username))
+print('Sender name: {}'.format(headers['from'].addresses[0].display_name))
+
+```
+
+Here’s an example of how to send a MIME message containing a bunch of family pictures that may be residing in a directory:

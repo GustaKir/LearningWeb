@@ -1,0 +1,45 @@
+Title: ssizeargfunc and PySequenceMethods.sq_inplace_repeat
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: The `sq_inplace_repeat` function is part of the `PySequenceMethods` structure and is utilized by `PySequence_InPlaceRepeat()`. It alters the first operand and returns it; if left as `NULL`, it defaults to `PySequence_Repeat()`. It is also invoked during the augmented assignment `*=`, after attempting numeric in-place multiplication.
+---
+
+[ssizeargfunc](https://docs.python.org/3/c-api/typeobj.html#c.ssizeargfunc "ssizeargfunc")[PySequenceMethods](https://docs.python.org/3/c-api/typeobj.html#c.PySequenceMethods "PySequenceMethods").sq_inplace_repeat[¶](https://docs.python.org/3/c-api/typeobj.html#c.PySequenceMethods.sq_inplace_repeat "Link to this definition")
+    
+This function is used by [`PySequence_InPlaceRepeat()`](https://docs.python.org/3/c-api/sequence.html#c.PySequence_InPlaceRepeat "PySequence_InPlaceRepeat") and has the same signature. It should modify its first operand, and return it. This slot may be left to `NULL`, in this case `PySequence_InPlaceRepeat()` will fall back to [`PySequence_Repeat()`](https://docs.python.org/3/c-api/sequence.html#c.PySequence_Repeat "PySequence_Repeat"). It is also used by the augmented assignment `*=`, after trying numeric in-place multiplication via the [`nb_inplace_multiply`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods.nb_inplace_multiply "PyNumberMethods.nb_inplace_multiply") slot.
+## Buffer Object Structures[¶](https://docs.python.org/3/c-api/typeobj.html#buffer-object-structures "Link to this heading") 
+
+typePyBufferProcs[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs "Link to this definition")
+    
+This structure holds pointers to the functions required by the [Buffer protocol](https://docs.python.org/3/c-api/buffer.html#bufferobjects). The protocol defines how an exporter object can expose its internal data to consumer objects. 
+
+[getbufferproc](https://docs.python.org/3/c-api/typeobj.html#c.getbufferproc "getbufferproc")[PyBufferProcs](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs "PyBufferProcs").bf_getbuffer[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs.bf_getbuffer "Link to this definition")
+    
+The signature of this function is:
+```
+int(PyObject*exporter,Py_buffer*view,intflags);
+
+```
+
+Handle a request to _exporter_ to fill in _view_ as specified by _flags_. Except for point (3), an implementation of this function MUST take these steps:
+  1. Check if the request can be met. If not, raise [`BufferError`](https://docs.python.org/3/library/exceptions.html#BufferError "BufferError"), set view->obj to `NULL` and return `-1`.
+  2. Fill in the requested fields.
+  3. Increment an internal counter for the number of exports.
+  4. Set view->obj to _exporter_ and increment view->obj.
+  5. Return `0`.
+
+
+If _exporter_ is part of a chain or tree of buffer providers, two main schemes can be used:
+  * Re-export: Each member of the tree acts as the exporting object and sets view->obj to a new reference to itself.
+  * Redirect: The buffer request is redirected to the root object of the tree. Here, view->obj will be a new reference to the root object.
+
+
+The individual fields of _view_ are described in section [Buffer structure](https://docs.python.org/3/c-api/buffer.html#buffer-structure), the rules how an exporter must react to specific requests are in section [Buffer request types](https://docs.python.org/3/c-api/buffer.html#buffer-request-types).
+All memory pointed to in the [`Py_buffer`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer") structure belongs to the exporter and must remain valid until there are no consumers left. [`format`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.format "Py_buffer.format"), [`shape`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.shape "Py_buffer.shape"), [`strides`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.strides "Py_buffer.strides"), [`suboffsets`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.suboffsets "Py_buffer.suboffsets") and [`internal`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.internal "Py_buffer.internal") are read-only for the consumer.
+[`PyBuffer_FillInfo()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_FillInfo "PyBuffer_FillInfo") provides an easy way of exposing a simple bytes buffer while dealing correctly with all request types.
+[`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer") is the interface for the consumer that wraps this function. 
+
+[releasebufferproc](https://docs.python.org/3/c-api/typeobj.html#c.releasebufferproc "releasebufferproc")[PyBufferProcs](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs "PyBufferProcs").bf_releasebuffer[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs.bf_releasebuffer "Link to this definition")
+    
+The signature of this function is:
+```
+void(PyObject*exporter,Py_buffer*view);

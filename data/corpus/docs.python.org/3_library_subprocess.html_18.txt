@@ -1,0 +1,37 @@
+Title: Suppressing Output in Subprocess
+URL: https://docs.python.org/3/library/subprocess.html
+Summary: To suppress stdout or stderr in subprocess calls, use `DEVNULL`. The function signature matches that of `Popen`, and it is important not to use `stdout=PIPE` or `stderr=PIPE` to avoid blocking issues. Notable changes include the addition of _timeout_ in version 3.3 and updates to the Windows shell search order in version 3.12.
+---
+
+```
+
+To suppress stdout or stderr, supply a value of [`DEVNULL`](https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL "subprocess.DEVNULL").
+The arguments shown above are merely some common ones. The full function signature is the same as that of the [`Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") constructor - this function passes all supplied arguments other than _timeout_ directly through to that interface.
+Note
+Do not use `stdout=PIPE` or `stderr=PIPE` with this function. The child process will block if it generates enough output to a pipe to fill up the OS pipe buffer as the pipes are not being read from.
+Changed in version 3.3: _timeout_ was added.
+Changed in version 3.12: Changed Windows shell search order for `shell=True`. The current directory and `%PATH%` are replaced with `%COMSPEC%` and `%SystemRoot%\System32\cmd.exe`. As a result, dropping a malicious program named `cmd.exe` into a current directory no longer works. 
+
+subprocess.check_call(_args_ , _*_ , _stdin =None_, _stdout =None_, _stderr =None_, _shell =False_, _cwd =None_, _timeout =None_, _** other_popen_kwargs_)[¶](https://docs.python.org/3/library/subprocess.html#subprocess.check_call "Link to this definition")
+    
+Run command with arguments. Wait for command to complete. If the return code was zero then return, otherwise raise [`CalledProcessError`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError "subprocess.CalledProcessError"). The [`CalledProcessError`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError "subprocess.CalledProcessError") object will have the return code in the [`returncode`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError.returncode "subprocess.CalledProcessError.returncode") attribute. If [`check_call()`](https://docs.python.org/3/library/subprocess.html#subprocess.check_call "subprocess.check_call") was unable to start the process it will propagate the exception that was raised.
+Code needing to capture stdout or stderr should use [`run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run") instead:
+```
+run(..., check=True)
+
+```
+
+To suppress stdout or stderr, supply a value of [`DEVNULL`](https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL "subprocess.DEVNULL").
+The arguments shown above are merely some common ones. The full function signature is the same as that of the [`Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") constructor - this function passes all supplied arguments other than _timeout_ directly through to that interface.
+Note
+Do not use `stdout=PIPE` or `stderr=PIPE` with this function. The child process will block if it generates enough output to a pipe to fill up the OS pipe buffer as the pipes are not being read from.
+Changed in version 3.3: _timeout_ was added.
+Changed in version 3.12: Changed Windows shell search order for `shell=True`. The current directory and `%PATH%` are replaced with `%COMSPEC%` and `%SystemRoot%\System32\cmd.exe`. As a result, dropping a malicious program named `cmd.exe` into a current directory no longer works. 
+
+subprocess.check_output(_args_ , _*_ , _stdin =None_, _stderr =None_, _shell =False_, _cwd =None_, _encoding =None_, _errors =None_, _universal_newlines =None_, _timeout =None_, _text =None_, _** other_popen_kwargs_)[¶](https://docs.python.org/3/library/subprocess.html#subprocess.check_output "Link to this definition")
+    
+Run command with arguments and return its output.
+If the return code was non-zero it raises a [`CalledProcessError`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError "subprocess.CalledProcessError"). The [`CalledProcessError`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError "subprocess.CalledProcessError") object will have the return code in the [`returncode`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError.returncode "subprocess.CalledProcessError.returncode") attribute and any output in the [`output`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError.output "subprocess.CalledProcessError.output") attribute.
+This is equivalent to:
+```
+run(..., check=True, stdout=PIPE).stdout

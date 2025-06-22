@@ -1,0 +1,97 @@
+Title: Bytecode Instructions for Function Calls
+URL: https://docs.python.org/3/library/dis.html
+Summary: This document section covers the `CALL_FUNCTION_EX` opcode, which calls a callable object with variable positional and keyword arguments, handling additional keywords through a mapping object if specified. It also introduces the `PUSH_NULL` opcode, used to push a `NULL` onto the stack to synchronize with method calls.
+---
+
+CALL_FUNCTION_EX(_flags_)[¶](https://docs.python.org/3/library/dis.html#opcode-CALL_FUNCTION_EX "Link to this definition")
+    
+Calls a callable object with variable set of positional and keyword arguments. If the lowest bit of _flags_ is set, the top of the stack contains a mapping object containing additional keyword arguments. Before the callable is called, the mapping object and iterable object are each “unpacked” and their contents passed in as keyword and positional arguments respectively. `CALL_FUNCTION_EX` pops all arguments and the callable object off the stack, calls the callable object with those arguments, and pushes the return value returned by the callable object.
+Added in version 3.6. 
+
+PUSH_NULL[¶](https://docs.python.org/3/library/dis.html#opcode-PUSH_NULL "Link to this definition")
+    
+Pushes a `NULL` to the stack. Used in the call sequence to match the `NULL` pushed by [`LOAD_METHOD`](https://docs.python.org/3/library/dis.html#opcode-LOAD_METHOD) for non-method calls.
+Added in version 3.11. 
+
+MAKE_FUNCTION[¶](https://docs.python.org/3/library/dis.html#opcode-MAKE_FUNCTION "Link to this definition")
+    
+Pushes a new function object on the stack built from the code object at `STACK[-1]`.
+Changed in version 3.10: Flag value `0x04` is a tuple of strings instead of dictionary
+Changed in version 3.11: Qualified name at `STACK[-1]` was removed.
+Changed in version 3.13: Extra function attributes on the stack, signaled by oparg flags, were removed. They now use [`SET_FUNCTION_ATTRIBUTE`](https://docs.python.org/3/library/dis.html#opcode-SET_FUNCTION_ATTRIBUTE). 
+
+SET_FUNCTION_ATTRIBUTE(_flag_)[¶](https://docs.python.org/3/library/dis.html#opcode-SET_FUNCTION_ATTRIBUTE "Link to this definition")
+    
+Sets an attribute on a function object. Expects the function at `STACK[-1]` and the attribute value to set at `STACK[-2]`; consumes both and leaves the function at `STACK[-1]`. The flag determines which attribute to set:
+  * `0x01` a tuple of default values for positional-only and positional-or-keyword parameters in positional order
+  * `0x02` a dictionary of keyword-only parameters’ default values
+  * `0x04` a tuple of strings containing parameters’ annotations
+  * `0x08` a tuple containing cells for free variables, making a closure
+
+
+Added in version 3.13. 
+
+BUILD_SLICE(_argc_)[¶](https://docs.python.org/3/library/dis.html#opcode-BUILD_SLICE "Link to this definition")
+    
+Pushes a slice object on the stack. _argc_ must be 2 or 3. If it is 2, implements:
+```
+end = STACK.pop()
+start = STACK.pop()
+STACK.append(slice(start, end))
+
+```
+
+if it is 3, implements:
+```
+step = STACK.pop()
+end = STACK.pop()
+start = STACK.pop()
+STACK.append(slice(start, end, step))
+
+```
+
+See the [`slice()`](https://docs.python.org/3/library/functions.html#slice "slice") built-in function for more information. 
+
+EXTENDED_ARG(_ext_)[¶](https://docs.python.org/3/library/dis.html#opcode-EXTENDED_ARG "Link to this definition")
+    
+Prefixes any opcode which has an argument too big to fit into the default one byte. _ext_ holds an additional byte which act as higher bits in the argument. For each opcode, at most three prefixal `EXTENDED_ARG` are allowed, forming an argument from two-byte to four-byte. 
+
+CONVERT_VALUE(_oparg_)[¶](https://docs.python.org/3/library/dis.html#opcode-CONVERT_VALUE "Link to this definition")
+    
+Convert value to a string, depending on `oparg`:
+```
+value = STACK.pop()
+result = func(value)
+STACK.append(result)
+
+```
+
+  * `oparg == 1`: call [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") on _value_
+  * `oparg == 2`: call [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") on _value_
+  * `oparg == 3`: call [`ascii()`](https://docs.python.org/3/library/functions.html#ascii "ascii") on _value_
+
+
+Used for implementing formatted string literals (f-strings).
+Added in version 3.13. 
+
+FORMAT_SIMPLE[¶](https://docs.python.org/3/library/dis.html#opcode-FORMAT_SIMPLE "Link to this definition")
+    
+Formats the value on top of stack:
+```
+value = STACK.pop()
+result = value.__format__("")
+STACK.append(result)
+
+```
+
+Used for implementing formatted string literals (f-strings).
+Added in version 3.13. 
+
+FORMAT_WITH_SPEC[¶](https://docs.python.org/3/library/dis.html#opcode-FORMAT_WITH_SPEC "Link to this definition")
+    
+Formats the given value with the given format spec:
+```
+spec = STACK.pop()
+value = STACK.pop()
+result = value.__format__(spec)
+STACK.append(result)

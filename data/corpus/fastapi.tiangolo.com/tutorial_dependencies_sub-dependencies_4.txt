@@ -1,0 +1,147 @@
+Title: Sub-dependencies in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/
+Summary: This section explains how to create dependencies with sub-dependencies in FastAPI, allowing for complex dependency chains that can be resolved automatically by the framework.
+---
+
+1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+  4. [ Dependencies  ](https://fastapi.tiangolo.com/tutorial/dependencies/)
+
+
+# Sub-dependencies[¶](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#sub-dependencies "Permanent link")
+You can create dependencies that have **sub-dependencies**.
+They can be as **deep** as you need them to be.
+**FastAPI** will take care of solving them.
+## First dependency "dependable"[¶](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#first-dependency-dependable "Permanent link")
+You could create a first dependency ("dependable") like:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Cookie, Depends, FastAPI
+app = FastAPI()
+defquery_extractor(q: str | None = None):
+  return q
+defquery_or_cookie_extractor(
+  q: Annotated[str, Depends(query_extractor)],
+  last_query: Annotated[str | None, Cookie()] = None,
+):
+  if not q:
+    return last_query
+  return q
+@app.get("/items/")
+async defread_query(
+  query_or_default: Annotated[str, Depends(query_or_cookie_extractor)],
+):
+  return {"q_or_cookie": query_or_default}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#__tabbed_2_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#__tabbed_2_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#__tabbed_2_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Cookie, Depends, FastAPI
+app = FastAPI()
+defquery_extractor(q: Union[str, None] = None):
+  return q
+defquery_or_cookie_extractor(
+  q: Annotated[str, Depends(query_extractor)],
+  last_query: Annotated[Union[str, None], Cookie()] = None,
+):
+  if not q:
+    return last_query
+  return q
+@app.get("/items/")
+async defread_query(
+  query_or_default: Annotated[str, Depends(query_or_cookie_extractor)],
+):
+  return {"q_or_cookie": query_or_default}
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Cookie, Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+defquery_extractor(q: Union[str, None] = None):
+  return q
+defquery_or_cookie_extractor(
+  q: Annotated[str, Depends(query_extractor)],
+  last_query: Annotated[Union[str, None], Cookie()] = None,
+):
+  if not q:
+    return last_query
+  return q
+@app.get("/items/")
+async defread_query(
+  query_or_default: Annotated[str, Depends(query_or_cookie_extractor)],
+):
+  return {"q_or_cookie": query_or_default}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Cookie, Depends, FastAPI
+app = FastAPI()
+defquery_extractor(q: str | None = None):
+  return q
+defquery_or_cookie_extractor(
+  q: str = Depends(query_extractor), last_query: str | None = Cookie(default=None)
+):
+  if not q:
+    return last_query
+  return q
+@app.get("/items/")
+async defread_query(query_or_default: str = Depends(query_or_cookie_extractor)):
+  return {"q_or_cookie": query_or_default}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Cookie, Depends, FastAPI
+app = FastAPI()
+defquery_extractor(q: Union[str, None] = None):
+  return q
+defquery_or_cookie_extractor(
+  q: str = Depends(query_extractor),
+  last_query: Union[str, None] = Cookie(default=None),
+):
+  if not q:
+    return last_query
+  return q
+@app.get("/items/")
+async defread_query(query_or_default: str = Depends(query_or_cookie_extractor)):
+  return {"q_or_cookie": query_or_default}
+
+```
+
+It declares an optional query parameter `q` as a `str`, and then it just returns it.
+This is quite simple (not very useful), but will help us focus on how the sub-dependencies work.
+## Second dependency, "dependable" and "dependant"[¶](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#second-dependency-dependable-and-dependant "Permanent link")
+Then you can create another dependency function (a "dependable") that at the same time declares a dependency of its own (so it is a "dependant" too):
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/dependencies/sub-dependencies/#__tabbed_3_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Cookie, Depends, FastAPI
+app = FastAPI()
+defquery_extractor(q: str | None = None):
+  return q
+defquery_or_cookie_extractor(
+  q: Annotated[str, Depends(query_extractor)],
+  last_query: Annotated[str | None, Cookie()] = None,
+):
+  if not q:
+    return last_query
+  return q
+@app.get("/items/")
+async defread_query(
+  query_or_default: Annotated[str, Depends(query_or_cookie_extractor)],
+):
+  return {"q_or_cookie": query_or_default}

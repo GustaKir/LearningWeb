@@ -1,0 +1,28 @@
+Title: Using AppTest for Element Retrieval in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/app-testing/get-started
+Summary: This section explains how to retrieve Streamlit elements using the `at.markdown` method, which collects all `st.markdown` instances in order. It references the `AppTest` class for supported elements and discusses using the `.get()` method for accessing attributes like `number_input` and `markdown`. Additionally, it highlights how the order of elements on the page may differ from the code due to container usage.
+---
+
+imilarly, `at.markdown` returns a collection of all `st.markdown` elements where `at.markdown[0]` is the first such element.
+Check out the current list of supported elements in the "Attributes" section of the [`AppTest`](https://docs.streamlit.io/develop/api-reference/app-testing/st.testing.v1.apptest) class or the [App testing cheat sheet](https://docs.streamlit.io/develop/concepts/app-testing/cheat-sheet). You can also use the `.get()` method and pass the attribute's name. `at.get("number_input")` and `at.get("markdown")` are equivalent to `at.number_input` and `at.markdown`, respectively.
+The returned sequence of elements is ordered by appearance on the page. If containers are used to insert elements in a different order, these sequences may not match the order within your code. Consider the following example where containers are used to switch the order of two buttons on the page:
+`import streamlit as st first = st.container() second = st.container() second.button("A") first.button("B") `
+If the above app was tested, the first button (`at.button[0]`) would be labeled "B" and the second button (`at.button[1]`) would be labeled "A." As true assertions, these would be:
+`assert at.button[0].label == "B" assert at.button[1].label == "A" `
+#### [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#retrieve-widgets-by-key)Retrieve widgets by key
+You can retrieve keyed widgets by their keys instead of their order on the page. The key of the widget is passed as either an arg or kwarg. For example, look at this app and the following (true) assertions:
+`import streamlit as st st.button("Next", key="submit") st.button("Back", key="cancel") `
+`assert at.button(key="submit").label == "Next" assert at.button("cancel").label == "Back" `
+#### [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#retrieve-containers)Retrieve containers
+You can also narrow down your sequences of elements by retrieving specific containers. Each retrieved container has the same attributes as `AppTest`. For example, `at.sidebar.checkbox` returns a sequence of all checkboxes in the sidebar. `at.main.selectbox` returns the sequence of all selectboxes in the main body of the app (not in the sidebar).
+For `AppTest.columns` and `AppTest.tabs`, a sequence of containers is returned. So `at.columns[0].button` would be the sequence of all buttons in the first column appearing in the app.
+### [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#how-to-manipulate-widgets)How to manipulate widgets
+All widgets have a universal `.set_value()` method. Additionally, many widgets have specific methods for manipulating their value. The names of [Testing element classes](https://docs.streamlit.io/develop/api-reference/app-testing/testing-element-classes) closely match the names of the `AppTest` attributes. For example, look at the return type of [`AppTest.button`](https://docs.streamlit.io/develop/api-reference/app-testing/st.testing.v1.apptest#apptestbutton) to see the corresponding class of [`Button`](https://docs.streamlit.io/develop/api-reference/app-testing/testing-element-classes#sttestingv1element_treebutton). Aside from setting the value of a button with `.set_value()`, you can also use `.click()`. Check out each testing element class for its specific methods.
+### [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#how-to-inspect-elements)How to inspect elements
+All elements, including widgets, have a universal `.value` property. This returns the contents of the element. For widgets, this is the same as the return value or value in Session State. For non-input elements, this will be the value of the primary contents argument. For example, `.value` returns the value of `body` for `st.markdown` or `st.error`. It returns the value of `data` for `st.dataframe` or `st.table`.
+Additionally, you can check many other details for widgets like labels or disabled status. Many parameters are available for inspection, but not all. Use linting software to see what is currently supported. Here's an example:
+`import streamlit as st st.selectbox("A", [1,2,3], None, help="Pick a number", placeholder="Pick me") `
+`assert at.selectbox[0].value == None assert at.selectbox[0].label == "A" assert at.selectbox[0].options == ["1","2","3"] assert at.selectbox[0].index == None assert at.selectbox[0].help == "Pick a number" assert at.selectbox[0].placeholder == "Pick me" assert at.selectbox[0].disabled == False `
+_star_
+#### Tip
+Note that the `options` for `st.selectbox` were declared as integers but asserted as strings. As noted in the documentation for [`st.selectbox`](https://docs.streamlit.io/develop/api-reference/widgets/st.selectbox), options are cast internally to strings.

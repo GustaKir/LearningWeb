@@ -1,0 +1,53 @@
+Title: Testing Support Functions in Python
+URL: https://docs.python.org/3/library/test.html
+Summary: This document section details three functions from the Python test.support module. 'detect_api_mismatch' identifies attributes and methods in one API that are not present in another, with an option to ignore specified items. 'patch' allows overriding a specific attribute of an object with a new value while ensuring cleanup after testing. Lastly, 'run_in_subinterp' executes provided code in a separate interpreter environment.
+---
+
+```
+
+
+test.support.detect_api_mismatch(_ref_api_ , _other_api_ , _*_ , _ignore =()_)[¶](https://docs.python.org/3/library/test.html#test.support.detect_api_mismatch "Link to this definition")
+    
+Returns the set of attributes, functions or methods of _ref_api_ not found on _other_api_ , except for a defined list of items to be ignored in this check specified in _ignore_.
+By default this skips private attributes beginning with ‘_’ but includes all magic methods, i.e. those starting and ending in ‘__’.
+Added in version 3.5. 
+
+test.support.patch(_test_instance_ , _object_to_patch_ , _attr_name_ , _new_value_)[¶](https://docs.python.org/3/library/test.html#test.support.patch "Link to this definition")
+    
+Override _object_to_patch.attr_name_ with _new_value_. Also add cleanup procedure to _test_instance_ to restore _object_to_patch_ for _attr_name_. The _attr_name_ should be a valid attribute for _object_to_patch_. 
+
+test.support.run_in_subinterp(_code_)[¶](https://docs.python.org/3/library/test.html#test.support.run_in_subinterp "Link to this definition")
+    
+Run _code_ in subinterpreter. Raise [`unittest.SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest") if [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") is enabled. 
+
+test.support.check_free_after_iterating(_test_ , _iter_ , _cls_ , _args =()_)[¶](https://docs.python.org/3/library/test.html#test.support.check_free_after_iterating "Link to this definition")
+    
+Assert instances of _cls_ are deallocated after iterating. 
+
+test.support.missing_compiler_executable(_cmd_names =[]_)[¶](https://docs.python.org/3/library/test.html#test.support.missing_compiler_executable "Link to this definition")
+    
+Check for the existence of the compiler executables whose names are listed in _cmd_names_ or all the compiler executables when _cmd_names_ is empty and return the first missing executable or `None` when none is found missing. 
+
+test.support.check__all__(_test_case_ , _module_ , _name_of_module =None_, _extra =()_, _not_exported =()_)[¶](https://docs.python.org/3/library/test.html#test.support.check__all__ "Link to this definition")
+    
+Assert that the `__all__` variable of _module_ contains all public names.
+The module’s public names (its API) are detected automatically based on whether they match the public name convention and were defined in _module_.
+The _name_of_module_ argument can specify (as a string or tuple thereof) what module(s) an API could be defined in order to be detected as a public API. One case for this is when _module_ imports part of its public API from other modules, possibly a C backend (like `csv` and its `_csv`).
+The _extra_ argument can be a set of names that wouldn’t otherwise be automatically detected as “public”, like objects without a proper [`__module__`](https://docs.python.org/3/library/stdtypes.html#definition.__module__ "definition.__module__") attribute. If provided, it will be added to the automatically detected ones.
+The _not_exported_ argument can be a set of names that must not be treated as part of the public API even though their names indicate otherwise.
+Example use:
+```
+importbar
+importfoo
+importunittest
+fromtestimport support
+classMiscTestCase(unittest.TestCase):
+  deftest__all__(self):
+    support.check__all__(self, foo)
+classOtherTestCase(unittest.TestCase):
+  deftest__all__(self):
+    extra = {'BAR_CONST', 'FOO_CONST'}
+    not_exported = {'baz'} # Undocumented name.
+    # bar imports part of its API from _bar.
+    support.check__all__(self, bar, ('bar', '_bar'),
+               extra=extra, not_exported=not_exported)

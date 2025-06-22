@@ -1,0 +1,16 @@
+Title: Python 3 Changelog Updates
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: Recent changes in Python include the addition of a Loader for iOS-style Frameworks, a new `__static_attributes__` field for classes, performance improvements for `PyDictValues`, and the implementation of an incremental cyclic garbage collector to reduce pause times.
+---
+
+s caused a new run to be created).
+  * [gh-114099](https://github.com/python/cpython/issues/114099): Added a Loader that can discover extension modules in an iOS-style Frameworks folder.
+  * [gh-115775](https://github.com/python/cpython/issues/115775): Compiler populates the new `__static_attributes__` field on a class with the names of attributes of this class which are accessed through self.X from any function in its body.
+  * [gh-115776](https://github.com/python/cpython/issues/115776): The array of values, the `PyDictValues` struct is now embedded in the object during allocation. This provides better performance in the common case, and does not degrade as much when the object’s `__dict__` is materialized.
+  * [gh-108362](https://github.com/python/cpython/issues/108362): Implement an incremental cyclic garbage collector. By collecting the old generation in increments, there is no need for a full heap scan. This can hugely reduce maximum pause time for programs with large heaps.
+Reduce the number of generations from three to two. The old generation is split into two spaces, “visited” and “pending”.
+Collection happens in two steps:: * An increment is formed from the young generation and a small part of the pending space. * This increment is scanned and the survivors moved to the end of the visited space.
+When the collecting space becomes empty, the two spaces are swapped.
+  * [gh-109870](https://github.com/python/cpython/issues/109870): Dataclasses now calls [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec") once per dataclass, instead of once per method being added. This can speed up dataclass creation by up to 20%.
+  * [gh-97901](https://github.com/python/cpython/issues/97901): Mime type `text/rtf` is now supported by [`mimetypes`](https://docs.python.org/3/library/mimetypes.html#module-mimetypes "mimetypes: Mapping of filename extensions to MIME types.").
+  * [bpo-24612](https://bugs.python.org/issue?@action=redirect&bpo=24612): Improve the [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") that happens when ‘not’ appears after an operator. Patch by Pablo Galindo

@@ -1,0 +1,97 @@
+Title: Parsing XML with Namespaces
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: This section explains how to parse XML input with namespaces using Python's ElementTree. It describes the expansion of tags and attributes with prefixes to their corresponding URIs and how a default namespace affects non-prefixed tags.
+---
+
+```
+>>> a = ET.Element('a')
+>>> b = ET.SubElement(a, 'b')
+>>> c = ET.SubElement(a, 'c')
+>>> d = ET.SubElement(c, 'd')
+>>> ET.dump(a)
+<a><b /><c><d /></c></a>
+
+```
+
+### Parsing XML with Namespaces[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#parsing-xml-with-namespaces "Link to this heading")
+If the XML input has [namespaces](https://en.wikipedia.org/wiki/XML_namespace), tags and attributes with prefixes in the form `prefix:sometag` get expanded to `{uri}sometag` where the _prefix_ is replaced by the full _URI_. Also, if there is a [default namespace](https://www.w3.org/TR/xml-names/#defaulting), that full URI gets prepended to all of the non-prefixed tags.
+Here is an XML example that incorporates two namespaces, one with the prefix “fictional” and the other serving as the default namespace:
+```
+<?xml version="1.0"?>
+<actorsxmlns:fictional="http://characters.example.com"
+xmlns="http://people.example.com">
+<actor>
+<name>JohnCleese</name>
+<fictional:character>Lancelot</fictional:character>
+<fictional:character>ArchieLeach</fictional:character>
+</actor>
+<actor>
+<name>EricIdle</name>
+<fictional:character>SirRobin</fictional:character>
+<fictional:character>Gunther</fictional:character>
+<fictional:character>CommanderClement</fictional:character>
+</actor>
+</actors>
+
+```
+
+One way to search and explore this XML example is to manually add the URI to every tag or attribute in the xpath of a [`find()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.find "xml.etree.ElementTree.Element.find") or [`findall()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.findall "xml.etree.ElementTree.Element.findall"):
+```
+root = fromstring(xml_text)
+for actor in root.findall('{http://people.example.com}actor'):
+  name = actor.find('{http://people.example.com}name')
+  print(name.text)
+  for char in actor.findall('{http://characters.example.com}character'):
+    print(' |-->', char.text)
+
+```
+
+A better way to search the namespaced XML example is to create a dictionary with your own prefixes and use those in the search functions:
+```
+ns = {'real_person': 'http://people.example.com',
+   'role': 'http://characters.example.com'}
+for actor in root.findall('real_person:actor', ns):
+  name = actor.find('real_person:name', ns)
+  print(name.text)
+  for char in actor.findall('role:character', ns):
+    print(' |-->', char.text)
+
+```
+
+These two approaches both output:
+```
+John Cleese
+ |--> Lancelot
+ |--> Archie Leach
+Eric Idle
+ |--> Sir Robin
+ |--> Gunther
+ |--> Commander Clement
+
+```
+
+## XPath support[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xpath-support "Link to this heading")
+This module provides limited support for [XPath expressions](https://www.w3.org/TR/xpath) for locating elements in a tree. The goal is to support a small subset of the abbreviated syntax; a full XPath engine is outside the scope of the module.
+### Example[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#example "Link to this heading")
+Here’s an example that demonstrates some of the XPath capabilities of the module. We’ll be using the `countrydata` XML document from the [Parsing XML](https://docs.python.org/3/library/xml.etree.elementtree.html#elementtree-parsing-xml) section:
+```
+importxml.etree.ElementTreeasET
+root = ET.fromstring(countrydata)
+# Top-level elements
+root.findall(".")
+# All 'neighbor' grand-children of 'country' children of the top-level
+# elements
+root.findall("./country/neighbor")
+# Nodes with name='Singapore' that have a 'year' child
+root.findall(".//year/..[@name='Singapore']")
+# 'year' nodes that are children of nodes with name='Singapore'
+root.findall(".//*[@name='Singapore']/year")
+# All 'neighbor' nodes that are the second child of their parent
+root.findall(".//neighbor[2]")
+
+```
+
+For XML with namespaces, use the usual qualified `{namespace}tag` notation:
+```
+# All dublin-core "title" tags in the document
+root.findall(".//{http://purl.org/dc/elements/1.1/}title")

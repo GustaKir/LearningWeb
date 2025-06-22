@@ -1,0 +1,55 @@
+Title: Implementing User Authentication in Streamlit with Microsoft
+URL: https://docs.streamlit.io/develop/tutorials/authentication/microsoft
+Summary: This section outlines the steps to build a user authentication system in a Streamlit app using Microsoft. It covers configuring secrets management to store client information securely and prompts users to log in, including the creation of a `.streamlit/secrets.toml` file and ensuring secrets are not added to version control.
+---
+
+Your client is ready to accept users.
+## [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#build-the-example)Build the example
+To create an app with user authentication, you'll need to configure your secrets and prompt your users to log in. You'll use secrets management to store the information from your client, and then create a simple app that welcomes your user by name after they log in.
+### [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#configure-your-secrets)Configure your secrets
+  1. In `your_repository`, create a `.streamlit/secrets.toml` file.
+  2. Add `secrets.toml` to your `.gitignore` file.
+_priority_high_
+#### Important
+Never commit secrets to your repository. For more information about `.gitignore`, see [Ignoring files](https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files).
+  3. Generate a strong, random secret to use as your cookie secret.
+The cookie secret is used to sign each user's identity cookie, which Streamlit stores when they log in.
+  4. In `.streamlit/secrets.toml`, add your connection configuration:
+` [auth] redirect_uri = "http://localhost:8501/oauth2callback" cookie_secret = "xxx" client_id = "xxx" client_secret = "xxx" server_metadata_url = "https://login.microsoftonline.com/consumers/v2.0/.well-known/openid-configuration" `
+Replace the values of `client_id`, `client_secret`, and `server_metadata_url` with the values you copied into your text editor earlier. Replace the value of `cookie_secret` with the random secret you generated in the previous step.
+  5. Save your `secrets.toml` file.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#initialize-your-app)Initialize your app
+  1. In `your_repository`, create a file named `app.py`.
+  2. In a terminal, change directories to `your_repository`, and start your app:
+`streamlit run app.py `
+Your app will be blank because you still need to add code.
+  3. In `app.py`, write the following:
+`import streamlit as st `
+  4. Save your `app.py` file, and view your running app.
+  5. In your app, select "**Always rerun** ", or press the "**A** " key.
+Your preview will be blank but will automatically update as you save changes to `app.py`.
+  6. Return to your code.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#log-the-user-in-and-out)Log the user in and out
+  1. Define a function that prompts the user to log in:
+`def login_screen():   st.header("This app is private.")   st.subheader("Please log in.")   st.button("Log in with Microsoft", on_click=st.login) `
+This function displays a short message and a button. Streamlit's login command is assigned to the button as a callback.
+_push_pin_
+#### Note
+If you don't want to use a callback, you can replace the last line with an equivalent `if` statement:
+`- st.button("Log in with Microsoft", on_click=st.login) + if st.button("Log in with Microsoft"): +   st.login() `
+  2. Conditioned on whether the user is logged in, call your function to prompt the user, or show their information:
+`if not st.experimental_user.is_logged_in:   login_screen() else:   st.experimental_user `
+Because `st.experimental_user` is a dict-like object in a line by itself, Streamlit magic displays it in your app.
+  3. Save your `app.py` file, and test your running app.
+In your live preview, when you log in to your app, the login button is replaced with the contents of your identity token. Observe the different values that are available from Microsoft. You can use these values to personalize your app for your users.
+  4. Return to your code.
+  5. Replace `st.experimental_user` with a personalized greeting:
+`else: -  st.experimental_user +  st.header(f"Welcome, {st.experimental_user.name}!") `
+  6. Add a logout button:
+`  st.button("Log out", on_click=st.logout) `
+  7. Save your `app.py` file and test your running app.
+In your live preview, if you log out of your app, it will return to the login prompt.

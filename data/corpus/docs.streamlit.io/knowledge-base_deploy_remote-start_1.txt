@@ -1,0 +1,37 @@
+Title: Troubleshooting Streamlit App Loading Issues
+URL: https://docs.streamlit.io/knowledge-base/deploy/remote-start
+Summary: To troubleshoot Streamlit app issues, start with a simple HTTP server using `python -m http.server [port]` to determine if the problem is with the app or Streamlit itself. Additionally, note that starting from version 1.29.0, loading issues may present as skeleton elements instead of the traditional 'Please wait...' message.
+---
+
+If that still doesn't solve the problem, try running a simple HTTP server instead of Streamlit, and seeing if _that_ works correctly. If it does, then you know the problem lies somewhere in your Streamlit app or configuration (in which case you should ask for help in our [forums](https://discuss.streamlit.io)!) If not, then it's definitely unrelated to Streamlit.
+How to start a simple HTTP server:
+`python -m http.server [port] `
+### [](https://docs.streamlit.io/knowledge-base/deploy/remote-start#symptom-2-the-app-says-please-wait-or-shows-skeleton-elements-forever)Symptom #2: The app says "Please wait..." or shows skeleton elements forever
+This symptom appears differently starting from version 1.29.0. For earlier versions of Streamlit, a loading app shows a blue box in the center of the page with a "Please wait..." message. Starting from version 1.29.0, a loading app shows skeleton elements. If this loading screen does not go away, the underlying cause is likely one of the following:
+  * Using port 3000 which is reserved for internal development.
+  * Misconfigured [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) protection.
+  * Server is stripping headers from the Websocket connection, thereby breaking compression.
+
+
+To diagnose the issue, first make sure you are not using port 3000. If in doubt, try port 80 as described above.
+Next, try temporarily disabling CORS protection by running Streamlit with the `--server.enableCORS` flag set to `false`:
+`streamlit run my_app.py --server.enableCORS=false `
+If this fixes your issue, **you should re-enable CORS protection** and then set `browser.serverAddress` to the URL of your Streamlit app.
+If the issue persists, try disabling websocket compression by running Streamlit with the `--server.enableWebsocketCompression` flag set to `false`
+`streamlit run my_app.py --server.enableWebsocketCompression=false `
+If this fixes your issue, your server setup is likely stripping the `Sec-WebSocket-Extensions` HTTP header that is used to negotiate Websocket compression.
+Compression is not required for Streamlit to work, but it's strongly recommended as it improves performance. If you'd like to turn it back on, you'll need to find which part of your infrastructure is stripping the `Sec-WebSocket-Extensions` HTTP header and change that behavior.
+### [](https://docs.streamlit.io/knowledge-base/deploy/remote-start#symptom-3-unable-to-upload-files-when-running-in-multiple-replicas)Symptom #3: Unable to upload files when running in multiple replicas
+If the file uploader widget returns an error with status code 403, this is probably due to a misconfiguration in your app's [XSRF](https://en.wikipedia.org/wiki/Cross-site_request_forgery) protection logic.
+To diagnose the issue, try temporarily disabling XSRF protection by running Streamlit with the `--server.enableXsrfProtection` flag set to `false`:
+`streamlit run my_app.py --server.enableXsrfProtection=false `
+If this fixes your issue, **you should re-enable XSRF protection** and try one or both of the following:
+  * Set `browser.serverAddress` and `browser.serverPort` to the URL and port of your Streamlit app.
+  * Configure your app to use the same secret across every replica by setting the `server.cookieSecret` config option to the same hard-to-guess string everywhere.
+
+[Previous: Invoking a Python subprocess in a deployed Streamlit app](https://docs.streamlit.io/knowledge-base/deploy/invoking-python-subprocess-deployed-streamlit-app)[Next: Argh. This app has gone over its resource limits](https://docs.streamlit.io/knowledge-base/deploy/resource-limits) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

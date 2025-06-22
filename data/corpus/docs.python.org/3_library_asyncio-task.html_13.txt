@@ -1,0 +1,26 @@
+Title: Introduction to asyncio.Task
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: The asyncio.Task class represents a Future-like object that executes a Python coroutine within an event loop. It manages coroutine execution, allowing them to yield control during await operations while the event loop can run other tasks or handle IO. It is not thread-safe and uses cooperative scheduling.
+---
+
+_class_ asyncio.Task(_coro_ , _*_ , _loop =None_, _name =None_, _context =None_, _eager_start =False_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "Link to this definition")
+    
+A [`Future-like`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future") object that runs a Python [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine). Not thread-safe.
+Tasks are used to run coroutines in event loops. If a coroutine awaits on a Future, the Task suspends the execution of the coroutine and waits for the completion of the Future. When the Future is _done_ , the execution of the wrapped coroutine resumes.
+Event loops use cooperative scheduling: an event loop runs one Task at a time. While a Task awaits for the completion of a Future, the event loop runs other Tasks, callbacks, or performs IO operations.
+Use the high-level [`asyncio.create_task()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task "asyncio.create_task") function to create Tasks, or the low-level [`loop.create_task()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_task "asyncio.loop.create_task") or [`ensure_future()`](https://docs.python.org/3/library/asyncio-future.html#asyncio.ensure_future "asyncio.ensure_future") functions. Manual instantiation of Tasks is discouraged.
+To cancel a running Task use the [`cancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel") method. Calling it will cause the Task to throw a [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") exception into the wrapped coroutine. If a coroutine is awaiting on a Future object during cancellation, the Future object will be cancelled.
+[`cancelled()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancelled "asyncio.Task.cancelled") can be used to check if the Task was cancelled. The method returns `True` if the wrapped coroutine did not suppress the [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") exception and was actually cancelled.
+[`asyncio.Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") inherits from [`Future`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future") all of its APIs except [`Future.set_result()`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future.set_result "asyncio.Future.set_result") and [`Future.set_exception()`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future.set_exception "asyncio.Future.set_exception").
+An optional keyword-only _context_ argument allows specifying a custom [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") for the _coro_ to run in. If no _context_ is provided, the Task copies the current context and later runs its coroutine in the copied context.
+An optional keyword-only _eager_start_ argument allows eagerly starting the execution of the [`asyncio.Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") at task creation time. If set to `True` and the event loop is running, the task will start executing the coroutine immediately, until the first time the coroutine blocks. If the coroutine returns or raises without blocking, the task will be finished eagerly and will skip scheduling to the event loop.
+Changed in version 3.7: Added support for the [`contextvars`](https://docs.python.org/3/library/contextvars.html#module-contextvars "contextvars: Context Variables") module.
+Changed in version 3.8: Added the _name_ parameter.
+Deprecated since version 3.10: Deprecation warning is emitted if _loop_ is not specified and there is no running event loop.
+Changed in version 3.11: Added the _context_ parameter.
+Changed in version 3.12: Added the _eager_start_ parameter. 
+
+done()[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.done "Link to this definition")
+    
+Return `True` if the Task is _done_.
+A Task is _done_ when the wrapped coroutine either returned a value, raised an exception, or the Task was cancelled.

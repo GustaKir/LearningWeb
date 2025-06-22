@@ -1,0 +1,22 @@
+Title: IDLE Shell Behavior and Functionality
+URL: https://docs.python.org/3/library/idle.html
+Summary: This section explains IDLE's interaction with the Python subprocess, noting that user code can disrupt standard input/output functionality. It details how IDLE controls the keyboard and screen when the Shell is focused and discusses the implications of increased call stack frames on recursion limits, as well as IDLE's handling of SystemExit events.
+---
+
+ine window. (On Windows, use `python` or `py` rather than `pythonw` or `pyw`.) The secondary subprocess will then be attached to that window for input and output.
+If `sys` is reset by user code, such as with `importlib.reload(sys)`, IDLE’s changes are lost and input from the keyboard and output to the screen will not work correctly.
+When Shell has the focus, it controls the keyboard and screen. This is normally transparent, but functions that directly access the keyboard and screen will not work. These include system-specific functions that determine whether a key has been pressed and if so, which.
+The IDLE code running in the execution process adds frames to the call stack that would not be there otherwise. IDLE wraps `sys.getrecursionlimit` and `sys.setrecursionlimit` to reduce the effect of the additional stack frames.
+When user code raises SystemExit either directly or by calling sys.exit, IDLE returns to a Shell prompt instead of exiting.
+### User output in Shell[¶](https://docs.python.org/3/library/idle.html#user-output-in-shell "Link to this heading")
+When a program outputs text, the result is determined by the corresponding output device. When IDLE executes user code, `sys.stdout` and `sys.stderr` are connected to the display area of IDLE’s Shell. Some of its features are inherited from the underlying Tk Text widget. Others are programmed additions. Where it matters, Shell is designed for development rather than production runs.
+For instance, Shell never throws away output. A program that sends unlimited output to Shell will eventually fill memory, resulting in a memory error. In contrast, some system text windows only keep the last n lines of output. A Windows console, for instance, keeps a user-settable 1 to 9999 lines, with 300 the default.
+A Tk Text widget, and hence IDLE’s Shell, displays characters (codepoints) in the BMP (Basic Multilingual Plane) subset of Unicode. Which characters are displayed with a proper glyph and which with a replacement box depends on the operating system and installed fonts. Tab characters cause the following text to begin after the next tab stop. (They occur every 8 ‘characters’). Newline characters cause following text to appear on a new line. Other control characters are ignored or displayed as a space, box, or something else, depending on the operating system and font. (Moving the text cursor through such output with arrow keys may exhibit some surprising spacing behavior.)
+>>>```
+>>> s = 'a\tb\a<\x02><\r>\bc\nd' # Enter 22 chars.
+>>> len(s)
+14
+>>> s # Display repr(s)
+'a\tb\x07<\x02><\r>\x08c\nd'
+>>> print(s, end='') # Display s as is.
+# Result varies by OS and font. Try it.

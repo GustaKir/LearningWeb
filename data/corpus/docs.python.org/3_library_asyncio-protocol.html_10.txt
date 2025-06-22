@@ -1,0 +1,112 @@
+Title: Echo Server Implementation Using asyncio
+URL: https://docs.python.org/3/library/asyncio-protocol.html
+Summary: This documentation chunk provides an example of an Echo Server implementation using Python's asyncio library. It defines an EchoServerProtocol class that handles connection management and data reception, echoing back received messages. The main function sets up the server to listen on localhost, port 8888, and runs indefinitely. An additional resource is mentioned for a TCP echo server using high-level streams.
+---
+
+```
+importasyncio
+
+classEchoServerProtocol(asyncio.Protocol):
+  defconnection_made(self, transport):
+    peername = transport.get_extra_info('peername')
+    print('Connection from {}'.format(peername))
+    self.transport = transport
+  defdata_received(self, data):
+    message = data.decode()
+    print('Data received: {!r}'.format(message))
+    print('Send: {!r}'.format(message))
+    self.transport.write(data)
+    print('Close the client socket')
+    self.transport.close()
+
+async defmain():
+  # Get a reference to the event loop as we plan to use
+  # low-level APIs.
+  loop = asyncio.get_running_loop()
+  server = await loop.create_server(
+    EchoServerProtocol,
+    '127.0.0.1', 8888)
+  async with server:
+    await server.serve_forever()
+
+asyncio.run(main())
+
+```
+
+See also
+The [TCP echo server using streams](https://docs.python.org/3/library/asyncio-stream.html#asyncio-tcp-echo-server-streams) example uses the high-level [`asyncio.start_server()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.start_server "asyncio.start_server") function.
+### TCP Echo Client[¶](https://docs.python.org/3/library/asyncio-protocol.html#tcp-echo-client "Link to this heading")
+A TCP echo client using the [`loop.create_connection()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_connection "asyncio.loop.create_connection") method, sends data, and waits until the connection is closed:
+```
+importasyncio
+
+classEchoClientProtocol(asyncio.Protocol):
+  def__init__(self, message, on_con_lost):
+    self.message = message
+    self.on_con_lost = on_con_lost
+  defconnection_made(self, transport):
+    transport.write(self.message.encode())
+    print('Data sent: {!r}'.format(self.message))
+  defdata_received(self, data):
+    print('Data received: {!r}'.format(data.decode()))
+  defconnection_lost(self, exc):
+    print('The server closed the connection')
+    self.on_con_lost.set_result(True)
+
+async defmain():
+  # Get a reference to the event loop as we plan to use
+  # low-level APIs.
+  loop = asyncio.get_running_loop()
+  on_con_lost = loop.create_future()
+  message = 'Hello World!'
+  transport, protocol = await loop.create_connection(
+    lambda: EchoClientProtocol(message, on_con_lost),
+    '127.0.0.1', 8888)
+  # Wait until the protocol signals that the connection
+  # is lost and close the transport.
+  try:
+    await on_con_lost
+  finally:
+    transport.close()
+
+asyncio.run(main())
+
+```
+
+See also
+The [TCP echo client using streams](https://docs.python.org/3/library/asyncio-stream.html#asyncio-tcp-echo-client-streams) example uses the high-level [`asyncio.open_connection()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.open_connection "asyncio.open_connection") function.
+### UDP Echo Server[¶](https://docs.python.org/3/library/asyncio-protocol.html#udp-echo-server "Link to this heading")
+A UDP echo server, using the [`loop.create_datagram_endpoint()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_datagram_endpoint "asyncio.loop.create_datagram_endpoint") method, sends back received data:
+```
+importasyncio
+
+classEchoServerProtocol:
+  defconnection_made(self, transport):
+    self.transport = transport
+  defdatagram_received(self, data, addr):
+    message = data.decode()
+    print('Received %r from %s' % (message, addr))
+    print('Send %r to %s' % (message, addr))
+    self.transport.sendto(data, addr)
+
+async defmain():
+  print("Starting UDP server")
+  # Get a reference to the event loop as we plan to use
+  # low-level APIs.
+  loop = asyncio.get_running_loop()
+  # One protocol instance will be created to serve all
+  # client requests.
+  transport, protocol = await loop.create_datagram_endpoint(
+    EchoServerProtocol,
+    local_addr=('127.0.0.1', 9999))
+  try:
+    await asyncio.sleep(3600) # Serve for 1 hour.
+  finally:
+    transport.close()
+
+asyncio.run(main())
+
+```
+
+### UDP Echo Client[¶](https://docs.python.org/3/library/asyncio-protocol.html#udp-echo-client "Link to this heading")
+A UDP echo client, using the [`loop.create_datagram_endpoint()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_datagram_endpoint "asyncio.loop.create_datagram_endpoint") method, sends data and closes the transport when it receives the answer:

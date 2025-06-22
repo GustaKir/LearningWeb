@@ -1,0 +1,32 @@
+Title: Resolving Module Names with importlib.util.resolve_name
+URL: https://docs.python.org/3/library/importlib.html
+Summary: The function `importlib.util.resolve_name(name, package)` resolves a relative module name to an absolute one. If the name has no leading dots, it is returned as-is. An `ImportError` is raised if the name is relative and the package argument is invalid or if it escapes its containing package. This functionality was added in Python 3.3 and modified in 3.9 for consistency.
+---
+
+importlib.util.resolve_name(_name_ , _package_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.resolve_name "Link to this definition")
+    
+Resolve a relative module name to an absolute one.
+If **name** has no leading dots, then **name** is simply returned. This allows for usage such as `importlib.util.resolve_name('sys', __spec__.parent)` without doing a check to see if the **package** argument is needed.
+[`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") is raised if **name** is a relative module name but **package** is a false value (e.g. `None` or the empty string). [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") is also raised if a relative name would escape its containing package (e.g. requesting `..bacon` from within the `spam` package).
+Added in version 3.3.
+Changed in version 3.9: To improve consistency with import statements, raise [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") instead of [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") for invalid relative import attempts. 
+
+importlib.util.find_spec(_name_ , _package =None_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec "Link to this definition")
+    
+Find the [spec](https://docs.python.org/3/glossary.html#term-module-spec) for a module, optionally relative to the specified **package** name. If the module is in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules"), then `sys.modules[name].__spec__` is returned (unless the spec would be `None` or is not set, in which case [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised). Otherwise a search using [`sys.meta_path`](https://docs.python.org/3/library/sys.html#sys.meta_path "sys.meta_path") is done. `None` is returned if no spec is found.
+If **name** is for a submodule (contains a dot), the parent module is automatically imported.
+**name** and **package** work the same as for `import_module()`.
+Added in version 3.4.
+Changed in version 3.7: Raises [`ModuleNotFoundError`](https://docs.python.org/3/library/exceptions.html#ModuleNotFoundError "ModuleNotFoundError") instead of [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") if **package** is in fact not a package (i.e. lacks a [`__path__`](https://docs.python.org/3/reference/datamodel.html#module.__path__ "module.__path__") attribute). 
+
+importlib.util.module_from_spec(_spec_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.module_from_spec "Link to this definition")
+    
+Create a new module based on **spec** and [`spec.loader.create_module`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "importlib.abc.Loader.create_module").
+If [`spec.loader.create_module`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "importlib.abc.Loader.create_module") does not return `None`, then any pre-existing attributes will not be reset. Also, no [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") will be raised if triggered while accessing **spec** or setting an attribute on the module.
+This function is preferred over using [`types.ModuleType`](https://docs.python.org/3/library/types.html#types.ModuleType "types.ModuleType") to create a new module as **spec** is used to set as many import-controlled attributes on the module as possible.
+Added in version 3.5. 
+
+importlib.util.spec_from_loader(_name_ , _loader_ , _*_ , _origin =None_, _is_package =None_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.spec_from_loader "Link to this definition")
+    
+A factory function for creating a [`ModuleSpec`](https://docs.python.org/3/library/importlib.html#importlib.machinery.ModuleSpec "importlib.machinery.ModuleSpec") instance based on a loader. The parameters have the same meaning as they do for ModuleSpec. The function uses available [loader](https://docs.python.org/3/glossary.html#term-loader) APIs, such as `InspectLoader.is_package()`, to fill in any missing information on the spec.
+Added in version 3.4.

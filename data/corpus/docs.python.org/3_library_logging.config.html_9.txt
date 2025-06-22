@@ -1,0 +1,44 @@
+Title: Logging Configuration: Custom Handlers and Resolution
+URL: https://docs.python.org/3/library/logging.config.html
+Summary: This section discusses how to configure custom logging handlers in Python, specifically focusing on the `MemoryHandler` and user-defined handlers. It explains the use of the `target` argument for delegation to other handlers and introduces a resolution system for defining alternate handlers, allowing users to reference configurations within their own custom handler definitions.
+---
+
+gging.handlers.html#logging.handlers.MemoryHandler "logging.handlers.MemoryHandler"), which takes a `target` argument which is another handler to delegate to. Since the system already knows about this class, then in the configuration, the given `target` just needs to be the object id of the relevant target handler, and the system will resolve to the handler from the id. If, however, a user defines a `my.package.MyHandler` which has an `alternate` handler, the configuration system would not know that the `alternate` referred to a handler. To cater for this, a generic resolution system allows the user to specify:
+```
+handlers:
+file:
+# configuration of file handler goes here
+custom:
+():my.package.MyHandler
+alternate:cfg://handlers.file
+
+```
+
+The literal string `'cfg://handlers.file'` will be resolved in an analogous way to strings with the `ext://` prefix, but looking in the configuration itself rather than the import namespace. The mechanism allows access by dot or by index, in a similar way to that provided by `str.format`. Thus, given the following snippet:
+```
+handlers:
+email:
+class:logging.handlers.SMTPHandler
+mailhost:localhost
+fromaddr:my_app@domain.tld
+toaddrs:
+-support_team@domain.tld
+-dev_team@domain.tld
+subject:Houston, we have a problem.
+
+```
+
+in the configuration, the string `'cfg://handlers'` would resolve to the dict with key `handlers`, the string `'cfg://handlers.email` would resolve to the dict with key `email` in the `handlers` dict, and so on. The string `'cfg://handlers.email.toaddrs[1]` would resolve to `'dev_team@domain.tld'` and the string `'cfg://handlers.email.toaddrs[0]'` would resolve to the value `'support_team@domain.tld'`. The `subject` value could be accessed using either `'cfg://handlers.email.subject'` or, equivalently, `'cfg://handlers.email[subject]'`. The latter form only needs to be used if the key contains spaces or non-alphanumeric characters. Please note that the characters `[` and `]` are not allowed in the keys. If an index value consists only of decimal digits, access will be attempted using the corresponding integer value, falling back to the string value if needed.
+Given a string `cfg://handlers.myhandler.mykey.123`, this will resolve to `config_dict['handlers']['myhandler']['mykey']['123']`. If the string is specified as `cfg://handlers.myhandler.mykey[123]`, the system will attempt to retrieve the value from `config_dict['handlers']['myhandler']['mykey'][123]`, and fall back to `config_dict['handlers']['myhandler']['mykey']['123']` if that fails.
+### Import resolution and custom importers[¶](https://docs.python.org/3/library/logging.config.html#import-resolution-and-custom-importers "Link to this heading")
+Import resolution, by default, uses the builtin [`__import__()`](https://docs.python.org/3/library/functions.html#import__ "__import__") function to do its importing. You may want to replace this with your own importing mechanism: if so, you can replace the `importer` attribute of the `DictConfigurator` or its superclass, the `BaseConfigurator` class. However, you need to be careful because of the way functions are accessed from classes via descriptors. If you are using a Python callable to do your imports, and you want to define it at class level rather than instance level, you need to wrap it with [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod"). For example:
+```
+fromimportlibimport import_module
+fromlogging.configimport BaseConfigurator
+BaseConfigurator.importer = staticmethod(import_module)
+
+```
+
+You don’t need to wrap with [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod") if you’re setting the import callable on a configurator _instance_.
+### Configuring QueueHandler and QueueListener[¶](https://docs.python.org/3/library/logging.config.html#configuring-queuehandler-and-queuelistener "Link to this heading")
+If you want to configure a [`QueueHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler "logging.handlers.QueueHandler"), noting that this is normally used in conjunction with a [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener"), you can configure both together. After the configuration, the `QueueListener` instance will be available as the [`listener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler.listener "logging.handlers.QueueHandler.listener") attribute of the created handler, and that in turn will be available to you using [`getHandlerByName()`](https://docs.python.org/3/library/logging.html#logging.getHandlerByName "logging.getHandlerByName") and passing the name you have used for the `QueueHandler` in your configuration. The dictionary schema for configuring the pair is shown in the example YAML snippet below.

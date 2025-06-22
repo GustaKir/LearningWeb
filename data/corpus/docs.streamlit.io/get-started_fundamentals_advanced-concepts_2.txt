@@ -1,0 +1,23 @@
+Title: Streamlit Caching Mechanism
+URL: https://docs.streamlit.io/get-started/fundamentals/advanced-concepts
+Summary: Streamlit's caching mechanism checks for previously saved results of functions before execution. If a cached result exists, it is returned; if not, the function runs, and the result is cached. During development, updates to the function code automatically refresh the cache. The document also highlights the use cases for two caching decorators: `st.cache_data` for storable data and `st.cache_resource` for non-storable resources like database connections or machine learning models.
+---
+
+Before running the code within `long_running_function`, Streamlit checks its cache for a previously saved result. If it finds a cached result for the given function and input values, it will return that cached result and not rerun function's code. Otherwise, Streamlit executes the function, saves the result in its cache, and proceeds with the script run. During development, the cache updates automatically as the function code changes, ensuring that the latest changes are reflected in the cache.
+![Streamlit's two caching decorators and their use cases. Use st.cache_data for anything you'd store in a database. Use st.cache_resource for anything you can't store in a database, like a connection to a database or a machine learning model.](https://docs.streamlit.io/images/caching-high-level-diagram.png)
+Streamlit's two caching decorators and their use cases.
+For more information about the Streamlit caching decorators, their configuration parameters, and their limitations, see [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+## [](https://docs.streamlit.io/get-started/fundamentals/advanced-concepts#session-state)Session State
+Session State provides a dictionary-like interface where you can save information that is preserved between script reruns. Use `st.session_state` with key or attribute notation to store and recall values. For example, `st.session_state["my_key"]` or `st.session_state.my_key`. Remember that widgets handle their statefulness all by themselves, so you won't always need to use Session State!
+### [](https://docs.streamlit.io/get-started/fundamentals/advanced-concepts#what-is-a-session)What is a session?
+A session is a single instance of viewing an app. If you view an app from two different tabs in your browser, each tab will have its own session. So each viewer of an app will have a Session State tied to their specific view. Streamlit maintains this session as the user interacts with the app. If the user refreshes their browser page or reloads the URL to the app, their Session State resets and they begin again with a new session.
+### [](https://docs.streamlit.io/get-started/fundamentals/advanced-concepts#examples-of-using-session-state)Examples of using Session State
+Here's a simple app that counts the number of times the page has been run. Every time you click the button, the script will rerun.
+`import streamlit as st if "counter" not in st.session_state:   st.session_state.counter = 0 st.session_state.counter += 1 st.header(f"This page has run {st.session_state.counter} times.") st.button("Run it again") `
+  * **First run:** The first time the app runs for each user, Session State is empty. Therefore, a key-value pair is created (`"counter":0`). As the script continues, the counter is immediately incremented (`"counter":1`) and the result is displayed: "This page has run 1 times." When the page has fully rendered, the script has finished and the Streamlit server waits for the user to do something. When that user clicks the button, a rerun begins.
+  * **Second run:** Since "counter" is already a key in Session State, it is not reinitialized. As the script continues, the counter is incremented (`"counter":2`) and the result is displayed: "This page has run 2 times."
+
+
+There are a few common scenarios where Session State is helpful. As demonstrated above, Session State is used when you have a progressive process that you want to build upon from one rerun to the next. Session State can also be used to prevent recalculation, similar to caching. However, the differences are important:
+  * Caching associates stored values to specific functions and inputs. Cached values are accessible to all users across all sessions.
+  * Session State associates stored values to keys (strings). Values in session state are only available in the single session where it was saved.

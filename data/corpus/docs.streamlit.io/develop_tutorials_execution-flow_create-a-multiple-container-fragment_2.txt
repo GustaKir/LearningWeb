@@ -1,0 +1,47 @@
+Title: Creating Multiple Containers in Streamlit App
+URL: https://docs.streamlit.io/develop/tutorials/execution-flow/create-a-multiple-container-fragment
+Summary: This section outlines how to frame an app's layout using Streamlit by adding a title and creating two rows of three containers. It includes the definition of helper functions to display two black cats and two orange cats, simulating a delay with `time.sleep()`. The optional step suggests testing these functions in the created grid cards.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/create-a-multiple-container-fragment#frame-out-your-apps-containers)Frame out your app's containers
+  1. Add a title to your app and two rows of three containers.
+`st.title("Cats!") row1 = st.columns(3) row2 = st.columns(3) grid = [col.container(height=200) for col in row1 + row2] `
+Save your file to see your updated preview.
+  2. Define a helper function to draw two black cats.
+`def black_cats():   time.sleep(1)   st.title("🐈‍⬛ 🐈‍⬛")   st.markdown("🐾 🐾 🐾 🐾") `
+This function represents "herding two cats" and uses `time.sleep()` to simulate a slower process. You will use this to draw two cats in one of your grid cards later on.
+  3. Define another helper function to draw two orange cats.
+`def orange_cats():   time.sleep(1)   st.title("🐈 🐈")   st.markdown("🐾 🐾 🐾 🐾") `
+  4. Optional: Test out your functions by calling each one within a grid card.
+`with grid[0]:   black_cats() with grid[1]:   orange_cats() `
+Save your `app.py` file to see the preview. Delete these four lines when finished.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/create-a-multiple-container-fragment#define-your-fragments)Define your fragments
+Since each fragment will span across the sidebar and three additional containers, you'll use the sidebar to hold the main body of the fragment and pass the three containers as function arguments.
+  1. Use an [`@st.fragment`](https://docs.streamlit.io/develop/api-reference/execution-flow/st.fragment) decorator and start your black-cat fragment definition.
+`@st.fragment def herd_black_cats(card_a, card_b, card_c): `
+  2. Add a button for rerunning this fragment.
+`  st.button("Herd the black cats") `
+  3. Write to each container using your helper function.
+` with card_a:     black_cats() with card_b:     black_cats() with card_c:     black_cats() `
+**This code above will not behave as desired, but you'll explore and correct this in the following steps.**
+  4. Test out your code. Call your fragment function in the sidebar.
+`with st.sidebar:   herd_black_cats(grid[0], grid[2], grid[4]) `
+Save your file and try using the button in the sidebar. More and more cats are appear in the cards with each fragment rerun! This is the expected behavior when fragments write to outside containers. To fix this, you will pass `st.empty()` containers to your fragment function.
+![Example Streamlit app showing accumulating elements when a fragment writes to outside containers](https://docs.streamlit.io/images/tutorials/fragment-multiple-containers-tutorial-app-duplicates.jpg)
+  5. Delete the lines of code from the previous two steps.
+  6. To prepare for using `st.empty()` containers, correct your cat-herding function as follows. After the button, define containers to place in the `st.empty()` cards you'll pass to your fragment.
+`  container_a = card_a.container()   container_b = card_b.container()   container_c = card_c.container() with container_a:     black_cats() with container_b:     black_cats() with container_c:     black_cats() `
+In this new version, `card_a`, `card_b`, and `card_c` will be `st.empty()` containers. You create `container_a`, `container_b`, and `container_c` to allow Streamlit to draw multiple elements on each grid card.
+  7. Similarly define your orange-cat fragment function.
+`@st.fragment def herd_orange_cats(card_a, card_b, card_c):   st.button("Herd the orange cats")   container_a = card_a.container()   container_b = card_b.container()   container_c = card_c.container() with container_a:     orange_cats() with container_b:     orange_cats() with container_c:     orange_cats() `
+
+
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/create-a-multiple-container-fragment#put-the-functions-together-together-to-create-an-app)Put the functions together together to create an app
+  1. Call both of your fragments in the sidebar.
+`with st.sidebar:   herd_black_cats(grid[0].empty(), grid[2].empty(), grid[4].empty())   herd_orange_cats(grid[1].empty(), grid[3].empty(), grid[5].empty()) `
+By creating `st.empty()` containers in each card and passing them to your fragments, you prevent elements from accumulating in the cards with each fragment rerun. If you create the `st.empty()` containers earlier in your app, full-script reruns will clear the orange-cat cards while (first) rendering the black-cat cards.
+  2. Include a button outside of your fragments. When clicked, the button will trigger a full-script rerun since you're calling its widget function outside of any fragment.
+`  st.button("Herd all the cats") `
+  3. Save your file and try out the app! When you click "**Herd the black cats** " or "**Herd the orange cats** ," Streamlit will only redraw the three related cards. When you click "**Herd all the cats** ," Streamlit redraws all six cards.

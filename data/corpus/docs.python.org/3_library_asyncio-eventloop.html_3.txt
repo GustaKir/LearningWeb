@@ -1,0 +1,47 @@
+Title: Running Futures and Event Loops in asyncio
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This section covers methods to run event loops in Python's asyncio library. `loop.run_until_complete(_future_)` executes until a Future is complete, returning its result or raising an exception. The `loop.run_forever()` method runs the event loop until explicitly stopped.
+---
+
+loop.run_until_complete(_future_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_until_complete "Link to this definition")
+    
+Run until the _future_ (an instance of [`Future`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future")) has completed.
+If the argument is a [coroutine object](https://docs.python.org/3/library/asyncio-task.html#coroutine) it is implicitly scheduled to run as a [`asyncio.Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task").
+Return the Future’s result or raise its exception. 
+
+loop.run_forever()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_forever "Link to this definition")
+    
+Run the event loop until [`stop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.stop "asyncio.loop.stop") is called.
+If [`stop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.stop "asyncio.loop.stop") is called before [`run_forever()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_forever "asyncio.loop.run_forever") is called, the loop will poll the I/O selector once with a timeout of zero, run all callbacks scheduled in response to I/O events (and those that were already scheduled), and then exit.
+If [`stop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.stop "asyncio.loop.stop") is called while [`run_forever()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_forever "asyncio.loop.run_forever") is running, the loop will run the current batch of callbacks and then exit. Note that new callbacks scheduled by callbacks will not run in this case; instead, they will run the next time [`run_forever()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_forever "asyncio.loop.run_forever") or [`run_until_complete()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_until_complete "asyncio.loop.run_until_complete") is called. 
+
+loop.stop()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.stop "Link to this definition")
+    
+Stop the event loop. 
+
+loop.is_running()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.is_running "Link to this definition")
+    
+Return `True` if the event loop is currently running. 
+
+loop.is_closed()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.is_closed "Link to this definition")
+    
+Return `True` if the event loop was closed. 
+
+loop.close()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.close "Link to this definition")
+    
+Close the event loop.
+The loop must not be running when this function is called. Any pending callbacks will be discarded.
+This method clears all queues and shuts down the executor, but does not wait for the executor to finish.
+This method is idempotent and irreversible. No other methods should be called after the event loop is closed. 
+
+_async_ loop.shutdown_asyncgens()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.shutdown_asyncgens "Link to this definition")
+    
+Schedule all currently open [asynchronous generator](https://docs.python.org/3/glossary.html#term-asynchronous-generator) objects to close with an [`aclose()`](https://docs.python.org/3/reference/expressions.html#agen.aclose "agen.aclose") call. After calling this method, the event loop will issue a warning if a new asynchronous generator is iterated. This should be used to reliably finalize all scheduled asynchronous generators.
+Note that there is no need to call this function when [`asyncio.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run") is used.
+Example:
+```
+try:
+  loop.run_forever()
+finally:
+  loop.run_until_complete(loop.shutdown_asyncgens())
+  loop.close()

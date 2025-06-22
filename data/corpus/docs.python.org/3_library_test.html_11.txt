@@ -1,0 +1,52 @@
+Title: Testing Utilities in Python
+URL: https://docs.python.org/3/library/test.html
+Summary: This section discusses Python testing utilities, including the `bigaddrspacetest` decorator for filling address space, and the `check_syntax_error` function to test for syntax errors in statements by compiling them and validating against expected error outputs and their positions.
+---
+
+@test.support.bigaddrspacetest[¶](https://docs.python.org/3/library/test.html#test.support.bigaddrspacetest "Link to this definition")
+    
+Decorator for tests that fill the address space. 
+
+test.support.check_syntax_error(_testcase_ , _statement_ , _errtext =''_, _*_ , _lineno =None_, _offset =None_)[¶](https://docs.python.org/3/library/test.html#test.support.check_syntax_error "Link to this definition")
+    
+Test for syntax errors in _statement_ by attempting to compile _statement_. _testcase_ is the [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") instance for the test. _errtext_ is the regular expression which should match the string representation of the raised [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError"). If _lineno_ is not `None`, compares to the line of the exception. If _offset_ is not `None`, compares to the offset of the exception. 
+
+test.support.open_urlresource(_url_ , _* args_, _** kw_)[¶](https://docs.python.org/3/library/test.html#test.support.open_urlresource "Link to this definition")
+    
+Open _url_. If open fails, raises [`TestFailed`](https://docs.python.org/3/library/test.html#test.support.TestFailed "test.support.TestFailed"). 
+
+test.support.reap_children()[¶](https://docs.python.org/3/library/test.html#test.support.reap_children "Link to this definition")
+    
+Use this at the end of `test_main` whenever sub-processes are started. This will help ensure that no extra children (zombies) stick around to hog resources and create problems when looking for refleaks. 
+
+test.support.get_attribute(_obj_ , _name_)[¶](https://docs.python.org/3/library/test.html#test.support.get_attribute "Link to this definition")
+    
+Get an attribute, raising [`unittest.SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest") if [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") is raised. 
+
+test.support.catch_unraisable_exception()[¶](https://docs.python.org/3/library/test.html#test.support.catch_unraisable_exception "Link to this definition")
+    
+Context manager catching unraisable exception using [`sys.unraisablehook()`](https://docs.python.org/3/library/sys.html#sys.unraisablehook "sys.unraisablehook").
+Storing the exception value (`cm.unraisable.exc_value`) creates a reference cycle. The reference cycle is broken explicitly when the context manager exits.
+Storing the object (`cm.unraisable.object`) can resurrect it if it is set to an object which is being finalized. Exiting the context manager clears the stored object.
+Usage:
+```
+with support.catch_unraisable_exception() as cm:
+  # code creating an "unraisable exception"
+  ...
+  # check the unraisable exception: use cm.unraisable
+  ...
+# cm.unraisable attribute no longer exists at this point
+# (to break a reference cycle)
+
+```
+
+Added in version 3.8. 
+
+test.support.load_package_tests(_pkg_dir_ , _loader_ , _standard_tests_ , _pattern_)[¶](https://docs.python.org/3/library/test.html#test.support.load_package_tests "Link to this definition")
+    
+Generic implementation of the [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") `load_tests` protocol for use in test packages. _pkg_dir_ is the root directory of the package; _loader_ , _standard_tests_ , and _pattern_ are the arguments expected by `load_tests`. In simple cases, the test package’s `__init__.py` can be the following:
+```
+importos
+fromtest.supportimport load_package_tests
+defload_tests(*args):
+  return load_package_tests(os.path.dirname(__file__), *args)

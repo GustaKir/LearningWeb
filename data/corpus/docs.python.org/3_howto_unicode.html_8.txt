@@ -1,0 +1,37 @@
+Title: Tips for Writing Unicode-aware Programs
+URL: https://docs.python.org/3/howto/unicode.html
+Summary: This section emphasizes using Unicode strings internally in software and suggests decoding input data early while encoding output at the end. It warns against mixing Unicode and byte strings to avoid bugs, as there is no automatic encoding or decoding.
+---
+
+```
+
+The first list contains UTF-8-encoded filenames, and the second list contains the Unicode versions.
+Note that on most occasions, you should can just stick with using Unicode with these APIs. The bytes APIs should only be used on systems where undecodable file names can be present; that’s pretty much only Unix systems now.
+### Tips for Writing Unicode-aware Programs[¶](https://docs.python.org/3/howto/unicode.html#tips-for-writing-unicode-aware-programs "Link to this heading")
+This section provides some suggestions on writing software that deals with Unicode.
+The most important tip is:
+> Software should only work with Unicode strings internally, decoding the input data as soon as possible and encoding the output only at the end.
+If you attempt to write processing functions that accept both Unicode and byte strings, you will find your program vulnerable to bugs wherever you combine the two different kinds of strings. There is no automatic encoding or decoding: if you do e.g. `str + bytes`, a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") will be raised.
+When using data coming from a web browser or some other untrusted source, a common technique is to check for illegal characters in a string before using the string in a generated command line or storing it in a database. If you’re doing this, be careful to check the decoded string, not the encoded bytes data; some encodings may have interesting properties, such as not being bijective or not being fully ASCII-compatible. This is especially true if the input data also specifies the encoding, since the attacker can then choose a clever way to hide malicious text in the encoded bytestream.
+#### Converting Between File Encodings[¶](https://docs.python.org/3/howto/unicode.html#converting-between-file-encodings "Link to this heading")
+The [`StreamRecoder`](https://docs.python.org/3/library/codecs.html#codecs.StreamRecoder "codecs.StreamRecoder") class can transparently convert between encodings, taking a stream that returns data in encoding #1 and behaving like a stream returning data in encoding #2.
+For example, if you have an input file _f_ that’s in Latin-1, you can wrap it with a [`StreamRecoder`](https://docs.python.org/3/library/codecs.html#codecs.StreamRecoder "codecs.StreamRecoder") to return bytes encoded in UTF-8:
+```
+new_f = codecs.StreamRecoder(f,
+  # en/decoder: used by read() to encode its results and
+  # by write() to decode its input.
+  codecs.getencoder('utf-8'), codecs.getdecoder('utf-8'),
+  # reader/writer: used to read and write to the stream.
+  codecs.getreader('latin-1'), codecs.getwriter('latin-1') )
+
+```
+
+#### Files in an Unknown Encoding[¶](https://docs.python.org/3/howto/unicode.html#files-in-an-unknown-encoding "Link to this heading")
+What can you do if you need to make a change to a file, but don’t know the file’s encoding? If you know the encoding is ASCII-compatible and only want to examine or modify the ASCII parts, you can open the file with the `surrogateescape` error handler:
+```
+with open(fname, 'r', encoding="ascii", errors="surrogateescape") as f:
+  data = f.read()
+# make changes to the string 'data'
+with open(fname + '.new', 'w',
+     encoding="ascii", errors="surrogateescape") as f:
+  f.write(data)

@@ -1,0 +1,57 @@
+Title: XML Parsing with ElementTree
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: The `xml.etree.ElementTree.XML` function parses an XML section from a string, allowing the embedding of XML literals in Python code, and optionally uses a custom parser. The function returns an `Element` instance. Additionally, `xml.etree.ElementTree.XMLID` serves a similar purpose, but also returns a dictionary mapping element IDs to elements.
+---
+
+xml.etree.ElementTree.XML(_text_ , _parser =None_)[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XML "Link to this definition")
+    
+Parses an XML section from a string constant. This function can be used to embed “XML literals” in Python code. _text_ is a string containing XML data. _parser_ is an optional parser instance. If not given, the standard [`XMLParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser "xml.etree.ElementTree.XMLParser") parser is used. Returns an [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") instance. 
+
+xml.etree.ElementTree.XMLID(_text_ , _parser =None_)[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLID "Link to this definition")
+    
+Parses an XML section from a string constant, and also returns a dictionary which maps from element id:s to elements. _text_ is a string containing XML data. _parser_ is an optional parser instance. If not given, the standard [`XMLParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser "xml.etree.ElementTree.XMLParser") parser is used. Returns a tuple containing an [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") instance and a dictionary.
+## XInclude support[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xinclude-support "Link to this heading")
+This module provides limited support for [XInclude directives](https://www.w3.org/TR/xinclude/), via the [`xml.etree.ElementInclude`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementInclude "xml.etree.ElementInclude") helper module. This module can be used to insert subtrees and text strings into element trees, based on information in the tree.
+### Example[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#id3 "Link to this heading")
+Here’s an example that demonstrates use of the XInclude module. To include an XML document in the current document, use the `{http://www.w3.org/2001/XInclude}include` element and set the **parse** attribute to `"xml"`, and use the **href** attribute to specify the document to include.
+```
+<?xml version="1.0"?>
+<documentxmlns:xi="http://www.w3.org/2001/XInclude">
+<xi:includehref="source.xml"parse="xml"/>
+</document>
+
+```
+
+By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
+To process this file, load it as usual, and pass the root element to the [`xml.etree.ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "xml.etree.ElementTree: Implementation of the ElementTree API.") module:
+```
+fromxml.etreeimport ElementTree, ElementInclude
+tree = ElementTree.parse("document.xml")
+root = tree.getroot()
+ElementInclude.include(root)
+
+```
+
+The ElementInclude module replaces the `{http://www.w3.org/2001/XInclude}include` element with the root element from the **source.xml** document. The result might look something like this:
+```
+<documentxmlns:xi="http://www.w3.org/2001/XInclude">
+<para>Thisisaparagraph.</para>
+</document>
+
+```
+
+If the **parse** attribute is omitted, it defaults to “xml”. The href attribute is required.
+To include a text document, use the `{http://www.w3.org/2001/XInclude}include` element, and set the **parse** attribute to “text”:
+```
+<?xml version="1.0"?>
+<documentxmlns:xi="http://www.w3.org/2001/XInclude">
+Copyright(c)<xi:includehref="year.txt"parse="text"/>.
+</document>
+
+```
+
+The result might look something like:
+```
+<documentxmlns:xi="http://www.w3.org/2001/XInclude">
+Copyright(c)2003.
+</document>

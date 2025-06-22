@@ -1,0 +1,42 @@
+Title: Customizing Virtual Environments with EnvBuilder
+URL: https://docs.python.org/3/library/venv.html
+Summary: The EnvBuilder class in Python's venv module allows for customization of virtual environment creation. It accepts various keyword arguments, including system_site_packages, clear, symlinks, upgrade, with_pip, prompt, upgrade_deps, and scm_ignore_files, to tailor the setup according to user needs.
+---
+
+use of a simple API which provides mechanisms for third-party virtual environment creators to customize environment creation according to their needs, the [`EnvBuilder`](https://docs.python.org/3/library/venv.html#venv.EnvBuilder "venv.EnvBuilder") class. 
+
+_class_ venv.EnvBuilder(_system_site_packages =False_, _clear =False_, _symlinks =False_, _upgrade =False_, _with_pip =False_, _prompt =None_, _upgrade_deps =False_, _*_ , _scm_ignore_files =frozenset()_)[¶](https://docs.python.org/3/library/venv.html#venv.EnvBuilder "Link to this definition")
+    
+The [`EnvBuilder`](https://docs.python.org/3/library/venv.html#venv.EnvBuilder "venv.EnvBuilder") class accepts the following keyword arguments on instantiation:
+  * _system_site_packages_ – a boolean value indicating that the system Python site-packages should be available to the environment (defaults to `False`).
+  * _clear_ – a boolean value which, if true, will delete the contents of any existing target directory, before creating the environment.
+  * _symlinks_ – a boolean value indicating whether to attempt to symlink the Python binary rather than copying.
+  * _upgrade_ – a boolean value which, if true, will upgrade an existing environment with the running Python - for use when that Python has been upgraded in-place (defaults to `False`).
+  * _with_pip_ – a boolean value which, if true, ensures pip is installed in the virtual environment. This uses [`ensurepip`](https://docs.python.org/3/library/ensurepip.html#module-ensurepip "ensurepip: Bootstrapping the "pip" installer into an existing Python installation or virtual environment.") with the `--default-pip` option.
+  * _prompt_ – a string to be used after virtual environment is activated (defaults to `None` which means directory name of the environment would be used). If the special string `"."` is provided, the basename of the current directory is used as the prompt.
+  * _upgrade_deps_ – Update the base venv modules to the latest on PyPI
+  * _scm_ignore_files_ – Create ignore files based for the specified source control managers (SCM) in the iterable. Support is defined by having a method named `create_{scm}_ignore_file`. The only value supported by default is `"git"` via [`create_git_ignore_file()`](https://docs.python.org/3/library/venv.html#venv.EnvBuilder.create_git_ignore_file "venv.EnvBuilder.create_git_ignore_file").
+
+
+Changed in version 3.4: Added the `with_pip` parameter
+Changed in version 3.6: Added the `prompt` parameter
+Changed in version 3.9: Added the `upgrade_deps` parameter
+Changed in version 3.13: Added the `scm_ignore_files` parameter
+[`EnvBuilder`](https://docs.python.org/3/library/venv.html#venv.EnvBuilder "venv.EnvBuilder") may be used as a base class. 
+
+create(_env_dir_)[¶](https://docs.python.org/3/library/venv.html#venv.EnvBuilder.create "Link to this definition")
+    
+Create a virtual environment by specifying the target directory (absolute or relative to the current directory) which is to contain the virtual environment. The `create` method will either create the environment in the specified directory, or raise an appropriate exception.
+The `create` method of the [`EnvBuilder`](https://docs.python.org/3/library/venv.html#venv.EnvBuilder "venv.EnvBuilder") class illustrates the hooks available for subclass customization:
+```
+defcreate(self, env_dir):
+"""
+  Create a virtualized Python environment in a directory.
+  env_dir is the target directory to create an environment in.
+  """
+  env_dir = os.path.abspath(env_dir)
+  context = self.ensure_directories(env_dir)
+  self.create_configuration(context)
+  self.setup_python(context)
+  self.setup_scripts(context)
+  self.post_setup(context)

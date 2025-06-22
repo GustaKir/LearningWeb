@@ -1,0 +1,29 @@
+Title: Interfacing Python with C++ Objects
+URL: https://docs.python.org/3/faq/extending.html
+Summary: This section discusses methods for interfacing C++ objects with Python, highlighting the minimal differences between C and C++ in the context of Python's runtime. It advises starting with the 'Extending and Embedding' document for detailed guidance and mentions alternatives for using C++ libraries.
+---
+
+```
+
+Calling [`PyObject_SetAttrString()`](https://docs.python.org/3/c-api/object.html#c.PyObject_SetAttrString "PyObject_SetAttrString") to assign to variables in the module also works.
+## [How do I interface to C++ objects from Python?](https://docs.python.org/3/faq/extending.html#id13)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-interface-to-c-objects-from-python "Link to this heading")
+Depending on your requirements, there are many approaches. To do this manually, begin by reading [the “Extending and Embedding” document](https://docs.python.org/3/extending/index.html#extending-index). Realize that for the Python run-time system, there isn’t a whole lot of difference between C and C++ – so the strategy of building a new Python type around a C structure (pointer) type will also work for C++ objects.
+For C++ libraries, see [Writing C is hard; are there any alternatives?](https://docs.python.org/3/faq/extending.html#c-wrapper-software).
+## [I added a module using the Setup file and the make fails; why?](https://docs.python.org/3/faq/extending.html#id14)[¶](https://docs.python.org/3/faq/extending.html#i-added-a-module-using-the-setup-file-and-the-make-fails-why "Link to this heading")
+Setup must end in a newline, if there is no newline there, the build process fails. (Fixing this requires some ugly shell script hackery, and this bug is so minor that it doesn’t seem worth the effort.)
+## [How do I debug an extension?](https://docs.python.org/3/faq/extending.html#id15)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-debug-an-extension "Link to this heading")
+When using GDB with dynamically loaded extensions, you can’t set a breakpoint in your extension until your extension is loaded.
+In your `.gdbinit` file (or interactively), add the command:
+```
+br _PyImport_LoadDynamicModule
+
+```
+
+Then, when you run GDB:
+```
+$ gdb/local/bin/python
+gdb) run myscript.py
+gdb) continue # repeat until your extension is loaded
+gdb) finish  # so that your extension is loaded
+gdb) br myfunction.c:50
+gdb) continue

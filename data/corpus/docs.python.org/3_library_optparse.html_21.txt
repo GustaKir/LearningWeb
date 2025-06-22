@@ -1,0 +1,80 @@
+Title: Conflict Handlers in OptionParser
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section describes the available conflict handlers in the OptionParser class. The default handler is 'error', which raises an OptionConflictError for conflicts. Alternatively, the 'resolve' handler intelligently resolves conflicts, exemplified by adding conflicting options with the same flag.
+---
+
+```
+
+The available conflict handlers are:
+> 
+
+`"error"` (default)
+    
+> assume option conflicts are a programming error and raise [`OptionConflictError`](https://docs.python.org/3/library/optparse.html#optparse.OptionConflictError "optparse.OptionConflictError") 
+
+`"resolve"`
+    
+> resolve option conflicts intelligently (see below)
+As an example, let’s define an [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser") that resolves conflicts intelligently and add conflicting options to it:
+```
+parser = OptionParser(conflict_handler="resolve")
+parser.add_option("-n", "--dry-run", ..., help="do no harm")
+parser.add_option("-n", "--noisy", ..., help="be noisy")
+
+```
+
+At this point, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") detects that a previously added option is already using the `-n` option string. Since `conflict_handler` is `"resolve"`, it resolves the situation by removing `-n` from the earlier option’s list of option strings. Now `--dry-run` is the only way for the user to activate that option. If the user asks for help, the help message will reflect that:
+```
+Options:
+ --dry-run   do no harm
+ ...
+ -n, --noisy  be noisy
+
+```
+
+It’s possible to whittle away the option strings for a previously added option until there are none left, and the user has no way of invoking that option from the command-line. In that case, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") removes that option completely, so it doesn’t show up in help text or anywhere else. Carrying on with our existing OptionParser:
+```
+parser.add_option("--dry-run", ..., help="new dry-run option")
+
+```
+
+At this point, the original `-n`/`--dry-run` option is no longer accessible, so [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") removes it, leaving this help text:
+```
+Options:
+ ...
+ -n, --noisy  be noisy
+ --dry-run   new dry-run option
+
+```
+
+### Cleanup[¶](https://docs.python.org/3/library/optparse.html#cleanup "Link to this heading")
+OptionParser instances have several cyclic references. This should not be a problem for Python’s garbage collector, but you may wish to break the cyclic references explicitly by calling `destroy()` on your OptionParser once you are done with it. This is particularly useful in long-running applications where large object graphs are reachable from your OptionParser.
+### Other methods[¶](https://docs.python.org/3/library/optparse.html#other-methods "Link to this heading")
+OptionParser supports several other public methods: 
+
+OptionParser.set_usage(_usage_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.set_usage "Link to this definition")
+    
+Set the usage string according to the rules described above for the `usage` constructor keyword argument. Passing `None` sets the default usage string; use `optparse.SUPPRESS_USAGE` to suppress a usage message. 
+
+OptionParser.print_usage(_file =None_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.print_usage "Link to this definition")
+    
+Print the usage message for the current program (`self.usage`) to _file_ (default stdout). Any occurrence of the string `%prog` in `self.usage` is replaced with the name of the current program. Does nothing if `self.usage` is empty or not defined. 
+
+OptionParser.get_usage()[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.get_usage "Link to this definition")
+    
+Same as [`print_usage()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.print_usage "optparse.OptionParser.print_usage") but returns the usage string instead of printing it. 
+
+OptionParser.set_defaults(_dest=value_ , _..._)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.set_defaults "Link to this definition")
+    
+Set default values for several option destinations at once. Using [`set_defaults()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.set_defaults "optparse.OptionParser.set_defaults") is the preferred way to set default values for options, since multiple options can share the same destination. For example, if several “mode” options all set the same destination, any one of them can set the default, and the last one wins:
+```
+parser.add_option("--advanced", action="store_const",
+         dest="mode", const="advanced",
+         default="novice")  # overridden below
+parser.add_option("--novice", action="store_const",
+         dest="mode", const="novice",
+         default="advanced") # overrides above setting
+
+```
+
+To avoid this confusion, use [`set_defaults()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.set_defaults "optparse.OptionParser.set_defaults"):

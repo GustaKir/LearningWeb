@@ -1,0 +1,76 @@
+Title: Configuring C Extensions in Python
+URL: https://docs.python.org/3/using/configure.html
+Summary: The `Modules/Setup` file generates Makefile targets for building C extensions, with built-in modules at the start and dynamic libraries defined after the `*shared*` marker. It describes macro usage for symbol exporting depending on the `Py_BUILD_CORE_MODULE` definition and cautions against using `Py_BUILD_CORE_BUILTIN` inappropriately, which can lead to `ImportError` when importing shared library extensions.
+---
+
+```
+
+`Modules/Setup` is used to generate Makefile targets to build C extensions. At the beginning of the files, C extensions are built as built-in modules. Extensions defined after the `*shared*` marker are built as dynamic libraries.
+The `PyAPI_FUNC()`, `PyAPI_DATA()` and [`PyMODINIT_FUNC`](https://docs.python.org/3/c-api/intro.html#c.PyMODINIT_FUNC "PyMODINIT_FUNC") macros of `Include/exports.h` are defined differently depending if the `Py_BUILD_CORE_MODULE` macro is defined:
+  * Use `Py_EXPORTED_SYMBOL` if the `Py_BUILD_CORE_MODULE` is defined
+  * Use `Py_IMPORTED_SYMBOL` otherwise.
+
+
+If the `Py_BUILD_CORE_BUILTIN` macro is used by mistake on a C extension built as a shared library, its `PyInit__xxx_()`function is not exported, causing an[`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") on import.
+## 3.5. Compiler and linker flags[¶](https://docs.python.org/3/using/configure.html#compiler-and-linker-flags "Link to this heading")
+Options set by the `./configure` script and environment variables and used by `Makefile`.
+### 3.5.1. Preprocessor flags[¶](https://docs.python.org/3/using/configure.html#preprocessor-flags "Link to this heading") 
+
+CONFIGURE_CPPFLAGS[¶](https://docs.python.org/3/using/configure.html#envvar-CONFIGURE_CPPFLAGS "Link to this definition")
+    
+Value of [`CPPFLAGS`](https://docs.python.org/3/using/configure.html#envvar-CPPFLAGS) variable passed to the `./configure` script.
+Added in version 3.6. 
+
+CPPFLAGS[¶](https://docs.python.org/3/using/configure.html#envvar-CPPFLAGS "Link to this definition")
+    
+(Objective) C/C++ preprocessor flags, e.g. `-I_include_dir_`if you have headers in a nonstandard directory _include_dir_.
+Both [`CPPFLAGS`](https://docs.python.org/3/using/configure.html#envvar-CPPFLAGS) and [`LDFLAGS`](https://docs.python.org/3/using/configure.html#envvar-LDFLAGS) need to contain the shell’s value to be able to build extension modules using the directories specified in the environment variables. 
+
+BASECPPFLAGS[¶](https://docs.python.org/3/using/configure.html#envvar-BASECPPFLAGS "Link to this definition")
+    
+Added in version 3.4. 
+
+PY_CPPFLAGS[¶](https://docs.python.org/3/using/configure.html#envvar-PY_CPPFLAGS "Link to this definition")
+    
+Extra preprocessor flags added for building the interpreter object files.
+Default: `$(BASECPPFLAGS) -I. -I$(srcdir)/Include $(CONFIGURE_CPPFLAGS) $(CPPFLAGS)`.
+Added in version 3.2.
+### 3.5.2. Compiler flags[¶](https://docs.python.org/3/using/configure.html#compiler-flags "Link to this heading") 
+
+CC[¶](https://docs.python.org/3/using/configure.html#envvar-CC "Link to this definition")
+    
+C compiler command.
+Example: `gcc -pthread`. 
+
+CXX[¶](https://docs.python.org/3/using/configure.html#envvar-CXX "Link to this definition")
+    
+C++ compiler command.
+Example: `g++ -pthread`. 
+
+CFLAGS[¶](https://docs.python.org/3/using/configure.html#envvar-CFLAGS "Link to this definition")
+    
+C compiler flags. 
+
+CFLAGS_NODIST[¶](https://docs.python.org/3/using/configure.html#envvar-CFLAGS_NODIST "Link to this definition")
+    
+[`CFLAGS_NODIST`](https://docs.python.org/3/using/configure.html#envvar-CFLAGS_NODIST) is used for building the interpreter and stdlib C extensions. Use it when a compiler flag should _not_ be part of [`CFLAGS`](https://docs.python.org/3/using/configure.html#envvar-CFLAGS) once Python is installed ([gh-65320](https://github.com/python/cpython/issues/65320)).
+In particular, [`CFLAGS`](https://docs.python.org/3/using/configure.html#envvar-CFLAGS) should not contain:
+  * the compiler flag `-I` (for setting the search path for include files). The `-I` flags are processed from left to right, and any flags in [`CFLAGS`](https://docs.python.org/3/using/configure.html#envvar-CFLAGS) would take precedence over user- and package-supplied `-I` flags.
+  * hardening flags such as `-Werror` because distributions cannot control whether packages installed by users conform to such heightened standards.
+
+
+Added in version 3.5. 
+
+COMPILEALL_OPTS[¶](https://docs.python.org/3/using/configure.html#envvar-COMPILEALL_OPTS "Link to this definition")
+    
+Options passed to the [`compileall`](https://docs.python.org/3/library/compileall.html#module-compileall "compileall: Tools for byte-compiling all Python source files in a directory tree.") command line when building PYC files in `make install`. Default: `-j0`.
+Added in version 3.12. 
+
+EXTRA_CFLAGS[¶](https://docs.python.org/3/using/configure.html#envvar-EXTRA_CFLAGS "Link to this definition")
+    
+Extra C compiler flags. 
+
+CONFIGURE_CFLAGS[¶](https://docs.python.org/3/using/configure.html#envvar-CONFIGURE_CFLAGS "Link to this definition")
+    
+Value of [`CFLAGS`](https://docs.python.org/3/using/configure.html#envvar-CFLAGS) variable passed to the `./configure` script.
+Added in version 3.2.

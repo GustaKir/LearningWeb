@@ -1,0 +1,91 @@
+Title: Using Filter and List Comprehensions in Python
+URL: https://docs.python.org/3/howto/functional.html
+Summary: This section discusses the use of the `filter()` function and list comprehensions in Python to create iterators that yield elements meeting specific conditions. It explains how to define a predicate function, provides an example using the `is_even` function, and illustrates how both `filter()` and a list comprehension can produce the same output. Additionally, it introduces the `enumerate()` function for counting elements in an iterable.
+---
+
+```
+
+You can of course achieve the same effect with a list comprehension.
+[`filter(predicate, iter)`](https://docs.python.org/3/library/functions.html#filter "filter") returns an iterator over all the sequence elements that meet a certain condition, and is similarly duplicated by list comprehensions. A **predicate** is a function that returns the truth value of some condition; for use with [`filter()`](https://docs.python.org/3/library/functions.html#filter "filter"), the predicate must take a single value.
+>>>```
+>>> defis_even(x):
+...   return (x % 2) == 0
+
+```
+
+>>>```
+>>> list(filter(is_even, range(10)))
+[0, 2, 4, 6, 8]
+
+```
+
+This can also be written as a list comprehension:
+>>>```
+>>> list(x for x in range(10) if is_even(x))
+[0, 2, 4, 6, 8]
+
+```
+
+[`enumerate(iter, start=0)`](https://docs.python.org/3/library/functions.html#enumerate "enumerate") counts off the elements in the iterable returning 2-tuples containing the count (from _start_) and each element.
+>>>```
+>>> for item in enumerate(['subject', 'verb', 'object']):
+...   print(item)
+(0, 'subject')
+(1, 'verb')
+(2, 'object')
+
+```
+
+[`enumerate()`](https://docs.python.org/3/library/functions.html#enumerate "enumerate") is often used when looping through a list and recording the indexes at which certain conditions are met:
+```
+f = open('data.txt', 'r')
+for i, line in enumerate(f):
+  if line.strip() == '':
+    print('Blank line at line #%i' % i)
+
+```
+
+[`sorted(iterable, key=None, reverse=False)`](https://docs.python.org/3/library/functions.html#sorted "sorted") collects all the elements of the iterable into a list, sorts the list, and returns the sorted result. The _key_ and _reverse_ arguments are passed through to the constructed list’s [`sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") method.
+>>>```
+>>> importrandom
+>>> # Generate 8 random numbers between [0, 10000)
+>>> rand_list = random.sample(range(10000), 8)
+>>> rand_list
+[769, 7953, 9828, 6431, 8442, 9878, 6213, 2207]
+>>> sorted(rand_list)
+[769, 2207, 6213, 6431, 7953, 8442, 9828, 9878]
+>>> sorted(rand_list, reverse=True)
+[9878, 9828, 8442, 7953, 6431, 6213, 2207, 769]
+
+```
+
+(For a more detailed discussion of sorting, see the [Sorting Techniques](https://docs.python.org/3/howto/sorting.html#sortinghowto).)
+The [`any(iter)`](https://docs.python.org/3/library/functions.html#any "any") and [`all(iter)`](https://docs.python.org/3/library/functions.html#all "all") built-ins look at the truth values of an iterable’s contents. [`any()`](https://docs.python.org/3/library/functions.html#any "any") returns `True` if any element in the iterable is a true value, and [`all()`](https://docs.python.org/3/library/functions.html#all "all") returns `True` if all of the elements are true values:
+>>>```
+>>> any([0, 1, 0])
+True
+>>> any([0, 0, 0])
+False
+>>> any([1, 1, 1])
+True
+>>> all([0, 1, 0])
+False
+>>> all([0, 0, 0])
+False
+>>> all([1, 1, 1])
+True
+
+```
+
+[`zip(iterA, iterB, ...)`](https://docs.python.org/3/library/functions.html#zip "zip") takes one element from each iterable and returns them in a tuple:
+```
+zip(['a', 'b', 'c'], (1, 2, 3)) =>
+ ('a', 1), ('b', 2), ('c', 3)
+
+```
+
+It doesn’t construct an in-memory list and exhaust all the input iterators before returning; instead tuples are constructed and returned only if they’re requested. (The technical term for this behaviour is [lazy evaluation](https://en.wikipedia.org/wiki/Lazy_evaluation).)
+This iterator is intended to be used with iterables that are all of the same length. If the iterables are of different lengths, the resulting stream will be the same length as the shortest iterable.
+```
+zip(['a', 'b'], (1, 2, 3)) =>
+ ('a', 1), ('b', 2)

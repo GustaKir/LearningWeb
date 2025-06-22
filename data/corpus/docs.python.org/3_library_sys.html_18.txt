@@ -1,0 +1,49 @@
+Title: sys.path - Module Search Path
+URL: https://docs.python.org/3/library/sys.html
+Summary: sys.path is a list that defines the module search path in Python, initialized from the PYTHONPATH environment variable and a default path. It includes a potentially unsafe path at startup that is determined by the command used to start Python, which can lead to security issues if not managed properly.
+---
+
+sys.path[¶](https://docs.python.org/3/library/sys.html#sys.path "Link to this definition")
+    
+A list of strings that specifies the search path for modules. Initialized from the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH), plus an installation-dependent default.
+By default, as initialized upon program startup, a potentially unsafe path is prepended to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") (_before_ the entries inserted as a result of [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH)):
+  * `python -m module` command line: prepend the current working directory.
+  * `python script.py` command line: prepend the script’s directory. If it’s a symbolic link, resolve symbolic links.
+  * `python -c code` and `python` (REPL) command lines: prepend an empty string, which means the current working directory.
+
+
+To not prepend this potentially unsafe path, use the [`-P`](https://docs.python.org/3/using/cmdline.html#cmdoption-P) command line option or the [`PYTHONSAFEPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONSAFEPATH) environment variable.
+A program is free to modify this list for its own purposes. Only strings should be added to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"); all other data types are ignored during import.
+See also
+  * Module [`site`](https://docs.python.org/3/library/site.html#module-site "site: Module responsible for site-specific configuration.") This describes how to use .pth files to extend [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path").
+
+
+
+sys.path_hooks[¶](https://docs.python.org/3/library/sys.html#sys.path_hooks "Link to this definition")
+    
+A list of callables that take a path argument to try to create a [finder](https://docs.python.org/3/glossary.html#term-finder) for the path. If a finder can be created, it is to be returned by the callable, else raise [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError").
+Originally specified in [**PEP 302**](https://peps.python.org/pep-0302/). 
+
+sys.path_importer_cache[¶](https://docs.python.org/3/library/sys.html#sys.path_importer_cache "Link to this definition")
+    
+A dictionary acting as a cache for [finder](https://docs.python.org/3/glossary.html#term-finder) objects. The keys are paths that have been passed to [`sys.path_hooks`](https://docs.python.org/3/library/sys.html#sys.path_hooks "sys.path_hooks") and the values are the finders that are found. If a path is a valid file system path but no finder is found on [`sys.path_hooks`](https://docs.python.org/3/library/sys.html#sys.path_hooks "sys.path_hooks") then `None` is stored.
+Originally specified in [**PEP 302**](https://peps.python.org/pep-0302/). 
+
+sys.platform[¶](https://docs.python.org/3/library/sys.html#sys.platform "Link to this definition")
+    
+A string containing a platform identifier. Known values are:
+System | `platform` value  
+---|---  
+AIX | `'aix'`  
+Android | `'android'`  
+Emscripten | `'emscripten'`  
+iOS | `'ios'`  
+Linux | `'linux'`  
+macOS | `'darwin'`  
+Windows | `'win32'`  
+Windows/Cygwin | `'cygwin'`  
+WASI | `'wasi'`  
+On Unix systems not listed in the table, the value is the lowercased OS name as returned by `uname -s`, with the first part of the version as returned by `uname -r` appended, e.g. `'sunos5'` or `'freebsd8'`, _at the time when Python was built_. Unless you want to test for a specific system version, it is therefore recommended to use the following idiom:
+```
+if sys.platform.startswith('freebsd'):
+  # FreeBSD-specific code here...

@@ -1,0 +1,122 @@
+Title: Query Parameter Validation in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: The `Query` function in FastAPI explicitly defines a parameter as a query parameter, allowing for validations such as `max_length` on string inputs. It provides clear error messages for invalid data and documents parameters in the OpenAPI schema. When using `Query` in conjunction with `Annotated`, avoid using `default` in `Query`, and instead set the default value directly on the function parameter to maintain consistency.
+---
+
+```
+
+But the `Query` version declares it explicitly as being a query parameter.
+Then, we can pass more parameters to `Query`. In this case, the `max_length` parameter that applies to strings:
+```
+q: str | None = Query(default=None, max_length=50)
+
+```
+
+This will validate the data, show a clear error when the data is not valid, and document the parameter in the OpenAPI schema _path operation_.
+### `Query` as the default value or in `Annotated`[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-as-the-default-value-or-in-annotated "Permanent link")
+Keep in mind that when using `Query` inside of `Annotated` you cannot use the `default` parameter for `Query`.
+Instead, use the actual default value of the function parameter. Otherwise, it would be inconsistent.
+For example, this is not allowed:
+```
+q: Annotated[str, Query(default="rick")] = "morty"
+
+```
+
+...because it's not clear if the default value should be `"rick"` or `"morty"`.
+So, you would use (preferably):
+```
+q: Annotated[str, Query()] = "rick"
+
+```
+
+...or in older code bases you will find:
+```
+q: str = Query(default="rick")
+
+```
+
+### Advantages of `Annotated`[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#advantages-of-annotated "Permanent link")
+**Using`Annotated` is recommended** instead of the default value in function parameters, it is **better** for multiple reasons. 🤓
+The **default** value of the **function parameter** is the **actual default** value, that's more intuitive with Python in general. 😌
+You could **call** that same function in **other places** without FastAPI, and it would **work as expected**. If there's a **required** parameter (without a default value), your **editor** will let you know with an error, **Python** will also complain if you run it without passing the required parameter.
+When you don't use `Annotated` and instead use the **(old) default value style** , if you call that function without FastAPI in **other places** , you have to **remember** to pass the arguments to the function for it to work correctly, otherwise the values will be different from what you expect (e.g. `QueryInfo` or something similar instead of `str`). And your editor won't complain, and Python won't complain running that function, only when the operations inside error out.
+Because `Annotated` can have more than one metadata annotation, you could now even use the same function with other tools, like [Typer](https://typer.tiangolo.com/). 🚀
+## Add more validations[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#add-more-validations "Permanent link")
+You can also add a parameter `min_length`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_11_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[str | None, Query(min_length=3, max_length=50)] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_12_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_12_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_12_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_12_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[Union[str, None], Query(min_length=3, max_length=50)] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[Union[str, None], Query(min_length=3, max_length=50)] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: str | None = Query(default=None, min_length=3, max_length=50)):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Union[str, None] = Query(default=None, min_length=3, max_length=50),
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results

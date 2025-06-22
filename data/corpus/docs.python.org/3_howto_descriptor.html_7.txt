@@ -1,0 +1,49 @@
+Title: Invocation Rules for Descriptors in Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section outlines how the `__get__` method of a descriptor is invoked based on precedence rules during instance lookups. It explains the order of priority for resolving attributes, starting with data descriptors, followed by instance variables, non-data descriptors, class variables, and lastly `__getattr__()` if available.
+---
+
+tps://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") method is invoked according to the precedence rules listed below.
+The details of invocation depend on whether `obj` is an object, class, or instance of super.
+### [Invocation from an instance](https://docs.python.org/3/howto/descriptor.html#id17)[¶](https://docs.python.org/3/howto/descriptor.html#invocation-from-an-instance "Link to this heading")
+Instance lookup scans through a chain of namespaces giving data descriptors the highest priority, followed by instance variables, then non-data descriptors, then class variables, and lastly [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") if it is provided.
+If a descriptor is found for `a.x`, then it is invoked with: `desc.__get__(a, type(a))`.
+The logic for a dotted lookup is in [`object.__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__"). Here is a pure Python equivalent:
+```
+deffind_name_in_mro(cls, name, default):
+  "Emulate _PyType_Lookup() in Objects/typeobject.c"
+  for base in cls.__mro__:
+    if name in vars(base):
+      return vars(base)[name]
+  return default
+defobject_getattribute(obj, name):
+  "Emulate PyObject_GenericGetAttr() in Objects/object.c"
+  null = object()
+  objtype = type(obj)
+  cls_var = find_name_in_mro(objtype, name, null)
+  descr_get = getattr(type(cls_var), '__get__', null)
+  if descr_get is not null:
+    if (hasattr(type(cls_var), '__set__')
+      or hasattr(type(cls_var), '__delete__')):
+      return descr_get(cls_var, obj, objtype)   # data descriptor
+  if hasattr(obj, '__dict__') and name in vars(obj):
+    return vars(obj)[name]             # instance variable
+  if descr_get is not null:
+    return descr_get(cls_var, obj, objtype)     # non-data descriptor
+  if cls_var is not null:
+    return cls_var                 # class variable
+  raise AttributeError(name)
+
+```
+
+Note, there is no [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") hook in the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") code. That is why calling [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") directly or with `super().__getattribute__` will bypass [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") entirely.
+Instead, it is the dot operator and the [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") function that are responsible for invoking [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") whenever [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") raises an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"). Their logic is encapsulated in a helper function:
+```
+defgetattr_hook(obj, name):
+  "Emulate slot_tp_getattr_hook() in Objects/typeobject.c"
+  try:
+    return obj.__getattribute__(name)
+  except AttributeError:
+    if not hasattr(type(obj), '__getattr__'):
+      raise
+  return type(obj).__getattr__(obj, name)       # __getattr__

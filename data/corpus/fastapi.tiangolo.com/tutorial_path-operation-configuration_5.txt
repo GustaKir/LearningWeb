@@ -1,0 +1,148 @@
+Title: Path Operation Configuration in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/path-operation-configuration/
+Summary: This document segment illustrates the configuration of path operations using FastAPI, including the creation of a FastAPI app, defining a Pydantic model for items, and setting up POST and GET requests for items and users. It emphasizes the use of response models and the tagging of operations for improved organization.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: set[str] = set()
+@app.post("/items/", response_model=Item, tags=["items"])
+async defcreate_item(item: Item):
+  return item
+@app.get("/items/", tags=["items"])
+async defread_items():
+  return [{"name": "Foo", "price": 42}]
+@app.get("/users/", tags=["users"])
+async defread_users():
+  return [{"username": "johndoe"}]
+
+```
+
+```
+fromtypingimport Set, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: Set[str] = set()
+@app.post("/items/", response_model=Item, tags=["items"])
+async defcreate_item(item: Item):
+  return item
+@app.get("/items/", tags=["items"])
+async defread_items():
+  return [{"name": "Foo", "price": 42}]
+@app.get("/users/", tags=["users"])
+async defread_users():
+  return [{"username": "johndoe"}]
+
+```
+
+They will be added to the OpenAPI schema and used by the automatic documentation interfaces:
+![](https://fastapi.tiangolo.com/img/tutorial/path-operation-configuration/image01.png)
+### Tags with Enums[¶](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#tags-with-enums "Permanent link")
+If you have a big application, you might end up accumulating **several tags** , and you would want to make sure you always use the **same tag** for related _path operations_.
+In these cases, it could make sense to store the tags in an `Enum`.
+**FastAPI** supports that the same way as with plain strings:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_5_1)
+```
+fromenumimport Enum
+fromfastapiimport FastAPI
+app = FastAPI()
+classTags(Enum):
+  items = "items"
+  users = "users"
+@app.get("/items/", tags=[Tags.items])
+async defget_items():
+  return ["Portal gun", "Plumbus"]
+@app.get("/users/", tags=[Tags.users])
+async defread_users():
+  return ["Rick", "Morty"]
+
+```
+
+## Summary and description[¶](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#summary-and-description "Permanent link")
+You can add a `summary` and `description`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_6_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+  tags: set[str] = set()
+@app.post(
+  "/items/",
+  response_model=Item,
+  summary="Create an item",
+  description="Create an item with all the information, name, description, price, tax and a set of unique tags",
+)
+async defcreate_item(item: Item):
+  return item
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_7_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_7_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: set[str] = set()
+@app.post(
+  "/items/",
+  response_model=Item,
+  summary="Create an item",
+  description="Create an item with all the information, name, description, price, tax and a set of unique tags",
+)
+async defcreate_item(item: Item):
+  return item
+
+```
+
+```
+fromtypingimport Set, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: Set[str] = set()
+@app.post(
+  "/items/",
+  response_model=Item,
+  summary="Create an item",
+  description="Create an item with all the information, name, description, price, tax and a set of unique tags",
+)
+async defcreate_item(item: Item):
+  return item
+
+```
+
+## Description from docstring[¶](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#description-from-docstring "Permanent link")
+As descriptions tend to be long and cover multiple lines, you can declare the _path operation_ description in the function docstring and **FastAPI** will read it from there.
+You can write [Markdown](https://en.wikipedia.org/wiki/Markdown) in the docstring, it will be interpreted and displayed correctly (taking into account docstring indentation).
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_8_1)

@@ -1,0 +1,56 @@
+Title: Understanding Python's zip() Function
+URL: https://docs.python.org/3/library/functions.html
+Summary: The behavior of Python's `zip()` function can lead to hard-to-find bugs if iterables of different lengths are not handled with `strict=True`. It can pad shorter iterables with a constant using `itertools.zip_longest()`. Special cases include returning 1-tuples with a single iterable or an empty iterator with no arguments. The left-to-right evaluation of iterables enables idioms for grouping data into n-length clusters.
+---
+
+```
+
+Without the `strict=True` argument, any bug that results in iterables of different lengths will be silenced, possibly manifesting as a hard-to-find bug in another part of the program.
+  * Shorter iterables can be padded with a constant value to make all the iterables have the same length. This is done by [`itertools.zip_longest()`](https://docs.python.org/3/library/itertools.html#itertools.zip_longest "itertools.zip_longest").
+
+
+Edge cases: With a single iterable argument, [`zip()`](https://docs.python.org/3/library/functions.html#zip "zip") returns an iterator of 1-tuples. With no arguments, it returns an empty iterator.
+Tips and tricks:
+  * The left-to-right evaluation order of the iterables is guaranteed. This makes possible an idiom for clustering a data series into n-length groups using `zip(*[iter(s)]*n, strict=True)`. This repeats the _same_ iterator `n` times so that each output tuple has the result of `n` calls to the iterator. This has the effect of dividing the input into n-length chunks.
+  * [`zip()`](https://docs.python.org/3/library/functions.html#zip "zip") in conjunction with the `*` operator can be used to unzip a list:
+>>>```
+>>> x = [1, 2, 3]
+>>> y = [4, 5, 6]
+>>> list(zip(x, y))
+[(1, 4), (2, 5), (3, 6)]
+>>> x2, y2 = zip(*zip(x, y))
+>>> x == list(x2) and y == list(y2)
+True
+
+```
+
+
+
+Changed in version 3.10: Added the `strict` argument. 
+
+__import__(_name_ , _globals =None_, _locals =None_, _fromlist =()_, _level =0_)[¶](https://docs.python.org/3/library/functions.html#import__ "Link to this definition")
+    
+Note
+This is an advanced function that is not needed in everyday Python programming, unlike [`importlib.import_module()`](https://docs.python.org/3/library/importlib.html#importlib.import_module "importlib.import_module").
+This function is invoked by the [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) statement. It can be replaced (by importing the [`builtins`](https://docs.python.org/3/library/builtins.html#module-builtins "builtins: The module that provides the built-in namespace.") module and assigning to `builtins.__import__`) in order to change semantics of the `import` statement, but doing so is **strongly** discouraged as it is usually simpler to use import hooks (see [**PEP 302**](https://peps.python.org/pep-0302/)) to attain the same goals and does not cause issues with code which assumes the default import implementation is in use. Direct use of [`__import__()`](https://docs.python.org/3/library/functions.html#import__ "__import__") is also discouraged in favor of [`importlib.import_module()`](https://docs.python.org/3/library/importlib.html#importlib.import_module "importlib.import_module").
+The function imports the module _name_ , potentially using the given _globals_ and _locals_ to determine how to interpret the name in a package context. The _fromlist_ gives the names of objects or submodules that should be imported from the module given by _name_. The standard implementation does not use its _locals_ argument at all and uses its _globals_ only to determine the package context of the [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) statement.
+_level_ specifies whether to use absolute or relative imports. `0` (the default) means only perform absolute imports. Positive values for _level_ indicate the number of parent directories to search relative to the directory of the module calling [`__import__()`](https://docs.python.org/3/library/functions.html#import__ "__import__") (see [**PEP 328**](https://peps.python.org/pep-0328/) for the details).
+When the _name_ variable is of the form `package.module`, normally, the top-level package (the name up till the first dot) is returned, _not_ the module named by _name_. However, when a non-empty _fromlist_ argument is given, the module named by _name_ is returned.
+For example, the statement `import spam` results in bytecode resembling the following code:
+```
+spam = __import__('spam', globals(), locals(), [], 0)
+
+```
+
+The statement `import spam.ham` results in this call:
+```
+spam = __import__('spam.ham', globals(), locals(), [], 0)
+
+```
+
+Note how [`__import__()`](https://docs.python.org/3/library/functions.html#import__ "__import__") returns the toplevel module here because this is the object that is bound to a name by the [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) statement.
+On the other hand, the statement `from spam.ham import eggs, sausage as saus` results in
+```
+_temp = __import__('spam.ham', globals(), locals(), ['eggs', 'sausage'], 0)
+eggs = _temp.eggs
+saus = _temp.sausage

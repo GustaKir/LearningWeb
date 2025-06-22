@@ -1,0 +1,86 @@
+Title: String Formatting Types in Python
+URL: https://docs.python.org/3/library/string.html
+Summary: This documentation chunk discusses various string formatting types in Python, including percentage formatting that multiplies a number by 100, and a None type that behaves like 'g' but ensures at least one decimal place is shown in fixed-point notation, switching to scientific notation as needed. It also touches on behavior for float and Decimal types.
+---
+
+This is the same as `'g'`, except that it uses the current locale setting to insert the appropriate digit group separators for the integral part of a number.  
+> `'%'` | Percentage. Multiplies the number by 100 and displays in fixed (`'f'`) format, followed by a percent sign.  
+> None | For [`float`](https://docs.python.org/3/library/functions.html#float "float") this is like the `'g'` type, except that when fixed-point notation is used to format the result, it always includes at least one digit past the decimal point, and switches to the scientific notation when `exp >= p - 1`. When the precision is not specified, the latter will be as large as needed to represent the given value faithfully. For [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal"), this is the same as either `'g'` or `'G'` depending on the value of `context.capitals` for the current decimal context. The overall effect is to match the output of [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") as altered by the other format modifiers.  
+The result should be correctly rounded to a given precision `p` of digits after the decimal point. The rounding mode for [`float`](https://docs.python.org/3/library/functions.html#float "float") matches that of the [`round()`](https://docs.python.org/3/library/functions.html#round "round") builtin. For [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal"), the rounding mode of the current [context](https://docs.python.org/3/library/decimal.html#decimal-context) will be used.
+The available presentation types for [`complex`](https://docs.python.org/3/library/functions.html#complex "complex") are the same as those for [`float`](https://docs.python.org/3/library/functions.html#float "float") (`'%'` is not allowed). Both the real and imaginary components of a complex number are formatted as floating-point numbers, according to the specified presentation type. They are separated by the mandatory sign of the imaginary part, the latter being terminated by a `j` suffix. If the presentation type is missing, the result will match the output of [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") (complex numbers with a non-zero real part are also surrounded by parentheses), possibly altered by other format modifiers.
+### Format examples[¶](https://docs.python.org/3/library/string.html#format-examples "Link to this heading")
+This section contains examples of the [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") syntax and comparison with the old `%`-formatting.
+In most of the cases the syntax is similar to the old `%`-formatting, with the addition of the `{}` and with `:` used instead of `%`. For example, `'%03.2f'` can be translated to `'{:03.2f}'`.
+The new format syntax also supports new and different options, shown in the following examples.
+Accessing arguments by position:
+>>>```
+>>> '{0}, {1}, {2}'.format('a', 'b', 'c')
+'a, b, c'
+>>> '{}, {}, {}'.format('a', 'b', 'c') # 3.1+ only
+'a, b, c'
+>>> '{2}, {1}, {0}'.format('a', 'b', 'c')
+'c, b, a'
+>>> '{2}, {1}, {0}'.format(*'abc')   # unpacking argument sequence
+'c, b, a'
+>>> '{0}{1}{0}'.format('abra', 'cad')  # arguments' indices can be repeated
+'abracadabra'
+
+```
+
+Accessing arguments by name:
+>>>```
+>>> 'Coordinates: {latitude}, {longitude}'.format(latitude='37.24N', longitude='-115.81W')
+'Coordinates: 37.24N, -115.81W'
+>>> coord = {'latitude': '37.24N', 'longitude': '-115.81W'}
+>>> 'Coordinates: {latitude}, {longitude}'.format(**coord)
+'Coordinates: 37.24N, -115.81W'
+
+```
+
+Accessing arguments’ attributes:
+>>>```
+>>> c = 3-5j
+>>> ('The complex number {0} is formed from the real part {0.real} '
+...  'and the imaginary part {0.imag}.').format(c)
+'The complex number (3-5j) is formed from the real part 3.0 and the imaginary part -5.0.'
+>>> classPoint:
+...   def__init__(self, x, y):
+...     self.x, self.y = x, y
+...   def__str__(self):
+...     return 'Point({self.x}, {self.y})'.format(self=self)
+...
+>>> str(Point(4, 2))
+'Point(4, 2)'
+
+```
+
+Accessing arguments’ items:
+>>>```
+>>> coord = (3, 5)
+>>> 'X: {0[0]}; Y: {0[1]}'.format(coord)
+'X: 3; Y: 5'
+
+```
+
+Replacing `%s` and `%r`:
+>>>```
+>>> "repr() shows quotes: {!r}; str() doesn't: {!s}".format('test1', 'test2')
+"repr() shows quotes: 'test1'; str() doesn't: test2"
+
+```
+
+Aligning the text and specifying a width:
+>>>```
+>>> '{:<30}'.format('left aligned')
+'left aligned         '
+>>> '{:>30}'.format('right aligned')
+'         right aligned'
+>>> '{:^30}'.format('centered')
+'      centered      '
+>>> '{:*^30}'.format('centered') # use '*' as a fill char
+'***********centered***********'
+
+```
+
+Replacing `%+f`, `%-f`, and `% f` and specifying a sign:
+>>>

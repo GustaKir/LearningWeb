@@ -1,0 +1,38 @@
+Title: PyTypeObject.tp_flags
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: The tp_flags field in the PyTypeObject is a bit mask representing various type flags. These flags indicate variant semantics and validate the presence of certain fields in the type object and associated extension structures.
+---
+
+unsignedlong[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_flags[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "Link to this definition")
+    
+This field is a bit mask of various flags. Some flags indicate variant semantics for certain situations; others are used to indicate that certain fields in the type object (or in the extension structures referenced via [`tp_as_number`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_number "PyTypeObject.tp_as_number"), [`tp_as_sequence`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_sequence "PyTypeObject.tp_as_sequence"), [`tp_as_mapping`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_mapping "PyTypeObject.tp_as_mapping"), and [`tp_as_buffer`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_buffer "PyTypeObject.tp_as_buffer")) that were historically not always present are valid; if such a flag bit is clear, the type fields it guards must not be accessed and must be considered to have a zero or `NULL` value instead.
+**Inheritance:**
+Inheritance of this field is complicated. Most flag bits are inherited individually, i.e. if the base type has a flag bit set, the subtype inherits this flag bit. The flag bits that pertain to extension structures are strictly inherited if the extension structure is inherited, i.e. the base type’s value of the flag bit is copied into the subtype together with a pointer to the extension structure. The [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit is inherited together with the [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") and [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") fields, i.e. if the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit is clear in the subtype and the [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") and [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") fields in the subtype exist and have `NULL` values. .. XXX are most flag bits _really_ inherited individually?
+**Default:**
+[`PyBaseObject_Type`](https://docs.python.org/3/c-api/structures.html#c.PyBaseObject_Type "PyBaseObject_Type") uses `Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE`.
+**Bit Masks:**
+The following bit masks are currently defined; these can be ORed together using the `|` operator to form the value of the [`tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags") field. The macro [`PyType_HasFeature()`](https://docs.python.org/3/c-api/type.html#c.PyType_HasFeature "PyType_HasFeature") takes a type and a flags value, _tp_ and _f_ , and checks whether `tp->tp_flags & f` is non-zero. 
+
+Py_TPFLAGS_HEAPTYPE[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HEAPTYPE "Link to this definition")
+    
+This bit is set when the type object itself is allocated on the heap, for example, types created dynamically using [`PyType_FromSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromSpec "PyType_FromSpec"). In this case, the [`ob_type`](https://docs.python.org/3/c-api/typeobj.html#c.PyObject.ob_type "PyObject.ob_type") field of its instances is considered a reference to the type, and the type object is INCREF’ed when a new instance is created, and DECREF’ed when an instance is destroyed (this does not apply to instances of subtypes; only the type referenced by the instance’s ob_type gets INCREF’ed or DECREF’ed). Heap types should also [support garbage collection](https://docs.python.org/3/c-api/gcsupport.html#supporting-cycle-detection) as they can form a reference cycle with their own module object.
+**Inheritance:**
+??? 
+
+Py_TPFLAGS_BASETYPE[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_BASETYPE "Link to this definition")
+    
+This bit is set when the type can be used as the base type of another type. If this bit is clear, the type cannot be subtyped (similar to a “final” class in Java).
+**Inheritance:**
+??? 
+
+Py_TPFLAGS_READY[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_READY "Link to this definition")
+    
+This bit is set when the type object has been fully initialized by [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready").
+**Inheritance:**
+??? 
+
+Py_TPFLAGS_READYING[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_READYING "Link to this definition")
+    
+This bit is set while [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready") is in the process of initializing the type object.
+**Inheritance:**
+???

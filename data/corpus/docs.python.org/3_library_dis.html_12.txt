@@ -1,0 +1,71 @@
+Title: Python Disassembly Operations Overview
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section describes Python's bytecode operations related to dictionaries and attribute loading. It covers `DICT_MERGE`, which allows for building dictionaries with stricter key handling, and `LOAD_ATTR`, which retrieves attributes from objects with considerations for method and attribute distinction. Both operations were introduced in Python 3.9.
+---
+
+```
+
+Used to build dicts.
+Added in version 3.9. 
+
+DICT_MERGE(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-DICT_MERGE "Link to this definition")
+    
+Like [`DICT_UPDATE`](https://docs.python.org/3/library/dis.html#opcode-DICT_UPDATE) but raises an exception for duplicate keys.
+Added in version 3.9. 
+
+LOAD_ATTR(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_ATTR "Link to this definition")
+    
+If the low bit of `namei` is not set, this replaces `STACK[-1]` with `getattr(STACK[-1], co_names[namei>>1])`.
+If the low bit of `namei` is set, this will attempt to load a method named `co_names[namei>>1]` from the `STACK[-1]` object. `STACK[-1]` is popped. This bytecode distinguishes two cases: if `STACK[-1]` has a method with the correct name, the bytecode pushes the unbound method and `STACK[-1]`. `STACK[-1]` will be used as the first argument (`self`) by [`CALL`](https://docs.python.org/3/library/dis.html#opcode-CALL) or [`CALL_KW`](https://docs.python.org/3/library/dis.html#opcode-CALL_KW) when calling the unbound method. Otherwise, `NULL` and the object returned by the attribute lookup are pushed.
+Changed in version 3.12: If the low bit of `namei` is set, then a `NULL` or `self` is pushed to the stack before the attribute or unbound method respectively. 
+
+LOAD_SUPER_ATTR(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_SUPER_ATTR "Link to this definition")
+    
+This opcode implements [`super()`](https://docs.python.org/3/library/functions.html#super "super"), both in its zero-argument and two-argument forms (e.g. `super().method()`, `super().attr` and `super(cls, self).method()`, `super(cls, self).attr`).
+It pops three values from the stack (from top of stack down):
+  * `self`: the first argument to the current method
+  * `cls`: the class within which the current method was defined
+  * the global `super`
+
+
+With respect to its argument, it works similarly to [`LOAD_ATTR`](https://docs.python.org/3/library/dis.html#opcode-LOAD_ATTR), except that `namei` is shifted left by 2 bits instead of 1.
+The low bit of `namei` signals to attempt a method load, as with [`LOAD_ATTR`](https://docs.python.org/3/library/dis.html#opcode-LOAD_ATTR), which results in pushing `NULL` and the loaded method. When it is unset a single value is pushed to the stack.
+The second-low bit of `namei`, if set, means that this was a two-argument call to [`super()`](https://docs.python.org/3/library/functions.html#super "super") (unset means zero-argument).
+Added in version 3.12. 
+
+COMPARE_OP(_opname_)[¶](https://docs.python.org/3/library/dis.html#opcode-COMPARE_OP "Link to this definition")
+    
+Performs a Boolean operation. The operation name can be found in `cmp_op[opname >> 5]`. If the fifth-lowest bit of `opname` is set (`opname & 16`), the result should be coerced to `bool`.
+Changed in version 3.13: The fifth-lowest bit of the oparg now indicates a forced conversion to [`bool`](https://docs.python.org/3/library/functions.html#bool "bool"). 
+
+IS_OP(_invert_)[¶](https://docs.python.org/3/library/dis.html#opcode-IS_OP "Link to this definition")
+    
+Performs `is` comparison, or `is not` if `invert` is 1.
+Added in version 3.9. 
+
+CONTAINS_OP(_invert_)[¶](https://docs.python.org/3/library/dis.html#opcode-CONTAINS_OP "Link to this definition")
+    
+Performs `in` comparison, or `not in` if `invert` is 1.
+Added in version 3.9. 
+
+IMPORT_NAME(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-IMPORT_NAME "Link to this definition")
+    
+Imports the module `co_names[namei]`. `STACK[-1]` and `STACK[-2]` are popped and provide the _fromlist_ and _level_ arguments of [`__import__()`](https://docs.python.org/3/library/functions.html#import__ "__import__"). The module object is pushed onto the stack. The current namespace is not affected: for a proper import statement, a subsequent [`STORE_FAST`](https://docs.python.org/3/library/dis.html#opcode-STORE_FAST) instruction modifies the namespace. 
+
+IMPORT_FROM(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-IMPORT_FROM "Link to this definition")
+    
+Loads the attribute `co_names[namei]` from the module found in `STACK[-1]`. The resulting object is pushed onto the stack, to be subsequently stored by a [`STORE_FAST`](https://docs.python.org/3/library/dis.html#opcode-STORE_FAST) instruction. 
+
+JUMP_FORWARD(_delta_)[¶](https://docs.python.org/3/library/dis.html#opcode-JUMP_FORWARD "Link to this definition")
+    
+Increments bytecode counter by _delta_. 
+
+JUMP_BACKWARD(_delta_)[¶](https://docs.python.org/3/library/dis.html#opcode-JUMP_BACKWARD "Link to this definition")
+    
+Decrements bytecode counter by _delta_. Checks for interrupts.
+Added in version 3.11. 
+
+JUMP_BACKWARD_NO_INTERRUPT(_delta_)[¶](https://docs.python.org/3/library/dis.html#opcode-JUMP_BACKWARD_NO_INTERRUPT "Link to this definition")
+    
+Decrements bytecode counter by _delta_. Does not check for interrupts.
+Added in version 3.11.

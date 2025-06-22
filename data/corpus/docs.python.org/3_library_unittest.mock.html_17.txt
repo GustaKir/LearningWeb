@@ -1,0 +1,61 @@
+Title: Using Patch in Unittest Mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: The 'patch' function in unittest.mock allows for dynamic attribute creation during tests, with a warning about potential risks. It can be applied as a class decorator to reduce boilerplate when multiple tests share common patches. Notably, starting from version 3.5, patching builtins does not require 'create=True' to be specified.
+---
+
+h will create the attribute for you when the patched function is called, and delete it again after the patched function has exited. This is useful for writing tests against attributes that your production code creates at runtime. It is off by default because it can be dangerous. With it switched on you can write passing tests against APIs that don’t actually exist!
+Note
+Changed in version 3.5: If you are patching builtins in a module then you don’t need to pass `create=True`, it will be added by default.
+Patch can be used as a [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") class decorator. It works by decorating each test method in the class. This reduces the boilerplate code when your test methods share a common patchings set. [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") finds tests by looking for method names that start with `patch.TEST_PREFIX`. By default this is `'test'`, which matches the way [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") finds tests. You can specify an alternative prefix by setting `patch.TEST_PREFIX`.
+Patch can be used as a context manager, with the with statement. Here the patching applies to the indented block after the with statement. If you use “as” then the patched object will be bound to the name after the “as”; very useful if [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") is creating a mock object for you.
+[`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") takes arbitrary keyword arguments. These will be passed to [`AsyncMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "unittest.mock.AsyncMock") if the patched object is asynchronous, to [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") otherwise or to _new_callable_ if specified.
+`patch.dict(...)`, `patch.multiple(...)` and `patch.object(...)` are available for alternate use-cases.
+[`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") as function decorator, creating the mock for you and passing it into the decorated function:
+>>>```
+>>> @patch('__main__.SomeClass')
+... deffunction(normal_argument, mock_class):
+...   print(mock_class is SomeClass)
+...
+>>> function(None)
+True
+
+```
+
+Patching a class replaces the class with a [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") _instance_. If the class is instantiated in the code under test then it will be the [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value") of the mock that will be used.
+If the class is instantiated multiple times you could use [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") to return a new mock each time. Alternatively you can set the _return_value_ to be anything you want.
+To configure return values on methods of _instances_ on the patched class you must do this on the [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value"). For example:
+>>>```
+>>> classClass:
+...   defmethod(self):
+...     pass
+...
+>>> with patch('__main__.Class') as MockClass:
+...   instance = MockClass.return_value
+...   instance.method.return_value = 'foo'
+...   assert Class() is instance
+...   assert Class().method() == 'foo'
+...
+
+```
+
+If you use _spec_ or _spec_set_ and [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") is replacing a _class_ , then the return value of the created mock will have the same spec.
+>>>```
+>>> Original = Class
+>>> patcher = patch('__main__.Class', spec=True)
+>>> MockClass = patcher.start()
+>>> instance = MockClass()
+>>> assert isinstance(instance, Original)
+>>> patcher.stop()
+
+```
+
+The _new_callable_ argument is useful where you want to use an alternative class to the default [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") for the created mock. For example, if you wanted a [`NonCallableMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.NonCallableMock "unittest.mock.NonCallableMock") to be used:
+>>>```
+>>> thing = object()
+>>> with patch('__main__.thing', new_callable=NonCallableMock) as mock_thing:
+...   assert thing is mock_thing
+...   thing()
+...
+Traceback (most recent call last):
+...
+TypeError: 'NonCallableMock' object is not callable

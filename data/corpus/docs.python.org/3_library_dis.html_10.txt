@@ -1,0 +1,74 @@
+Title: UNPACK_EX Opcode
+URL: https://docs.python.org/3/library/dis.html
+Summary: The UNPACK_EX opcode facilitates unpacking an iterable from the stack into individual values, allowing for a starred target where excess values are collected into a list. The opcode utilizes a two-byte argument to specify counts of values before and after the list, with a maximum of 255 values on each side. The resulting unpacked values are pushed onto the stack in right-to-left order.
+---
+
+```
+
+
+UNPACK_EX(_counts_)[¶](https://docs.python.org/3/library/dis.html#opcode-UNPACK_EX "Link to this definition")
+    
+Implements assignment with a starred target: Unpacks an iterable in `STACK[-1]` into individual values, where the total number of values can be smaller than the number of items in the iterable: one of the new values will be a list of all leftover items.
+The number of values before and after the list value is limited to 255.
+The number of values before the list value is encoded in the argument of the opcode. The number of values after the list if any is encoded using an `EXTENDED_ARG`. As a consequence, the argument can be seen as a two bytes values where the low byte of _counts_ is the number of values before the list value, the high byte of _counts_ the number of values after it.
+The extracted values are put onto the stack right-to-left, i.e. `a, *b, c = d` will be stored after execution as `STACK.extend((a, b, c))`. 
+
+STORE_ATTR(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-STORE_ATTR "Link to this definition")
+    
+Implements:
+```
+obj = STACK.pop()
+value = STACK.pop()
+obj.name = value
+
+```
+
+where _namei_ is the index of name in [`co_names`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_names "codeobject.co_names") of the [code object](https://docs.python.org/3/reference/datamodel.html#code-objects). 
+
+DELETE_ATTR(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-DELETE_ATTR "Link to this definition")
+    
+Implements:
+```
+obj = STACK.pop()
+del obj.name
+
+```
+
+where _namei_ is the index of name into [`co_names`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_names "codeobject.co_names") of the [code object](https://docs.python.org/3/reference/datamodel.html#code-objects). 
+
+STORE_GLOBAL(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-STORE_GLOBAL "Link to this definition")
+    
+Works as [`STORE_NAME`](https://docs.python.org/3/library/dis.html#opcode-STORE_NAME), but stores the name as a global. 
+
+DELETE_GLOBAL(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-DELETE_GLOBAL "Link to this definition")
+    
+Works as [`DELETE_NAME`](https://docs.python.org/3/library/dis.html#opcode-DELETE_NAME), but deletes a global name. 
+
+LOAD_CONST(_consti_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_CONST "Link to this definition")
+    
+Pushes `co_consts[consti]` onto the stack. 
+
+LOAD_NAME(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_NAME "Link to this definition")
+    
+Pushes the value associated with `co_names[namei]` onto the stack. The name is looked up within the locals, then the globals, then the builtins. 
+
+LOAD_LOCALS[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_LOCALS "Link to this definition")
+    
+Pushes a reference to the locals dictionary onto the stack. This is used to prepare namespace dictionaries for [`LOAD_FROM_DICT_OR_DEREF`](https://docs.python.org/3/library/dis.html#opcode-LOAD_FROM_DICT_OR_DEREF) and [`LOAD_FROM_DICT_OR_GLOBALS`](https://docs.python.org/3/library/dis.html#opcode-LOAD_FROM_DICT_OR_GLOBALS).
+Added in version 3.12. 
+
+LOAD_FROM_DICT_OR_GLOBALS(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_FROM_DICT_OR_GLOBALS "Link to this definition")
+    
+Pops a mapping off the stack and looks up the value for `co_names[namei]`. If the name is not found there, looks it up in the globals and then the builtins, similar to [`LOAD_GLOBAL`](https://docs.python.org/3/library/dis.html#opcode-LOAD_GLOBAL). This is used for loading global variables in [annotation scopes](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes) within class bodies.
+Added in version 3.12. 
+
+BUILD_TUPLE(_count_)[¶](https://docs.python.org/3/library/dis.html#opcode-BUILD_TUPLE "Link to this definition")
+    
+Creates a tuple consuming _count_ items from the stack, and pushes the resulting tuple onto the stack:
+```
+if count == 0:
+  value = ()
+else:
+  value = tuple(STACK[-count:])
+  STACK = STACK[:-count]
+STACK.append(value)

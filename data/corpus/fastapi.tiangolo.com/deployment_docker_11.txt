@@ -1,0 +1,23 @@
+Title: Deploying with Docker: Load Balancing and Container Management
+URL: https://fastapi.tiangolo.com/deployment/docker/
+Summary: This section discusses utilizing parallelization through load balancers in a distributed container system, allowing multiple replicated containers to handle requests efficiently. It emphasizes the practice of running a single Uvicorn process per container to manage replication at the cluster level.
+---
+
+That way you would take advantage of **parallelization** in **different cores** of the CPU, or even in **different machines**.
+And the distributed container system with the **load balancer** would **distribute the requests** to each one of the containers with your app **in turns**. So, each request could be handled by one of the multiple **replicated containers** running your app.
+And normally this **load balancer** would be able to handle requests that go to _other_ apps in your cluster (e.g. to a different domain, or under a different URL path prefix), and would transmit that communication to the right containers for _that other_ application running in your cluster.
+### One Process per Container[¶](https://fastapi.tiangolo.com/deployment/docker/#one-process-per-container "Permanent link")
+In this type of scenario, you probably would want to have **a single (Uvicorn) process per container** , as you would already be handling replication at the cluster level.
+So, in this case, you **would not** want to have a multiple workers in the container, for example with the `--workers` command line option.You would want to have just a **single Uvicorn process** per container (but probably multiple containers).
+Having another process manager inside the container (as would be with multiple workers) would only add **unnecessary complexity** that you are most probably already taking care of with your cluster system.
+### Containers with Multiple Processes and Special Cases[¶](https://fastapi.tiangolo.com/deployment/docker/#containers-with-multiple-processes-and-special-cases "Permanent link")
+Of course, there are **special cases** where you could want to have **a container** with several **Uvicorn worker processes** inside.
+In those cases, you can use the `--workers` command line option to set the number of workers that you want to run:
+```
+FROMpython:3.9
+WORKDIR/code
+COPY./requirements.txt/code/requirements.txt
+RUNpipinstall--no-cache-dir--upgrade-r/code/requirements.txt
+COPY./app/code/app
+[](https://fastapi.tiangolo.com/deployment/docker/#__code_17_annotation_1)
+CMD["fastapi","run","app/main.py","--port","80","--workers","4"]

@@ -1,0 +1,46 @@
+Title: Using Additional Status Codes in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/additional-status-codes/
+Summary: This section illustrates how to implement a PUT endpoint in FastAPI that manages item updates or creations with appropriate status codes. It includes an example where an item is either updated or created, returning a 201 status code for new items. It also warns developers about the direct response handling and the need for valid JSON when using JSONResponse.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI, status
+fromfastapi.responsesimport JSONResponse
+app = FastAPI()
+items = {"foo": {"name": "Fighters", "size": 6}, "bar": {"name": "Tenders", "size": 3}}
+@app.put("/items/{item_id}")
+async defupsert_item(
+  item_id: str,
+  name: Union[str, None] = Body(default=None),
+  size: Union[int, None] = Body(default=None),
+):
+  if item_id in items:
+    item = items[item_id]
+    item["name"] = name
+    item["size"] = size
+    return item
+  else:
+    item = {"name": name, "size": size}
+    items[item_id] = item
+    return JSONResponse(status_code=status.HTTP_201_CREATED, content=item)
+
+```
+
+Warning
+When you return a `Response` directly, like in the example above, it will be returned directly.
+It won't be serialized with a model, etc.
+Make sure it has the data you want it to have, and that the values are valid JSON (if you are using `JSONResponse`).
+Technical Details
+You could also use `from starlette.responses import JSONResponse`.
+**FastAPI** provides the same `starlette.responses` as `fastapi.responses` just as a convenience for you, the developer. But most of the available responses come directly from Starlette. The same with `status`.
+## OpenAPI and API docs[¶](https://fastapi.tiangolo.com/advanced/additional-status-codes/#openapi-and-api-docs "Permanent link")
+If you return additional status codes and responses directly, they won't be included in the OpenAPI schema (the API docs), because FastAPI doesn't have a way to know beforehand what you are going to return.
+But you can document that in your code, using: [Additional Responses](https://fastapi.tiangolo.com/advanced/additional-responses/).
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Path Operation Advanced Configuration  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/) [ Next  Return a Response Directly  ](https://fastapi.tiangolo.com/advanced/response-directly/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

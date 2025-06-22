@@ -1,0 +1,53 @@
+Title: Asyncio Subprocess: Wait and Communicate Methods
+URL: https://docs.python.org/3/library/asyncio-subprocess.html
+Summary: The 'wait()' method in asyncio subprocess allows for waiting on a child process to terminate and sets the returncode attribute. However, it can lead to deadlock if used with stdout=PIPE or stderr=PIPE when the child process produces excessive output. To prevent this, the 'communicate()' method should be used for interacting with the process and handling input/output.
+---
+
+_async_ wait()[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.wait "Link to this definition")
+    
+Wait for the child process to terminate.
+Set and return the [`returncode`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.returncode "asyncio.subprocess.Process.returncode") attribute.
+Note
+This method can deadlock when using `stdout=PIPE` or `stderr=PIPE` and the child process generates so much output that it blocks waiting for the OS pipe buffer to accept more data. Use the [`communicate()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.communicate "asyncio.subprocess.Process.communicate") method when using pipes to avoid this condition. 
+
+_async_ communicate(_input =None_)[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.communicate "Link to this definition")
+    
+Interact with process:
+  1. send data to _stdin_ (if _input_ is not `None`);
+  2. closes _stdin_ ;
+  3. read data from _stdout_ and _stderr_ , until EOF is reached;
+  4. wait for process to terminate.
+
+
+The optional _input_ argument is the data ([`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object) that will be sent to the child process.
+Return a tuple `(stdout_data, stderr_data)`.
+If either [`BrokenPipeError`](https://docs.python.org/3/library/exceptions.html#BrokenPipeError "BrokenPipeError") or [`ConnectionResetError`](https://docs.python.org/3/library/exceptions.html#ConnectionResetError "ConnectionResetError") exception is raised when writing _input_ into _stdin_ , the exception is ignored. This condition occurs when the process exits before all data are written into _stdin_.
+If it is desired to send data to the process’ _stdin_ , the process needs to be created with `stdin=PIPE`. Similarly, to get anything other than `None` in the result tuple, the process has to be created with `stdout=PIPE` and/or `stderr=PIPE` arguments.
+Note, that the data read is buffered in memory, so do not use this method if the data size is large or unlimited.
+Changed in version 3.12: _stdin_ gets closed when `input=None` too. 
+
+send_signal(_signal_)[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.send_signal "Link to this definition")
+    
+Sends the signal _signal_ to the child process.
+Note
+On Windows, [`SIGTERM`](https://docs.python.org/3/library/signal.html#signal.SIGTERM "signal.SIGTERM") is an alias for [`terminate()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.terminate "asyncio.subprocess.Process.terminate"). `CTRL_C_EVENT` and `CTRL_BREAK_EVENT` can be sent to processes started with a _creationflags_ parameter which includes `CREATE_NEW_PROCESS_GROUP`. 
+
+terminate()[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.terminate "Link to this definition")
+    
+Stop the child process.
+On POSIX systems this method sends [`SIGTERM`](https://docs.python.org/3/library/signal.html#signal.SIGTERM "signal.SIGTERM") to the child process.
+On Windows the Win32 API function `TerminateProcess()` is called to stop the child process. 
+
+kill()[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.kill "Link to this definition")
+    
+Kill the child process.
+On POSIX systems this method sends [`SIGKILL`](https://docs.python.org/3/library/signal.html#signal.SIGKILL "signal.SIGKILL") to the child process.
+On Windows this method is an alias for [`terminate()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.terminate "asyncio.subprocess.Process.terminate"). 
+
+stdin[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stdin "Link to this definition")
+    
+Standard input stream ([`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter "asyncio.StreamWriter")) or `None` if the process was created with `stdin=None`. 
+
+stdout[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stdout "Link to this definition")
+    
+Standard output stream ([`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader "asyncio.StreamReader")) or `None` if the process was created with `stdout=None`.

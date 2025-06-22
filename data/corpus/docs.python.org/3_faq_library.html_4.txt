@@ -1,0 +1,41 @@
+Title: Python FAQ: Documentation and Keypress Handling
+URL: https://docs.python.org/3/faq/library.html
+Summary: This section discusses testing programs with fake interfaces when external ones are unavailable and covers methods to create documentation from docstrings using the `pydoc` module, `epydoc`, and `Sphinx`. It also hints at methods for obtaining a single keypress in Python.
+---
+
+```
+
+Even programs that interact with complex external interfaces may be tested when the external interfaces are unavailable by using “fake” interfaces implemented in Python.
+### [How do I create documentation from doc strings?](https://docs.python.org/3/faq/library.html#id11)[¶](https://docs.python.org/3/faq/library.html#how-do-i-create-documentation-from-doc-strings "Link to this heading")
+The [`pydoc`](https://docs.python.org/3/library/pydoc.html#module-pydoc "pydoc: Documentation generator and online help system.") module can create HTML from the doc strings in your Python source code. An alternative for creating API documentation purely from docstrings is [epydoc](https://epydoc.sourceforge.net/). [Sphinx](https://www.sphinx-doc.org) can also include docstring content.
+### [How do I get a single keypress at a time?](https://docs.python.org/3/faq/library.html#id12)[¶](https://docs.python.org/3/faq/library.html#how-do-i-get-a-single-keypress-at-a-time "Link to this heading")
+For Unix variants there are several solutions. It’s straightforward to do this using curses, but curses is a fairly large module to learn.
+## [Threads](https://docs.python.org/3/faq/library.html#id13)[¶](https://docs.python.org/3/faq/library.html#threads "Link to this heading")
+### [How do I program using threads?](https://docs.python.org/3/faq/library.html#id14)[¶](https://docs.python.org/3/faq/library.html#how-do-i-program-using-threads "Link to this heading")
+Be sure to use the [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module and not the [`_thread`](https://docs.python.org/3/library/_thread.html#module-_thread "_thread: Low-level threading API.") module. The [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module builds convenient abstractions on top of the low-level primitives provided by the [`_thread`](https://docs.python.org/3/library/_thread.html#module-_thread "_thread: Low-level threading API.") module.
+### [None of my threads seem to run: why?](https://docs.python.org/3/faq/library.html#id15)[¶](https://docs.python.org/3/faq/library.html#none-of-my-threads-seem-to-run-why "Link to this heading")
+As soon as the main thread exits, all threads are killed. Your main thread is running too quickly, giving the threads no time to do any work.
+A simple fix is to add a sleep to the end of the program that’s long enough for all the threads to finish:
+```
+importthreading,time
+defthread_task(name, n):
+  for i in range(n):
+    print(name, i)
+for i in range(10):
+  T = threading.Thread(target=thread_task, args=(str(i), i))
+  T.start()
+time.sleep(10) # <---------------------------!
+
+```
+
+But now (on many platforms) the threads don’t run in parallel, but appear to run sequentially, one at a time! The reason is that the OS thread scheduler doesn’t start a new thread until the previous thread is blocked.
+A simple fix is to add a tiny sleep to the start of the run function:
+```
+defthread_task(name, n):
+  time.sleep(0.001) # <--------------------!
+  for i in range(n):
+    print(name, i)
+for i in range(10):
+  T = threading.Thread(target=thread_task, args=(str(i), i))
+  T.start()
+time.sleep(10)

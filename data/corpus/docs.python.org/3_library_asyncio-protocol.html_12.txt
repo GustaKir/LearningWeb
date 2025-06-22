@@ -1,0 +1,51 @@
+Title: Using asyncio Subprocess Protocol for Date Retrieval
+URL: https://docs.python.org/3/library/asyncio-protocol.html
+Summary: This document chunk presents a Python class 'DateProtocol' that extends 'asyncio.SubprocessProtocol' to manage subprocesses for fetching the current date. It defines methods for handling pipe connection loss, receiving data, and checking for process exit, ensuring that both the output and exit conditions are appropriately managed.
+---
+
+```
+importasyncio
+importsys
+classDateProtocol(asyncio.SubprocessProtocol):
+  def__init__(self, exit_future):
+    self.exit_future = exit_future
+    self.output = bytearray()
+    self.pipe_closed = False
+    self.exited = False
+  defpipe_connection_lost(self, fd, exc):
+    self.pipe_closed = True
+    self.check_for_exit()
+  defpipe_data_received(self, fd, data):
+    self.output.extend(data)
+  defprocess_exited(self):
+    self.exited = True
+    # process_exited() method can be called before
+    # pipe_connection_lost() method: wait until both methods are
+    # called.
+    self.check_for_exit()
+  defcheck_for_exit(self):
+    if self.pipe_closed and self.exited:
+      self.exit_future.set_result(True)
+async defget_date():
+  # Get a reference to the event loop as we plan to use
+  # low-level APIs.
+  loop = asyncio.get_running_loop()
+  code = 'import datetime; print(datetime.datetime.now())'
+  exit_future = asyncio.Future(loop=loop)
+  # Create the subprocess controlled by DateProtocol;
+  # redirect the standard output into a pipe.
+  transport, protocol = await loop.subprocess_exec(
+    lambda: DateProtocol(exit_future),
+    sys.executable, '-c', code,
+    stdin=None, stderr=None)
+  # Wait for the subprocess exit using the process_exited()
+  # method of the protocol.
+  await exit_future
+  # Close the stdout pipe.
+  transport.close()
+  # Read the output which was collected by the
+  # pipe_data_received() method of the protocol.
+  data = bytes(protocol.output)
+  return data.decode('ascii').rstrip()
+date = asyncio.run(get_date())
+print(f"Current date: {date}")

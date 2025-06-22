@@ -1,0 +1,41 @@
+Title: Class Definitions in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section outlines the grammar for class definitions in Python, including components such as decorators, class names, inheritance, and type parameters. It details the structure of a class definition as an executable statement, emphasizing the role of the inheritance list in specifying base classes.
+---
+
+```
+**classdef**  ::= [[decorators](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-decorators)] "class" [classname](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-classname) [[type_params](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-type_params)] [[inheritance](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-inheritance)] ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)
+**inheritance** ::= "(" [[argument_list](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-argument_list)] ")"
+**classname**  ::= [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier)
+
+```
+
+A class definition is an executable statement. The inheritance list usually gives a list of base classes (see [Metaclasses](https://docs.python.org/3/reference/datamodel.html#metaclasses) for more advanced uses), so each item in the list should evaluate to a class object which allows subclassing. Classes without an inheritance list inherit, by default, from the base class [`object`](https://docs.python.org/3/library/functions.html#object "object"); hence,
+```
+classFoo:
+  pass
+
+```
+
+is equivalent to
+```
+classFoo(object):
+  pass
+
+```
+
+The class’s suite is then executed in a new execution frame (see [Naming and binding](https://docs.python.org/3/reference/executionmodel.html#naming)), using a newly created local namespace and the original global namespace. (Usually, the suite contains mostly function definitions.) When the class’s suite finishes execution, its execution frame is discarded but its local namespace is saved. [[5]](https://docs.python.org/3/reference/compound_stmts.html#id24) A class object is then created using the inheritance list for the base classes and the saved local namespace for the attribute dictionary. The class name is bound to this class object in the original local namespace.
+The order in which attributes are defined in the class body is preserved in the new class’s [`__dict__`](https://docs.python.org/3/reference/datamodel.html#type.__dict__ "type.__dict__"). Note that this is reliable only right after the class is created and only for classes that were defined using the definition syntax.
+Class creation can be customized heavily using [metaclasses](https://docs.python.org/3/reference/datamodel.html#metaclasses).
+Classes can also be decorated: just like when decorating functions,
+```
+@f1(arg)
+@f2
+classFoo: pass
+
+```
+
+is roughly equivalent to
+```
+classFoo: pass
+Foo = f1(arg)(f2(Foo))

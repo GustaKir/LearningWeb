@@ -1,0 +1,49 @@
+Title: Text Encoding in Python's IO Module
+URL: https://docs.python.org/3/library/io.html
+Summary: The section discusses the default encoding behavior of `TextIOWrapper` and `open()` in Python, which is locale-specific. It emphasizes the importance of explicitly specifying encoding, particularly for UTF-8 text files, to avoid compatibility issues across different operating systems, especially between Unix and Windows environments.
+---
+
+```
+
+The raw stream API is described in detail in the docs of [`RawIOBase`](https://docs.python.org/3/library/io.html#io.RawIOBase "io.RawIOBase").
+## Text Encoding[¶](https://docs.python.org/3/library/io.html#text-encoding "Link to this heading")
+The default encoding of [`TextIOWrapper`](https://docs.python.org/3/library/io.html#io.TextIOWrapper "io.TextIOWrapper") and [`open()`](https://docs.python.org/3/library/functions.html#open "open") is locale-specific ([`locale.getencoding()`](https://docs.python.org/3/library/locale.html#locale.getencoding "locale.getencoding")).
+However, many developers forget to specify the encoding when opening text files encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc…) since most Unix platforms use UTF-8 locale by default. This causes bugs because the locale encoding is not UTF-8 for most Windows users. For example:
+```
+# May not work on Windows when non-ASCII characters in the file.
+with open("README.md") as f:
+  long_description = f.read()
+
+```
+
+Accordingly, it is highly recommended that you specify the encoding explicitly when opening text files. If you want to use UTF-8, pass `encoding="utf-8"`. To use the current locale encoding, `encoding="locale"` is supported since Python 3.10.
+See also 
+
+[Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode)
+    
+Python UTF-8 Mode can be used to change the default encoding to UTF-8 from locale-specific encoding. 
+
+[**PEP 686**](https://peps.python.org/pep-0686/)
+    
+Python 3.15 will make [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode) default.
+### Opt-in EncodingWarning[¶](https://docs.python.org/3/library/io.html#opt-in-encodingwarning "Link to this heading")
+Added in version 3.10: See [**PEP 597**](https://peps.python.org/pep-0597/) for more details.
+To find where the default locale encoding is used, you can enable the [`-X warn_default_encoding`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) command line option or set the [`PYTHONWARNDEFAULTENCODING`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNDEFAULTENCODING) environment variable, which will emit an [`EncodingWarning`](https://docs.python.org/3/library/exceptions.html#EncodingWarning "EncodingWarning") when the default encoding is used.
+If you are providing an API that uses [`open()`](https://docs.python.org/3/library/functions.html#open "open") or [`TextIOWrapper`](https://docs.python.org/3/library/io.html#io.TextIOWrapper "io.TextIOWrapper") and passes `encoding=None` as a parameter, you can use [`text_encoding()`](https://docs.python.org/3/library/io.html#io.text_encoding "io.text_encoding") so that callers of the API will emit an [`EncodingWarning`](https://docs.python.org/3/library/exceptions.html#EncodingWarning "EncodingWarning") if they don’t pass an `encoding`. However, please consider using UTF-8 by default (i.e. `encoding="utf-8"`) for new APIs.
+## High-level Module Interface[¶](https://docs.python.org/3/library/io.html#high-level-module-interface "Link to this heading") 
+
+io.DEFAULT_BUFFER_SIZE[¶](https://docs.python.org/3/library/io.html#io.DEFAULT_BUFFER_SIZE "Link to this definition")
+    
+An int containing the default buffer size used by the module’s buffered I/O classes. [`open()`](https://docs.python.org/3/library/functions.html#open "open") uses the file’s blksize (as obtained by [`os.stat()`](https://docs.python.org/3/library/os.html#os.stat "os.stat")) if possible. 
+
+io.open(_file_ , _mode ='r'_, _buffering =-1_, _encoding =None_, _errors =None_, _newline =None_, _closefd =True_, _opener =None_)[¶](https://docs.python.org/3/library/io.html#io.open "Link to this definition")
+    
+This is an alias for the builtin [`open()`](https://docs.python.org/3/library/functions.html#open "open") function.
+This function raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `open` with arguments _path_ , _mode_ and _flags_. The _mode_ and _flags_ arguments may have been modified or inferred from the original call. 
+
+io.open_code(_path_)[¶](https://docs.python.org/3/library/io.html#io.open_code "Link to this definition")
+    
+Opens the provided file with mode `'rb'`. This function should be used when the intent is to treat the contents as executable code.
+_path_ should be a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") and an absolute path.
+The behavior of this function may be overridden by an earlier call to the [`PyFile_SetOpenCodeHook()`](https://docs.python.org/3/c-api/file.html#c.PyFile_SetOpenCodeHook "PyFile_SetOpenCodeHook"). However, assuming that _path_ is a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") and an absolute path, `open_code(path)` should always behave the same as `open(path, 'rb')`. Overriding the behavior is intended for additional validation or preprocessing of the file.
+Added in version 3.8.

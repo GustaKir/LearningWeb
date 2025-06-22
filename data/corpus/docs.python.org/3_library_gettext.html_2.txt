@@ -1,0 +1,25 @@
+Title: Class-based API of gettext Module
+URL: https://docs.python.org/3/library/gettext.html
+Summary: The class-based API of the gettext module offers enhanced flexibility for localizing Python applications compared to the GNU gettext API. It includes the GNUTranslations class for parsing GNU .mo files and provides string-returning methods. Additionally, instances of this class can register themselves in the built-in namespace as the function _().
+---
+
+```
+
+## Class-based API[¶](https://docs.python.org/3/library/gettext.html#class-based-api "Link to this heading")
+The class-based API of the [`gettext`](https://docs.python.org/3/library/gettext.html#module-gettext "gettext: Multilingual internationalization services.") module gives you more flexibility and greater convenience than the GNU **gettext** API. It is the recommended way of localizing your Python applications and modules. `gettext` defines a [`GNUTranslations`](https://docs.python.org/3/library/gettext.html#gettext.GNUTranslations "gettext.GNUTranslations") class which implements the parsing of GNU `.mo` format files, and has methods for returning strings. Instances of this class can also install themselves in the built-in namespace as the function `_()`. 
+
+gettext.find(_domain_ , _localedir =None_, _languages =None_, _all =False_)[¶](https://docs.python.org/3/library/gettext.html#gettext.find "Link to this definition")
+    
+This function implements the standard `.mo` file search algorithm. It takes a _domain_ , identical to what [`textdomain()`](https://docs.python.org/3/library/gettext.html#gettext.textdomain "gettext.textdomain") takes. Optional _localedir_ is as in [`bindtextdomain()`](https://docs.python.org/3/library/gettext.html#gettext.bindtextdomain "gettext.bindtextdomain"). Optional _languages_ is a list of strings, where each string is a language code.
+If _localedir_ is not given, then the default system locale directory is used. [[2]](https://docs.python.org/3/library/gettext.html#id4) If _languages_ is not given, then the following environment variables are searched: `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, and `LANG`. The first one returning a non-empty value is used for the _languages_ variable. The environment variables should contain a colon separated list of languages, which will be split on the colon to produce the expected list of language code strings.
+[`find()`](https://docs.python.org/3/library/gettext.html#gettext.find "gettext.find") then expands and normalizes the languages, and then iterates through them, searching for an existing file built of these components:
+`_localedir_/_language_/LC_MESSAGES/_domain_.mo`
+The first such file name that exists is returned by [`find()`](https://docs.python.org/3/library/gettext.html#gettext.find "gettext.find"). If no such file is found, then `None` is returned. If _all_ is given, it returns a list of all file names, in the order in which they appear in the languages list or the environment variables. 
+
+gettext.translation(_domain_ , _localedir =None_, _languages =None_, _class_ =None_, _fallback =False_)[¶](https://docs.python.org/3/library/gettext.html#gettext.translation "Link to this definition")
+    
+Return a `*Translations` instance based on the _domain_ , _localedir_ , and _languages_ , which are first passed to [`find()`](https://docs.python.org/3/library/gettext.html#gettext.find "gettext.find") to get a list of the associated `.mo` file paths. Instances with identical `.mo` file names are cached. The actual class instantiated is _class__ if provided, otherwise [`GNUTranslations`](https://docs.python.org/3/library/gettext.html#gettext.GNUTranslations "gettext.GNUTranslations"). The class’s constructor must take a single [file object](https://docs.python.org/3/glossary.html#term-file-object) argument.
+If multiple files are found, later files are used as fallbacks for earlier ones. To allow setting the fallback, [`copy.copy()`](https://docs.python.org/3/library/copy.html#copy.copy "copy.copy") is used to clone each translation object from the cache; the actual instance data is still shared with the cache.
+If no `.mo` file is found, this function raises [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") if _fallback_ is false (which is the default), and returns a [`NullTranslations`](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations "gettext.NullTranslations") instance if _fallback_ is true.
+Changed in version 3.3: [`IOError`](https://docs.python.org/3/library/exceptions.html#IOError "IOError") used to be raised, it is now an alias of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError").
+Changed in version 3.11: _codeset_ parameter is removed.

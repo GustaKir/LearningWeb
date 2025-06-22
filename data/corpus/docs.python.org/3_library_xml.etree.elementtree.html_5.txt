@@ -1,0 +1,41 @@
+Title: Supported XPath Syntax in ElementTree
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: This section details the supported XPath syntax in Python's ElementTree, including selectors for tags, namespaces, and node relationships. It explains how to use specific expressions to select child elements, current nodes, and subelements, highlighting the functionality introduced in version 3.8 regarding star-wildcards.
+---
+
+```
+
+### Supported XPath syntax[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#supported-xpath-syntax "Link to this heading")
+Syntax | Meaning  
+---|---  
+`tag` | Selects all child elements with the given tag. For example, `spam` selects all child elements named `spam`, and `spam/egg` selects all grandchildren named `egg` in all children named `spam`. `{namespace}*` selects all tags in the given namespace, `{*}spam` selects tags named `spam` in any (or no) namespace, and `{}*` only selects tags that are not in a namespace. Changed in version 3.8: Support for star-wildcards was added.  
+`*` | Selects all child elements, including comments and processing instructions. For example, `*/egg` selects all grandchildren named `egg`.  
+`.` | Selects the current node. This is mostly useful at the beginning of the path, to indicate that it’s a relative path.  
+`//` | Selects all subelements, on all levels beneath the current element. For example, `.//egg` selects all `egg` elements in the entire tree.  
+`..` | Selects the parent element. Returns `None` if the path attempts to reach the ancestors of the start element (the element `find` was called on).  
+`[@attrib]` | Selects all elements that have the given attribute.  
+`[@attrib='value']` | Selects all elements for which the given attribute has the given value. The value cannot contain quotes.  
+`[@attrib!='value']` | Selects all elements for which the given attribute does not have the given value. The value cannot contain quotes. Added in version 3.10.  
+`[tag]` | Selects all elements that have a child named `tag`. Only immediate children are supported.  
+`[.='text']` | Selects all elements whose complete text content, including descendants, equals the given `text`. Added in version 3.7.  
+`[.!='text']` | Selects all elements whose complete text content, including descendants, does not equal the given `text`. Added in version 3.10.  
+`[tag='text']` | Selects all elements that have a child named `tag` whose complete text content, including descendants, equals the given `text`.  
+`[tag!='text']` | Selects all elements that have a child named `tag` whose complete text content, including descendants, does not equal the given `text`. Added in version 3.10.  
+`[position]` | Selects all elements that are located at the given position. The position can be either an integer (1 is the first position), the expression `last()` (for the last position), or a position relative to the last position (e.g. `last()-1`).  
+Predicates (expressions within square brackets) must be preceded by a tag name, an asterisk, or another predicate. `position` predicates must be preceded by a tag name.
+## Reference[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#reference "Link to this heading")
+### Functions[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#functions "Link to this heading") 
+
+xml.etree.ElementTree.canonicalize(_xml_data =None_, _*_ , _out =None_, _from_file =None_, _** options_)[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.canonicalize "Link to this definition")
+    
+[C14N 2.0](https://www.w3.org/TR/xml-c14n2/) transformation function.
+Canonicalization is a way to normalise XML output in a way that allows byte-by-byte comparisons and digital signatures. It reduces the freedom that XML serializers have and instead generates a more constrained XML representation. The main restrictions regard the placement of namespace declarations, the ordering of attributes, and ignorable whitespace.
+This function takes an XML data string (_xml_data_) or a file path or file-like object (_from_file_) as input, converts it to the canonical form, and writes it out using the _out_ file(-like) object, if provided, or returns it as a text string if not. The output file receives text, not bytes. It should therefore be opened in text mode with `utf-8` encoding.
+Typical uses:
+```
+xml_data = "<root>...</root>"
+print(canonicalize(xml_data))
+with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+  canonicalize(xml_data, out=out_file)
+with open("c14n_output.xml", mode='w', encoding='utf-8') as out_file:
+  canonicalize(from_file="inputfile.xml", out=out_file)

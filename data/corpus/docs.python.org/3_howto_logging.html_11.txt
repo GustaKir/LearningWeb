@@ -1,0 +1,24 @@
+Title: Handling Logging Events Without Configuration
+URL: https://docs.python.org/3/howto/logging.html
+Summary: If no logging configuration is provided, logging events may not be output as expected. In such cases, a 'handler of last resort' is used, which acts like a StreamHandler and outputs messages to sys.stderr, thus maintaining any existing redirections.
+---
+
+```
+
+For more information about logging using a dictionary, see [Configuration functions](https://docs.python.org/3/library/logging.config.html#logging-config-api).
+### What happens if no configuration is provided[¶](https://docs.python.org/3/howto/logging.html#what-happens-if-no-configuration-is-provided "Link to this heading")
+If no logging configuration is provided, it is possible to have a situation where a logging event needs to be output, but no handlers can be found to output the event.
+The event is output using a ‘handler of last resort’, stored in [`lastResort`](https://docs.python.org/3/library/logging.html#logging.lastResort "logging.lastResort"). This internal handler is not associated with any logger, and acts like a [`StreamHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.StreamHandler "logging.StreamHandler") which writes the event description message to the current value of `sys.stderr` (therefore respecting any redirections which may be in effect). No formatting is done on the message - just the bare event description message is printed. The handler’s level is set to `WARNING`, so all events at this and greater severities will be output.
+Changed in version 3.2: For versions of Python prior to 3.2, the behaviour is as follows:
+  * If [`raiseExceptions`](https://docs.python.org/3/library/logging.html#logging.raiseExceptions "logging.raiseExceptions") is `False` (production mode), the event is silently dropped.
+  * If [`raiseExceptions`](https://docs.python.org/3/library/logging.html#logging.raiseExceptions "logging.raiseExceptions") is `True` (development mode), a message ‘No handlers could be found for logger X.Y.Z’ is printed once.
+
+
+To obtain the pre-3.2 behaviour, [`lastResort`](https://docs.python.org/3/library/logging.html#logging.lastResort "logging.lastResort") can be set to `None`.
+### Configuring Logging for a Library[¶](https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library "Link to this heading")
+When developing a library which uses logging, you should take care to document how the library uses logging - for example, the names of loggers used. Some consideration also needs to be given to its logging configuration. If the using application does not use logging, and library code makes logging calls, then (as described in the previous section) events of severity `WARNING` and greater will be printed to `sys.stderr`. This is regarded as the best default behaviour.
+If for some reason you _don’t_ want these messages printed in the absence of any logging configuration, you can attach a do-nothing handler to the top-level logger for your library. This avoids the message being printed, since a handler will always be found for the library’s events: it just doesn’t produce any output. If the library user configures logging for application use, presumably that configuration will add some handlers, and if levels are suitably configured then logging calls made in library code will send output to those handlers, as normal.
+A do-nothing handler is included in the logging package: [`NullHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.NullHandler "logging.NullHandler") (since Python 3.1). An instance of this handler could be added to the top-level logger of the logging namespace used by the library (_if_ you want to prevent your library’s logged events being output to `sys.stderr` in the absence of logging configuration). If all logging by a library _foo_ is done using loggers with names matching ‘foo.x’, ‘foo.x.y’, etc. then the code:
+```
+importlogging
+logging.getLogger('foo').addHandler(logging.NullHandler())

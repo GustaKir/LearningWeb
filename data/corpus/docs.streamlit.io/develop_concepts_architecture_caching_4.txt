@@ -1,0 +1,36 @@
+Title: Caching in Streamlit: Serialization and Security
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: This section discusses the serialization and deserialization of cached objects in Streamlit, emphasizing the importance of protecting against mutations and concurrency issues through data copying. It also warns about the security risks associated with the `pickle` module used in caching, advising to only use trusted data sources.
+---
+
+This process of serializing and deserializing the cached object creates a copy of our original DataFrame. While this copying behavior may seem unnecessary, it's what we want when caching data objects since it effectively prevents mutation and concurrency issues. Read the section “[Mutation and concurrency issues](https://docs.streamlit.io/develop/concepts/architecture/caching#mutation-and-concurrency-issues)" below to understand this in more detail.
+_priority_high_
+#### Warning
+`st.cache_data` implicitly uses the `pickle` module, which is known to be insecure. Anything your cached function returns is pickled and stored, then unpickled on retrieval. Ensure your cached functions return trusted values because it is possible to construct malicious pickle data that will execute arbitrary code during unpickling. Never load data that could have come from an untrusted source in an unsafe mode or that could have been tampered with. **Only load data you trust**.
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#examples)Examples
+**DataFrame transformations**
+In the example above, we already showed how to cache loading a DataFrame. It can also be useful to cache DataFrame transformations such as `df.filter`, `df.apply`, or `df.sort_values`. Especially with large DataFrames, these operations can be slow.
+`@st.cache_data def transform(df):   df = df.filter(items=['one', 'three'])   df = df.apply(np.sum, axis=0) return df `
+**Array computations**
+Similarly, it can make sense to cache computations on NumPy arrays:
+`@st.cache_data def add(arr1, arr2): return arr1 + arr2 `
+**Database queries**
+You usually make SQL queries to load data into your app when working with databases. Repeatedly running these queries can be slow, cost money, and degrade the performance of your database. We strongly recommend caching any database queries in your app. See also [our guides on connecting Streamlit to different databases](https://docs.streamlit.io/develop/tutorials/databases) for in-depth examples.
+`connection = database.connect() @st.cache_data def query(): return pd.read_sql_query("SELECT * from table", connection) `
+_star_
+#### Tip
+You should set a `ttl` (time to live) to get new results from your database. If you set `st.cache_data(ttl=3600)`, Streamlit invalidates any cached values after 1 hour (3600 seconds) and runs the cached function again. See details in [Controlling cache size and duration](https://docs.streamlit.io/develop/concepts/architecture/caching#controlling-cache-size-and-duration).
+**API calls**
+Similarly, it makes sense to cache API calls. Doing so also avoids rate limits.
+`@st.cache_data def api_call():   response = requests.get('https://jsonplaceholder.typicode.com/posts/1') return response.json() `
+**Running ML models (inference)**
+Running complex machine learning models can use significant time and memory. To avoid rerunning the same computations over and over, use caching.
+`@st.cache_data def run_model(inputs): return model(inputs) `
+### [](https://docs.streamlit.io/develop/concepts/architecture/caching#stcache_resource)st.cache_resource
+`st.cache_resource` is the right command to cache “resources" that should be available globally across all users, sessions, and reruns. It has more limited use cases than `st.cache_data`, especially for caching database connections and ML models. Within each user session, an `@st.cache_resource`-decorated function returns the cached instance of the return value (if the value is already cached). Therefore, objects cached by `st.cache_resource` act like singletons and can mutate.
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#usage-1)Usage
+As an example for `st.cache_resource`, let's look at a typical machine learning app. As a first step, we need to load an ML model. We do this with [Hugging Face's transformers library](https://huggingface.co/docs/transformers/index):
+`from transformers import pipeline model = pipeline("sentiment-analysis") # 👈 Load the model `
+If we put this code into a Streamlit app directly, the app will load the model at each rerun or user interaction. Repeatedly loading the model poses two problems:
+  * Loading the model takes time and slows down the app.
+  * Each session loads the model from scratch, which takes up a huge amount of memory.

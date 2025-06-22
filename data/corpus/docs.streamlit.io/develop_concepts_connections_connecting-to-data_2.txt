@@ -1,0 +1,32 @@
+Title: Connecting Streamlit Apps to Data and APIs
+URL: https://docs.streamlit.io/develop/concepts/connections/connecting-to-data
+Summary: Streamlit's `st.connection()` function simplifies the process of connecting apps to data and APIs. This documentation provides an overview, beginner examples, and links to video resources for utilizing data connections effectively, including built-in support for SQL and Snowflake.
+---
+
+**Streamlit provides[`st.connection()`](https://docs.streamlit.io/develop/api-reference/connections/st.connection) to more easily connect your Streamlit apps to data and APIs with just a few lines of code**. This page provides a basic example of using the feature and then focuses on advanced usage.
+For a comprehensive overview of this feature, check out this video tutorial by Joshua Carroll, Streamlit's Product Manager for Developer Experience. You'll learn about the feature's utility in creating and managing data connections within your apps by using real-world examples.
+## [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#basic-usage)Basic usage
+For basic startup and usage examples, read up on the relevant [data source tutorial](https://docs.streamlit.io/develop/tutorials/databases). Streamlit has built-in connections to SQL dialects and Snowflake. We also maintain installable connections for [Cloud File Storage](https://github.com/streamlit/files-connection) and [Google Sheets](https://github.com/streamlit/gsheets-connection).
+If you are just starting, the best way to learn is to pick a data source you can access and get a minimal example working from one of the pages above 👆. Here, we will provide an ultra-minimal usage example for using a SQLite database. From there, the rest of this page will focus on advanced usage.
+### [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#a-simple-starting-point---using-a-local-sqlite-database)A simple starting point - using a local SQLite database
+A [local SQLite database](https://sqlite.org/index.html) could be useful for your app's semi-persistent data storage.
+_push_pin_
+#### Note
+Community Cloud apps do not guarantee the persistence of local file storage, so the platform may delete data stored using this technique at any time.
+To see the example below running live, check out the interactive demo below:
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://experimental-connection.streamlit.app/SQL/?utm_medium=oembed)
+#### [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#step-1-install-prerequisite-library---sqlalchemy)Step 1: Install prerequisite library - SQLAlchemy
+All SQLConnections in Streamlit use SQLAlchemy. For most other SQL dialects, you also need to install the driver. But the [SQLite driver ships with python3](https://docs.python.org/3/develop/sqlite3.html), so it isn't necessary.
+`pip install SQLAlchemy==1.4.0 `
+#### [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#step-2-set-a-database-url-in-your-streamlit-secretstoml-file)Step 2: Set a database URL in your Streamlit secrets.toml file
+Create a directory and file `.streamlit/secrets.toml` in the same directory your app will run from. Add the following to the file.
+`# .streamlit/secrets.toml [connections.pets_db] url = "sqlite:///pets.db" `
+#### [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#step-3-use-the-connection-in-your-app)Step 3: Use the connection in your app
+The following app creates a connection to the database, uses it to create a table and insert some data, then queries the data back and displays it in a data frame.
+`# streamlit_app.py import streamlit as st # Create the SQL connection to pets_db as specified in your secrets file. conn = st.connection('pets_db', type='sql') # Insert some data with conn.session. with conn.session as s:   s.execute('CREATE TABLE IF NOT EXISTS pet_owners (person TEXT, pet TEXT);')   s.execute('DELETE FROM pet_owners;')   pet_owners = {'jerry': 'fish', 'barbara': 'cat', 'alex': 'puppy'} for k in pet_owners:     s.execute( 'INSERT INTO pet_owners (person, pet) VALUES (:owner, :pet);',       params=dict(owner=k, pet=pet_owners[k]) )   s.commit() # Query and display the data you inserted pet_owners = conn.query('select * from pet_owners') st.dataframe(pet_owners) `
+In this example, we didn't set a `ttl=` value on the call to [`conn.query()`](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionquery), meaning Streamlit caches the result indefinitely as long as the app server runs.
+Now, on to more advanced topics! 🚀
+## [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#advanced-topics)Advanced topics
+### [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#global-secrets-managing-multiple-apps-and-multiple-data-stores)Global secrets, managing multiple apps and multiple data stores
+Streamlit [supports a global secrets file](https://docs.streamlit.io/develop/concepts/connections/secrets-management) specified in the user's home directory, such as `~/.streamlit/secrets.toml`. If you build or manage multiple apps, we recommend using a global credential or secret file for local development across apps. With this approach, you only need to set up and manage your credentials in one place, and connecting a new a

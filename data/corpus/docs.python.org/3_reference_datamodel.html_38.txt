@@ -1,0 +1,50 @@
+Title: __class_getitem__ Method in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: The `__class_getitem__()` method returns an object representing the specialization of a generic class based on type arguments in `_key_`. It is automatically a class method when defined on a class, negating the need for the `@classmethod` decorator. This method enables runtime parameterization of standard-library generic classes, facilitating the application of type hints.
+---
+
+_classmethod_ object.__class_getitem__(_cls_ , _key_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "Link to this definition")
+    
+Return an object representing the specialization of a generic class by type arguments found in _key_.
+When defined on a class, `__class_getitem__()` is automatically a class method. As such, there is no need for it to be decorated with [`@classmethod`](https://docs.python.org/3/library/functions.html#classmethod "classmethod") when it is defined.
+#### 3.3.5.1. The purpose of ___class_getitem___[¶](https://docs.python.org/3/reference/datamodel.html#the-purpose-of-class-getitem "Link to this heading")
+The purpose of [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__") is to allow runtime parameterization of standard-library generic classes in order to more easily apply [type hints](https://docs.python.org/3/glossary.html#term-type-hint) to these classes.
+To implement custom generic classes that can be parameterized at runtime and understood by static type-checkers, users should either inherit from a standard library class that already implements [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__"), or inherit from [`typing.Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic"), which has its own implementation of `__class_getitem__()`.
+Custom implementations of [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__") on classes defined outside of the standard library may not be understood by third-party type-checkers such as mypy. Using `__class_getitem__()` on any class for purposes other than type hinting is discouraged.
+#### 3.3.5.2. ___class_getitem___ versus ___getitem___[¶](https://docs.python.org/3/reference/datamodel.html#class-getitem-versus-getitem "Link to this heading")
+Usually, the [subscription](https://docs.python.org/3/reference/expressions.html#subscriptions) of an object using square brackets will call the [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") instance method defined on the object’s class. However, if the object being subscribed is itself a class, the class method [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__") may be called instead. `__class_getitem__()` should return a [GenericAlias](https://docs.python.org/3/library/stdtypes.html#types-genericalias) object if it is properly defined.
+Presented with the [expression](https://docs.python.org/3/glossary.html#term-expression) `obj[x]`, the Python interpreter follows something like the following process to decide whether [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") or [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__") should be called:
+```
+frominspectimport isclass
+defsubscribe(obj, x):
+"""Return the result of the expression 'obj[x]'"""
+  class_of_obj = type(obj)
+  # If the class of obj defines __getitem__,
+  # call class_of_obj.__getitem__(obj, x)
+  if hasattr(class_of_obj, '__getitem__'):
+    return class_of_obj.__getitem__(obj, x)
+  # Else, if obj is a class and defines __class_getitem__,
+  # call obj.__class_getitem__(x)
+  elif isclass(obj) and hasattr(obj, '__class_getitem__'):
+    return obj.__class_getitem__(x)
+  # Else, raise an exception
+  else:
+    raise TypeError(
+      f"'{class_of_obj.__name__}' object is not subscriptable"
+    )
+
+```
+
+In Python, all classes are themselves instances of other classes. The class of a class is known as that class’s [metaclass](https://docs.python.org/3/glossary.html#term-metaclass), and most classes have the [`type`](https://docs.python.org/3/library/functions.html#type "type") class as their metaclass. [`type`](https://docs.python.org/3/library/functions.html#type "type") does not define [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__"), meaning that expressions such as `list[int]`, `dict[str, float]` and `tuple[str, bytes]` all result in [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__") being called:
+>>>```
+>>> # list has class "type" as its metaclass, like most classes:
+>>> type(list)
+<class 'type'>
+>>> type(dict) == type(list) == type(tuple) == type(str) == type(bytes)
+True
+>>> # "list[int]" calls "list.__class_getitem__(int)"
+>>> list[int]
+list[int]
+>>> # list.__class_getitem__ returns a GenericAlias object:
+>>> type(list[int])
+<class 'types.GenericAlias'>

@@ -1,0 +1,18 @@
+Title: TarFile Filtering Options in Python
+URL: https://docs.python.org/3/library/tarfile.html
+Summary: This section discusses the different values for the _filter_ argument in the TarFile.extract() and extractall() methods. It explains three options: 'fully_trusted' for complete metadata honor, 'tar' for blocking potentially malicious features, and 'data' for ignoring UNIX-specific filesystem features, aimed at cross-platform compatibility.
+---
+
+[**PEP 706**](https://peps.python.org/pep-0706/)
+    
+Contains further motivation and rationale behind the design.
+The _filter_ argument to [`TarFile.extract()`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.extract "tarfile.TarFile.extract") or [`extractall()`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.extractall "tarfile.TarFile.extractall") can be:
+  * the string `'fully_trusted'`: Honor all metadata as specified in the archive. Should be used if the user trusts the archive completely, or implements their own complex verification.
+  * the string `'tar'`: Honor most _tar_ -specific features (i.e. features of UNIX-like filesystems), but block features that are very likely to be surprising or malicious. See [`tar_filter()`](https://docs.python.org/3/library/tarfile.html#tarfile.tar_filter "tarfile.tar_filter") for details.
+  * the string `'data'`: Ignore or block most features specific to UNIX-like filesystems. Intended for extracting cross-platform data archives. See [`data_filter()`](https://docs.python.org/3/library/tarfile.html#tarfile.data_filter "tarfile.data_filter") for details.
+  * `None` (default): Use [`TarFile.extraction_filter`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.extraction_filter "tarfile.TarFile.extraction_filter").
+If that is also `None` (the default), raise a `DeprecationWarning`, and fall back to the `'fully_trusted'` filter, whose dangerous behavior matches previous versions of Python.
+In Python 3.14, the `'data'` filter will become the default instead. It’s possible to switch earlier; see [`TarFile.extraction_filter`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.extraction_filter "tarfile.TarFile.extraction_filter").
+  * A callable which will be called for each extracted member with a [TarInfo](https://docs.python.org/3/library/tarfile.html#tarinfo-objects) describing the member and the destination path to where the archive is extracted (i.e. the same path is used for all members):
+```
+filter(member: TarInfo, path: str, /) -> TarInfo | None

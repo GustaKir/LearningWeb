@@ -1,0 +1,99 @@
+Title: Introduction of sysconfig Module
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The new sysconfig module simplifies the discovery of installation paths and configuration variables across different platforms. It includes functions like get_platform() and get_python_version() for retrieving platform details and Python version information.
+---
+
+```
+
+(Contributed by Tarek Ziadé in [bpo-6693](https://bugs.python.org/issue?@action=redirect&bpo=6693).)
+### sysconfig[¶](https://docs.python.org/3/whatsnew/3.2.html#sysconfig "Link to this heading")
+The new [`sysconfig`](https://docs.python.org/3/library/sysconfig.html#module-sysconfig "sysconfig: Python's configuration information") module makes it straightforward to discover installation paths and configuration variables that vary across platforms and installations.
+The module offers access simple access functions for platform and version information:
+  * [`get_platform()`](https://docs.python.org/3/library/sysconfig.html#sysconfig.get_platform "sysconfig.get_platform") returning values like _linux-i586_ or _macosx-10.6-ppc_.
+  * [`get_python_version()`](https://docs.python.org/3/library/sysconfig.html#sysconfig.get_python_version "sysconfig.get_python_version") returns a Python version string such as “3.2”.
+
+
+It also provides access to the paths and variables corresponding to one of seven named schemes used by `distutils`. Those include _posix_prefix_ , _posix_home_ , _posix_user_ , _nt_ , _nt_user_ , _os2_ , _os2_home_ :
+  * [`get_paths()`](https://docs.python.org/3/library/sysconfig.html#sysconfig.get_paths "sysconfig.get_paths") makes a dictionary containing installation paths for the current installation scheme.
+  * [`get_config_vars()`](https://docs.python.org/3/library/sysconfig.html#sysconfig.get_config_vars "sysconfig.get_config_vars") returns a dictionary of platform specific variables.
+
+
+There is also a convenient command-line interface:
+```
+C:\Python32>python -m sysconfig
+Platform: "win32"
+Python version: "3.2"
+Current installation scheme: "nt"
+Paths:
+    data = "C:\Python32"
+    include = "C:\Python32\Include"
+    platinclude = "C:\Python32\Include"
+    platlib = "C:\Python32\Lib\site-packages"
+    platstdlib = "C:\Python32\Lib"
+    purelib = "C:\Python32\Lib\site-packages"
+    scripts = "C:\Python32\Scripts"
+    stdlib = "C:\Python32\Lib"
+Variables:
+    BINDIR = "C:\Python32"
+    BINLIBDEST = "C:\Python32\Lib"
+    EXE = ".exe"
+    INCLUDEPY = "C:\Python32\Include"
+    LIBDEST = "C:\Python32\Lib"
+    SO = ".pyd"
+    VERSION = "32"
+    abiflags = ""
+    base = "C:\Python32"
+    exec_prefix = "C:\Python32"
+    platbase = "C:\Python32"
+    prefix = "C:\Python32"
+    projectbase = "C:\Python32"
+    py_version = "3.2"
+    py_version_nodot = "32"
+    py_version_short = "3.2"
+    srcdir = "C:\Python32"
+    userbase = "C:\Documents and Settings\Raymond\Application Data\Python"
+
+```
+
+(Moved out of Distutils by Tarek Ziadé.)
+### pdb[¶](https://docs.python.org/3/whatsnew/3.2.html#pdb "Link to this heading")
+The [`pdb`](https://docs.python.org/3/library/pdb.html#module-pdb "pdb: The Python debugger for interactive interpreters.") debugger module gained a number of usability improvements:
+  * `pdb.py` now has a `-c` option that executes commands as given in a `.pdbrc` script file.
+  * A `.pdbrc` script file can contain `continue` and `next` commands that continue debugging.
+  * The [`Pdb`](https://docs.python.org/3/library/pdb.html#pdb.Pdb "pdb.Pdb") class constructor now accepts a _nosigint_ argument.
+  * New commands: `l(list)`, `ll(long list)` and `source` for listing source code.
+  * New commands: `display` and `undisplay` for showing or hiding the value of an expression if it has changed.
+  * New command: `interact` for starting an interactive interpreter containing the global and local names found in the current scope.
+  * Breakpoints can be cleared by breakpoint number.
+
+
+(Contributed by Georg Brandl, Antonio Cuni and Ilya Sandler.)
+### configparser[¶](https://docs.python.org/3/whatsnew/3.2.html#configparser "Link to this heading")
+The [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") module was modified to improve usability and predictability of the default parser and its supported INI syntax. The old `ConfigParser` class was removed in favor of `SafeConfigParser` which has in turn been renamed to [`ConfigParser`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser "configparser.ConfigParser"). Support for inline comments is now turned off by default and section or option duplicates are not allowed in a single configuration source.
+Config parsers gained a new API based on the mapping protocol:
+>>>```
+>>> parser = ConfigParser()
+>>> parser.read_string("""
+... [DEFAULT]
+... location = upper left
+... visible = yes
+... editable = no
+... color = blue
+...
+... [main]
+... title = Main Menu
+... color = green
+...
+... [options]
+... title = Options
+... """)
+>>> parser['main']['color']
+'green'
+>>> parser['main']['editable']
+'no'
+>>> section = parser['options']
+>>> section['title']
+'Options'
+>>> section['title'] = 'Options (editable: %(editable)s)'
+>>> section['title']
+'Options (editable: no)'

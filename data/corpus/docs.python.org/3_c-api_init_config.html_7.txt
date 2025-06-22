@@ -1,0 +1,28 @@
+Title: PyConfig_Read Function in Python C API
+URL: https://docs.python.org/3/c-api/init_config.html
+Summary: The `PyConfig_Read()` function reads and initializes Python configuration, leaving already initialized fields unchanged. Starting from Python 3.11, path configuration fields are not modified when this function is called. It parses `PyConfig.argv` arguments only once, setting `PyConfig.parse_argv` to `2` after parsing.
+---
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")PyConfig_Read([PyConfig](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig")*config)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_Read "Link to this definition")
+    
+Read all Python configuration.
+Fields which are already initialized are left unchanged.
+Fields for [path configuration](https://docs.python.org/3/c-api/init_config.html#init-path-config) are no longer calculated or modified when calling this function, as of Python 3.11.
+The [`PyConfig_Read()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_Read "PyConfig_Read") function only parses [`PyConfig.argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.argv "PyConfig.argv") arguments once: [`PyConfig.parse_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.parse_argv "PyConfig.parse_argv") is set to `2` after arguments are parsed. Since Python arguments are stripped from [`PyConfig.argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.argv "PyConfig.argv"), parsing arguments twice would parse the application options as Python options.
+[Preinitialize Python](https://docs.python.org/3/c-api/init_config.html#c-preinit) if needed.
+Changed in version 3.10: The [`PyConfig.argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.argv "PyConfig.argv") arguments are now only parsed once, [`PyConfig.parse_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.parse_argv "PyConfig.parse_argv") is set to `2` after arguments are parsed, and arguments are only parsed if [`PyConfig.parse_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.parse_argv "PyConfig.parse_argv") equals `1`.
+Changed in version 3.11: [`PyConfig_Read()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_Read "PyConfig_Read") no longer calculates all paths, and so fields listed under [Python Path Configuration](https://docs.python.org/3/c-api/init_config.html#init-path-config) may no longer be updated until [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig") is called. 
+
+voidPyConfig_Clear([PyConfig](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig")*config)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_Clear "Link to this definition")
+    
+Release configuration memory.
+Most `PyConfig` methods [preinitialize Python](https://docs.python.org/3/c-api/init_config.html#c-preinit) if needed. In that case, the Python preinitialization configuration ([`PyPreConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig "PyPreConfig")) in based on the [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig"). If configuration fields which are in common with [`PyPreConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig "PyPreConfig") are tuned, they must be set before calling a [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig") method:
+  * [`PyConfig.dev_mode`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.dev_mode "PyConfig.dev_mode")
+  * [`PyConfig.isolated`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.isolated "PyConfig.isolated")
+  * [`PyConfig.parse_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.parse_argv "PyConfig.parse_argv")
+  * [`PyConfig.use_environment`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.use_environment "PyConfig.use_environment")
+
+
+Moreover, if [`PyConfig_SetArgv()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_SetArgv "PyConfig_SetArgv") or [`PyConfig_SetBytesArgv()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_SetBytesArgv "PyConfig_SetBytesArgv") is used, this method must be called before other methods, since the preinitialization configuration depends on command line arguments (if [`parse_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.parse_argv "PyConfig.parse_argv") is non-zero).
+The caller of these methods is responsible to handle exceptions (error or exit) using `PyStatus_Exception()` and `Py_ExitStatusException()`.
+Structure fields:

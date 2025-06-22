@@ -1,0 +1,45 @@
+Title: datetime.time.fold - Disambiguation of Wall Times
+URL: https://docs.python.org/3/library/datetime.html
+Summary: The 'fold' attribute in datetime.time is used to resolve ambiguities in wall times that may occur during events like the end of daylight saving time. It takes values 0 and 1 to indicate the earlier and later times, respectively. This feature was added in Python 3.6. Additionally, naive and aware time objects cannot be equal, and attempting to compare them raises a TypeError.
+---
+
+time.fold[¶](https://docs.python.org/3/library/datetime.html#datetime.time.fold "Link to this definition")
+    
+In `[0, 1]`. Used to disambiguate wall times during a repeated interval. (A repeated interval occurs when clocks are rolled back at the end of daylight saving time or when the UTC offset for the current zone is decreased for political reasons.) The values 0 and 1 represent, respectively, the earlier and later of the two moments with the same wall time representation.
+Added in version 3.6.
+[`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") objects support equality and order comparisons, where `a` is considered less than `b` when `a` precedes `b` in time.
+Naive and aware `time` objects are never equal. Order comparison between naive and aware `time` objects raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError").
+If both comparands are aware, and have the same [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.time.tzinfo "datetime.time.tzinfo") attribute, the `tzinfo` and `fold` attributes are ignored and the base times are compared. If both comparands are aware and have different `tzinfo` attributes, the comparands are first adjusted by subtracting their UTC offsets (obtained from `self.utcoffset()`).
+Changed in version 3.3: Equality comparisons between aware and naive [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") instances don’t raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError").
+In Boolean contexts, a [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") object is always considered to be true.
+Changed in version 3.5: Before Python 3.5, a [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") object was considered to be false if it represented midnight in UTC. This behavior was considered obscure and error-prone and has been removed in Python 3.5. See [bpo-13936](https://bugs.python.org/issue?@action=redirect&bpo=13936) for full details.
+Other constructor: 
+
+_classmethod_ time.fromisoformat(_time_string_)[¶](https://docs.python.org/3/library/datetime.html#datetime.time.fromisoformat "Link to this definition")
+    
+Return a [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") corresponding to a _time_string_ in any valid ISO 8601 format, with the following exceptions:
+  1. Time zone offsets may have fractional seconds.
+  2. The leading `T`, normally required in cases where there may be ambiguity between a date and a time, is not required.
+  3. Fractional seconds may have any number of digits (anything beyond 6 will be truncated).
+  4. Fractional hours and minutes are not supported.
+
+
+Examples:
+>>>```
+>>> fromdatetimeimport time
+>>> time.fromisoformat('04:23:01')
+datetime.time(4, 23, 1)
+>>> time.fromisoformat('T04:23:01')
+datetime.time(4, 23, 1)
+>>> time.fromisoformat('T042301')
+datetime.time(4, 23, 1)
+>>> time.fromisoformat('04:23:01.000384')
+datetime.time(4, 23, 1, 384)
+>>> time.fromisoformat('04:23:01,000384')
+datetime.time(4, 23, 1, 384)
+>>> time.fromisoformat('04:23:01+04:00')
+datetime.time(4, 23, 1, tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
+>>> time.fromisoformat('04:23:01Z')
+datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)
+>>> time.fromisoformat('04:23:01+00:00')
+datetime.time(4, 23, 1, tzinfo=datetime.timezone.utc)

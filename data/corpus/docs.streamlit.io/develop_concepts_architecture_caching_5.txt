@@ -1,0 +1,30 @@
+Title: Using st.cache_resource for Model Loading in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: This section describes the use of `st.cache_resource` in Streamlit to load a model once and share it across user sessions, enhancing efficiency. It provides an example of loading a sentiment analysis model using the caching decorator, thereby saving time and memory as the model is reused in subsequent executions.
+---
+
+Instead, it would make much more sense to load the model once and use that same object across all users and sessions. That's exactly the use case for `st.cache_resource`! Let's add it to our app and process some text the user entered:
+`from transformers import pipeline @st.cache_resource # 👈 Add the caching decorator def load_model(): return pipeline("sentiment-analysis") model = load_model() query = st.text_input("Your query", value="I love Streamlit! 🎈") if query:   result = model(query)[0] # 👈 Classify the query text   st.write(result) `
+If you run this app, you'll see that the app calls `load_model` only once – right when the app starts. Subsequent runs will reuse that same model stored in the cache, saving time and memory!
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#behavior-1)Behavior
+Using `st.cache_resource` is very similar to using `st.cache_data`. But there are a few important differences in behavior:
+  * `st.cache_resource` does **not** create a copy of the cached return value but instead stores the object itself in the cache. All mutations on the function's return value directly affect the object in the cache, so you must ensure that mutations from multiple sessions do not cause problems. In short, the return value must be thread-safe.
+_priority_high_
+#### Warning
+Using `st.cache_resource` on objects that are not thread-safe might lead to crashes or corrupted data. Learn more below under [Mutation and concurrency issues](https://docs.streamlit.io/develop/concepts/architecture/caching#mutation-and-concurrency-issues).
+  * Not creating a copy means there's just one global instance of the cached return object, which saves memory, e.g. when using a large ML model. In computer science terms, we create a [singleton](https://en.wikipedia.org/wiki/Singleton_pattern).
+  * Return values of functions do not need to be serializable. This behavior is great for types not serializable by nature, e.g., database connections, file handles, or threads. Caching these objects with `st.cache_data` is not possible.
+
+
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#examples-1)Examples
+**Database connections**
+`st.cache_resource` is useful for connecting to databases. Usually, you're creating a connection object that you want to reuse globally for every query. Creating a new connection object at each run would be inefficient and might lead to connection errors. That's exactly what `st.cache_resource` can do, e.g., for a Postgres database:
+`@st.cache_resource def init_connection():   host = "hh-pgsql-public.ebi.ac.uk"   database = "pfmegrnargs"   user = "reader"   password = "NWDMCE5xdipIjRrp" return psycopg2.connect(host=host, database=database, user=user, password=password) conn = init_connection() `
+Of course, you can do the same for any other database. Have a look at [our guides on how to connect Streamlit to databases](https://docs.streamlit.io/develop/tutorials/databases) for in-depth examples.
+**Loading ML models**
+Your app should always cache ML models, so they are not loaded into memory again for every new session. See the [example](https://docs.streamlit.io/develop/concepts/architecture/caching#usage-1) above for how this works with 🤗 Hugging Face models. You can do the same thing for PyTorch, TensorFlow, etc. Here's an example for PyTorch:
+`@st.cache_resource def load_model():   model = torchvision.models.resnet50(weights=ResNet50_Weights.DEFAULT)   model.eval() return model model = load_model() `
+### [](https://docs.streamlit.io/develop/concepts/architecture/caching#deciding-which-caching-decorator-to-use)Deciding which caching decorator to use
+The sections above showed many common examples for each caching decorator. But there are edge cases for which it's less trivial to decide which caching decorator to use. Eventually, it all comes down to the difference between “data" and “resource":
+  * Data are serializable objects (objects that can be converted to bytes via [pickle](https://docs.python.org/3/library/pickle.html)) that you could easily save to disk. Imagine all the types you would usually store in a database or on a file system – basic types like str, int, and float, but also arrays, DataFrames, images, or combinations of these types (lists, tuples, dicts, and so on).
+  * Resources are unserializable objects that you usually would not save to disk or a database. They are often more complex, non-permanent objects like database connections, ML models, file handles, threads, etc.

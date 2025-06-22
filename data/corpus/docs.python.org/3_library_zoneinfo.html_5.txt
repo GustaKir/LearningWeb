@@ -1,0 +1,26 @@
+Title: ZoneInfo Serialization and Pickling
+URL: https://docs.python.org/3/library/zoneinfo.html
+Summary: This section discusses the serialization of `ZoneInfo` objects in Python. When created without a `key`, their string representation falls back to `repr()`, which is unstable across versions. `ZoneInfo` objects are serialized by key rather than by transition data, and those created from files cannot be pickled.
+---
+
+```
+
+For objects constructed from a file without specifying a `key` parameter, `str` falls back to calling [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr"). `ZoneInfo`’s `repr` is implementation-defined and not necessarily stable between versions, but it is guaranteed not to be a valid `ZoneInfo` key.
+### Pickle serialization[¶](https://docs.python.org/3/library/zoneinfo.html#pickle-serialization "Link to this heading")
+Rather than serializing all transition data, `ZoneInfo` objects are serialized by key, and `ZoneInfo` objects constructed from files (even those with a value for `key` specified) cannot be pickled.
+The behavior of a `ZoneInfo` file depends on how it was constructed:
+  1. `ZoneInfo(key)`: When constructed with the primary constructor, a `ZoneInfo` object is serialized by key, and when deserialized, the deserializing process uses the primary and thus it is expected that these are expected to be the same object as other references to the same time zone. For example, if `europe_berlin_pkl` is a string containing a pickle constructed from `ZoneInfo("Europe/Berlin")`, one would expect the following behavior:
+>>>```
+>>> a = ZoneInfo("Europe/Berlin")
+>>> b = pickle.loads(europe_berlin_pkl)
+>>> a is b
+True
+
+```
+
+  2. `ZoneInfo.no_cache(key)`: When constructed from the cache-bypassing constructor, the `ZoneInfo` object is also serialized by key, but when deserialized, the deserializing process uses the cache bypassing constructor. If `europe_berlin_pkl_nc` is a string containing a pickle constructed from `ZoneInfo.no_cache("Europe/Berlin")`, one would expect the following behavior:
+>>>```
+>>> a = ZoneInfo("Europe/Berlin")
+>>> b = pickle.loads(europe_berlin_pkl_nc)
+>>> a is b
+False

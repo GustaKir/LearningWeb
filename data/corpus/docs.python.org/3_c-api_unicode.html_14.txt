@@ -1,0 +1,37 @@
+Title: Python C API: Unicode Decoding Functions
+URL: https://docs.python.org/3/c-api/unicode.html
+Summary: This document describes the Python C API functions for decoding UTF-8 encoded strings into Unicode objects. Specifically, it covers `PyUnicode_DecodeUTF8`, which creates a Unicode object from a specified string size and returns NULL on codec exceptions, and `PyUnicode_DecodeUTF8Stateful`, which includes stateful decoding mechanics.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_DecodeUTF8(constchar*str, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")size, constchar*errors)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_DecodeUTF8 "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a Unicode object by decoding _size_ bytes of the UTF-8 encoded string _str_. Return `NULL` if an exception was raised by the codec. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_DecodeUTF8Stateful(constchar*str, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")size, constchar*errors, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*consumed)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_DecodeUTF8Stateful "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+If _consumed_ is `NULL`, behave like [`PyUnicode_DecodeUTF8()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_DecodeUTF8 "PyUnicode_DecodeUTF8"). If _consumed_ is not `NULL`, trailing incomplete UTF-8 byte sequences will not be treated as an error. Those bytes will not be decoded and the number of bytes that have been decoded will be stored in _consumed_. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_AsUTF8String([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*unicode)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF8String "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Encode a Unicode object using UTF-8 and return the result as Python bytes object. Error handling is “strict”. Return `NULL` if an exception was raised by the codec.
+The function fails if the string contains surrogate code points (`U+D800` - `U+DFFF`). 
+
+constchar*PyUnicode_AsUTF8AndSize([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*unicode, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*size)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF8AndSize "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.10._
+Return a pointer to the UTF-8 encoding of the Unicode object, and store the size of the encoded representation (in bytes) in _size_. The _size_ argument can be `NULL`; in this case no size will be stored. The returned buffer always has an extra null byte appended (not included in _size_), regardless of whether there are any other null code points.
+On error, set an exception, set _size_ to `-1` (if it’s not NULL) and return `NULL`.
+The function fails if the string contains surrogate code points (`U+D800` - `U+DFFF`).
+This caches the UTF-8 representation of the string in the Unicode object, and subsequent calls will return a pointer to the same buffer. The caller is not responsible for deallocating the buffer. The buffer is deallocated and pointers to it become invalid when the Unicode object is garbage collected.
+Added in version 3.3.
+Changed in version 3.7: The return type is now `const char *` rather of `char *`.
+Changed in version 3.10: This function is a part of the [limited API](https://docs.python.org/3/c-api/stable.html#limited-c-api). 
+
+constchar*PyUnicode_AsUTF8([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*unicode)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF8 "Link to this definition")
+    
+As [`PyUnicode_AsUTF8AndSize()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF8AndSize "PyUnicode_AsUTF8AndSize"), but does not store the size.
+Warning
+This function does not have any special behavior for [null characters](https://en.wikipedia.org/wiki/Null_character) embedded within _unicode_. As a result, strings containing null characters will remain in the returned string, which some C functions might interpret as the end of the string, leading to truncation. If truncation is an issue, it is recommended to use [`PyUnicode_AsUTF8AndSize()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF8AndSize "PyUnicode_AsUTF8AndSize") instead.
+Added in version 3.3.
+Changed in version 3.7: The return type is now `const char *` rather of `char *`.
+### UTF-32 Codecs[¶](https://docs.python.org/3/c-api/unicode.html#utf-32-codecs "Link to this heading")
+These are the UTF-32 codec APIs:

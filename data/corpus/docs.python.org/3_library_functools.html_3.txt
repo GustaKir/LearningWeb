@@ -1,0 +1,76 @@
+Title: Memoization with lru_cache and total_ordering Decorator
+URL: https://docs.python.org/3/library/functools.html
+Summary: This section demonstrates the use of the @lru_cache decorator to optimize the Fibonacci function for memoization, displaying its cache performance. It also introduces the @total_ordering decorator, which simplifies defining rich comparison methods in classes by requiring only one comparison method alongside an equality method.
+---
+
+```
+@lru_cache(maxsize=None)
+deffib(n):
+  if n < 2:
+    return n
+  return fib(n-1) + fib(n-2)
+>>> [fib(n) for n in range(16)]
+[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610]
+>>> fib.cache_info()
+CacheInfo(hits=28, misses=16, maxsize=None, currsize=16)
+
+```
+
+Added in version 3.2.
+Changed in version 3.3: Added the _typed_ option.
+Changed in version 3.8: Added the _user_function_ option.
+Changed in version 3.9: Added the function `cache_parameters()` 
+
+@functools.total_ordering[¶](https://docs.python.org/3/library/functools.html#functools.total_ordering "Link to this definition")
+    
+Given a class defining one or more rich comparison ordering methods, this class decorator supplies the rest. This simplifies the effort involved in specifying all of the possible rich comparison operations:
+The class must define one of `__lt__()`, `__le__()`, `__gt__()`, or `__ge__()`. In addition, the class should supply an `__eq__()` method.
+For example:
+```
+@total_ordering
+classStudent:
+  def_is_valid_operand(self, other):
+    return (hasattr(other, "lastname") and
+        hasattr(other, "firstname"))
+  def__eq__(self, other):
+    if not self._is_valid_operand(other):
+      return NotImplemented
+    return ((self.lastname.lower(), self.firstname.lower()) ==
+        (other.lastname.lower(), other.firstname.lower()))
+  def__lt__(self, other):
+    if not self._is_valid_operand(other):
+      return NotImplemented
+    return ((self.lastname.lower(), self.firstname.lower()) <
+        (other.lastname.lower(), other.firstname.lower()))
+
+```
+
+Note
+While this decorator makes it easy to create well behaved totally ordered types, it _does_ come at the cost of slower execution and more complex stack traces for the derived comparison methods. If performance benchmarking indicates this is a bottleneck for a given application, implementing all six rich comparison methods instead is likely to provide an easy speed boost.
+Note
+This decorator makes no attempt to override methods that have been declared in the class _or its superclasses_. Meaning that if a superclass defines a comparison operator, _total_ordering_ will not implement it again, even if the original method is abstract.
+Added in version 3.2.
+Changed in version 3.4: Returning `NotImplemented` from the underlying comparison function for unrecognised types is now supported. 
+
+functools.partial(_func_ , _/_ , _* args_, _** keywords_)[¶](https://docs.python.org/3/library/functools.html#functools.partial "Link to this definition")
+    
+Return a new [partial object](https://docs.python.org/3/library/functools.html#partial-objects) which when called will behave like _func_ called with the positional arguments _args_ and keyword arguments _keywords_. If more arguments are supplied to the call, they are appended to _args_. If additional keyword arguments are supplied, they extend and override _keywords_. Roughly equivalent to:
+```
+defpartial(func, /, *args, **keywords):
+  defnewfunc(*fargs, **fkeywords):
+    newkeywords = {**keywords, **fkeywords}
+    return func(*args, *fargs, **newkeywords)
+  newfunc.func = func
+  newfunc.args = args
+  newfunc.keywords = keywords
+  return newfunc
+
+```
+
+The [`partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") is used for partial function application which “freezes” some portion of a function’s arguments and/or keywords resulting in a new object with a simplified signature. For example, [`partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") can be used to create a callable that behaves like the [`int()`](https://docs.python.org/3/library/functions.html#int "int") function where the _base_ argument defaults to two:
+>>>```
+>>> fromfunctoolsimport partial
+>>> basetwo = partial(int, base=2)
+>>> basetwo.__doc__ = 'Convert base 2 string to an int.'
+>>> basetwo('10010')
+18

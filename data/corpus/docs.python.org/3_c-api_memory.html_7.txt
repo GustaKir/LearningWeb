@@ -1,0 +1,24 @@
+Title: Memory Block Allocator Functions
+URL: https://docs.python.org/3/c-api/memory.html
+Summary: This section describes two functions for managing memory block allocators in Python's C API. `PyMem_GetAllocator` retrieves the memory allocator for a specified domain, while `PyMem_SetAllocator` allows setting a new allocator for that domain, ensuring that it does not return a NULL pointer when zero bytes are requested.
+---
+
+voidPyMem_GetAllocator([PyMemAllocatorDomain](https://docs.python.org/3/c-api/memory.html#c.PyMemAllocatorDomain "PyMemAllocatorDomain")domain, [PyMemAllocatorEx](https://docs.python.org/3/c-api/memory.html#c.PyMemAllocatorEx "PyMemAllocatorEx")*allocator)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_GetAllocator "Link to this definition")
+    
+Get the memory block allocator of the specified domain. 
+
+voidPyMem_SetAllocator([PyMemAllocatorDomain](https://docs.python.org/3/c-api/memory.html#c.PyMemAllocatorDomain "PyMemAllocatorDomain")domain, [PyMemAllocatorEx](https://docs.python.org/3/c-api/memory.html#c.PyMemAllocatorEx "PyMemAllocatorEx")*allocator)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetAllocator "Link to this definition")
+    
+Set the memory block allocator of the specified domain.
+The new allocator must return a distinct non-`NULL` pointer when requesting zero bytes.
+For the [`PYMEM_DOMAIN_RAW`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_RAW "PYMEM_DOMAIN_RAW") domain, the allocator must be thread-safe: the [GIL](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) is not held when the allocator is called.
+For the remaining domains, the allocator must also be thread-safe: the allocator may be called in different interpreters that do not share a `GIL`.
+If the new allocator is not a hook (does not call the previous allocator), the [`PyMem_SetupDebugHooks()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetupDebugHooks "PyMem_SetupDebugHooks") function must be called to reinstall the debug hooks on top on the new allocator.
+See also [`PyPreConfig.allocator`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.allocator "PyPreConfig.allocator") and [Preinitialize Python with PyPreConfig](https://docs.python.org/3/c-api/init_config.html#c-preinit).
+Warning
+[`PyMem_SetAllocator()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetAllocator "PyMem_SetAllocator") does have the following contract:
+  * It can be called after [`Py_PreInitialize()`](https://docs.python.org/3/c-api/init_config.html#c.Py_PreInitialize "Py_PreInitialize") and before [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig") to install a custom memory allocator. There are no restrictions over the installed allocator other than the ones imposed by the domain (for instance, the Raw Domain allows the allocator to be called without the GIL held). See [the section on allocator domains](https://docs.python.org/3/c-api/memory.html#id1) for more information.
+  * If called after Python has finish initializing (after [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig") has been called) the allocator **must** wrap the existing allocator. Substituting the current allocator for some other arbitrary one is **not supported**.
+
+
+Changed in version 3.12: All allocators must be thread-safe.

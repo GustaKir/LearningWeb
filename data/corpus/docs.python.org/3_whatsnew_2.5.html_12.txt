@@ -1,0 +1,36 @@
+Title: Enhancements to Built-in Functions in Python 2.5
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: Python 2.5 introduced a `key` parameter for the `min()` and `max()` functions, allowing custom comparisons based on a specified function. This enables use cases like finding the longest string in a list. Additionally, two new built-in functions, `any()` and `all()`, were added to facilitate logical operations.
+---
+
+```
+
+(Implemented by Georg Brandl following a suggestion by Tom Lynn.)
+  * The [`min()`](https://docs.python.org/3/library/functions.html#min "min") and [`max()`](https://docs.python.org/3/library/functions.html#max "max") built-in functions gained a `key` keyword parameter analogous to the `key` argument for `sort()`. This parameter supplies a function that takes a single argument and is called for every value in the list; [`min()`](https://docs.python.org/3/library/functions.html#min "min")/[`max()`](https://docs.python.org/3/library/functions.html#max "max") will return the element with the smallest/largest return value from this function. For example, to find the longest string in a list, you can do:
+```
+L = ['medium', 'longest', 'short']
+# Prints 'longest'
+print max(L, key=len)
+# Prints 'short', because lexicographically 'short' has the largest value
+print max(L)
+
+```
+
+(Contributed by Steven Bethard and Raymond Hettinger.)
+  * Two new built-in functions, [`any()`](https://docs.python.org/3/library/functions.html#any "any") and [`all()`](https://docs.python.org/3/library/functions.html#all "all"), evaluate whether an iterator contains any true or false values. [`any()`](https://docs.python.org/3/library/functions.html#any "any") returns [`True`](https://docs.python.org/3/library/constants.html#True "True") if any value returned by the iterator is true; otherwise it will return [`False`](https://docs.python.org/3/library/constants.html#False "False"). [`all()`](https://docs.python.org/3/library/functions.html#all "all") returns [`True`](https://docs.python.org/3/library/constants.html#True "True") only if all of the values returned by the iterator evaluate as true. (Suggested by Guido van Rossum, and implemented by Raymond Hettinger.)
+  * The result of a class’s `__hash__()` method can now be either a long integer or a regular integer. If a long integer is returned, the hash of that value is taken. In earlier versions the hash value was required to be a regular integer, but in 2.5 the [`id()`](https://docs.python.org/3/library/functions.html#id "id") built-in was changed to always return non-negative numbers, and users often seem to use `id(self)` in `__hash__()` methods (though this is discouraged).
+  * ASCII is now the default encoding for modules. It’s now a syntax error if a module contains string literals with 8-bit characters but doesn’t have an encoding declaration. In Python 2.4 this triggered a warning, not a syntax error. See [**PEP 263**](https://peps.python.org/pep-0263/) for how to declare a module’s encoding; for example, you might add a line like this near the top of the source file:
+```
+# -*- coding: latin1 -*-
+
+```
+
+  * A new warning, [`UnicodeWarning`](https://docs.python.org/3/library/exceptions.html#UnicodeWarning "UnicodeWarning"), is triggered when you attempt to compare a Unicode string and an 8-bit string that can’t be converted to Unicode using the default ASCII encoding. The result of the comparison is false:
+>>>```
+>>> chr(128) == unichr(128)  # Can't convert chr(128) to Unicode
+__main__:1: UnicodeWarning: Unicode equal comparison failed
+ to convert both arguments to Unicode - interpreting them
+ as being unequal
+False
+>>> chr(127) == unichr(127)  # chr(127) can be converted
+True

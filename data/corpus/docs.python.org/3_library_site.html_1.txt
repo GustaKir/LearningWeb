@@ -1,0 +1,38 @@
+Title: site - Site-specific configuration hook
+URL: https://docs.python.org/3/library/site.html
+Summary: The `site` module is automatically imported during Python initialization to append site-specific paths and add callables like `help()` to the built-in namespace. The import can be suppressed using the `-S` option, preventing modifications to the module search path and built-ins.
+---
+
+# `site` — Site-specific configuration hook[¶](https://docs.python.org/3/library/site.html#module-site "Link to this heading")
+**Source code:** [Lib/site.py](https://github.com/python/cpython/tree/3.13/Lib/site.py)
+**This module is automatically imported during initialization.** The automatic import can be suppressed using the interpreter’s [`-S`](https://docs.python.org/3/using/cmdline.html#cmdoption-S) option.
+Importing this module normally appends site-specific paths to the module search path and adds [callables](https://docs.python.org/3/library/constants.html#site-consts), including [`help()`](https://docs.python.org/3/library/functions.html#help "help") to the built-in namespace. However, Python startup option [`-S`](https://docs.python.org/3/using/cmdline.html#cmdoption-S) blocks this and this module can be safely imported with no automatic modifications to the module search path or additions to the builtins. To explicitly trigger the usual site-specific additions, call the [`main()`](https://docs.python.org/3/library/site.html#site.main "site.main") function.
+Changed in version 3.3: Importing the module used to trigger paths manipulation even when using [`-S`](https://docs.python.org/3/using/cmdline.html#cmdoption-S).
+It starts by constructing up to four directories from a head and a tail part. For the head part, it uses `sys.prefix` and `sys.exec_prefix`; empty heads are skipped. For the tail part, it uses the empty string and then `lib/site-packages` (on Windows) or `lib/python_X.Y[t]_/site-packages`(on Unix and macOS). (The optional suffix “t” indicates the[ free threading](https://docs.python.org/3/glossary.html#term-free-threading) build, and is appended if `"t"` is present in the [`sys.abiflags`](https://docs.python.org/3/library/sys.html#sys.abiflags "sys.abiflags") constant.) For each of the distinct head-tail combinations, it sees if it refers to an existing directory, and if so, adds it to `sys.path` and also inspects the newly added path for configuration files.
+Changed in version 3.5: Support for the “site-python” directory has been removed.
+Changed in version 3.13: On Unix, [Free threading](https://docs.python.org/3/glossary.html#term-free-threading) Python installations are identified by the “t” suffix in the version-specific directory name, such as `lib/python3.13t/`.
+If a file named “pyvenv.cfg” exists one directory above sys.executable, sys.prefix and sys.exec_prefix are set to that directory and it is also checked for site-packages (sys.base_prefix and sys.base_exec_prefix will always be the “real” prefixes of the Python installation). If “pyvenv.cfg” (a bootstrap configuration file) contains the key “include-system-site-packages” set to anything other than “true” (case-insensitive), the system-level prefixes will not be searched for site-packages; otherwise they will.
+A path configuration file is a file whose name has the form `_name_.pth`and exists in one of the four directories mentioned above; its contents are additional items (one per line) to be added to`sys.path`. Non-existing items are never added to `sys.path`, and no check is made that the item refers to a directory rather than a file. No item is added to `sys.path` more than once. Blank lines and lines beginning with `#` are skipped. Lines starting with `import` (followed by space or tab) are executed.
+Note
+An executable line in a `.pth` file is run at every Python startup, regardless of whether a particular module is actually going to be used. Its impact should thus be kept to a minimum. The primary intended purpose of executable lines is to make the corresponding module(s) importable (load 3rd-party import hooks, adjust `PATH` etc). Any other initialization is supposed to be done upon a module’s actual import, if and when it happens. Limiting a code chunk to a single line is a deliberate measure to discourage putting anything more complex here.
+Changed in version 3.13: The `.pth` files are now decoded by UTF-8 at first and then by the [locale encoding](https://docs.python.org/3/glossary.html#term-locale-encoding) if it fails.
+For example, suppose `sys.prefix` and `sys.exec_prefix` are set to `/usr/local`. The Python X.Y library is then installed in `/usr/local/lib/python_X.Y_`. Suppose this has a subdirectory`/usr/local/lib/python _X.Y_/site-packages`with three subsubdirectories,`foo` , `bar` and `spam`, and two path configuration files, `foo.pth` and `bar.pth`. Assume `foo.pth` contains the following:
+```
+# foo package configuration
+foo
+bar
+bletch
+
+```
+
+and `bar.pth` contains:
+```
+# bar package configuration
+bar
+
+```
+
+Then the following version-specific directories are added to `sys.path`, in this order:
+```
+/usr/local/lib/pythonX.Y/site-packages/bar
+/usr/local/lib/pythonX.Y/site-packages/foo

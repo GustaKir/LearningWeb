@@ -1,0 +1,57 @@
+Title: Using gettext.install to Set Up Translation
+URL: https://docs.python.org/3/library/gettext.html
+Summary: The `gettext.install()` function installs the `_()` function in Python’s builtins, enabling easy access for marking strings for translation in applications. It requires parameters for the translation domain and optional localization directory, facilitating the internationalization of strings by wrapping them in the `_()` function.
+---
+
+gettext.install(_domain_ , _localedir =None_, _*_ , _names =None_)[¶](https://docs.python.org/3/library/gettext.html#gettext.install "Link to this definition")
+    
+This installs the function `_()` in Python’s builtins namespace, based on _domain_ and _localedir_ which are passed to the function [`translation()`](https://docs.python.org/3/library/gettext.html#gettext.translation "gettext.translation").
+For the _names_ parameter, please see the description of the translation object’s [`install()`](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.install "gettext.NullTranslations.install") method.
+As seen below, you usually mark the strings in your application that are candidates for translation, by wrapping them in a call to the `_()` function, like this:
+```
+print(_('This string will be translated.'))
+
+```
+
+For convenience, you want the `_()` function to be installed in Python’s builtins namespace, so it is easily accessible in all modules of your application.
+Changed in version 3.11: _names_ is now a keyword-only parameter.
+### The [`NullTranslations`](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations "gettext.NullTranslations") class[¶](https://docs.python.org/3/library/gettext.html#the-nulltranslations-class "Link to this heading")
+Translation classes are what actually implement the translation of original source file message strings to translated message strings. The base class used by all translation classes is [`NullTranslations`](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations "gettext.NullTranslations"); this provides the basic interface you can use to write your own specialized translation classes. Here are the methods of `NullTranslations`: 
+
+_class_ gettext.NullTranslations(_fp =None_)[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations "Link to this definition")
+    
+Takes an optional [file object](https://docs.python.org/3/glossary.html#term-file-object) _fp_ , which is ignored by the base class. Initializes “protected” instance variables __info_ and __charset_ which are set by derived classes, as well as __fallback_ , which is set through [`add_fallback()`](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.add_fallback "gettext.NullTranslations.add_fallback"). It then calls `self._parse(fp)` if _fp_ is not `None`. 
+
+_parse(_fp_)[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations._parse "Link to this definition")
+    
+No-op in the base class, this method takes file object _fp_ , and reads the data from the file, initializing its message catalog. If you have an unsupported message catalog file format, you should override this method to parse your format. 
+
+add_fallback(_fallback_)[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.add_fallback "Link to this definition")
+    
+Add _fallback_ as the fallback object for the current translation object. A translation object should consult the fallback if it cannot provide a translation for a given message. 
+
+gettext(_message_)[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.gettext "Link to this definition")
+    
+If a fallback has been set, forward `gettext()` to the fallback. Otherwise, return _message_. Overridden in derived classes. 
+
+ngettext(_singular_ , _plural_ , _n_)[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.ngettext "Link to this definition")
+    
+If a fallback has been set, forward `ngettext()` to the fallback. Otherwise, return _singular_ if _n_ is 1; return _plural_ otherwise. Overridden in derived classes. 
+
+pgettext(_context_ , _message_)[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.pgettext "Link to this definition")
+    
+If a fallback has been set, forward [`pgettext()`](https://docs.python.org/3/library/gettext.html#gettext.pgettext "gettext.pgettext") to the fallback. Otherwise, return the translated message. Overridden in derived classes.
+Added in version 3.8. 
+
+npgettext(_context_ , _singular_ , _plural_ , _n_)[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.npgettext "Link to this definition")
+    
+If a fallback has been set, forward [`npgettext()`](https://docs.python.org/3/library/gettext.html#gettext.npgettext "gettext.npgettext") to the fallback. Otherwise, return the translated message. Overridden in derived classes.
+Added in version 3.8. 
+
+info()[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.info "Link to this definition")
+    
+Return a dictionary containing the metadata found in the message catalog file. 
+
+charset()[¶](https://docs.python.org/3/library/gettext.html#gettext.NullTranslations.charset "Link to this definition")
+    
+Return the encoding of the message catalog file.

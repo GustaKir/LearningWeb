@@ -1,0 +1,132 @@
+Title: Using Dependencies with Yield in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/
+Summary: FastAPI allows the use of dependencies that perform additional steps after execution by utilizing `yield` instead of `return`. It's essential to use `yield` only once per dependency, and functions compatible with `@contextlib.contextmanager` or `@contextlib.asynccontextmanager` can be applied as FastAPI dependencies. The section also hints at creating a database session as a practical application of this feature.
+---
+
+# Dependencies with yield[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#dependencies-with-yield "Permanent link")
+FastAPI supports dependencies that do some extra steps after finishing.
+To do this, use `yield` instead of `return`, and write the extra steps (code) after.
+Tip
+Make sure to use `yield` one single time per dependency.
+Technical Details
+Any function that is valid to use with:
+  * [`@contextlib.contextmanager`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager) or
+  * [`@contextlib.asynccontextmanager`](https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager)
+
+
+would be valid to use as a **FastAPI** dependency.
+In fact, FastAPI uses those two decorators internally.
+## A database dependency with `yield`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#a-database-dependency-with-yield "Permanent link")
+For example, you could use this to create a database session and close it after finishing.
+Only the code prior to and including the `yield` statement is executed before creating a response:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_1_1)
+```
+async defget_db():
+  db = DBSession()
+  try:
+    yield db
+  finally:
+    db.close()
+
+```
+
+The yielded value is what is injected into _path operations_ and other dependencies:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_2_1)
+```
+async defget_db():
+  db = DBSession()
+  try:
+    yield db
+  finally:
+    db.close()
+
+```
+
+The code following the `yield` statement is executed after creating the response but before sending it:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_3_1)
+```
+async defget_db():
+  db = DBSession()
+  try:
+    yield db
+  finally:
+    db.close()
+
+```
+
+Tip
+You can use `async` or regular functions.
+**FastAPI** will do the right thing with each, the same as with normal dependencies.
+## A dependency with `yield` and `try`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#a-dependency-with-yield-and-try "Permanent link")
+If you use a `try` block in a dependency with `yield`, you'll receive any exception that was thrown when using the dependency.
+For example, if some code at some point in the middle, in another dependency or in a _path operation_ , made a database transaction "rollback" or create any other error, you will receive the exception in your dependency.
+So, you can look for that specific exception inside the dependency with `except SomeException`.
+In the same way, you can use `finally` to make sure the exit steps are executed, no matter if there was an exception or not.
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_4_1)
+```
+async defget_db():
+  db = DBSession()
+  try:
+    yield db
+  finally:
+    db.close()
+
+```
+
+## Sub-dependencies with `yield`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#sub-dependencies-with-yield "Permanent link")
+You can have sub-dependencies and "trees" of sub-dependencies of any size and shape, and any or all of them can use `yield`.
+**FastAPI** will make sure that the "exit code" in each dependency with `yield` is run in the correct order.
+For example, `dependency_c` can have a dependency on `dependency_b`, and `dependency_b` on `dependency_a`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_5_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends
+async defdependency_a():
+  dep_a = generate_dep_a()
+  try:
+    yield dep_a
+  finally:
+    dep_a.close()
+async defdependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):
+  dep_b = generate_dep_b()
+  try:
+    yield dep_b
+  finally:
+    dep_b.close(dep_a)
+async defdependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):
+  dep_c = generate_dep_c()
+  try:
+    yield dep_c
+  finally:
+    dep_c.close(dep_b)
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_6_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_6_2)
+```
+fromfastapiimport Depends
+fromtyping_extensionsimport Annotated
+async defdependency_a():
+  dep_a = generate_dep_a()
+  try:
+    yield dep_a
+  finally:
+    dep_a.close()
+async defdependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):
+  dep_b = generate_dep_b()
+  try:
+    yield dep_b
+  finally:
+    dep_b.close(dep_a)
+async defdependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):
+  dep_c = generate_dep_c()
+  try:
+    yield dep_c
+  finally:
+    dep_c.close(dep_b)
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

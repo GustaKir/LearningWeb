@@ -1,0 +1,55 @@
+Title: Extending asyncio in Python
+URL: https://docs.python.org/3/library/asyncio-extending.html
+Summary: This section provides an overview of extending the asyncio library, including writing custom event loops, understanding the private constructors of Future and Task, and supporting task lifetimes.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Extending](https://docs.python.org/3/library/asyncio-extending.html)
+    * [Writing a Custom Event Loop](https://docs.python.org/3/library/asyncio-extending.html#writing-a-custom-event-loop)
+    * [Future and Task private constructors](https://docs.python.org/3/library/asyncio-extending.html#future-and-task-private-constructors)
+    * [Task lifetime support](https://docs.python.org/3/library/asyncio-extending.html#task-lifetime-support)
+
+
+#### Previous topic
+[Platform Support](https://docs.python.org/3/library/asyncio-platforms.html "previous chapter")
+#### Next topic
+[High-level API Index](https://docs.python.org/3/library/asyncio-api-index.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/asyncio-extending.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/library/asyncio-api-index.html "High-level API Index") |
+  * [previous](https://docs.python.org/3/library/asyncio-platforms.html "Platform Support") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [The Python Standard Library](https://docs.python.org/3/library/index.html) »
+  * [Networking and Interprocess Communication](https://docs.python.org/3/library/ipc.html) »
+  * [`asyncio` — Asynchronous I/O](https://docs.python.org/3/library/asyncio.html) »
+  * [Extending](https://docs.python.org/3/library/asyncio-extending.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Extending[¶](https://docs.python.org/3/library/asyncio-extending.html#extending "Link to this heading")
+The main direction for [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") extending is writing custom _event loop_ classes. Asyncio has helpers that could be used to simplify this task.
+Note
+Third-parties should reuse existing asyncio code with caution, a new Python version is free to break backward compatibility in _internal_ part of API.
+## Writing a Custom Event Loop[¶](https://docs.python.org/3/library/asyncio-extending.html#writing-a-custom-event-loop "Link to this heading")
+[`asyncio.AbstractEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop "asyncio.AbstractEventLoop") declares very many methods. Implementing all them from scratch is a tedious job.
+A loop can get many common methods implementation for free by inheriting from `asyncio.BaseEventLoop`.
+In turn, the successor should implement a bunch of _private_ methods declared but not implemented in `asyncio.BaseEventLoop`.
+For example, `loop.create_connection()` checks arguments, resolves DNS addresses, and calls `loop._make_socket_transport()` that should be implemented by inherited class. The `_make_socket_transport()` method is not documented and is considered as an _internal_ API.
+## Future and Task private constructors[¶](https://docs.python.org/3/library/asyncio-extending.html#future-and-task-private-constructors "Link to this heading")
+[`asyncio.Future`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future") and [`asyncio.Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") should be never created directly, please use corresponding [`loop.create_future()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_future "asyncio.loop.create_future") and [`loop.create_task()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_task "asyncio.loop.create_task"), or [`asyncio.create_task()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task "asyncio.create_task") factories instead.
+However, third-party _event loops_ may _reuse_ built-in future and task implementations for the sake of getting a complex and highly optimized code for free.
+For this purpose the following, _private_ constructors are listed:

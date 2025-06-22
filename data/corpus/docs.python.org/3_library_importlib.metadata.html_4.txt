@@ -1,0 +1,74 @@
+Title: Distribution Files in importlib.metadata
+URL: https://docs.python.org/3/library/importlib.metadata.html
+Summary: The `importlib.metadata.files` function returns all files within a specified distribution package. It raises a `PackageNotFoundError` if the package isn't installed and returns `None` if the package is found but its file records are missing.
+---
+
+```
+
+### Distribution files[¶](https://docs.python.org/3/library/importlib.metadata.html#distribution-files "Link to this heading") 
+
+importlib.metadata.files(_distribution_name_)[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.files "Link to this definition")
+    
+Return the full set of files contained within the named distribution package.
+Raises [`PackageNotFoundError`](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.PackageNotFoundError "importlib.metadata.PackageNotFoundError") if the named distribution package is not installed in the current Python environment.
+Returns [`None`](https://docs.python.org/3/library/constants.html#None "None") if the distribution is found but the installation database records reporting the files associated with the distribuion package are missing. 
+
+_class_ importlib.metadata.PackagePath[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.PackagePath "Link to this definition")
+    
+A [`pathlib.PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath") derived object with additional `dist`, `size`, and `hash` properties corresponding to the distribution package’s installation metadata for that file.
+The `files()` function takes a [Distribution Package](https://packaging.python.org/en/latest/glossary/#term-Distribution-Package) name and returns all of the files installed by this distribution. Each file is reported as a [`PackagePath`](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.PackagePath "importlib.metadata.PackagePath") instance. For example:
+>>>```
+>>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]
+>>> util
+PackagePath('wheel/util.py')
+>>> util.size
+859
+>>> util.dist
+<importlib.metadata._hooks.PathDistribution object at 0x101e0cef0>
+>>> util.hash
+<FileHash mode: sha256 value: bYkw5oMccfazVCoYQwKkkemoVyMAFoR34mmKBx8R1NI>
+
+```
+
+Once you have the file, you can also read its contents:
+>>>```
+>>> print(util.read_text())
+import base64
+import sys
+...
+def as_bytes(s):
+  if isinstance(s, text_type):
+    return s.encode('utf-8')
+  return s
+
+```
+
+You can also use the `locate()` method to get the absolute path to the file:
+>>>```
+>>> util.locate()
+PosixPath('/home/gustav/example/lib/site-packages/wheel/util.py')
+
+```
+
+In the case where the metadata file listing files (`RECORD` or `SOURCES.txt`) is missing, `files()` will return [`None`](https://docs.python.org/3/library/constants.html#None "None"). The caller may wish to wrap calls to `files()` in [always_iterable](https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.always_iterable) or otherwise guard against this condition if the target distribution is not known to have the metadata present.
+### Distribution requirements[¶](https://docs.python.org/3/library/importlib.metadata.html#distribution-requirements "Link to this heading") 
+
+importlib.metadata.requires(_distribution_name_)[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.requires "Link to this definition")
+    
+Return the declared dependency specifiers for the named distribution package.
+Raises [`PackageNotFoundError`](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.PackageNotFoundError "importlib.metadata.PackageNotFoundError") if the named distribution package is not installed in the current Python environment.
+To get the full set of requirements for a [Distribution Package](https://packaging.python.org/en/latest/glossary/#term-Distribution-Package), use the `requires()` function:
+>>>```
+>>> requires('wheel')
+["pytest (>=3.0.0) ; extra == 'test'", "pytest-cov ; extra == 'test'"]
+
+```
+
+### Mapping import to distribution packages[¶](https://docs.python.org/3/library/importlib.metadata.html#mapping-import-to-distribution-packages "Link to this heading") 
+
+importlib.metadata.packages_distributions()[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.packages_distributions "Link to this definition")
+    
+Return a mapping from the top level module and import package names found via [`sys.meta_path`](https://docs.python.org/3/library/sys.html#sys.meta_path "sys.meta_path") to the names of the distribution packages (if any) that provide the corresponding files.
+To allow for namespace packages (which may have members provided by multiple distribution packages), each top level import name maps to a list of distribution names rather than mapping directly to a single name.
+A convenience method to resolve the [Distribution Package](https://packaging.python.org/en/latest/glossary/#term-Distribution-Package) name (or names, in the case of a namespace package) that provide each importable top-level Python module or [Import Package](https://packaging.python.org/en/latest/glossary/#term-Import-Package):
+>>>

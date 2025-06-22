@@ -1,0 +1,38 @@
+Title: Asyncio Server Methods and Event Loop Implementations
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This section outlines key methods introduced in Python 3.7 for the asyncio server, including is_serving() to check server status, wait_closed() to wait for connections to close, and sockets which now returns a copy of the socket-like objects the server listens on.
+---
+
+```
+
+Added in version 3.7. 
+
+is_serving()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.is_serving "Link to this definition")
+    
+Return `True` if the server is accepting new connections.
+Added in version 3.7. 
+
+_async_ wait_closed()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.wait_closed "Link to this definition")
+    
+Wait until the [`close()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.close "asyncio.Server.close") method completes and all active connections have finished. 
+
+sockets[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.sockets "Link to this definition")
+    
+List of socket-like objects, `asyncio.trsock.TransportSocket`, which the server is listening on.
+Changed in version 3.7: Prior to Python 3.7 `Server.sockets` used to return an internal list of server sockets directly. In 3.7 a copy of that list is returned.
+## Event Loop Implementations[¶](https://docs.python.org/3/library/asyncio-eventloop.html#event-loop-implementations "Link to this heading")
+asyncio ships with two different event loop implementations: [`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") and [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop").
+By default asyncio is configured to use [`EventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.EventLoop "asyncio.EventLoop"). 
+
+_class_ asyncio.SelectorEventLoop[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "Link to this definition")
+    
+A subclass of [`AbstractEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop "asyncio.AbstractEventLoop") based on the [`selectors`](https://docs.python.org/3/library/selectors.html#module-selectors "selectors: High-level I/O multiplexing.") module.
+Uses the most efficient _selector_ available for the given platform. It is also possible to manually configure the exact selector implementation to be used:
+```
+importasyncio
+importselectors
+classMyPolicy(asyncio.DefaultEventLoopPolicy):
+  defnew_event_loop(self):
+   selector = selectors.SelectSelector()
+   return asyncio.SelectorEventLoop(selector)
+asyncio.set_event_loop_policy(MyPolicy())

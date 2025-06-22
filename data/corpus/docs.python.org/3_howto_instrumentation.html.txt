@@ -1,0 +1,81 @@
+Title: Instrumenting CPython with DTrace and SystemTap
+URL: https://docs.python.org/3/howto/instrumentation.html
+Summary: This document provides guidance on using DTrace and SystemTap to instrument CPython for performance monitoring and debugging. It covers enabling static markers, and details about static DTrace probes and static SystemTap markers.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Instrumenting CPython with DTrace and SystemTap](https://docs.python.org/3/howto/instrumentation.html)
+    * [Enabling the static markers](https://docs.python.org/3/howto/instrumentation.html#enabling-the-static-markers)
+    * [Static DTrace probes](https://docs.python.org/3/howto/instrumentation.html#static-dtrace-probes)
+    * [Static SystemTap markers](https://docs.python.org/3/howto/instrumentation.html#static-systemtap-markers)
+    * [Available static markers](https://docs.python.org/3/howto/instrumentation.html#available-static-markers)
+    * [SystemTap Tapsets](https://docs.python.org/3/howto/instrumentation.html#systemtap-tapsets)
+    * [Examples](https://docs.python.org/3/howto/instrumentation.html#examples)
+
+
+#### Previous topic
+[An introduction to the ipaddress module](https://docs.python.org/3/howto/ipaddress.html "previous chapter")
+#### Next topic
+[Python support for the Linux `perf` profiler](https://docs.python.org/3/howto/perf_profiling.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/instrumentation.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/perf_profiling.html "Python support for the Linux perf profiler") |
+  * [previous](https://docs.python.org/3/howto/ipaddress.html "An introduction to the ipaddress module") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Instrumenting CPython with DTrace and SystemTap](https://docs.python.org/3/howto/instrumentation.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Instrumenting CPython with DTrace and SystemTap[¶](https://docs.python.org/3/howto/instrumentation.html#instrumenting-cpython-with-dtrace-and-systemtap "Link to this heading") 
+
+author:
+    
+David Malcolm 
+
+author:
+    
+Łukasz Langa
+DTrace and SystemTap are monitoring tools, each providing a way to inspect what the processes on a computer system are doing. They both use domain-specific languages allowing a user to write scripts which:
+  * filter which processes are to be observed
+  * gather data from the processes of interest
+  * generate reports on the data
+
+
+As of Python 3.6, CPython can be built with embedded “markers”, also known as “probes”, that can be observed by a DTrace or SystemTap script, making it easier to monitor what the CPython processes on a system are doing.
+**CPython implementation detail:** DTrace markers are implementation details of the CPython interpreter. No guarantees are made about probe compatibility between versions of CPython. DTrace scripts can stop working or work incorrectly without warning when changing CPython versions.
+## Enabling the static markers[¶](https://docs.python.org/3/howto/instrumentation.html#enabling-the-static-markers "Link to this heading")
+macOS comes with built-in support for DTrace. On Linux, in order to build CPython with the embedded markers for SystemTap, the SystemTap development tools must be installed.
+On a Linux machine, this can be done via:
+```
+$ yuminstallsystemtap-sdt-devel
+
+```
+
+or:
+```
+$ sudoapt-getinstallsystemtap-sdt-dev
+
+```
+
+CPython must then be [`configured with the --with-dtrace option`](https://docs.python.org/3/using/configure.html#cmdoption-with-dtrace):
+```
+checking for --with-dtrace... yes
+
+```
+
+On macOS, you can list available DTrace probes by running a Python process in the background and listing all probes made available by the Python provider:

@@ -1,0 +1,49 @@
+Title: PyMethodDef Structure in Python C API
+URL: https://docs.python.org/3/c-api/structures.html
+Summary: The PyMethodDef structure, introduced in Python 3.9, is used to describe methods of extension types. It includes four fields: ml_name (method name), ml_meth (pointer to the C implementation), ml_flags (call construction flags), and ml_doc (documentation string).
+---
+
+```
+
+Added in version 3.9. 
+
+typePyMethodDef[¶](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) (including all members)._
+Structure used to describe a method of an extension type. This structure has four fields: 
+
+constchar*ml_name[¶](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef.ml_name "Link to this definition")
+    
+Name of the method. 
+
+[PyCFunction](https://docs.python.org/3/c-api/structures.html#c.PyCFunction "PyCFunction")ml_meth[¶](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef.ml_meth "Link to this definition")
+    
+Pointer to the C implementation. 
+
+intml_flags[¶](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef.ml_flags "Link to this definition")
+    
+Flags bits indicating how the call should be constructed. 
+
+constchar*ml_doc[¶](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef.ml_doc "Link to this definition")
+    
+Points to the contents of the docstring.
+The [`ml_meth`](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef.ml_meth "PyMethodDef.ml_meth") is a C function pointer. The functions may be of different types, but they always return [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*. If the function is not of the [`PyCFunction`](https://docs.python.org/3/c-api/structures.html#c.PyCFunction "PyCFunction"), the compiler will require a cast in the method table. Even though [`PyCFunction`](https://docs.python.org/3/c-api/structures.html#c.PyCFunction "PyCFunction") defines the first parameter as [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*, it is common that the method implementation uses the specific C type of the _self_ object.
+The [`ml_flags`](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef.ml_flags "PyMethodDef.ml_flags") field is a bitfield which can include the following flags. The individual flags indicate either a calling convention or a binding convention.
+There are these calling conventions: 
+
+METH_VARARGS[¶](https://docs.python.org/3/c-api/structures.html#c.METH_VARARGS "Link to this definition")
+    
+This is the typical calling convention, where the methods have the type [`PyCFunction`](https://docs.python.org/3/c-api/structures.html#c.PyCFunction "PyCFunction"). The function expects two [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* values. The first one is the _self_ object for methods; for module functions, it is the module object. The second parameter (often called _args_) is a tuple object representing all arguments. This parameter is typically processed using [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") or [`PyArg_UnpackTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_UnpackTuple "PyArg_UnpackTuple"). 
+
+METH_KEYWORDS[¶](https://docs.python.org/3/c-api/structures.html#c.METH_KEYWORDS "Link to this definition")
+    
+Can only be used in certain combinations with other flags: [METH_VARARGS | METH_KEYWORDS](https://docs.python.org/3/c-api/structures.html#meth-varargs-meth-keywords), [METH_FASTCALL | METH_KEYWORDS](https://docs.python.org/3/c-api/structures.html#meth-fastcall-meth-keywords) and [METH_METHOD | METH_FASTCALL | METH_KEYWORDS](https://docs.python.org/3/c-api/structures.html#meth-method-meth-fastcall-meth-keywords). 
+
+[METH_VARARGS](https://docs.python.org/3/c-api/structures.html#c.METH_VARARGS "METH_VARARGS")|[METH_KEYWORDS](https://docs.python.org/3/c-api/structures.html#c.METH_KEYWORDS "METH_KEYWORDS")
+    
+Methods with these flags must be of type [`PyCFunctionWithKeywords`](https://docs.python.org/3/c-api/structures.html#c.PyCFunctionWithKeywords "PyCFunctionWithKeywords"). The function expects three parameters: _self_ , _args_ , _kwargs_ where _kwargs_ is a dictionary of all the keyword arguments or possibly `NULL` if there are no keyword arguments. The parameters are typically processed using [`PyArg_ParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTupleAndKeywords "PyArg_ParseTupleAndKeywords"). 
+
+METH_FASTCALL[¶](https://docs.python.org/3/c-api/structures.html#c.METH_FASTCALL "Link to this definition")
+    
+Fast calling convention supporting only positional arguments. The methods have the type [`PyCFunctionFast`](https://docs.python.org/3/c-api/structures.html#c.PyCFunctionFast "PyCFunctionFast"). The first parameter is _self_ , the second parameter is a C array of [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* values indicating the arguments and the third parameter is the number of arguments (the length of the array).
+Added in version 3.7.
+Changed in version 3.10: `METH_FASTCALL` is now part of the [stable ABI](https://docs.python.org/3/c-api/stable.html#stable-abi).

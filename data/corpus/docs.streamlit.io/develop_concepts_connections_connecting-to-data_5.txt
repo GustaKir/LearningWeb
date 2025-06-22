@@ -1,0 +1,33 @@
+Title: Best Practices for Connection Building in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/connections/connecting-to-data
+Summary: This section outlines best practices for creating Connections in Streamlit, emphasizing the importance of extending existing drivers or SDKs for consistency and ease of maintenance. It suggests leveraging popular Python tools to enhance security and usability, especially for Connections meant for public distribution.
+---
+
+### [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#connection-building-best-practices)Connection-building best practices
+We recommend applying the following best practices to make your Connection consistent with the Connections built into Streamlit and the wider Streamlit ecosystem. These practices are especially important for Connections that you intend to distribute publicly.
+  1. **Extend existing drivers or SDKs, and default to semantics that makes sense for their existing users.**
+You should rarely need to implement complex data access logic from scratch when building a Connection. Use existing popular Python drivers and clients whenever possible. Doing so makes your Connection easier to maintain, more secure, and enables users to get the latest features. E.g. [SQLConnection](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection) extends SQLAlchemy, [FileConnection](https://github.com/streamlit/files-connection) extends [fsspec](https://filesystem-spec.readthedocs.io/en/latest/), [GsheetsConnection](https://github.com/streamlit/gsheets-connection) extends [gspread](https://docs.gspread.org/en/latest/), etc.
+Consider using access patterns, method/argument naming, and return values that are consistent with the underlying package and familiar to existing users of that package.
+  2. **Intuitive, easy to use read methods.**
+Much of the power of st.connection is providing intuitive, easy-to-use read methods that enable app developers to get started quickly. Most connections should expose at least one read method that is:
+     * Named with a simple verb, like `read()`, `query()`, or `get()`
+     * Wrapped by `st.cache_data` by default, with at least `ttl=` argument supported
+     * If the result is in a tabular format, it returns a pandas DataFrame
+     * Provides commonly used keyword arguments (such as paging or formatting) with sensible defaults - ideally, the common case requires only 1-2 arguments.
+  3. **Config, secrets, and precedence in`_connect` method.**
+Every Connection should support commonly used connection parameters provided via Streamlit secrets and keyword arguments. The names should match the ones used when initializing or configuring the underlying package.
+Additionally, where relevant, Connections should support data source specific configuration through existing standard environment variables or config / credential files. In many cases, the underlying package provides constructors or factory functions that already handle this easily.
+When you can specify the same connection parameters in multiple places, we recommend using the following precedence order when possible (highest to lowest):
+     * Keyword arguments specified in the code
+     * Streamlit secrets
+     * data source specific configuration (if relevant)
+  4. **Handling thread safety and stale connections.**
+Connections should provide thread-safe operations when practical (which should be most of the time) and clearly document any considerations around this. Most underlying drivers or SDKs should provide thread-safe objects or methods - use these when possible.
+If the underlying driver or SDK has a risk of stateful connection objects becoming stale or invalid, consider building a low impact health check or reset/retry pattern into the access methods. The SQLConnection built into Streamlit has a good example of this pattern using [tenacity](https://tenacity.readthedocs.io/) and the built-in [Connection.reset()](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionreset) method. An alternate approach is to encourage developers to set an appropriate TTL on the `st.connection()` call to ensure it periodically reinitializes the connection object.
+
+[Previous: Connections, secrets, & authentication](https://docs.streamlit.io/develop/concepts/connections)[Next: Secrets management](https://docs.streamlit.io/develop/concepts/connections/secrets-management) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

@@ -1,0 +1,53 @@
+Title: PEP 695: Type Parameter Syntax
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: PEP 695 offers a new syntax for declaring generic classes and functions, which simplifies type parameter declaration and clarifies variance. It allows for more compact and explicit definitions, enhancing the ease of use within type hinting.
+---
+
+## New Features[¶](https://docs.python.org/3/whatsnew/3.12.html#new-features "Link to this heading")
+### PEP 695: Type Parameter Syntax[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-695-type-parameter-syntax "Link to this heading")
+Generic classes and functions under [**PEP 484**](https://peps.python.org/pep-0484/) were declared using a verbose syntax that left the scope of type parameters unclear and required explicit declarations of variance.
+[**PEP 695**](https://peps.python.org/pep-0695/) introduces a new, more compact and explicit way to create [generic classes](https://docs.python.org/3/reference/compound_stmts.html#generic-classes) and [functions](https://docs.python.org/3/reference/compound_stmts.html#generic-functions):
+```
+defmax[T](args: Iterable[T]) -> T:
+  ...
+classlist[T]:
+  def__getitem__(self, index: int, /) -> T:
+    ...
+  defappend(self, element: T) -> None:
+    ...
+
+```
+
+In addition, the PEP introduces a new way to declare [type aliases](https://docs.python.org/3/library/typing.html#type-aliases) using the [`type`](https://docs.python.org/3/reference/simple_stmts.html#type) statement, which creates an instance of [`TypeAliasType`](https://docs.python.org/3/library/typing.html#typing.TypeAliasType "typing.TypeAliasType"):
+```
+type Point = tuple[float, float]
+
+```
+
+Type aliases can also be [generic](https://docs.python.org/3/reference/compound_stmts.html#generic-type-aliases):
+```
+type Point[T] = tuple[T, T]
+
+```
+
+The new syntax allows declaring [`TypeVarTuple`](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple "typing.TypeVarTuple") and [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") parameters, as well as [`TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") parameters with bounds or constraints:
+```
+type IntFunc[**P] = Callable[P, int] # ParamSpec
+type LabeledTuple[*Ts] = tuple[str, *Ts] # TypeVarTuple
+type HashableSequence[T: Hashable] = Sequence[T] # TypeVar with bound
+type IntOrStrSequence[T: (int, str)] = Sequence[T] # TypeVar with constraints
+
+```
+
+The value of type aliases and the bound and constraints of type variables created through this syntax are evaluated only on demand (see [lazy evaluation](https://docs.python.org/3/reference/executionmodel.html#lazy-evaluation)). This means type aliases are able to refer to other types defined later in the file.
+Type parameters declared through a type parameter list are visible within the scope of the declaration and any nested scopes, but not in the outer scope. For example, they can be used in the type annotations for the methods of a generic class or in the class body. However, they cannot be used in the module scope after the class is defined. See [Type parameter lists](https://docs.python.org/3/reference/compound_stmts.html#type-params) for a detailed description of the runtime semantics of type parameters.
+In order to support these scoping semantics, a new kind of scope is introduced, the [annotation scope](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes). Annotation scopes behave for the most part like function scopes, but interact differently with enclosing class scopes. In Python 3.13, [annotations](https://docs.python.org/3/glossary.html#term-annotation) will also be evaluated in annotation scopes.
+See [**PEP 695**](https://peps.python.org/pep-0695/) for more details.
+(PEP written by Eric Traut. Implementation by Jelle Zijlstra, Eric Traut, and others in [gh-103764](https://github.com/python/cpython/issues/103764).)
+### PEP 701: Syntactic formalization of f-strings[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-701-syntactic-formalization-of-f-strings "Link to this heading")
+[**PEP 701**](https://peps.python.org/pep-0701/) lifts some restrictions on the usage of [f-strings](https://docs.python.org/3/glossary.html#term-f-string). Expression components inside f-strings can now be any valid Python expression, including strings reusing the same quote as the containing f-string, multi-line expressions, comments, backslashes, and unicode escape sequences. Let’s cover these in detail:
+  * Quote reuse: in Python 3.11, reusing the same quotes as the enclosing f-string raises a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError"), forcing the user to either use other available quotes (like using double quotes or triple quotes if the f-string uses single quotes). In Python 3.12, you can now do things like this:
+>>>```
+>>> songs = ['Take me back to Eden', 'Alkaline', 'Ascensionism']
+>>> f"This is the playlist: {", ".join(songs)}"
+'This is the playlist: Take me back to Eden, Alkaline, Ascensionism'

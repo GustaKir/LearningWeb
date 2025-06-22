@@ -1,0 +1,29 @@
+Title: Using subprocess with String Arguments in POSIX
+URL: https://docs.python.org/3/library/subprocess.html
+Summary: On POSIX systems, if _args_ is a string, it must represent the program's path without additional arguments. To properly tokenize complex shell commands, the `shlex.split()` function can be used. This function correctly separates options and arguments, accommodating elements that require quoting or escaping.
+---
+
+```
+
+On POSIX, if _args_ is a string, the string is interpreted as the name or path of the program to execute. However, this can only be done if not passing arguments to the program.
+Note
+It may not be obvious how to break a shell command into a sequence of arguments, especially in complex cases. [`shlex.split()`](https://docs.python.org/3/library/shlex.html#shlex.split "shlex.split") can illustrate how to determine the correct tokenization for _args_ :
+>>>```
+>>> importshlex,subprocess
+>>> command_line = input()
+/bin/vikings -input eggs.txt -output "spam spam.txt" -cmd "echo '$MONEY'"
+>>> args = shlex.split(command_line)
+>>> print(args)
+['/bin/vikings', '-input', 'eggs.txt', '-output', 'spam spam.txt', '-cmd', "echo '$MONEY'"]
+>>> p = subprocess.Popen(args) # Success!
+
+```
+
+Note in particular that options (such as _-input_) and arguments (such as _eggs.txt_) that are separated by whitespace in the shell go in separate list elements, while arguments that need quoting or backslash escaping when used in the shell (such as filenames containing spaces or the _echo_ command shown above) are single list elements.
+On Windows, if _args_ is a sequence, it will be converted to a string in a manner described in [Converting an argument sequence to a string on Windows](https://docs.python.org/3/library/subprocess.html#converting-argument-sequence). This is because the underlying `CreateProcess()` operates on strings.
+Changed in version 3.6: _args_ parameter accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object) if _shell_ is `False` and a sequence containing path-like objects on POSIX.
+Changed in version 3.8: _args_ parameter accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object) if _shell_ is `False` and a sequence containing bytes and path-like objects on Windows.
+The _shell_ argument (which defaults to `False`) specifies whether to use the shell as the program to execute. If _shell_ is `True`, it is recommended to pass _args_ as a string rather than as a sequence.
+On POSIX with `shell=True`, the shell defaults to `/bin/sh`. If _args_ is a string, the string specifies the command to execute through the shell. This means that the string must be formatted exactly as it would be when typed at the shell prompt. This includes, for example, quoting or backslash escaping filenames with spaces in them. If _args_ is a sequence, the first item specifies the command string, and any additional items will be treated as additional arguments to the shell itself. That is to say, [`Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") does the equivalent of:
+```
+Popen(['/bin/sh', '-c', args[0], args[1], ...])

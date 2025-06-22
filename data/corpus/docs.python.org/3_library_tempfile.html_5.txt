@@ -1,0 +1,46 @@
+Title: tempfile.mkdtemp() - Create a Temporary Directory
+URL: https://docs.python.org/3/library/tempfile.html
+Summary: The `tempfile.mkdtemp()` function safely creates a temporary directory accessible only by the user. Users must manage the deletion of the directory and its contents, and the function accepts optional arguments for prefix, suffix, and directory location. It returns the absolute path of the created directory and triggers an auditing event.
+---
+
+tempfile.mkdtemp(_suffix =None_, _prefix =None_, _dir =None_)[¶](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "Link to this definition")
+    
+Creates a temporary directory in the most secure manner possible. There are no race conditions in the directory’s creation. The directory is readable, writable, and searchable only by the creating user ID.
+The user of [`mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp") is responsible for deleting the temporary directory and its contents when done with it.
+The _prefix_ , _suffix_ , and _dir_ arguments are the same as for [`mkstemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkstemp "tempfile.mkstemp").
+[`mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp") returns the absolute pathname of the new directory.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `tempfile.mkdtemp` with argument `fullpath`.
+Changed in version 3.5: _suffix_ , _prefix_ , and _dir_ may now be supplied in bytes in order to obtain a bytes return value. Prior to this, only str was allowed. _suffix_ and _prefix_ now accept and default to `None` to cause an appropriate default value to be used.
+Changed in version 3.6: The _dir_ parameter now accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+Changed in version 3.12: [`mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp") now always returns an absolute path, even if _dir_ is relative. 
+
+tempfile.gettempdir()[¶](https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir "Link to this definition")
+    
+Return the name of the directory used for temporary files. This defines the default value for the _dir_ argument to all functions in this module.
+Python searches a standard list of directories to find one which the calling user can create files in. The list is:
+  1. The directory named by the `TMPDIR` environment variable.
+  2. The directory named by the `TEMP` environment variable.
+  3. The directory named by the `TMP` environment variable.
+  4. A platform-specific location:
+     * On Windows, the directories `C:\TEMP`, `C:\TMP`, `\TEMP`, and `\TMP`, in that order.
+     * On all other platforms, the directories `/tmp`, `/var/tmp`, and `/usr/tmp`, in that order.
+  5. As a last resort, the current working directory.
+
+
+The result of this search is cached, see the description of [`tempdir`](https://docs.python.org/3/library/tempfile.html#tempfile.tempdir "tempfile.tempdir") below.
+Changed in version 3.10: Always returns a str. Previously it would return any [`tempdir`](https://docs.python.org/3/library/tempfile.html#tempfile.tempdir "tempfile.tempdir") value regardless of type so long as it was not `None`. 
+
+tempfile.gettempdirb()[¶](https://docs.python.org/3/library/tempfile.html#tempfile.gettempdirb "Link to this definition")
+    
+Same as [`gettempdir()`](https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir "tempfile.gettempdir") but the return value is in bytes.
+Added in version 3.5. 
+
+tempfile.gettempprefix()[¶](https://docs.python.org/3/library/tempfile.html#tempfile.gettempprefix "Link to this definition")
+    
+Return the filename prefix used to create temporary files. This does not contain the directory component. 
+
+tempfile.gettempprefixb()[¶](https://docs.python.org/3/library/tempfile.html#tempfile.gettempprefixb "Link to this definition")
+    
+Same as [`gettempprefix()`](https://docs.python.org/3/library/tempfile.html#tempfile.gettempprefix "tempfile.gettempprefix") but the return value is in bytes.
+Added in version 3.5.
+The module uses a global variable to store the name of the directory used for temporary files returned by [`gettempdir()`](https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir "tempfile.gettempdir"). It can be set directly to override the selection process, but this is discouraged. All functions in this module take a _dir_ argument which can be used to specify the directory. This is the recommended approach that does not surprise other unsuspecting code by changing global API behavior.

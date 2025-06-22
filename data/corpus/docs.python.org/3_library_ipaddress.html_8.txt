@@ -1,0 +1,28 @@
+Title: IP Network Definitions
+URL: https://docs.python.org/3/library/ipaddress.html
+Summary: The section explains how to define and inspect IP networks using the `IPv4Network` and `IPv6Network` objects. It describes the components of a network definition, including the mask and network address, and provides an example of their application.
+---
+
+```
+
+## IP Network definitions[¶](https://docs.python.org/3/library/ipaddress.html#ip-network-definitions "Link to this heading")
+The [`IPv4Network`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network "ipaddress.IPv4Network") and [`IPv6Network`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv6Network "ipaddress.IPv6Network") objects provide a mechanism for defining and inspecting IP network definitions. A network definition consists of a _mask_ and a _network address_ , and as such defines a range of IP addresses that equal the network address when masked (binary AND) with the mask. For example, a network definition with the mask `255.255.255.0` and the network address `192.168.1.0` consists of IP addresses in the inclusive range `192.168.1.0` to `192.168.1.255`.
+### Prefix, net mask and host mask[¶](https://docs.python.org/3/library/ipaddress.html#prefix-net-mask-and-host-mask "Link to this heading")
+There are several equivalent ways to specify IP network masks. A _prefix_ `/<nbits>` is a notation that denotes how many high-order bits are set in the network mask. A _net mask_ is an IP address with some number of high-order bits set. Thus the prefix `/24` is equivalent to the net mask `255.255.255.0` in IPv4, or `ffff:ff00::` in IPv6. In addition, a _host mask_ is the logical inverse of a _net mask_ , and is sometimes used (for example in Cisco access control lists) to denote a network mask. The host mask equivalent to `/24` in IPv4 is `0.0.0.255`.
+### Network objects[¶](https://docs.python.org/3/library/ipaddress.html#network-objects "Link to this heading")
+All attributes implemented by address objects are implemented by network objects as well. In addition, network objects implement additional attributes. All of these are common between [`IPv4Network`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network "ipaddress.IPv4Network") and [`IPv6Network`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv6Network "ipaddress.IPv6Network"), so to avoid duplication they are only documented for [`IPv4Network`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network "ipaddress.IPv4Network"). Network objects are [hashable](https://docs.python.org/3/glossary.html#term-hashable), so they can be used as keys in dictionaries. 
+
+_class_ ipaddress.IPv4Network(_address_ , _strict =True_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network "Link to this definition")
+    
+Construct an IPv4 network definition. _address_ can be one of the following:
+  1. A string consisting of an IP address and an optional mask, separated by a slash (`/`). The IP address is the network address, and the mask can be either a single number, which means it’s a _prefix_ , or a string representation of an IPv4 address. If it’s the latter, the mask is interpreted as a _net mask_ if it starts with a non-zero field, or as a _host mask_ if it starts with a zero field, with the single exception of an all-zero mask which is treated as a _net mask_. If no mask is provided, it’s considered to be `/32`.
+For example, the following _address_ specifications are equivalent: `192.168.1.0/24`, `192.168.1.0/255.255.255.0` and `192.168.1.0/0.0.0.255`.
+  2. An integer that fits into 32 bits. This is equivalent to a single-address network, with the network address being _address_ and the mask being `/32`.
+  3. An integer packed into a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object of length 4, big-endian. The interpretation is similar to an integer _address_.
+  4. A two-tuple of an address description and a netmask, where the address description is either a string, a 32-bits integer, a 4-bytes packed integer, or an existing IPv4Address object; and the netmask is either an integer representing the prefix length (e.g. `24`) or a string representing the prefix mask (e.g. `255.255.255.0`).
+
+
+An [`AddressValueError`](https://docs.python.org/3/library/ipaddress.html#ipaddress.AddressValueError "ipaddress.AddressValueError") is raised if _address_ is not a valid IPv4 address. A [`NetmaskValueError`](https://docs.python.org/3/library/ipaddress.html#ipaddress.NetmaskValueError "ipaddress.NetmaskValueError") is raised if the mask is not valid for an IPv4 address.
+If _strict_ is `True` and host bits are set in the supplied address, then [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised. Otherwise, the host bits are masked out to determine the appropriate network address.
+Unless stated otherwise, all network methods accepting other network/address objects will raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if the argument’s IP version is incompatible to `self`.
+Changed in version 3.5: Added the two-tuple form for the _address_ constructor parameter.

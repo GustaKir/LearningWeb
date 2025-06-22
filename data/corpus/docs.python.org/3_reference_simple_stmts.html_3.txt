@@ -1,0 +1,37 @@
+Title: Assignment to Subscription in Python
+URL: https://docs.python.org/3/reference/simple_stmts.html
+Summary: This section explains the rules for assigning values to subscription targets in Python, emphasizing that the primary expression must be a mutable sequence or a mapping. It details how subscripts are evaluated and the requirements for valid indices, noting that attempting to assign to an out-of-range index will raise an IndexError.
+---
+
+```
+
+This description does not necessarily apply to descriptor attributes, such as properties created with [`property()`](https://docs.python.org/3/library/functions.html#property "property").
+  * If the target is a subscription: The primary expression in the reference is evaluated. It should yield either a mutable sequence object (such as a list) or a mapping object (such as a dictionary). Next, the subscript expression is evaluated.
+If the primary is a mutable sequence object (such as a list), the subscript must yield an integer. If it is negative, the sequence’s length is added to it. The resulting value must be a nonnegative integer less than the sequence’s length, and the sequence is asked to assign the assigned object to its item with that index. If the index is out of range, [`IndexError`](https://docs.python.org/3/library/exceptions.html#IndexError "IndexError") is raised (assignment to a subscripted sequence cannot add new items to a list).
+If the primary is a mapping object (such as a dictionary), the subscript must have a type compatible with the mapping’s key type, and the mapping is then asked to create a key/value pair which maps the subscript to the assigned object. This can either replace an existing key/value pair with the same key value, or insert a new key/value pair (if no key with the same value existed).
+For user-defined objects, the [`__setitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__setitem__ "object.__setitem__") method is called with appropriate arguments.
+  * If the target is a slicing: The primary expression in the reference is evaluated. It should yield a mutable sequence object (such as a list). The assigned object should be a sequence object of the same type. Next, the lower and upper bound expressions are evaluated, insofar they are present; defaults are zero and the sequence’s length. The bounds should evaluate to integers. If either bound is negative, the sequence’s length is added to it. The resulting bounds are clipped to lie between zero and the sequence’s length, inclusive. Finally, the sequence object is asked to replace the slice with the items of the assigned sequence. The length of the slice may be different from the length of the assigned sequence, thus changing the length of the target sequence, if the target sequence allows it.
+
+
+**CPython implementation detail:** In the current implementation, the syntax for targets is taken to be the same as for expressions, and invalid syntax is rejected during the code generation phase, causing less detailed error messages.
+Although the definition of assignment implies that overlaps between the left-hand side and the right-hand side are ‘simultaneous’ (for example `a, b = b, a` swaps two variables), overlaps _within_ the collection of assigned-to variables occur left-to-right, sometimes resulting in confusion. For instance, the following program prints `[0, 2]`:
+```
+x = [0, 1]
+i = 0
+i, x[i] = 1, 2     # i is updated, then x[i] is updated
+print(x)
+
+```
+
+See also 
+
+[**PEP 3132**](https://peps.python.org/pep-3132/) - Extended Iterable Unpacking
+    
+The specification for the `*target` feature.
+### 7.2.1. Augmented assignment statements[¶](https://docs.python.org/3/reference/simple_stmts.html#augmented-assignment-statements "Link to this heading")
+Augmented assignment is the combination, in a single statement, of a binary operation and an assignment statement:
+```
+**augmented_assignment_stmt** ::= [augtarget](https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-augtarget) [augop](https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-augop) ([expression_list](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression_list) | [yield_expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-yield_expression))
+**augtarget**         ::= [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier) | [attributeref](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-attributeref) | [subscription](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-subscription) | [slicing](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-slicing)
+**augop**           ::= "+=" | "-=" | "*=" | "@=" | "/=" | "//=" | "%=" | "**="
+               | ">>=" | "<<=" | "&=" | "^=" | "|="

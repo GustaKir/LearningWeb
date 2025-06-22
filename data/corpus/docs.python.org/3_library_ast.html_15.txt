@@ -1,0 +1,129 @@
+Title: ast.MatchMapping in Python 3.10
+URL: https://docs.python.org/3/library/ast.html
+Summary: The `ast.MatchMapping` class represents a match mapping pattern, introduced in Python 3.10. It requires a sequence of key expressions and corresponding pattern nodes, with an optional 'rest' to capture remaining mapping elements. The pattern is successful if the subject is a mapping that contains all evaluated keys and matches corresponding subpatterns, with the 'rest' capturing any extra elements if specified.
+---
+
+```
+
+Added in version 3.10. 
+
+_class_ ast.MatchMapping(_keys_ , _patterns_ , _rest_)[¶](https://docs.python.org/3/library/ast.html#ast.MatchMapping "Link to this definition")
+    
+A match mapping pattern. `keys` is a sequence of expression nodes. `patterns` is a corresponding sequence of pattern nodes. `rest` is an optional name that can be specified to capture the remaining mapping elements. Permitted key expressions are restricted as described in the match statement documentation.
+This pattern succeeds if the subject is a mapping, all evaluated key expressions are present in the mapping, and the value corresponding to each key matches the corresponding subpattern. If `rest` is not `None`, a dict containing the remaining mapping elements is bound to that name if the overall mapping pattern is successful.
+>>>```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case {1: _, 2: _}:
+...     ...
+...   case {**rest}:
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchMapping(
+            keys=[
+              Constant(value=1),
+              Constant(value=2)],
+            patterns=[
+              MatchAs(),
+              MatchAs()]),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))]),
+        match_case(
+          pattern=MatchMapping(rest='rest'),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])
+
+```
+
+Added in version 3.10. 
+
+_class_ ast.MatchClass(_cls_ , _patterns_ , _kwd_attrs_ , _kwd_patterns_)[¶](https://docs.python.org/3/library/ast.html#ast.MatchClass "Link to this definition")
+    
+A match class pattern. `cls` is an expression giving the nominal class to be matched. `patterns` is a sequence of pattern nodes to be matched against the class defined sequence of pattern matching attributes. `kwd_attrs` is a sequence of additional attributes to be matched (specified as keyword arguments in the class pattern), `kwd_patterns` are the corresponding patterns (specified as keyword values in the class pattern).
+This pattern succeeds if the subject is an instance of the nominated class, all positional patterns match the corresponding class-defined attributes, and any specified keyword attributes match their corresponding pattern.
+Note: classes may define a property that returns self in order to match a pattern node against the instance being matched. Several builtin types are also matched that way, as described in the match statement documentation.
+>>>```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case Point2D(0, 0):
+...     ...
+...   case Point3D(x=0, y=0, z=0):
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchClass(
+            cls=Name(id='Point2D', ctx=Load()),
+            patterns=[
+              MatchValue(
+                value=Constant(value=0)),
+              MatchValue(
+                value=Constant(value=0))]),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))]),
+        match_case(
+          pattern=MatchClass(
+            cls=Name(id='Point3D', ctx=Load()),
+            kwd_attrs=[
+              'x',
+              'y',
+              'z'],
+            kwd_patterns=[
+              MatchValue(
+                value=Constant(value=0)),
+              MatchValue(
+                value=Constant(value=0)),
+              MatchValue(
+                value=Constant(value=0))]),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])
+
+```
+
+Added in version 3.10. 
+
+_class_ ast.MatchAs(_pattern_ , _name_)[¶](https://docs.python.org/3/library/ast.html#ast.MatchAs "Link to this definition")
+    
+A match “as-pattern”, capture pattern or wildcard pattern. `pattern` contains the match pattern that the subject will be matched against. If the pattern is `None`, the node represents a capture pattern (i.e a bare name) and will always succeed.
+The `name` attribute contains the name that will be bound if the pattern is successful. If `name` is `None`, `pattern` must also be `None` and the node represents the wildcard pattern.
+>>>```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case [x] as y:
+...     ...
+...   case _:
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchAs(
+            pattern=MatchSequence(
+              patterns=[
+                MatchAs(name='x')]),
+            name='y'),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))]),
+        match_case(
+          pattern=MatchAs(),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])

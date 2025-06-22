@@ -1,0 +1,21 @@
+Title: Understanding the super() Function in Python
+URL: https://docs.python.org/3/library/functions.html
+Summary: The `super()` function returns a proxy object that delegates method calls to a parent or sibling class, facilitating access to inherited methods that may be overridden. The `_object_or_type_` parameter defines the method resolution order, starting the search from the class following the specified `_type_`. For instance, given a method resolution order of `D -> B -> C -> A -> object` and `_type_` as `B`, `super()` will look in `C -> A -> object`.
+---
+
+_class_ super(_type_ , _object_or_type =None_)
+    
+Return a proxy object that delegates method calls to a parent or sibling class of _type_. This is useful for accessing inherited methods that have been overridden in a class.
+The _object_or_type_ determines the [method resolution order](https://docs.python.org/3/glossary.html#term-method-resolution-order) to be searched. The search starts from the class right after the _type_.
+For example, if [`__mro__`](https://docs.python.org/3/reference/datamodel.html#type.__mro__ "type.__mro__") of _object_or_type_ is `D -> B -> C -> A -> object` and the value of _type_ is `B`, then [`super()`](https://docs.python.org/3/library/functions.html#super "super") searches `C -> A -> object`.
+The [`__mro__`](https://docs.python.org/3/reference/datamodel.html#type.__mro__ "type.__mro__") attribute of the class corresponding to _object_or_type_ lists the method resolution search order used by both [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") and [`super()`](https://docs.python.org/3/library/functions.html#super "super"). The attribute is dynamic and can change whenever the inheritance hierarchy is updated.
+If the second argument is omitted, the super object returned is unbound. If the second argument is an object, `isinstance(obj, type)` must be true. If the second argument is a type, `issubclass(type2, type)` must be true (this is useful for classmethods).
+When called directly within an ordinary method of a class, both arguments may be omitted (“zero-argument `super()`”). In this case, _type_ will be the enclosing class, and _obj_ will be the first argument of the immediately enclosing function (typically `self`). (This means that zero-argument `super()` will not work as expected within nested functions, including generator expressions, which implicitly create nested functions.)
+There are two typical use cases for _super_. In a class hierarchy with single inheritance, _super_ can be used to refer to parent classes without naming them explicitly, thus making the code more maintainable. This use closely parallels the use of _super_ in other programming languages.
+The second use case is to support cooperative multiple inheritance in a dynamic execution environment. This use case is unique to Python and is not found in statically compiled languages or languages that only support single inheritance. This makes it possible to implement “diamond diagrams” where multiple base classes implement the same method. Good design dictates that such implementations have the same calling signature in every case (because the order of calls is determined at runtime, because that order adapts to changes in the class hierarchy, and because that order can include sibling classes that are unknown prior to runtime).
+For both use cases, a typical superclass call looks like this:
+```
+classC(B):
+  defmethod(self, arg):
+    super().method(arg)  # This does the same thing as:
+                # super(C, self).method(arg)

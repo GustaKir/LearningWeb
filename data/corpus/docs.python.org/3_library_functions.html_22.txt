@@ -1,0 +1,35 @@
+Title: File Encoding and Error Handling in Python
+URL: https://docs.python.org/3/library/functions.html
+Summary: This section discusses the parameters '_encoding_' and '_errors_' used in text mode file handling in Python. It explains that '_encoding_' refers to the encoding used for decoding or encoding the file, which is platform dependent but can be set to any supported text encoding. The '_errors_' parameter specifies how to handle encoding and decoding errors, with a variety of standard error handlers available.
+---
+
+_encoding_ is the name of the encoding used to decode or encode the file. This should only be used in text mode. The default encoding is platform dependent (whatever [`locale.getencoding()`](https://docs.python.org/3/library/locale.html#locale.getencoding "locale.getencoding") returns), but any [text encoding](https://docs.python.org/3/glossary.html#term-text-encoding) supported by Python can be used. See the [`codecs`](https://docs.python.org/3/library/codecs.html#module-codecs "codecs: Encode and decode data and streams.") module for the list of supported encodings.
+_errors_ is an optional string that specifies how encoding and decoding errors are to be handled—this cannot be used in binary mode. A variety of standard error handlers are available (listed under [Error Handlers](https://docs.python.org/3/library/codecs.html#error-handlers)), though any error handling name that has been registered with [`codecs.register_error()`](https://docs.python.org/3/library/codecs.html#codecs.register_error "codecs.register_error") is also valid. The standard names include:
+  * `'strict'` to raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") exception if there is an encoding error. The default value of `None` has the same effect.
+  * `'ignore'` ignores errors. Note that ignoring encoding errors can lead to data loss.
+  * `'replace'` causes a replacement marker (such as `'?'`) to be inserted where there is malformed data.
+  * `'surrogateescape'` will represent any incorrect bytes as low surrogate code units ranging from U+DC80 to U+DCFF. These surrogate code units will then be turned back into the same bytes when the `surrogateescape` error handler is used when writing data. This is useful for processing files in an unknown encoding.
+  * `'xmlcharrefreplace'` is only supported when writing to a file. Characters not supported by the encoding are replaced with the appropriate XML character reference `&#_nnn_;`.
+  * `'backslashreplace'` replaces malformed data by Python’s backslashed escape sequences.
+  * `'namereplace'` (also only supported when writing) replaces unsupported characters with `\N{...}` escape sequences.
+
+
+_newline_ determines how to parse newline characters from the stream. It can be `None`, `''`, `'\n'`, `'\r'`, and `'\r\n'`. It works as follows:
+  * When reading input from the stream, if _newline_ is `None`, universal newlines mode is enabled. Lines in the input can end in `'\n'`, `'\r'`, or `'\r\n'`, and these are translated into `'\n'` before being returned to the caller. If it is `''`, universal newlines mode is enabled, but line endings are returned to the caller untranslated. If it has any of the other legal values, input lines are only terminated by the given string, and the line ending is returned to the caller untranslated.
+  * When writing output to the stream, if _newline_ is `None`, any `'\n'` characters written are translated to the system default line separator, [`os.linesep`](https://docs.python.org/3/library/os.html#os.linesep "os.linesep"). If _newline_ is `''` or `'\n'`, no translation takes place. If _newline_ is any of the other legal values, any `'\n'` characters written are translated to the given string.
+
+
+If _closefd_ is `False` and a file descriptor rather than a filename was given, the underlying file descriptor will be kept open when the file is closed. If a filename is given _closefd_ must be `True` (the default); otherwise, an error will be raised.
+A custom opener can be used by passing a callable as _opener_. The underlying file descriptor for the file object is then obtained by calling _opener_ with (_file_ , _flags_). _opener_ must return an open file descriptor (passing [`os.open`](https://docs.python.org/3/library/os.html#os.open "os.open") as _opener_ results in functionality similar to passing `None`).
+The newly created file is [non-inheritable](https://docs.python.org/3/library/os.html#fd-inheritance).
+The following example uses the [dir_fd](https://docs.python.org/3/library/os.html#dir-fd) parameter of the [`os.open()`](https://docs.python.org/3/library/os.html#os.open "os.open") function to open a file relative to a given directory:
+>>>```
+>>> importos
+>>> dir_fd = os.open('somedir', os.O_RDONLY)
+>>> defopener(path, flags):
+...   return os.open(path, flags, dir_fd=dir_fd)
+...
+>>> with open('spamspam.txt', 'w', opener=opener) as f:
+...   print('This will be written to somedir/spamspam.txt', file=f)
+...
+>>> os.close(dir_fd) # don't leak a file descriptor

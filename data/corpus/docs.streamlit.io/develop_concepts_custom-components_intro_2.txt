@@ -1,0 +1,39 @@
+Title: Creating Bi-Directional Streamlit Components
+URL: https://docs.streamlit.io/develop/concepts/custom-components/intro
+Summary: This document introduces tools for building bi-directional Streamlit Components, including a React and TypeScript template available in the Streamlit Component-template GitHub repository. It outlines the necessary development environment setup, which requires Python, Streamlit, nodejs, and npm or yarn.
+---
+
+To make the process of creating bi-directional Streamlit Components easier, we've created a React template and a TypeScript-only template in the [Streamlit Component-template GitHub repo](https://github.com/streamlit/component-template). We also provide some [example Components](https://github.com/streamlit/component-template/tree/master/examples) in the same repo.
+### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#development-environment-setup)Development Environment Setup
+To build a Streamlit Component, you need the following installed in your development environment:
+  * Python 3.9 - Python 3.13
+  * Streamlit
+  * [nodejs](https://nodejs.org/en/)
+  * [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+
+
+Clone the [component-template GitHub repo](https://github.com/streamlit/component-template), then decide whether you want to use the React.js (["template"](https://github.com/streamlit/component-template/tree/master/template)) or plain TypeScript (["template-reactless"](https://github.com/streamlit/component-template/tree/master/template-reactless)) template.
+  1. Initialize and build the component template frontend from the terminal:
+`# React template template/my_component/frontend npm install # Initialize the project and install npm dependencies npm run start # Start the Webpack dev server # or # TypeScript-only template template-reactless/my_component/frontend npm install # Initialize the project and install npm dependencies npm run start # Start the Webpack dev server `
+  2. _From a separate terminal_ , run the Streamlit app (Python) that declares and uses the component:
+`# React template cd template . venv/bin/activate # or similar to activate the venv/conda environment where Streamlit is installed pip install -e . # install template as editable package streamlit run my_component/example.py # run the example # or # TypeScript-only template cd template-reactless . venv/bin/activate # or similar to activate the venv/conda environment where Streamlit is installed pip install -e . # install template as editable package streamlit run my_component/example.py # run the example `
+
+
+After running the steps above, you should see a Streamlit app in your browser that looks like this:
+![Streamlit Component Example App](https://docs.streamlit.io/images/component_demo_example.png)
+The example app from the template shows how bi-directional communication is implemented. The Streamlit Component displays a button (`Python → JavaScript`), and the end-user can click the button. Each time the button is clicked, the JavaScript front-end increments the counter value and passes it back to Python (`JavaScript → Python`), which is then displayed by Streamlit (`Python → JavaScript`).
+### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#frontend)Frontend
+Because each Streamlit Component is its own webpage that gets rendered into an `iframe`, you can use just about any web tech you'd like to create that web page. We provide two templates to get started with in the Streamlit [Components-template GitHub repo](https://github.com/streamlit/component-template/); one of those templates uses [React](https://reactjs.org/) and the other does not.
+_push_pin_
+#### Note
+Even if you're not already familiar with React, you may still want to check out the React-based template. It handles most of the boilerplate required to send and receive data from Streamlit, and you can learn the bits of React you need as you go.
+If you'd rather not use React, please read this section anyway! It explains the fundamentals of Streamlit ↔ Component communication.
+#### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#react)React
+The React-based template is in `template/my_component/frontend/src/MyComponent.tsx`.
+  * `MyComponent.render()` is called automatically when the component needs to be re-rendered (just like in any React app)
+  * Arguments passed from the Python script are available via the `this.props.args` dictionary:
+
+
+`# Send arguments in Python: result = my_component(greeting="Hello", name="Streamlit") `
+`// Receive arguments in frontend: let greeting = this.props.args["greeting"]; // greeting = "Hello" let name = this.props.args["name"]; // name = "Streamlit" `
+  * Use `Streamlit.setComponentValue()` to return data from the component to the Python script:

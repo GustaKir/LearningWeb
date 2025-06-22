@@ -1,0 +1,33 @@
+Title: Understanding Widget Behavior in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/architecture/widget-behavior
+Summary: This section explores how widgets, such as buttons and text inputs, function in Streamlit apps, emphasizing their role as interactive elements. It discusses the specific order of events that occur with widgets and provides guidance on advanced concepts, particularly for users aiming to manage widget dynamics and state across pages.
+---
+
+# [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#understanding-widget-behavior)Understanding widget behavior
+Widgets (like `st.button`, `st.selectbox`, and `st.text_input`) are at the heart of Streamlit apps. They are the interactive elements of Streamlit that pass information from your users into your Python code. Widgets are magical and often work how you want, but they can have surprising behavior in some situations. Understanding the different parts of a widget and the precise order in which events occur helps you achieve your desired results.
+This guide covers advanced concepts about widgets. Generally, it begins with simpler concepts and increases in complexity. For most beginning users, these details won't be important to know right away. When you want to dynamically change widgets or preserve widget information between pages, these concepts will be important to understand. We recommend having a basic understanding of [Session State](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state) before reading this guide.
+🎈 TL;DR _expand_more_
+  1. The actions of one user do not affect the widgets of any other user.
+  2. A widget function call returns the widget's current value, which is a simple Python type. (e.g. `st.button` returns a boolean value.)
+  3. Widgets return their default values on their first call before a user interacts with them.
+  4. A widget's identity depends on the arguments passed to the widget function. Changing a widget's label, min or max value, default value, placeholder text, help text, or key will cause it to reset.
+  5. If you don't call a widget function in a script run, Streamlit will delete the widget's information— _including its key-value pair in Session State_. If you call the same widget function later, Streamlit treats it as a new widget.
+
+
+The last two points (widget identity and widget deletion) are the most relevant when dynamically changing widgets or working with multi-page applications. This is covered in detail later in this guide: [Statefulness of widgets](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#statefulness-of-widgets) and [Widget life cycle](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#widget-life-cycle).
+## [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#anatomy-of-a-widget)Anatomy of a widget
+There are four parts to keep in mind when using widgets:
+  1. The frontend component as seen by the user.
+  2. The backend value or value as seen through `st.session_state`.
+  3. The key of the widget used to access its value via `st.session_state`.
+  4. The return value given by the widget's function.
+
+
+### [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#widgets-are-session-dependent)Widgets are session dependent
+Widget states are dependent on a particular session (browser connection). The actions of one user do not affect the widgets of any other user. Furthermore, if a user opens up multiple tabs to access an app, each tab will be a unique session. Changing a widget in one tab will not affect the same widget in another tab.
+### [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#widgets-return-simple-python-data-types)Widgets return simple Python data types
+The value of a widget as seen through `st.session_state` and returned by the widget function are of simple Python types. For example, `st.button` returns a boolean value and will have the same boolean value saved in `st.session_state` if using a key. The first time a widget function is called (before a user interacts with it), it will return its default value. (e.g. `st.selectbox` returns the first option by default.) Default values are configurable for all widgets with a few special exceptions like `st.button` and `st.file_uploader`.
+### [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#keys-help-distinguish-widgets-and-access-their-values)Keys help distinguish widgets and access their values
+Widget keys serve two purposes:
+  1. Distinguishing two otherwise identical widgets.
+  2. Creating a means to access and manipulate the widget's value through `st.session_state`.

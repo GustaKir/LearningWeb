@@ -1,0 +1,111 @@
+Title: Configuring FastAPI Behind a Proxy
+URL: https://fastapi.tiangolo.com/advanced/behind-a-proxy/
+Summary: This section explains how to run a FastAPI application behind a proxy using Traefik. It covers starting the application with the `--root-path` option, and demonstrates how the API responds correctly with the configured `root_path` when accessed through a specific URL port.
+---
+
+```
+
+fast →[](https://fastapi.tiangolo.com/advanced/behind-a-proxy/)./traefik --configFile=traefik.tomlINFO[0000] Configuration loaded from file: /home/user/awesomeapi/traefik.tomlrestart ↻[](https://fastapi.tiangolo.com/advanced/behind-a-proxy/)
+
+```
+
+And now start your app, using the `--root-path` option:
+```
+
+fast →[](https://fastapi.tiangolo.com/advanced/behind-a-proxy/)fastapi run main.py --root-path /api/v1INFO:   Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)restart ↻[](https://fastapi.tiangolo.com/advanced/behind-a-proxy/)
+
+```
+
+### Check the responses[¶](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#check-the-responses "Permanent link")
+Now, if you go to the URL with the port for Uvicorn: <http://127.0.0.1:8000/app>, you will see the normal response:
+```
+{
+"message":"Hello World",
+"root_path":"/api/v1"
+}
+
+```
+
+Tip
+Notice that even though you are accessing it at `http://127.0.0.1:8000/app` it shows the `root_path` of `/api/v1`, taken from the option `--root-path`.
+And now open the URL with the port for Traefik, including the path prefix: <http://127.0.0.1:9999/api/v1/app>.
+We get the same response:
+```
+{
+"message":"Hello World",
+"root_path":"/api/v1"
+}
+
+```
+
+but this time at the URL with the prefix path provided by the proxy: `/api/v1`.
+Of course, the idea here is that everyone would access the app through the proxy, so the version with the path prefix `/api/v1` is the "correct" one.
+And the version without the path prefix (`http://127.0.0.1:8000/app`), provided by Uvicorn directly, would be exclusively for the _proxy_ (Traefik) to access it.
+That demonstrates how the Proxy (Traefik) uses the path prefix and how the server (Uvicorn) uses the `root_path` from the option `--root-path`.
+### Check the docs UI[¶](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#check-the-docs-ui "Permanent link")
+But here's the fun part. ✨
+The "official" way to access the app would be through the proxy with the path prefix that we defined. So, as we would expect, if you try the docs UI served by Uvicorn directly, without the path prefix in the URL, it won't work, because it expects to be accessed through the proxy.
+You can check it at <http://127.0.0.1:8000/docs>:
+![](https://fastapi.tiangolo.com/img/tutorial/behind-a-proxy/image01.png)
+But if we access the docs UI at the "official" URL using the proxy with port `9999`, at `/api/v1/docs`, it works correctly! 🎉
+You can check it at <http://127.0.0.1:9999/api/v1/docs>:
+![](https://fastapi.tiangolo.com/img/tutorial/behind-a-proxy/image02.png)
+Right as we wanted it. ✔️
+This is because FastAPI uses this `root_path` to create the default `server` in OpenAPI with the URL provided by `root_path`.
+## Additional servers[¶](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#additional-servers "Permanent link")
+Warning
+This is a more advanced use case. Feel free to skip it.
+By default, **FastAPI** will create a `server` in the OpenAPI schema with the URL for the `root_path`.
+But you can also provide other alternative `servers`, for example if you want _the same_ docs UI to interact with both a staging and a production environment.
+If you pass a custom list of `servers` and there's a `root_path` (because your API lives behind a proxy), **FastAPI** will insert a "server" with this `root_path` at the beginning of the list.
+For example:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#__tabbed_4_1)
+```
+fromfastapiimport FastAPI, Request
+app = FastAPI(
+  servers=[
+    {"url": "https://stag.example.com", "description": "Staging environment"},
+    {"url": "https://prod.example.com", "description": "Production environment"},
+  ],
+  root_path="/api/v1",
+)
+@app.get("/app")
+defread_main(request: Request):
+  return {"message": "Hello World", "root_path": request.scope.get("root_path")}
+
+```
+
+Will generate an OpenAPI schema like:
+```
+{
+"openapi":"3.1.0",
+// More stuff here
+"servers":[
+{
+"url":"/api/v1"
+},
+{
+"url":"https://stag.example.com",
+"description":"Staging environment"
+},
+{
+"url":"https://prod.example.com",
+"description":"Production environment"
+}
+],
+"paths":{
+// More stuff here
+}
+}
+
+```
+
+Tip
+Notice the auto-generated server with a `url` value of `/api/v1`, taken from the `root_path`.
+In the docs UI at <http://127.0.0.1:9999/api/v1/docs> it would look like:
+![](https://fastapi.tiangolo.com/img/tutorial/behind-a-proxy/image03.png)
+Tip
+The docs UI will interact with the server that you select.
+### Disable automatic server from `root_path`[¶](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#disable-automatic-server-from-root_path "Permanent link")
+If you don't want **FastAPI** to include an automatic server using the `root_path`, you can use the parameter `root_path_in_servers=False`:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#__tabbed_5_1)

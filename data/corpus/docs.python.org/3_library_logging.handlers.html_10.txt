@@ -1,0 +1,56 @@
+Title: SysLogHandler.emit Method
+URL: https://docs.python.org/3/library/logging.handlers.html
+Summary: The emit method formats the logging record and sends it to the syslog server, excluding any exception information. It discusses changes in version 3.2.1 related to message termination with a NUL byte, addressing differences in behavior among syslog daemons and adherence to RFC 5424.
+---
+
+emit(_record_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SysLogHandler.emit "Link to this definition")
+    
+The record is formatted, and then sent to the syslog server. If exception information is present, it is _not_ sent to the server.
+Changed in version 3.2.1: (See: [bpo-12168](https://bugs.python.org/issue?@action=redirect&bpo=12168).) In earlier versions, the message sent to the syslog daemons was always terminated with a NUL byte, because early versions of these daemons expected a NUL terminated message - even though it’s not in the relevant specification ([**RFC 5424**](https://datatracker.ietf.org/doc/html/rfc5424.html)). More recent versions of these daemons don’t expect the NUL byte but strip it off if it’s there, and even more recent daemons (which adhere more closely to RFC 5424) pass the NUL byte on as part of the message.
+To enable easier handling of syslog messages in the face of all these differing daemon behaviours, the appending of the NUL byte has been made configurable, through the use of a class-level attribute, `append_nul`. This defaults to `True` (preserving the existing behaviour) but can be set to `False` on a `SysLogHandler` instance in order for that instance to _not_ append the NUL terminator.
+Changed in version 3.3: (See: [bpo-12419](https://bugs.python.org/issue?@action=redirect&bpo=12419).) In earlier versions, there was no facility for an “ident” or “tag” prefix to identify the source of the message. This can now be specified using a class-level attribute, defaulting to `""` to preserve existing behaviour, but which can be overridden on a `SysLogHandler` instance in order for that instance to prepend the ident to every message handled. Note that the provided ident must be text, not bytes, and is prepended to the message exactly as is. 
+
+encodePriority(_facility_ , _priority_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority "Link to this definition")
+    
+Encodes the facility and priority into an integer. You can pass in strings or integers - if strings are passed, internal mapping dictionaries are used to convert them to integers.
+The symbolic `LOG_` values are defined in [`SysLogHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SysLogHandler "logging.handlers.SysLogHandler") and mirror the values defined in the `sys/syslog.h` header file.
+**Priorities**
+Name (string) | Symbolic value  
+---|---  
+`alert` | LOG_ALERT  
+`crit` or `critical` | LOG_CRIT  
+`debug` | LOG_DEBUG  
+`emerg` or `panic` | LOG_EMERG  
+`err` or `error` | LOG_ERR  
+`info` | LOG_INFO  
+`notice` | LOG_NOTICE  
+`warn` or `warning` | LOG_WARNING  
+**Facilities**
+Name (string) | Symbolic value  
+---|---  
+`auth` | LOG_AUTH  
+`authpriv` | LOG_AUTHPRIV  
+`cron` | LOG_CRON  
+`daemon` | LOG_DAEMON  
+`ftp` | LOG_FTP  
+`kern` | LOG_KERN  
+`lpr` | LOG_LPR  
+`mail` | LOG_MAIL  
+`news` | LOG_NEWS  
+`syslog` | LOG_SYSLOG  
+`user` | LOG_USER  
+`uucp` | LOG_UUCP  
+`local0` | LOG_LOCAL0  
+`local1` | LOG_LOCAL1  
+`local2` | LOG_LOCAL2  
+`local3` | LOG_LOCAL3  
+`local4` | LOG_LOCAL4  
+`local5` | LOG_LOCAL5  
+`local6` | LOG_LOCAL6  
+`local7` | LOG_LOCAL7 
+
+mapPriority(_levelname_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SysLogHandler.mapPriority "Link to this definition")
+      
+Maps a logging level name to a syslog priority name. You may need to override this if you are using custom levels, or if the default algorithm is not suitable for your needs. The default algorithm maps `DEBUG`, `INFO`, `WARNING`, `ERROR` and `CRITICAL` to the equivalent syslog names, and all other level names to ‘warning’.
+## NTEventLogHandler[¶](https://docs.python.org/3/library/logging.handlers.html#nteventloghandler "Link to this heading")
+The [`NTEventLogHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.NTEventLogHandler "logging.handlers.NTEventLogHandler") class, located in the [`logging.handlers`](https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers "logging.handlers: Handlers for the logging module.") module, supports sending logging messages to a local Windows NT, Windows 2000 or Windows XP event log. Before you can use it, you need Mark Hammond’s Win32 extensions for Python installed.

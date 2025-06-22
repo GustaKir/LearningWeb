@@ -1,0 +1,81 @@
+Title: Using the Interactive Documentation for API Authorization
+URL: https://fastapi.tiangolo.com/tutorial/security/first-steps/
+Summary: This section introduces the interactive documentation for the API, highlighting the 'Authorize' button and the authorization form for entering a username and password. It emphasizes that the form is not functional yet, but serves as a useful tool for documenting and testing the API, benefiting frontend teams, third-party applications, and developers.
+---
+
+```
+
+## Check it[¶](https://fastapi.tiangolo.com/tutorial/security/first-steps/#check-it "Permanent link")
+Go to the interactive docs at: <http://127.0.0.1:8000/docs>.
+You will see something like this:
+![](https://fastapi.tiangolo.com/img/tutorial/security/image01.png)
+Authorize button!
+You already have a shiny new "Authorize" button.
+And your _path operation_ has a little lock in the top-right corner that you can click.
+And if you click it, you have a little authorization form to type a `username` and `password` (and other optional fields):
+![](https://fastapi.tiangolo.com/img/tutorial/security/image02.png)
+Note
+It doesn't matter what you type in the form, it won't work yet. But we'll get there.
+This is of course not the frontend for the final users, but it's a great automatic tool to document interactively all your API.
+It can be used by the frontend team (that can also be yourself).
+It can be used by third party applications and systems.
+And it can also be used by yourself, to debug, check and test the same application.
+## The `password` flow[¶](https://fastapi.tiangolo.com/tutorial/security/first-steps/#the-password-flow "Permanent link")
+Now let's go back a bit and understand what is all that.
+The `password` "flow" is one of the ways ("flows") defined in OAuth2, to handle security and authentication.
+OAuth2 was designed so that the backend or API could be independent of the server that authenticates the user.
+But in this case, the same **FastAPI** application will handle the API and the authentication.
+So, let's review it from that simplified point of view:
+  * The user types the `username` and `password` in the frontend, and hits `Enter`.
+  * The frontend (running in the user's browser) sends that `username` and `password` to a specific URL in our API (declared with `tokenUrl="token"`).
+  * The API checks that `username` and `password`, and responds with a "token" (we haven't implemented any of this yet).
+    * A "token" is just a string with some content that we can use later to verify this user.
+    * Normally, a token is set to expire after some time.
+      * So, the user will have to log in again at some point later.
+      * And if the token is stolen, the risk is less. It is not like a permanent key that will work forever (in most of the cases).
+  * The frontend stores that token temporarily somewhere.
+  * The user clicks in the frontend to go to another section of the frontend web app.
+  * The frontend needs to fetch some more data from the API.
+    * But it needs authentication for that specific endpoint.
+    * So, to authenticate with our API, it sends a header `Authorization` with a value of `Bearer` plus the token.
+    * If the token contains `foobar`, the content of the `Authorization` header would be: `Bearer foobar`.
+
+
+## **FastAPI** 's `OAuth2PasswordBearer`[¶](https://fastapi.tiangolo.com/tutorial/security/first-steps/#fastapis-oauth2passwordbearer "Permanent link")
+**FastAPI** provides several tools, at different levels of abstraction, to implement these security features.
+In this example we are going to use **OAuth2** , with the **Password** flow, using a **Bearer** token. We do that using the `OAuth2PasswordBearer` class.
+Info
+A "bearer" token is not the only option.
+But it's the best one for our use case.
+And it might be the best for most use cases, unless you are an OAuth2 expert and know exactly why there's another option that better suits your needs.
+In that case, **FastAPI** also provides you with the tools to build it.
+When we create an instance of the `OAuth2PasswordBearer` class we pass in the `tokenUrl` parameter. This parameter contains the URL that the client (the frontend running in the user's browser) will use to send the `username` and `password` in order to get a token.
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/security/first-steps/#__tabbed_3_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+@app.get("/items/")
+async defread_items(token: Annotated[str, Depends(oauth2_scheme)]):
+  return {"token": token}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/security/first-steps/#__tabbed_4_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/security/first-steps/#__tabbed_4_2)
+```
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+@app.get("/items/")
+async defread_items(token: Annotated[str, Depends(oauth2_scheme)]):
+  return {"token": token}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

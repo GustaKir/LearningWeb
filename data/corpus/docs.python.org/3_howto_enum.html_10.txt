@@ -1,0 +1,107 @@
+Title: Python Enum: Private Names and Member Types
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section covers the handling of private names in Enums which remain normal attributes, and describes how Enum members function as instances of their class. It advises using upper-case names for Enum members to avoid naming conflicts with attributes from mixed-in classes.
+---
+
+```
+
+Note
+In Python 2 code the [`_order_`](https://docs.python.org/3/library/enum.html#enum.Enum._order_ "enum.Enum._order_") attribute is necessary as definition order is lost before it can be recorded.
+#### _Private__names[¶](https://docs.python.org/3/howto/enum.html#private-names "Link to this heading")
+[Private names](https://docs.python.org/3/reference/expressions.html#private-name-mangling) are not converted to enum members, but remain normal attributes.
+Changed in version 3.11.
+#### `Enum` member type[¶](https://docs.python.org/3/howto/enum.html#enum-member-type "Link to this heading")
+Enum members are instances of their enum class, and are normally accessed as `EnumClass.member`. In certain situations, such as writing custom enum behavior, being able to access one member directly from another is useful, and is supported; however, in order to avoid name clashes between member names and attributes/methods from mixed-in classes, upper-case names are strongly recommended.
+Changed in version 3.5.
+#### Creating members that are mixed with other data types[¶](https://docs.python.org/3/howto/enum.html#creating-members-that-are-mixed-with-other-data-types "Link to this heading")
+When subclassing other data types, such as [`int`](https://docs.python.org/3/library/functions.html#int "int") or [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), with an [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum"), all values after the `=` are passed to that data type’s constructor. For example:
+>>>```
+>>> classMyEnum(IntEnum):   # help(int) -> int(x, base=10) -> integer
+...   example = '11', 16   # so x='11' and base=16
+...
+>>> MyEnum.example.value    # and hex(11) is...
+17
+
+```
+
+#### Boolean value of `Enum` classes and members[¶](https://docs.python.org/3/howto/enum.html#boolean-value-of-enum-classes-and-members "Link to this heading")
+Enum classes that are mixed with non-[`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") types (such as [`int`](https://docs.python.org/3/library/functions.html#int "int"), [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), etc.) are evaluated according to the mixed-in type’s rules; otherwise, all members evaluate as [`True`](https://docs.python.org/3/library/constants.html#True "True"). To make your own enum’s boolean evaluation depend on the member’s value add the following to your class:
+```
+def__bool__(self):
+  return bool(self.value)
+
+```
+
+Plain [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") classes always evaluate as [`True`](https://docs.python.org/3/library/constants.html#True "True").
+#### `Enum` classes with methods[¶](https://docs.python.org/3/howto/enum.html#enum-classes-with-methods "Link to this heading")
+If you give your enum subclass extra methods, like the [Planet](https://docs.python.org/3/howto/enum.html#planet) class below, those methods will show up in a [`dir()`](https://docs.python.org/3/library/functions.html#dir "dir") of the member, but not of the class:
+>>>```
+>>> dir(Planet)
+['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
+>>> dir(Planet.EARTH)
+['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
+
+```
+
+#### Combining members of `Flag`[¶](https://docs.python.org/3/howto/enum.html#combining-members-of-flag "Link to this heading")
+Iterating over a combination of [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") members will only return the members that are comprised of a single bit:
+>>>```
+>>> classColor(Flag):
+...   RED = auto()
+...   GREEN = auto()
+...   BLUE = auto()
+...   MAGENTA = RED | BLUE
+...   YELLOW = RED | GREEN
+...   CYAN = GREEN | BLUE
+...
+>>> Color(3) # named combination
+<Color.YELLOW: 3>
+>>> Color(7)   # not named combination
+<Color.RED|GREEN|BLUE: 7>
+
+```
+
+#### `Flag` and `IntFlag` minutia[¶](https://docs.python.org/3/howto/enum.html#flag-and-intflag-minutia "Link to this heading")
+Using the following snippet for our examples:
+>>>```
+>>> classColor(IntFlag):
+...   BLACK = 0
+...   RED = 1
+...   GREEN = 2
+...   BLUE = 4
+...   PURPLE = RED | BLUE
+...   WHITE = RED | GREEN | BLUE
+...
+
+```
+
+the following are true:
+  * single-bit flags are canonical
+  * multi-bit and zero-bit flags are aliases
+  * only canonical flags are returned during iteration:
+>>>```
+>>> list(Color.WHITE)
+[<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]
+
+```
+
+  * negating a flag or flag set returns a new flag/flag set with the corresponding positive integer value:
+>>>```
+>>> Color.BLUE
+<Color.BLUE: 4>
+>>> ~Color.BLUE
+<Color.RED|GREEN: 3>
+
+```
+
+  * names of pseudo-flags are constructed from their members’ names:
+>>>```
+>>> (Color.RED | Color.GREEN).name
+'RED|GREEN'
+>>> classPerm(IntFlag):
+...   R = 4
+...   W = 2
+...   X = 1
+...
+>>> (Perm.R & Perm.W).name is None # effectively Perm(0)
+True

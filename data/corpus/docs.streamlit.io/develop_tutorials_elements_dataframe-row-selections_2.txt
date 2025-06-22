@@ -1,0 +1,42 @@
+Title: Creating Random Member Data in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections
+Summary: This section guides you through the process of defining a function in Streamlit to generate random member data. It includes the implementation of the function using the `@st.cache_data` decorator to enhance performance, utilizing the Faker library to create random profiles and random activity data.
+---
+
+ll automatically update as you save changes to `app.py`.
+  6. Return to your code.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#build-a-function-to-create-random-member-data)Build a function to create random member data
+To begin with, you'll define a function to randomly generate some member data. It's okay to skip this section if you just want to copy the function.
+Complete function to randomly generate member data _expand_more_
+`@st.cache_data def get_profile_dataset(number_of_items: int = 20, seed: int = 0) -> pd.DataFrame:   new_data = []   fake = Faker()   np.random.seed(seed)   Faker.seed(seed) for i in range(number_of_items):     profile = fake.profile()     new_data.append( { "name": profile["name"], "daily_activity": np.random.rand(25), "activity": np.random.randint(2, 90, size=12), } )   profile_df = pd.DataFrame(new_data) return profile_df `
+  1. Use an `@st.cache_data` decorator and start your function definition.
+`@st.cache_data def get_profile_dataset(number_of_items: int = 20, seed: int = 0) -> pd.DataFrame: `
+The `@st.cache_data` decorator turns `get_profile_dataset()` into a cached function. Streamlit saves the output of a cached function to reuse when the cached function is called again with the same inputs. This keeps your app performant when rerunning as part of Streamlit's execution model. For more information, see [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+The `get_profile_dataset` function has two parameters to configure the size of the data set and the seed for random generation. This example will use the default values (20 members in the set with a seed of 0). The function will return a `pandas.DataFrame`.
+  2. Initialize an empty list to store data.
+`  new_data = [] `
+  3. Initialize the random generators.
+`  fake = Faker()   random.seed(seed)   Faker.seed(seed) `
+  4. Iterate through a range to generate new member data as a dictionary and append it to your list.
+` for i in range(number_of_items):     profile = fake.profile()     new_data.append( { "name": profile["name"], "daily_activity": np.random.rand(25), "activity": np.random.randint(2, 90, size=12), } ) `
+For `daily_activity`, you're generating an array of length 25. These values are floats in the interval `[0,1)`. For `activity`, you're generating an array of length 12. These values are integers in the interval `[2,90)`.
+  5. Convert your list of dictionaries to a single `pandas.DataFrame` and return it.
+`  profile_df = pd.DataFrame(new_data) return profile_df `
+  6. Optional: Test out your function by calling it and displaying the data.
+`st.dataframe(get_profile_dataset()) `
+Save your `app.py` file to see the preview. Delete this line before you continue.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#display-your-data-with-multi-row-selections-enabled)Display your data with multi-row selections enabled
+  1. Define your column configuration to format your data.
+`column_configuration = { "name": st.column_config.TextColumn( "Name", help="The name of the user", max_chars=100, width="medium" ), "activity": st.column_config.LineChartColumn( "Activity (1 year)", help="The user's activity over the last 1 year",     width="large",     y_min=0,     y_max=100, ), "daily_activity": st.column_config.BarChartColumn( "Activity (daily)", help="The user's activity in the last 25 days",     width="medium",     y_min=0,     y_max=1, ), } `
+For each column of your dataframe, this defines nicely formatted column name, tooltip, and column width. You'll use a line chart to show yearly activity, and a bar chart to show daily activity.
+  2. Insert a header to identify the data you will display.
+`st.header("All members") `
+  3. Store your data in a convenient variable.
+`df = get_profile_dataset() `
+  4. Display your dataframe with selections activated.
+`event = st.dataframe(   df,   column_config=column_configuration,   use_container_width=True,   hide_index=True,   on_select="rerun",   selection_mode="multi-row", ) `
+By setting `on_selection="rerun"`, you've activated selections for the dataframe. `selection_mode="multi_row"` specifies the type of selections allowed (multiple rows, no columns). `event` stores the selection data from the user. Selections can be accessed from the `event.selection` attribute.

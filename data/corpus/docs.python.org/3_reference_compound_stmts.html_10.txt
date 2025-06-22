@@ -1,0 +1,58 @@
+Title: Pattern Matching in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section discusses the behavior of OR patterns in Python's pattern matching, where only the final subpattern can be irrefutable. It outlines that an OR pattern evaluates its subpatterns sequentially until one succeeds, and describes the syntax for AS patterns that match alongside a specified keyword.
+---
+
+```
+
+Only the final subpattern may be [irrefutable](https://docs.python.org/3/reference/compound_stmts.html#irrefutable-case), and each subpattern must bind the same set of names to avoid ambiguity.
+An OR pattern matches each of its subpatterns in turn to the subject value, until one succeeds. The OR pattern is then considered successful. Otherwise, if none of the subpatterns succeed, the OR pattern fails.
+In simple terms, `P1 | P2 | ...` will try to match `P1`, if it fails it will try to match `P2`, succeeding immediately if any succeeds, failing otherwise.
+#### 8.6.4.2. AS Patterns[¶](https://docs.python.org/3/reference/compound_stmts.html#as-patterns "Link to this heading")
+An AS pattern matches an OR pattern on the left of the [`as`](https://docs.python.org/3/reference/compound_stmts.html#as) keyword against a subject. Syntax:
+```
+**as_pattern** ::= [or_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-or_pattern) "as" [capture_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-capture_pattern)
+
+```
+
+If the OR pattern fails, the AS pattern fails. Otherwise, the AS pattern binds the subject to the name on the right of the as keyword and succeeds. `capture_pattern` cannot be a `_`.
+In simple terms `P as NAME` will match with `P`, and on success it will set `NAME = <subject>`.
+#### 8.6.4.3. Literal Patterns[¶](https://docs.python.org/3/reference/compound_stmts.html#literal-patterns "Link to this heading")
+A literal pattern corresponds to most [literals](https://docs.python.org/3/reference/lexical_analysis.html#literals) in Python. Syntax:
+```
+**literal_pattern** ::= [signed_number](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-signed_number)
+          | [signed_number](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-signed_number) "+" NUMBER
+          | [signed_number](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-signed_number) "-" NUMBER
+          | strings
+          | "None"
+          | "True"
+          | "False"
+**signed_number**  ::= ["-"] NUMBER
+
+```
+
+The rule `strings` and the token `NUMBER` are defined in the [standard Python grammar](https://docs.python.org/3/reference/grammar.html). Triple-quoted strings are supported. Raw strings and byte strings are supported. [f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings) are not supported.
+The forms `signed_number '+' NUMBER` and `signed_number '-' NUMBER` are for expressing [complex numbers](https://docs.python.org/3/reference/lexical_analysis.html#imaginary); they require a real number on the left and an imaginary number on the right. E.g. `3 + 4j`.
+In simple terms, `LITERAL` will succeed only if `<subject> == LITERAL`. For the singletons `None`, `True` and `False`, the [`is`](https://docs.python.org/3/reference/expressions.html#is) operator is used.
+#### 8.6.4.4. Capture Patterns[¶](https://docs.python.org/3/reference/compound_stmts.html#capture-patterns "Link to this heading")
+A capture pattern binds the subject value to a name. Syntax:
+```
+**capture_pattern** ::= !'_' NAME
+
+```
+
+A single underscore `_` is not a capture pattern (this is what `!'_'` expresses). It is instead treated as a [`wildcard_pattern`](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-wildcard_pattern).
+In a given pattern, a given name can only be bound once. E.g. `case x, x: ...` is invalid while `case [x] | x: ...` is allowed.
+Capture patterns always succeed. The binding follows scoping rules established by the assignment expression operator in [**PEP 572**](https://peps.python.org/pep-0572/); the name becomes a local variable in the closest containing function scope unless there’s an applicable [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) or [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) statement.
+In simple terms `NAME` will always succeed and it will set `NAME = <subject>`.
+#### 8.6.4.5. Wildcard Patterns[¶](https://docs.python.org/3/reference/compound_stmts.html#wildcard-patterns "Link to this heading")
+A wildcard pattern always succeeds (matches anything) and binds no name. Syntax:
+```
+**wildcard_pattern** ::= '_'
+
+```
+
+`_` is a [soft keyword](https://docs.python.org/3/reference/lexical_analysis.html#soft-keywords) within any pattern, but only within patterns. It is an identifier, as usual, even within `match` subject expressions, `guard`s, and `case` blocks.
+In simple terms, `_` will always succeed.
+#### 8.6.4.6. Value Patterns[¶](https://docs.python.org/3/reference/compound_stmts.html#value-patterns "Link to this heading")
+A value pattern represents a named value in Python. Syntax:

@@ -1,0 +1,123 @@
+Title: OAuth2 Security Scopes and Client Credentials
+URL: https://fastapi.tiangolo.com/reference/security/
+Summary: This section outlines the use of OAuth2 for handling security scopes such as `items:read`, `items:write`, `users:read`, `profile`, and `openid`. It also discusses the proper method of sending `client_id` and `client_secret` as part of form fields and recommends using HTTP Basic authentication for better compliance with OAuth2 specifications.
+---
+
+```python
+      "items:read items:write users:read profile openid"
+  ````
+      would represent the scopes:
+      * `items:read`
+      * `items:write`
+      * `users:read`
+      * `profile`
+      * `openid`
+      """
+    ),
+  ] = "",
+  client_id: Annotated[
+    Union[str, None],
+    Form(),
+    Doc(
+"""
+      If there's a `client_id`, it can be sent as part of the form fields.
+      But the OAuth2 specification recommends sending the `client_id` and
+      `client_secret` (if any) using HTTP Basic auth.
+      """
+    ),
+  ] = None,
+  client_secret: Annotated[
+    Union[str, None],
+    Form(),
+    Doc(
+"""
+      If there's a `client_password` (and a `client_id`), they can be sent
+      as part of the form fields. But the OAuth2 specification recommends
+      sending the `client_id` and `client_secret` (if any) using HTTP Basic
+      auth.
+      """
+    ),
+  ] = None,
+):
+  self.grant_type = grant_type
+  self.username = username
+  self.password = password
+  self.scopes = scope.split()
+  self.client_id = client_id
+  self.client_secret = client_secret
+
+```
+  
+---|---  
+###  grant_type `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestForm.grant_type "Permanent link")
+```
+grant_type = grant_type
+
+```
+
+###  username `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestForm.username "Permanent link")
+```
+username = username
+
+```
+
+###  password `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestForm.password "Permanent link")
+```
+password = password
+
+```
+
+###  scopes `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestForm.scopes "Permanent link")
+```
+scopes = split()
+
+```
+
+###  client_id `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestForm.client_id "Permanent link")
+```
+client_id = client_id
+
+```
+
+###  client_secret `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestForm.client_secret "Permanent link")
+```
+client_secret = client_secret
+
+```
+
+##  fastapi.security.OAuth2PasswordRequestFormStrict [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestFormStrict "Permanent link")
+```
+OAuth2PasswordRequestFormStrict(
+  grant_type,
+  username,
+  password,
+  scope="",
+  client_id=None,
+  client_secret=None,
+)
+
+```
+
+Bases: `OAuth2PasswordRequestForm[](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestForm "<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>      <span class="doc doc-object-name doc-class-name">fastapi.security.OAuth2PasswordRequestForm</span> \(<code>fastapi.security.oauth2.OAuth2PasswordRequestForm</code>\)")`
+This is a dependency class to collect the `username` and `password` as form data for an OAuth2 password flow.
+The OAuth2 specification dictates that for a password flow the data should be collected using form data (instead of JSON) and that it should have the specific fields `username` and `password`.
+All the initialization parameters are extracted from the request.
+The only difference between `OAuth2PasswordRequestFormStrict` and `OAuth2PasswordRequestForm` is that `OAuth2PasswordRequestFormStrict` requires the client to send the form field `grant_type` with the value `"password"`, which is required in the OAuth2 specification (it seems that for no particular reason), while for `OAuth2PasswordRequestForm` `grant_type` is optional.
+Read more about it in the [FastAPI docs for Simple OAuth2 with Password and Bearer](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/).
+#### Example[¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.OAuth2PasswordRequestFormStrict--example "Permanent link")
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordRequestForm
+app = FastAPI()
+@app.post("/login")
+deflogin(form_data: Annotated[OAuth2PasswordRequestFormStrict, Depends()]):
+  data = {}
+  data["scopes"] = []
+  for scope in form_data.scopes:
+    data["scopes"].append(scope)
+  if form_data.client_id:
+    data["client_id"] = form_data.client_id
+  if form_data.client_secret:
+    data["client_secret"] = form_data.client_secret
+  return data

@@ -1,0 +1,52 @@
+Title: Handling Special Keys and Termination in Curses Applications
+URL: https://docs.python.org/3/howto/curses.html
+Summary: Terminal special keys are processed as multibyte escape sequences, but curses can simplify handling them by enabling keypad mode. To enable, call `stdscr.keypad(True)`. Terminating a curses application involves reversing terminal settings with `curses.nocbreak()`, `stdscr.keypad(False)`, and `curses.echo()`, followed by `curses.endwin()` to restore the original terminal mode.
+---
+
+```
+
+Terminals usually return special keys, such as the cursor keys or navigation keys such as Page Up and Home, as a multibyte escape sequence. While you could write your application to expect such sequences and process them accordingly, curses can do it for you, returning a special value such as [`curses.KEY_LEFT`](https://docs.python.org/3/library/curses.html#curses.KEY_LEFT "curses.KEY_LEFT"). To get curses to do the job, you’ll have to enable keypad mode.
+```
+stdscr.keypad(True)
+
+```
+
+Terminating a curses application is much easier than starting one. You’ll need to call:
+```
+curses.nocbreak()
+stdscr.keypad(False)
+curses.echo()
+
+```
+
+to reverse the curses-friendly terminal settings. Then call the [`endwin()`](https://docs.python.org/3/library/curses.html#curses.endwin "curses.endwin") function to restore the terminal to its original operating mode.
+```
+curses.endwin()
+
+```
+
+A common problem when debugging a curses application is to get your terminal messed up when the application dies without restoring the terminal to its previous state. In Python this commonly happens when your code is buggy and raises an uncaught exception. Keys are no longer echoed to the screen when you type them, for example, which makes using the shell difficult.
+In Python you can avoid these complications and make debugging much easier by importing the [`curses.wrapper()`](https://docs.python.org/3/library/curses.html#curses.wrapper "curses.wrapper") function and using it like this:
+```
+fromcursesimport wrapper
+defmain(stdscr):
+  # Clear screen
+  stdscr.clear()
+  # This raises ZeroDivisionError when i == 10.
+  for i in range(0, 11):
+    v = i-10
+    stdscr.addstr(i, 0, '10 divided by {} is {}'.format(v, 10/v))
+    stdscr.refresh()
+    stdscr.getkey()
+wrapper(main)
+
+```
+
+The [`wrapper()`](https://docs.python.org/3/library/curses.html#curses.wrapper "curses.wrapper") function takes a callable object and does the initializations described above, also initializing colors if color support is present. `wrapper()` then runs your provided callable. Once the callable returns, `wrapper()` will restore the original state of the terminal. The callable is called inside a [`try`](https://docs.python.org/3/reference/compound_stmts.html#try)…[`except`](https://docs.python.org/3/reference/compound_stmts.html#except) that catches exceptions, restores the state of the terminal, and then re-raises the exception. Therefore your terminal won’t be left in a funny state on exception and you’ll be able to read the exception’s message and traceback.
+## Windows and Pads[¶](https://docs.python.org/3/howto/curses.html#windows-and-pads "Link to this heading")
+Windows are the basic abstraction in curses. A window object represents a rectangular area of the screen, and supports methods to display text, erase it, allow the user to input strings, and so forth.
+The `stdscr` object returned by the [`initscr()`](https://docs.python.org/3/library/curses.html#curses.initscr "curses.initscr") function is a window object that covers the entire screen. Many programs may need only this single window, but you might wish to divide the screen into smaller windows, in order to redraw or clear them separately. The [`newwin()`](https://docs.python.org/3/library/curses.html#curses.newwin "curses.newwin") function creates a new window of a given size, returning the new window object.
+```
+begin_x = 20; begin_y = 7
+height = 5; width = 40
+win = curses.newwin(height, width, begin_y, begin_x)

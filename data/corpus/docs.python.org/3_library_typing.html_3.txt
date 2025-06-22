@@ -1,0 +1,87 @@
+Title: Using Callables in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section introduces the usage of `Callable` and `Awaitable` types in Python typing, illustrating their application in defining functions like `feeder`, `async_query`, and `on_update`. It explains the subscription syntax for specifying argument lists and return types, emphasizing the requirement for exactly two values and detailing how to use ellipses for arbitrary parameter lists.
+---
+
+```
+fromcollections.abcimport Callable, Awaitable
+deffeeder(get_next_item: Callable[[], str]) -> None:
+  ... # Body
+defasync_query(on_success: Callable[[int], None],
+        on_error: Callable[[int, Exception], None]) -> None:
+  ... # Body
+async defon_update(value: str) -> None:
+  ... # Body
+callback: Callable[[str], Awaitable[None]] = on_update
+
+```
+
+The subscription syntax must always be used with exactly two values: the argument list and the return type. The argument list must be a list of types, a [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec"), [`Concatenate`](https://docs.python.org/3/library/typing.html#typing.Concatenate "typing.Concatenate"), or an ellipsis. The return type must be a single type.
+If a literal ellipsis `...` is given as the argument list, it indicates that a callable with any arbitrary parameter list would be acceptable:
+```
+defconcat(x: str, y: str) -> str:
+  return x + y
+x: Callable[..., str]
+x = str   # OK
+x = concat # Also OK
+
+```
+
+`Callable` cannot express complex signatures such as functions that take a variadic number of arguments, [overloaded functions](https://docs.python.org/3/library/typing.html#overload), or functions that have keyword-only parameters. However, these signatures can be expressed by defining a [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol") class with a [`__call__()`](https://docs.python.org/3/reference/datamodel.html#object.__call__ "object.__call__") method:
+```
+fromcollections.abcimport Iterable
+fromtypingimport Protocol
+classCombiner(Protocol):
+  def__call__(self, *vals: bytes, maxlen: int | None = None) -> list[bytes]: ...
+defbatch_proc(data: Iterable[bytes], cb_results: Combiner) -> bytes:
+  for item in data:
+    ...
+defgood_cb(*vals: bytes, maxlen: int | None = None) -> list[bytes]:
+  ...
+defbad_cb(*vals: bytes, maxitems: int | None) -> list[bytes]:
+  ...
+batch_proc([], good_cb) # OK
+batch_proc([], bad_cb)  # Error! Argument 2 has incompatible type because of
+             # different name and kind in the callback
+
+```
+
+Callables which take other callables as arguments may indicate that their parameter types are dependent on each other using [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec"). Additionally, if that callable adds or removes arguments from other callables, the [`Concatenate`](https://docs.python.org/3/library/typing.html#typing.Concatenate "typing.Concatenate") operator may be used. They take the form `Callable[ParamSpecVariable, ReturnType]` and `Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]` respectively.
+Changed in version 3.10: `Callable` now supports [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") and [`Concatenate`](https://docs.python.org/3/library/typing.html#typing.Concatenate "typing.Concatenate"). See [**PEP 612**](https://peps.python.org/pep-0612/) for more details.
+See also
+The documentation for [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") and [`Concatenate`](https://docs.python.org/3/library/typing.html#typing.Concatenate "typing.Concatenate") provides examples of usage in `Callable`.
+## Generics[¶](https://docs.python.org/3/library/typing.html#generics "Link to this heading")
+Since type information about objects kept in containers cannot be statically inferred in a generic way, many container classes in the standard library support subscription to denote the expected types of container elements.
+```
+fromcollections.abcimport Mapping, Sequence
+classEmployee: ...
+# Sequence[Employee] indicates that all elements in the sequence
+# must be instances of "Employee".
+# Mapping[str, str] indicates that all keys and all values in the mapping
+# must be strings.
+defnotify_by_email(employees: Sequence[Employee],
+          overrides: Mapping[str, str]) -> None: ...
+
+```
+
+Generic functions and classes can be parameterized by using [type parameter syntax](https://docs.python.org/3/reference/compound_stmts.html#type-params):
+```
+fromcollections.abcimport Sequence
+deffirst[T](l: Sequence[T]) -> T: # Function is generic over the TypeVar "T"
+  return l[0]
+
+```
+
+Or by using the [`TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") factory directly:
+```
+fromcollections.abcimport Sequence
+fromtypingimport TypeVar
+U = TypeVar('U')         # Declare type variable "U"
+defsecond(l: Sequence[U]) -> U: # Function is generic over the TypeVar "U"
+  return l[1]
+
+```
+
+Changed in version 3.12: Syntactic support for generics is new in Python 3.12.
+## Annotating tuples[¶](https://docs.python.org/3/library/typing.html#annotating-tuples "Link to this heading")
+For most containers in Python, the typing system assumes that all elements in the container will be of the same type. For example:

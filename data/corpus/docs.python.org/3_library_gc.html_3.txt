@@ -1,0 +1,56 @@
+Title: Garbage Collection Functions in Python
+URL: https://docs.python.org/3/library/gc.html
+Summary: The gc module introduced the gc.freeze() function in version 3.9 to move tracked objects to a permanent generation, optimizing memory usage during process forking. This is done by disabling garbage collection beforehand and re-enabling it in child processes. The gc.unfreeze() function, added in version 3.7, allows unfreezing of these objects.
+---
+
+```
+
+Added in version 3.9. 
+
+gc.freeze()[¶](https://docs.python.org/3/library/gc.html#gc.freeze "Link to this definition")
+    
+Freeze all the objects tracked by the garbage collector; move them to a permanent generation and ignore them in all the future collections.
+If a process will `fork()` without `exec()`, avoiding unnecessary copy-on-write in child processes will maximize memory sharing and reduce overall memory usage. This requires both avoiding creation of freed “holes” in memory pages in the parent process and ensuring that GC collections in child processes won’t touch the `gc_refs` counter of long-lived objects originating in the parent process. To accomplish both, call `gc.disable()` early in the parent process, `gc.freeze()` right before `fork()`, and `gc.enable()` early in child processes.
+Added in version 3.7. 
+
+gc.unfreeze()[¶](https://docs.python.org/3/library/gc.html#gc.unfreeze "Link to this definition")
+    
+Unfreeze the objects in the permanent generation, put them back into the oldest generation.
+Added in version 3.7. 
+
+gc.get_freeze_count()[¶](https://docs.python.org/3/library/gc.html#gc.get_freeze_count "Link to this definition")
+    
+Return the number of objects in the permanent generation.
+Added in version 3.7.
+The following variables are provided for read-only access (you can mutate the values but should not rebind them): 
+
+gc.garbage[¶](https://docs.python.org/3/library/gc.html#gc.garbage "Link to this definition")
+    
+A list of objects which the collector found to be unreachable but could not be freed (uncollectable objects). Starting with Python 3.4, this list should be empty most of the time, except when using instances of C extension types with a non-`NULL` `tp_del` slot.
+If [`DEBUG_SAVEALL`](https://docs.python.org/3/library/gc.html#gc.DEBUG_SAVEALL "gc.DEBUG_SAVEALL") is set, then all unreachable objects will be added to this list rather than freed.
+Changed in version 3.2: If this list is non-empty at [interpreter shutdown](https://docs.python.org/3/glossary.html#term-interpreter-shutdown), a [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning") is emitted, which is silent by default. If [`DEBUG_UNCOLLECTABLE`](https://docs.python.org/3/library/gc.html#gc.DEBUG_UNCOLLECTABLE "gc.DEBUG_UNCOLLECTABLE") is set, in addition all uncollectable objects are printed.
+Changed in version 3.4: Following [**PEP 442**](https://peps.python.org/pep-0442/), objects with a [`__del__()`](https://docs.python.org/3/reference/datamodel.html#object.__del__ "object.__del__") method don’t end up in [`gc.garbage`](https://docs.python.org/3/library/gc.html#gc.garbage "gc.garbage") anymore. 
+
+gc.callbacks[¶](https://docs.python.org/3/library/gc.html#gc.callbacks "Link to this definition")
+    
+A list of callbacks that will be invoked by the garbage collector before and after collection. The callbacks will be called with two arguments, _phase_ and _info_.
+_phase_ can be one of two values:
+> “start”: The garbage collection is about to start.
+> “stop”: The garbage collection has finished.
+_info_ is a dict providing more information for the callback. The following keys are currently defined:
+> “generation”: The oldest generation being collected.
+> “collected”: When _phase_ is “stop”, the number of objects successfully collected.
+> “uncollectable”: When _phase_ is “stop”, the number of objects that could not be collected and were put in [`garbage`](https://docs.python.org/3/library/gc.html#gc.garbage "gc.garbage").
+Applications can add their own callbacks to this list. The primary use cases are:
+> Gathering statistics about garbage collection, such as how often various generations are collected, and how long the collection takes.
+> Allowing applications to identify and clear their own uncollectable types when they appear in [`garbage`](https://docs.python.org/3/library/gc.html#gc.garbage "gc.garbage").
+Added in version 3.3.
+The following constants are provided for use with [`set_debug()`](https://docs.python.org/3/library/gc.html#gc.set_debug "gc.set_debug"): 
+
+gc.DEBUG_STATS[¶](https://docs.python.org/3/library/gc.html#gc.DEBUG_STATS "Link to this definition")
+    
+Print statistics during collection. This information can be useful when tuning the collection frequency. 
+
+gc.DEBUG_COLLECTABLE[¶](https://docs.python.org/3/library/gc.html#gc.DEBUG_COLLECTABLE "Link to this definition")
+    
+Print information on collectable objects found.

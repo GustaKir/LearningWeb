@@ -1,0 +1,51 @@
+Title: Standard Error Stream in asyncio Subprocesses
+URL: https://docs.python.org/3/library/asyncio-subprocess.html
+Summary: Describes the standard error stream in asyncio subprocesses, highlighting that it can be accessed via a StreamReader or may be None. It warns users to prefer the communicate() method for interaction over directly writing to input streams or reading from output streams.
+---
+
+stderr[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stderr "Link to this definition")
+    
+Standard error stream ([`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader "asyncio.StreamReader")) or `None` if the process was created with `stderr=None`.
+Warning
+Use the [`communicate()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.communicate "asyncio.subprocess.Process.communicate") method rather than [`process.stdin.write()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stdin "asyncio.subprocess.Process.stdin"), [`await process.stdout.read()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stdout "asyncio.subprocess.Process.stdout") or [`await process.stderr.read()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.stderr "asyncio.subprocess.Process.stderr"). This avoids deadlocks due to streams pausing reading or writing and blocking the child process. 
+
+pid[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.pid "Link to this definition")
+    
+Process identification number (PID).
+Note that for processes created by the [`create_subprocess_shell()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.create_subprocess_shell "asyncio.create_subprocess_shell") function, this attribute is the PID of the spawned shell. 
+
+returncode[¶](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process.returncode "Link to this definition")
+    
+Return code of the process when it exits.
+A `None` value indicates that the process has not terminated yet.
+A negative value `-N` indicates that the child was terminated by signal `N` (POSIX only).
+### Subprocess and Threads[¶](https://docs.python.org/3/library/asyncio-subprocess.html#subprocess-and-threads "Link to this heading")
+Standard asyncio event loop supports running subprocesses from different threads by default.
+On Windows subprocesses are provided by [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop") only (default), [`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") has no subprocess support.
+On UNIX _child watchers_ are used for subprocess finish waiting, see [Process Watchers](https://docs.python.org/3/library/asyncio-policy.html#asyncio-watchers) for more info.
+Changed in version 3.8: UNIX switched to use [`ThreadedChildWatcher`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.ThreadedChildWatcher "asyncio.ThreadedChildWatcher") for spawning subprocesses from different threads without any limitation.
+Spawning a subprocess with _inactive_ current child watcher raises [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError").
+Note that alternative event loop implementations might have own limitations; please refer to their documentation.
+See also
+The [Concurrency and multithreading in asyncio](https://docs.python.org/3/library/asyncio-dev.html#asyncio-multithreading) section.
+### Examples[¶](https://docs.python.org/3/library/asyncio-subprocess.html#examples "Link to this heading")
+An example using the [`Process`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.subprocess.Process "asyncio.subprocess.Process") class to control a subprocess and the [`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader "asyncio.StreamReader") class to read from its standard output.
+The subprocess is created by the [`create_subprocess_exec()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.create_subprocess_exec "asyncio.create_subprocess_exec") function:
+```
+importasyncio
+importsys
+async defget_date():
+  code = 'import datetime; print(datetime.datetime.now())'
+  # Create the subprocess; redirect the standard output
+  # into a pipe.
+  proc = await asyncio.create_subprocess_exec(
+    sys.executable, '-c', code,
+    stdout=asyncio.subprocess.PIPE)
+  # Read one line of output.
+  data = await proc.stdout.readline()
+  line = data.decode('ascii').rstrip()
+  # Wait for the subprocess exit.
+  await proc.wait()
+  return line
+date = asyncio.run(get_date())
+print(f"Current date: {date}")

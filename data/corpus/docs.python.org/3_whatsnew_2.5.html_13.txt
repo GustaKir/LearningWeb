@@ -1,0 +1,26 @@
+Title: Unicode Handling Changes in Python 2.5
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: Python 2.5 introduced changes in Unicode handling that could result in a `UnicodeDecodeError` when accessing dictionaries with mixed key types. This raised concerns about backward compatibility, leading to the introduction of a `UnicodeWarning` instead of suppressing the error. Additionally, common mistakes such as omitting an `__init__.py` module in package directories were noted.
+---
+
+```
+
+Previously this would raise a [`UnicodeDecodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeDecodeError "UnicodeDecodeError") exception, but in 2.5 this could result in puzzling problems when accessing a dictionary. If you looked up `unichr(128)` and `chr(128)` was being used as a key, you’d get a [`UnicodeDecodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeDecodeError "UnicodeDecodeError") exception. Other changes in 2.5 resulted in this exception being raised instead of suppressed by the code in `dictobject.c` that implements dictionaries.
+Raising an exception for such a comparison is strictly correct, but the change might have broken code, so instead [`UnicodeWarning`](https://docs.python.org/3/library/exceptions.html#UnicodeWarning "UnicodeWarning") was introduced.
+(Implemented by Marc-André Lemburg.)
+  * One error that Python programmers sometimes make is forgetting to include an `__init__.py` module in a package directory. Debugging this mistake can be confusing, and usually requires running Python with the [`-v`](https://docs.python.org/3/using/cmdline.html#cmdoption-v) switch to log all the paths searched. In Python 2.5, a new [`ImportWarning`](https://docs.python.org/3/library/exceptions.html#ImportWarning "ImportWarning") warning is triggered when an import would have picked up a directory as a package but no `__init__.py` was found. This warning is silently ignored by default; provide the [`-Wd`](https://docs.python.org/3/using/cmdline.html#cmdoption-W) option when running the Python executable to display the warning message. (Implemented by Thomas Wouters.)
+  * The list of base classes in a class definition can now be empty. As an example, this is now legal:
+```
+classC():
+  pass
+
+```
+
+(Implemented by Brett Cannon.)
+
+
+### Interactive Interpreter Changes[¶](https://docs.python.org/3/whatsnew/2.5.html#interactive-interpreter-changes "Link to this heading")
+In the interactive interpreter, `quit` and `exit` have long been strings so that new users get a somewhat helpful message when they try to quit:
+>>>```
+>>> quit
+'Use Ctrl-D (i.e. EOF) to exit.'

@@ -1,0 +1,33 @@
+Title: Frame Object Attributes and Methods
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: This section describes the 'f_trace_opcodes' attribute which can be set to allow per-opcode events in Python’s frame object, warning that it may cause undefined behavior with exceptions. Additionally, it covers 'f_lineno' which holds the current line number and can be modified to jump within the frame for debugging purposes. It also mentions the 'clear()' method available on frame objects.
+---
+
+frame.f_trace_opcodes[¶](https://docs.python.org/3/reference/datamodel.html#frame.f_trace_opcodes "Link to this definition")
+| Set this attribute to [`True`](https://docs.python.org/3/library/constants.html#True "True") to allow per-opcode events to be requested. Note that this may lead to undefined interpreter behaviour if exceptions raised by the trace function escape to the function being traced. 
+
+frame.f_lineno[¶](https://docs.python.org/3/reference/datamodel.html#frame.f_lineno "Link to this definition")
+| The current line number of the frame – writing to this from within a trace function jumps to the given line (only for the bottom-most frame). A debugger can implement a Jump command (aka Set Next Statement) by writing to this attribute.  
+##### 3.2.13.2.3. Frame object methods[¶](https://docs.python.org/3/reference/datamodel.html#frame-object-methods "Link to this heading")
+Frame objects support one method: 
+
+frame.clear()[¶](https://docs.python.org/3/reference/datamodel.html#frame.clear "Link to this definition")
+    
+This method clears all references to [local variables](https://docs.python.org/3/reference/executionmodel.html#naming) held by the frame. Also, if the frame belonged to a [generator](https://docs.python.org/3/glossary.html#term-generator), the generator is finalized. This helps break reference cycles involving frame objects (for example when catching an [exception](https://docs.python.org/3/library/exceptions.html#bltin-exceptions) and storing its [traceback](https://docs.python.org/3/reference/datamodel.html#traceback-objects) for later use).
+[`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised if the frame is currently executing or suspended.
+Added in version 3.4.
+Changed in version 3.13: Attempting to clear a suspended frame raises [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") (as has always been the case for executing frames).
+#### 3.2.13.3. Traceback objects[¶](https://docs.python.org/3/reference/datamodel.html#traceback-objects "Link to this heading")
+Traceback objects represent the stack trace of an [exception](https://docs.python.org/3/tutorial/errors.html#tut-errors). A traceback object is implicitly created when an exception occurs, and may also be explicitly created by calling [`types.TracebackType`](https://docs.python.org/3/library/types.html#types.TracebackType "types.TracebackType").
+Changed in version 3.7: Traceback objects can now be explicitly instantiated from Python code.
+For implicitly created tracebacks, when the search for an exception handler unwinds the execution stack, at each unwound level a traceback object is inserted in front of the current traceback. When an exception handler is entered, the stack trace is made available to the program. (See section [The try statement](https://docs.python.org/3/reference/compound_stmts.html#try).) It is accessible as the third item of the tuple returned by [`sys.exc_info()`](https://docs.python.org/3/library/sys.html#sys.exc_info "sys.exc_info"), and as the [`__traceback__`](https://docs.python.org/3/library/exceptions.html#BaseException.__traceback__ "BaseException.__traceback__") attribute of the caught exception.
+When the program contains no suitable handler, the stack trace is written (nicely formatted) to the standard error stream; if the interpreter is interactive, it is also made available to the user as [`sys.last_traceback`](https://docs.python.org/3/library/sys.html#sys.last_traceback "sys.last_traceback").
+For explicitly created tracebacks, it is up to the creator of the traceback to determine how the [`tb_next`](https://docs.python.org/3/reference/datamodel.html#traceback.tb_next "traceback.tb_next") attributes should be linked to form a full stack trace.
+Special read-only attributes: 
+
+traceback.tb_frame[¶](https://docs.python.org/3/reference/datamodel.html#traceback.tb_frame "Link to this definition")
+| Points to the execution [frame](https://docs.python.org/3/reference/datamodel.html#frame-objects) of the current level. Accessing this attribute raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `object.__getattr__` with arguments `obj` and `"tb_frame"`.  
+---|--- 
+
+traceback.tb_lineno[¶](https://docs.python.org/3/reference/datamodel.html#traceback.tb_lineno "Link to this definition")
+| Gives the line number where the exception occurred

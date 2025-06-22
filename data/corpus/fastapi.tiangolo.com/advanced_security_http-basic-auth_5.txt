@@ -1,0 +1,131 @@
+Title: HTTP Basic Authentication in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/security/http-basic-auth/
+Summary: This document provides an implementation example of HTTP Basic Authentication in FastAPI. It demonstrates how to define a FastAPI application with an endpoint that uses HTTP Basic credentials to authenticate users. The example includes checking the submitted credentials against predefined correct values and raises an HTTP 401 error for unauthorized access.
+---
+
+```
+importsecrets
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI, HTTPException, status
+fromfastapi.securityimport HTTPBasic, HTTPBasicCredentials
+app = FastAPI()
+security = HTTPBasic()
+defget_current_username(
+  credentials: Annotated[HTTPBasicCredentials, Depends(security)],
+):
+  current_username_bytes = credentials.username.encode("utf8")
+  correct_username_bytes = b"stanleyjobson"
+  is_correct_username = secrets.compare_digest(
+    current_username_bytes, correct_username_bytes
+  )
+  current_password_bytes = credentials.password.encode("utf8")
+  correct_password_bytes = b"swordfish"
+  is_correct_password = secrets.compare_digest(
+    current_password_bytes, correct_password_bytes
+  )
+  if not (is_correct_username and is_correct_password):
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Incorrect username or password",
+      headers={"WWW-Authenticate": "Basic"},
+    )
+  return credentials.username
+@app.get("/users/me")
+defread_current_user(username: Annotated[str, Depends(get_current_username)]):
+  return {"username": username}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/security/http-basic-auth/#__tabbed_4_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/advanced/security/http-basic-auth/#__tabbed_4_2)
+```
+importsecrets
+fromfastapiimport Depends, FastAPI, HTTPException, status
+fromfastapi.securityimport HTTPBasic, HTTPBasicCredentials
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+security = HTTPBasic()
+defget_current_username(
+  credentials: Annotated[HTTPBasicCredentials, Depends(security)],
+):
+  current_username_bytes = credentials.username.encode("utf8")
+  correct_username_bytes = b"stanleyjobson"
+  is_correct_username = secrets.compare_digest(
+    current_username_bytes, correct_username_bytes
+  )
+  current_password_bytes = credentials.password.encode("utf8")
+  correct_password_bytes = b"swordfish"
+  is_correct_password = secrets.compare_digest(
+    current_password_bytes, correct_password_bytes
+  )
+  if not (is_correct_username and is_correct_password):
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Incorrect username or password",
+      headers={"WWW-Authenticate": "Basic"},
+    )
+  return credentials.username
+@app.get("/users/me")
+defread_current_user(username: Annotated[str, Depends(get_current_username)]):
+  return {"username": username}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+importsecrets
+fromfastapiimport Depends, FastAPI, HTTPException, status
+fromfastapi.securityimport HTTPBasic, HTTPBasicCredentials
+app = FastAPI()
+security = HTTPBasic()
+defget_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+  current_username_bytes = credentials.username.encode("utf8")
+  correct_username_bytes = b"stanleyjobson"
+  is_correct_username = secrets.compare_digest(
+    current_username_bytes, correct_username_bytes
+  )
+  current_password_bytes = credentials.password.encode("utf8")
+  correct_password_bytes = b"swordfish"
+  is_correct_password = secrets.compare_digest(
+    current_password_bytes, correct_password_bytes
+  )
+  if not (is_correct_username and is_correct_password):
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Incorrect username or password",
+      headers={"WWW-Authenticate": "Basic"},
+    )
+  return credentials.username
+@app.get("/users/me")
+defread_current_user(username: str = Depends(get_current_username)):
+  return {"username": username}
+
+```
+
+This would be similar to:
+```
+if not (credentials.username == "stanleyjobson") or not (credentials.password == "swordfish"):
+  # Return some error
+  ...
+
+```
+
+But by using the `secrets.compare_digest()` it will be secure against a type of attacks called "timing attacks".
+### Timing Attacks[¶](https://fastapi.tiangolo.com/advanced/security/http-basic-auth/#timing-attacks "Permanent link")
+But what's a "timing attack"?
+Let's imagine some attackers are trying to guess the username and password.
+And they send a request with a username `johndoe` and a password `love123`.
+Then the Python code in your application would be equivalent to something like:
+```
+if "johndoe" == "stanleyjobson" and "love123" == "swordfish":
+  ...
+
+```
+
+But right at the moment Python compares the first `j` in `johndoe` to the first `s` in `stanleyjobson`, it will return `False`, because it already knows that those two strings are not the same, thinking that "there's no need to waste more computation comparing the rest of the letters". And your application will say "Incorrect username or password".
+But then the attackers try with username `stanleyjobsox` and password `love123`.
+And your application code does something like:
+```
+if "stanleyjobsox" == "stanleyjobson" and "love123" == "swordfish":
+  ...

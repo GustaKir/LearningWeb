@@ -1,0 +1,52 @@
+Title: PyTypeObject Fields Overview
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: The section describes the 'tp_doc' and 'tp_traverse' fields of the PyTypeObject. 'tp_doc' is an optional pointer to a docstring for the type, which is not inherited by subtypes. 'tp_traverse' is a pointer to a garbage collector traversal function, applicable when the Py_TPFLAGS_HAVE_GC flag is set.
+---
+
+constchar*[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_doc[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_doc "Link to this definition")
+    
+An optional pointer to a NUL-terminated C string giving the docstring for this type object. This is exposed as the [`__doc__`](https://docs.python.org/3/reference/datamodel.html#type.__doc__ "type.__doc__") attribute on the type and instances of the type.
+**Inheritance:**
+This field is _not_ inherited by subtypes. 
+
+[traverseproc](https://docs.python.org/3/c-api/gcsupport.html#c.traverseproc "traverseproc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_traverse[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "Link to this definition")
+    
+An optional pointer to a traversal function for the garbage collector. This is only used if the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit is set. The signature is:
+```
+inttp_traverse(PyObject*self,visitprocvisit,void*arg);
+
+```
+
+More information about Python’s garbage collection scheme can be found in section [Supporting Cyclic Garbage Collection](https://docs.python.org/3/c-api/gcsupport.html#supporting-cycle-detection).
+The [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") pointer is used by the garbage collector to detect reference cycles. A typical implementation of a [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") function simply calls [`Py_VISIT()`](https://docs.python.org/3/c-api/gcsupport.html#c.Py_VISIT "Py_VISIT") on each of the instance’s members that are Python objects that the instance owns. For example, this is function `local_traverse()` from the `_thread` extension module:
+```
+staticint
+local_traverse(localobject*self,visitprocvisit,void*arg)
+{
+Py_VISIT(self->args);
+Py_VISIT(self->kw);
+Py_VISIT(self->dict);
+return0;
+}
+
+```
+
+Note that [`Py_VISIT()`](https://docs.python.org/3/c-api/gcsupport.html#c.Py_VISIT "Py_VISIT") is called only on those members that can participate in reference cycles. Although there is also a `self->key` member, it can only be `NULL` or a Python string and therefore cannot be part of a reference cycle.
+On the other hand, even if you know a member can never be part of a cycle, as a debugging aid you may want to visit it anyway just so the [`gc`](https://docs.python.org/3/library/gc.html#module-gc "gc: Interface to the cycle-detecting garbage collector.") module’s [`get_referents()`](https://docs.python.org/3/library/gc.html#gc.get_referents "gc.get_referents") function will include it.
+Heap types ([`Py_TPFLAGS_HEAPTYPE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HEAPTYPE "Py_TPFLAGS_HEAPTYPE")) must visit their type with:
+```
+Py_VISIT(Py_TYPE(self));
+
+```
+
+It is only needed since Python 3.9. To support Python 3.8 and older, this line must be conditional:
+```
+#if PY_VERSION_HEX >= 0x03090000
+Py_VISIT(Py_TYPE(self));
+#endif
+
+```
+
+If the [`Py_TPFLAGS_MANAGED_DICT`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_DICT "Py_TPFLAGS_MANAGED_DICT") bit is set in the [`tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags") field, the traverse function must call [`PyObject_VisitManagedDict()`](https://docs.python.org/3/c-api/object.html#c.PyObject_VisitManagedDict "PyObject_VisitManagedDict") like this:
+```
+PyObject_VisitManagedDict((PyObject*)self,visit,arg);

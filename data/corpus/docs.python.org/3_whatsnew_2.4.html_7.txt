@@ -1,0 +1,98 @@
+Title: Decimal Type in Python: Precision Handling and Operations
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: This section discusses the handling of floating-point numbers when converting to the Decimal type in Python. It highlights the importance of precision and suggests converting floating-point numbers to strings before passing them to the Decimal constructor to avoid inaccuracies. Additionally, it outlines basic operations that can be performed with Decimal instances, noting that exponentiation requires an integer exponent.
+---
+
+```
+
+Cautionary note: the sign bit is a Boolean value, so 0 is positive and 1 is negative.
+Converting from floating-point numbers poses a bit of a problem: should the FP number representing 1.1 turn into the decimal number for exactly 1.1, or for 1.1 plus whatever inaccuracies are introduced? The decision was to dodge the issue and leave such a conversion out of the API. Instead, you should convert the floating-point number into a string using the desired precision and pass the string to the `Decimal` constructor:
+>>>```
+>>> f = 1.1
+>>> decimal.Decimal(str(f))
+Decimal("1.1")
+>>> decimal.Decimal('%.12f' % f)
+Decimal("1.100000000000")
+
+```
+
+Once you have `Decimal` instances, you can perform the usual mathematical operations on them. One limitation: exponentiation requires an integer exponent:
+>>>```
+>>> a = decimal.Decimal('35.72')
+>>> b = decimal.Decimal('1.73')
+>>> a+b
+Decimal("37.45")
+>>> a-b
+Decimal("33.99")
+>>> a*b
+Decimal("61.7956")
+>>> a/b
+Decimal("20.64739884393063583815028902")
+>>> a ** 2
+Decimal("1275.9184")
+>>> a**b
+Traceback (most recent call last):
+...
+decimal.InvalidOperation: x ** (non-integer)
+
+```
+
+You can combine `Decimal` instances with integers, but not with floating-point numbers:
+>>>```
+>>> a + 4
+Decimal("39.72")
+>>> a + 4.5
+Traceback (most recent call last):
+...
+TypeError: You can interact Decimal only with int, long or Decimal data types.
+>>>
+
+```
+
+`Decimal` numbers can be used with the [`math`](https://docs.python.org/3/library/math.html#module-math "math: Mathematical functions \(sin\(\) etc.\).") and [`cmath`](https://docs.python.org/3/library/cmath.html#module-cmath "cmath: Mathematical functions for complex numbers.") modules, but note that they’ll be immediately converted to floating-point numbers before the operation is performed, resulting in a possible loss of precision and accuracy. You’ll also get back a regular floating-point number and not a `Decimal`.
+>>>```
+>>> importmath,cmath
+>>> d = decimal.Decimal('123456789012.345')
+>>> math.sqrt(d)
+351364.18288201344
+>>> cmath.sqrt(-d)
+351364.18288201344j
+
+```
+
+`Decimal` instances have a `sqrt()` method that returns a `Decimal`, but if you need other things such as trigonometric functions you’ll have to implement them.
+>>>```
+>>> d.sqrt()
+Decimal("351364.1828820134592177245001")
+
+```
+
+### The `Context` type[¶](https://docs.python.org/3/whatsnew/2.4.html#the-context-type "Link to this heading")
+Instances of the `Context` class encapsulate several settings for decimal operations:
+  * `prec` is the precision, the number of decimal places.
+  * `rounding` specifies the rounding mode. The [`decimal`](https://docs.python.org/3/library/decimal.html#module-decimal "decimal: Implementation of the General Decimal Arithmetic Specification.") module has constants for the various possibilities: `ROUND_DOWN`, `ROUND_CEILING`, `ROUND_HALF_EVEN`, and various others.
+  * `traps` is a dictionary specifying what happens on encountering certain error conditions: either an exception is raised or a value is returned. Some examples of error conditions are division by zero, loss of precision, and overflow.
+
+
+There’s a thread-local default context available by calling `getcontext()`; you can change the properties of this context to alter the default precision, rounding, or trap handling. The following example shows the effect of changing the precision of the default context:
+>>>```
+>>> decimal.getcontext().prec
+28
+>>> decimal.Decimal(1) / decimal.Decimal(7)
+Decimal("0.1428571428571428571428571429")
+>>> decimal.getcontext().prec = 9
+>>> decimal.Decimal(1) / decimal.Decimal(7)
+Decimal("0.142857143")
+
+```
+
+The default action for error conditions is selectable; the module can either return a special value such as infinity or not-a-number, or exceptions can be raised:
+>>>```
+>>> decimal.Decimal(1) / decimal.Decimal(0)
+Traceback (most recent call last):
+...
+decimal.DivisionByZero: x / 0
+>>> decimal.getcontext().traps[decimal.DivisionByZero] = False
+>>> decimal.Decimal(1) / decimal.Decimal(0)
+Decimal("Infinity")
+>>>

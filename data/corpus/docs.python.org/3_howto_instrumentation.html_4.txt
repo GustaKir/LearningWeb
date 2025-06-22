@@ -1,0 +1,65 @@
+Title: Using SystemTap to Monitor CPython Performance
+URL: https://docs.python.org/3/howto/instrumentation.html
+Summary: This script demonstrates how to use SystemTap to create a monitoring tool that displays the top 20 most frequently entered bytecode frames from all running CPython code every second. It captures function entry events and organizes them by process ID, filename, line number, function name, and call count.
+---
+
+```
+
+The following script uses the tapset above to provide a top-like view of all running CPython code, showing the top 20 most frequently entered bytecode frames, each second, across the whole system:
+```
+global fn_calls;
+probe python.function.entry
+{
+  fn_calls[pid(), filename, funcname, lineno] += 1;
+}
+probe timer.ms(1000) {
+  printf("\033[2J\033[1;1H") /* clear screen \*/
+  printf("%6s %80s %6s %30s %6s\n",
+      "PID", "FILENAME", "LINE", "FUNCTION", "CALLS")
+  foreach ([pid, filename, funcname, lineno] in fn_calls- limit 20) {
+    printf("%6d %80s %6d %30s %6d\n",
+      pid, filename, lineno, funcname,
+      fn_calls[pid, filename, funcname, lineno]);
+  }
+  delete fn_calls;
+}
+
+```
+
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Instrumenting CPython with DTrace and SystemTap](https://docs.python.org/3/howto/instrumentation.html)
+    * [Enabling the static markers](https://docs.python.org/3/howto/instrumentation.html#enabling-the-static-markers)
+    * [Static DTrace probes](https://docs.python.org/3/howto/instrumentation.html#static-dtrace-probes)
+    * [Static SystemTap markers](https://docs.python.org/3/howto/instrumentation.html#static-systemtap-markers)
+    * [Available static markers](https://docs.python.org/3/howto/instrumentation.html#available-static-markers)
+    * [SystemTap Tapsets](https://docs.python.org/3/howto/instrumentation.html#systemtap-tapsets)
+    * [Examples](https://docs.python.org/3/howto/instrumentation.html#examples)
+
+
+#### Previous topic
+[An introduction to the ipaddress module](https://docs.python.org/3/howto/ipaddress.html "previous chapter")
+#### Next topic
+[Python support for the Linux `perf` profiler](https://docs.python.org/3/howto/perf_profiling.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/instrumentation.rst)
+
+
+«
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/perf_profiling.html "Python support for the Linux perf profiler") |
+  * [previous](https://docs.python.org/3/howto/ipaddress.html "An introduction to the ipaddress module") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Instrumenting CPython with DTrace and SystemTap](https://docs.python.org/3/howto/instrumentation.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+© [ Copyright ](https://docs.python.org/3/copyright.html) 2001-2025, Python Software Foundation. This page is licensed under the Python Software Foundation License Version 2. Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License. See [History and License](https://docs.python.org/license.html) for more information. The Python Software Foundation is a non-profit corporation. [Please donate.](https://www.python.org/psf/donations/) Last updated on Apr 27, 2025 (05:38 UTC). [Found a bug](https://docs.python.org/bugs.html)? Created using [Sphinx](https://www.sphinx-doc.org/) 8.2.3.

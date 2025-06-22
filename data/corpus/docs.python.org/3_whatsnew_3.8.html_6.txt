@@ -1,0 +1,44 @@
+Title: Python 3.8 Features and Improvements
+URL: https://docs.python.org/3/whatsnew/3.8.html
+Summary: Python 3.8 introduces several updates, including support for `
+{name_}` escapes in regular expressions for better pattern matching, reversed iteration for dict and dictviews, and stricter syntax for keyword names in function calls.
+---
+
+issue?@action=redirect&bpo=20092).)
+  * Added support of `\N{_name_}`escapes in[`regular expressions`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations."):
+>>>```
+>>> notice = 'Copyright © 2019'
+>>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
+>>> int(copyright_year_pattern.search(notice).group(1))
+2019
+
+```
+
+(Contributed by Jonathan Eunice and Serhiy Storchaka in [bpo-30688](https://bugs.python.org/issue?@action=redirect&bpo=30688).)
+  * Dict and dictviews are now iterable in reversed insertion order using [`reversed()`](https://docs.python.org/3/library/functions.html#reversed "reversed"). (Contributed by Rémi Lapeyre in [bpo-33462](https://bugs.python.org/issue?@action=redirect&bpo=33462).)
+  * The syntax allowed for keyword names in function calls was further restricted. In particular, `f((keyword)=arg)` is no longer allowed. It was never intended to permit more than a bare name on the left-hand side of a keyword argument assignment term. (Contributed by Benjamin Peterson in [bpo-34641](https://bugs.python.org/issue?@action=redirect&bpo=34641).)
+  * Generalized iterable unpacking in [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) and [`return`](https://docs.python.org/3/reference/simple_stmts.html#return) statements no longer requires enclosing parentheses. This brings the _yield_ and _return_ syntax into better agreement with normal assignment syntax:
+>>>```
+>>> defparse(family):
+    lastname, *members = family.split()
+    return lastname.upper(), *members
+>>> parse('simpsons homer marge bart lisa maggie')
+('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
+
+```
+
+(Contributed by David Cuthbert and Jordan Chapman in [bpo-32117](https://bugs.python.org/issue?@action=redirect&bpo=32117).)
+  * When a comma is missed in code such as `[(10, 20) (30, 40)]`, the compiler displays a [`SyntaxWarning`](https://docs.python.org/3/library/exceptions.html#SyntaxWarning "SyntaxWarning") with a helpful suggestion. This improves on just having a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") indicating that the first tuple was not callable. (Contributed by Serhiy Storchaka in [bpo-15248](https://bugs.python.org/issue?@action=redirect&bpo=15248).)
+  * Arithmetic operations between subclasses of [`datetime.date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date") or [`datetime.datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") and [`datetime.timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") objects now return an instance of the subclass, rather than the base class. This also affects the return type of operations whose implementation (directly or indirectly) uses [`datetime.timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") arithmetic, such as [`astimezone()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone "datetime.datetime.astimezone"). (Contributed by Paul Ganssle in [bpo-32417](https://bugs.python.org/issue?@action=redirect&bpo=32417).)
+  * When the Python interpreter is interrupted by Ctrl-C (SIGINT) and the resulting [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt") exception is not caught, the Python process now exits via a SIGINT signal or with the correct exit code such that the calling process can detect that it died due to a Ctrl-C. Shells on POSIX and Windows use this to properly terminate scripts in interactive sessions. (Contributed by Google via Gregory P. Smith in [bpo-1054041](https://bugs.python.org/issue?@action=redirect&bpo=1054041).)
+  * Some advanced styles of programming require updating the [`types.CodeType`](https://docs.python.org/3/library/types.html#types.CodeType "types.CodeType") object for an existing function. Since code objects are immutable, a new code object needs to be created, one that is modeled on the existing code object. With 19 parameters, this was somewhat tedious. Now, the new `replace()` method makes it possible to create a clone with a few altered parameters.
+Here’s an example that alters the [`statistics.mean()`](https://docs.python.org/3/library/statistics.html#statistics.mean "statistics.mean") function to prevent the _data_ parameter from being used as a keyword argument:
+>>>```
+>>> fromstatisticsimport mean
+>>> mean(data=[10, 20, 90])
+40
+>>> mean.__code__ = mean.__code__.replace(co_posonlyargcount=1)
+>>> mean(data=[10, 20, 90])
+Traceback (most recent call last):
+...
+TypeError: mean() got some positional-only arguments passed as keyword arguments: 'data'

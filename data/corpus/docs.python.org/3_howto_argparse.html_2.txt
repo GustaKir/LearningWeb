@@ -1,0 +1,126 @@
+Title: Using argparse in Python
+URL: https://docs.python.org/3/howto/argparse.html
+Summary: This section outlines the use of the `add_argument()` method to define command-line options for a program, specifically naming an option 'echo'. It explains the necessity of specifying an option when calling the program and how the `parse_args()` method retrieves data from the specified options, including the handling of values by `argparse`.
+---
+
+```
+
+Here is what’s happening:
+  * We’ve added the [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") method, which is what we use to specify which command-line options the program is willing to accept. In this case, I’ve named it `echo` so that it’s in line with its function.
+  * Calling our program now requires us to specify an option.
+  * The [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") method actually returns some data from the options specified, in this case, `echo`.
+  * The variable is some form of ‘magic’ that [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") performs for free (i.e. no need to specify which variable that value is stored in). You will also notice that its name matches the string argument given to the method, `echo`.
+
+
+Note however that, although the help display looks nice and all, it currently is not as helpful as it can be. For example we see that we got `echo` as a positional argument, but we don’t know what it does, other than by guessing or by reading the source code. So, let’s make it a bit more useful:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.add_argument("echo", help="echo the string you use here")
+args = parser.parse_args()
+print(args.echo)
+
+```
+
+And we get:
+```
+$ pythonprog.py-h
+usage: prog.py [-h] echo
+positional arguments:
+ echo    echo the string you use here
+options:
+ -h, --help show this help message and exit
+
+```
+
+Now, how about doing something even more useful:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.add_argument("square", help="display a square of a given number")
+args = parser.parse_args()
+print(args.square**2)
+
+```
+
+Following is a result of running the code:
+```
+$ pythonprog.py4
+Traceback (most recent call last):
+ File "prog.py", line 5, in <module>
+  print(args.square**2)
+TypeError: unsupported operand type(s) for ** or pow(): 'str' and 'int'
+
+```
+
+That didn’t go so well. That’s because [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") treats the options we give it as strings, unless we tell it otherwise. So, let’s tell [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") to treat that input as an integer:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.add_argument("square", help="display a square of a given number",
+          type=int)
+args = parser.parse_args()
+print(args.square**2)
+
+```
+
+Following is a result of running the code:
+```
+$ pythonprog.py4
+16
+$ pythonprog.pyfour
+usage: prog.py [-h] square
+prog.py: error: argument square: invalid int value: 'four'
+
+```
+
+That went well. The program now even helpfully quits on bad illegal input before proceeding.
+## Introducing Optional arguments[¶](https://docs.python.org/3/howto/argparse.html#introducing-optional-arguments "Link to this heading")
+So far we have been playing with positional arguments. Let us have a look on how to add optional ones:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--verbosity", help="increase output verbosity")
+args = parser.parse_args()
+if args.verbosity:
+  print("verbosity turned on")
+
+```
+
+And the output:
+```
+$ pythonprog.py--verbosity1
+verbosity turned on
+$ pythonprog.py
+$ pythonprog.py--help
+usage: prog.py [-h] [--verbosity VERBOSITY]
+options:
+ -h, --help      show this help message and exit
+ --verbosity VERBOSITY
+            increase output verbosity
+$ pythonprog.py--verbosity
+usage: prog.py [-h] [--verbosity VERBOSITY]
+prog.py: error: argument --verbosity: expected one argument
+
+```
+
+Here is what is happening:
+  * The program is written so as to display something when `--verbosity` is specified and display nothing when not.
+  * To show that the option is actually optional, there is no error when running the program without it. Note that by default, if an optional argument isn’t used, the relevant variable, in this case `args.verbosity`, is given `None` as a value, which is the reason it fails the truth test of the [`if`](https://docs.python.org/3/reference/compound_stmts.html#if) statement.
+  * The help message is a bit different.
+  * When using the `--verbosity` option, one must also specify some value, any value.
+
+
+The above example accepts arbitrary integer values for `--verbosity`, but for our simple program, only two values are actually useful, `True` or `False`. Let’s modify the code accordingly:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--verbose", help="increase output verbosity",
+          action="store_true")
+args = parser.parse_args()
+if args.verbose:
+  print("verbosity turned on")
+
+```
+
+And the output:

@@ -1,0 +1,23 @@
+Title: sys.addaudithook
+URL: https://docs.python.org/3/library/sys.html
+Summary: This function appends a callable hook to the list of auditing hooks in the current interpreter. When an auditing event is triggered using sys.audit(), these hooks are called in the order they were added, allowing for event logging or exceptions. Audit hooks are meant for monitoring internal actions, not for sandboxing.
+---
+
+sys.addaudithook(_hook_)[¶](https://docs.python.org/3/library/sys.html#sys.addaudithook "Link to this definition")
+    
+Append the callable _hook_ to the list of active auditing hooks for the current (sub)interpreter.
+When an auditing event is raised through the [`sys.audit()`](https://docs.python.org/3/library/sys.html#sys.audit "sys.audit") function, each hook will be called in the order it was added with the event name and the tuple of arguments. Native hooks added by [`PySys_AddAuditHook()`](https://docs.python.org/3/c-api/sys.html#c.PySys_AddAuditHook "PySys_AddAuditHook") are called first, followed by hooks added in the current (sub)interpreter. Hooks can then log the event, raise an exception to abort the operation, or terminate the process entirely.
+Note that audit hooks are primarily for collecting information about internal or otherwise unobservable actions, whether by Python or libraries written in Python. They are not suitable for implementing a “sandbox”. In particular, malicious code can trivially disable or bypass hooks added using this function. At a minimum, any security-sensitive hooks must be added using the C API [`PySys_AddAuditHook()`](https://docs.python.org/3/c-api/sys.html#c.PySys_AddAuditHook "PySys_AddAuditHook") before initialising the runtime, and any modules allowing arbitrary memory modification (such as [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.")) should be completely removed or closely monitored.
+Calling [`sys.addaudithook()`](https://docs.python.org/3/library/sys.html#sys.addaudithook "sys.addaudithook") will itself raise an auditing event named `sys.addaudithook` with no arguments. If any existing hooks raise an exception derived from [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError"), the new hook will not be added and the exception suppressed. As a result, callers cannot assume that their hook has been added unless they control all existing hooks.
+See the [audit events table](https://docs.python.org/3/library/audit_events.html#audit-events) for all events raised by CPython, and [**PEP 578**](https://peps.python.org/pep-0578/) for the original design discussion.
+Added in version 3.8.
+Changed in version 3.8.1: Exceptions derived from [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") but not [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") are no longer suppressed.
+**CPython implementation detail:** When tracing is enabled (see [`settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace")), Python hooks are only traced if the callable has a `__cantrace__` member that is set to a true value. Otherwise, trace functions will skip the hook. 
+
+sys.argv[¶](https://docs.python.org/3/library/sys.html#sys.argv "Link to this definition")
+    
+The list of command line arguments passed to a Python script. `argv[0]` is the script name (it is operating system dependent whether this is a full pathname or not). If the command was executed using the [`-c`](https://docs.python.org/3/using/cmdline.html#cmdoption-c) command line option to the interpreter, `argv[0]` is set to the string `'-c'`. If no script name was passed to the Python interpreter, `argv[0]` is the empty string.
+To loop over the standard input, or the list of files given on the command line, see the [`fileinput`](https://docs.python.org/3/library/fileinput.html#module-fileinput "fileinput: Loop over standard input or a list of files.") module.
+See also [`sys.orig_argv`](https://docs.python.org/3/library/sys.html#sys.orig_argv "sys.orig_argv").
+Note
+On Unix, command line arguments are passed by bytes from OS. Python decodes them with filesystem encoding and “surrogateescape” error handler. When you need original bytes, you can get it by `[os.fsencode(arg) for arg in sys.argv]`.

@@ -1,0 +1,20 @@
+Title: multiprocessing.Value Function
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The multiprocessing.Value function creates a ctypes object in shared memory, providing a synchronized wrapper by default. The type of the object is determined by _typecode_or_type_, with additional arguments for initialization. A lock can be configured to manage concurrent access.
+---
+
+multiprocessing.Value(_typecode_or_type_ , _* args_, _lock =True_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Value "Link to this definition")
+    
+Return a [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") object allocated from shared memory. By default the return value is actually a synchronized wrapper for the object. The object itself can be accessed via the _value_ attribute of a [`Value`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Value "multiprocessing.Value").
+_typecode_or_type_ determines the type of the returned object: it is either a ctypes type or a one character typecode of the kind used by the [`array`](https://docs.python.org/3/library/array.html#module-array "array: Space efficient arrays of uniformly typed numeric values.") module. _*args_ is passed on to the constructor for the type.
+If _lock_ is `True` (the default) then a new recursive lock object is created to synchronize access to the value. If _lock_ is a [`Lock`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Lock "multiprocessing.Lock") or [`RLock`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.RLock "multiprocessing.RLock") object then that will be used to synchronize access to the value. If _lock_ is `False` then access to the returned object will not be automatically protected by a lock, so it will not necessarily be “process-safe”.
+Operations like `+=` which involve a read and write are not atomic. So if, for instance, you want to atomically increment a shared value it is insufficient to just do
+```
+counter.value += 1
+
+```
+
+Assuming the associated lock is recursive (which it is by default) you can instead do
+```
+with counter.get_lock():
+  counter.value += 1

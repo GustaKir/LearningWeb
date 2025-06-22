@@ -1,0 +1,153 @@
+Title: Using Multiple Path and Query Parameters in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params/
+Summary: This section explains how to declare and use multiple path and query parameters in FastAPI. It highlights that parameters can be defined without a specific order, and demonstrates the functionality through an example of a FastAPI route that uses both types of parameters.
+---
+
+```
+
+or any other case variation (uppercase, first letter in uppercase, etc), your function will see the parameter `short` with a `bool` value of `True`. Otherwise as `False`.
+## Multiple path and query parameters[¶](https://fastapi.tiangolo.com/tutorial/query-params/#multiple-path-and-query-parameters "Permanent link")
+You can declare multiple path parameters and query parameters at the same time, **FastAPI** knows which is which.
+And you don't have to declare them in any specific order.
+They will be detected by name:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params/#__tabbed_6_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/users/{user_id}/items/{item_id}")
+async defread_user_item(
+  user_id: int, item_id: str, q: str | None = None, short: bool = False
+):
+  item = {"item_id": item_id, "owner_id": user_id}
+  if q:
+    item.update({"q": q})
+  if not short:
+    item.update(
+      {"description": "This is an amazing item that has a long description"}
+    )
+  return item
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params/#__tabbed_7_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/users/{user_id}/items/{item_id}")
+async defread_user_item(
+  user_id: int, item_id: str, q: Union[str, None] = None, short: bool = False
+):
+  item = {"item_id": item_id, "owner_id": user_id}
+  if q:
+    item.update({"q": q})
+  if not short:
+    item.update(
+      {"description": "This is an amazing item that has a long description"}
+    )
+  return item
+
+```
+
+## Required query parameters[¶](https://fastapi.tiangolo.com/tutorial/query-params/#required-query-parameters "Permanent link")
+When you declare a default value for non-path parameters (for now, we have only seen query parameters), then it is not required.
+If you don't want to add a specific value but just make it optional, set the default as `None`.
+But when you want to make a query parameter required, you can just not declare any default value:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params/#__tabbed_8_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_user_item(item_id: str, needy: str):
+  item = {"item_id": item_id, "needy": needy}
+  return item
+
+```
+
+Here the query parameter `needy` is a required query parameter of type `str`.
+If you open in your browser a URL like:
+```
+http://127.0.0.1:8000/items/foo-item
+
+```
+
+...without adding the required parameter `needy`, you will see an error like:
+```
+{
+"detail":[
+{
+"type":"missing",
+"loc":[
+"query",
+"needy"
+],
+"msg":"Field required",
+"input":null,
+"url":"https://errors.pydantic.dev/2.1/v/missing"
+}
+]
+}
+
+```
+
+As `needy` is a required parameter, you would need to set it in the URL:
+```
+http://127.0.0.1:8000/items/foo-item?needy=sooooneedy
+
+```
+
+...this would work:
+```
+{
+"item_id":"foo-item",
+"needy":"sooooneedy"
+}
+
+```
+
+And of course, you can define some parameters as required, some as having a default value, and some entirely optional:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params/#__tabbed_9_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_user_item(
+  item_id: str, needy: str, skip: int = 0, limit: int | None = None
+):
+  item = {"item_id": item_id, "needy": needy, "skip": skip, "limit": limit}
+  return item
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params/#__tabbed_10_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_user_item(
+  item_id: str, needy: str, skip: int = 0, limit: Union[int, None] = None
+):
+  item = {"item_id": item_id, "needy": needy, "skip": skip, "limit": limit}
+  return item
+
+```
+
+In this case, there are 3 query parameters:
+  * `needy`, a required `str`.
+  * `skip`, an `int` with a default value of `0`.
+  * `limit`, an optional `int`.
+
+
+Tip
+You could also use `Enum`s the same way as with [Path Parameters](https://fastapi.tiangolo.com/tutorial/path-params/#predefined-values).
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Path Parameters  ](https://fastapi.tiangolo.com/tutorial/path-params/) [ Next  Request Body  ](https://fastapi.tiangolo.com/tutorial/body/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")
+  *["parsing"]: converting the string that comes from an HTTP request into Python data

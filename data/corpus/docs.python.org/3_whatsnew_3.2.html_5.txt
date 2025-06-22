@@ -1,0 +1,59 @@
+Title: Python 3.2 Highlights and New Features
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: This document discusses improvements in Python 3.2, including PEP 3148 for asynchronous computations and examples using threads and processes. It also introduces PEP 3147, which addresses issues with bytecode caching in environments with multiple Python interpreters.
+---
+
+```
+
+See also 
+
+[**PEP 3148**](https://peps.python.org/pep-3148/) - Futures – Execute Computations Asynchronously
+    
+PEP written by Brian Quinlan.
+[Code for Threaded Parallel URL reads](https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor-example), an example using threads to fetch multiple web pages in parallel.
+[Code for computing prime numbers in parallel](https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor-example), an example demonstrating [`ProcessPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ProcessPoolExecutor "concurrent.futures.ProcessPoolExecutor").
+## PEP 3147: PYC Repository Directories[¶](https://docs.python.org/3/whatsnew/3.2.html#pep-3147-pyc-repository-directories "Link to this heading")
+Python’s scheme for caching bytecode in _.pyc_ files did not work well in environments with multiple Python interpreters. If one interpreter encountered a cached file created by another interpreter, it would recompile the source and overwrite the cached file, thus losing the benefits of caching.
+The issue of “pyc fights” has become more pronounced as it has become commonplace for Linux distributions to ship with multiple versions of Python. These conflicts also arise with CPython alternatives such as Unladen Swallow.
+To solve this problem, Python’s import machinery has been extended to use distinct filenames for each interpreter. Instead of Python 3.2 and Python 3.3 and Unladen Swallow each competing for a file called “mymodule.pyc”, they will now look for “mymodule.cpython-32.pyc”, “mymodule.cpython-33.pyc”, and “mymodule.unladen10.pyc”. And to prevent all of these new files from cluttering source directories, the _pyc_ files are now collected in a “__pycache__” directory stored under the package directory.
+Aside from the filenames and target directories, the new scheme has a few aspects that are visible to the programmer:
+  * Imported modules now have a [`__cached__`](https://docs.python.org/3/reference/datamodel.html#module.__cached__ "module.__cached__") attribute which stores the name of the actual file that was imported:
+>>>```
+>>> importcollections
+>>> collections.__cached__
+'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
+
+```
+
+  * The tag that is unique to each interpreter is accessible from the `imp` module:
+>>>```
+>>> importimp
+>>> imp.get_tag()
+'cpython-32'
+
+```
+
+  * Scripts that try to deduce source filename from the imported file now need to be smarter. It is no longer sufficient to simply strip the “c” from a “.pyc” filename. Instead, use the new functions in the `imp` module:
+>>>```
+>>> imp.source_from_cache('c:/py32/lib/__pycache__/collections.cpython-32.pyc')
+'c:/py32/lib/collections.py'
+>>> imp.cache_from_source('c:/py32/lib/collections.py')
+'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
+
+```
+
+  * The [`py_compile`](https://docs.python.org/3/library/py_compile.html#module-py_compile "py_compile: Generate byte-code files from Python source files.") and [`compileall`](https://docs.python.org/3/library/compileall.html#module-compileall "compileall: Tools for byte-compiling all Python source files in a directory tree.") modules have been updated to reflect the new naming convention and target directory. The command-line invocation of _compileall_ has new options: `-i` for specifying a list of files and directories to compile and `-b` which causes bytecode files to be written to their legacy location rather than ___pycache___.
+  * The [`importlib.abc`](https://docs.python.org/3/library/importlib.html#module-importlib.abc "importlib.abc: Abstract base classes related to import") module has been updated with new [abstract base classes](https://docs.python.org/3/glossary.html#term-abstract-base-class) for loading bytecode files. The obsolete ABCs, `PyLoader` and `PyPycLoader`, have been deprecated (instructions on how to stay Python 3.1 compatible are included with the documentation).
+
+
+See also 
+
+[**PEP 3147**](https://peps.python.org/pep-3147/) - PYC Repository Directories
+    
+PEP written by Barry Warsaw.
+## PEP 3149: ABI Version Tagged .so Files[¶](https://docs.python.org/3/whatsnew/3.2.html#pep-3149-abi-version-tagged-so-files "Link to this heading")
+The PYC repository directory allows multiple bytecode cache files to be co-located. This PEP implements a similar mechanism for shared object files by giving them a common directory and distinct names for each version.
+The common directory is “pyshared” and the file names are made distinct by identifying the Python implementation (such as CPython, PyPy, Jython, etc.), the major and minor version numbers, and optional build flags (such as “d” for debug, “m” for pymalloc, “u” for wide-unicode). For an arbitrary package “foo”, you may see these files when the distribution package is installed:
+```
+/usr/share/pyshared/foo.cpython-32m.so
+/usr/share/pyshared/foo.cpython-33md.so

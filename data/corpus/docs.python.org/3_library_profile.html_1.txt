@@ -1,0 +1,72 @@
+Title: Python Profiler Modules Overview
+URL: https://docs.python.org/3/library/profile.html
+Summary: The profiler modules in Python help provide execution profiles for programs rather than for benchmarking. For accurate benchmarking, the 'timeit' module is recommended. This note highlights that profilers may introduce overhead that affects performance comparisons between Python and C code. An instant user’s manual section is also included, offering a quick guide to profiling functions, illustrated with an example of profiling a function with a single argument.
+---
+
+Note
+The profiler modules are designed to provide an execution profile for a given program, not for benchmarking purposes (for that, there is [`timeit`](https://docs.python.org/3/library/timeit.html#module-timeit "timeit: Measure the execution time of small code snippets.") for reasonably accurate results). This particularly applies to benchmarking Python code against C code: the profilers introduce overhead for Python code, but not for C-level functions, and so the C code would seem faster than any Python one.
+## Instant User’s Manual[¶](https://docs.python.org/3/library/profile.html#instant-user-s-manual "Link to this heading")
+This section is provided for users that “don’t want to read the manual.” It provides a very brief overview, and allows a user to rapidly perform profiling on an existing application.
+To profile a function that takes a single argument, you can do:
+```
+importcProfile
+importre
+cProfile.run('re.compile("foo|bar")')
+
+```
+
+(Use [`profile`](https://docs.python.org/3/library/profile.html#module-profile "profile: Python source profiler.") instead of [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile "cProfile") if the latter is not available on your system.)
+The above action would run [`re.compile()`](https://docs.python.org/3/library/re.html#re.compile "re.compile") and print profile results like the following:
+```
+   214 function calls (207 primitive calls) in 0.002 seconds
+Ordered by: cumulative time
+ncalls tottime percall cumtime percall filename:lineno(function)
+   1  0.000  0.000  0.002  0.002 {built-in method builtins.exec}
+   1  0.000  0.000  0.001  0.001 <string>:1(<module>)
+   1  0.000  0.000  0.001  0.001 __init__.py:250(compile)
+   1  0.000  0.000  0.001  0.001 __init__.py:289(_compile)
+   1  0.000  0.000  0.000  0.000 _compiler.py:759(compile)
+   1  0.000  0.000  0.000  0.000 _parser.py:937(parse)
+   1  0.000  0.000  0.000  0.000 _compiler.py:598(_code)
+   1  0.000  0.000  0.000  0.000 _parser.py:435(_parse_sub)
+
+```
+
+The first line indicates that 214 calls were monitored. Of those calls, 207 were _primitive_ , meaning that the call was not induced via recursion. The next line: `Ordered by: cumulative time` indicates the output is sorted by the `cumtime` values. The column headings include: 
+
+ncalls
+    
+for the number of calls. 
+
+tottime
+    
+for the total time spent in the given function (and excluding time made in calls to sub-functions) 
+
+percall
+    
+is the quotient of `tottime` divided by `ncalls` 
+
+cumtime
+    
+is the cumulative time spent in this and all subfunctions (from invocation till exit). This figure is accurate _even_ for recursive functions. 
+
+percall
+    
+is the quotient of `cumtime` divided by primitive calls 
+
+filename:lineno(function)
+    
+provides the respective data of each function
+When there are two numbers in the first column (for example `3/1`), it means that the function recursed. The second value is the number of primitive calls and the former is the total number of calls. Note that when the function does not recurse, these two values are the same, and only the single figure is printed.
+Instead of printing the output at the end of the profile run, you can save the results to a file by specifying a filename to the `run()` function:
+```
+importcProfile
+importre
+cProfile.run('re.compile("foo|bar")', 'restats')
+
+```
+
+The [`pstats.Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") class reads profile results from a file and formats them in various ways.
+The files [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile "cProfile") and [`profile`](https://docs.python.org/3/library/profile.html#module-profile "profile: Python source profiler.") can also be invoked as a script to profile another script. For example:
+```
+python -m cProfile [-o output_file] [-s sort_order] (-m module | myscript.py)

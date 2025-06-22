@@ -1,0 +1,125 @@
+Title: Comprehensions in AST
+URL: https://docs.python.org/3/library/ast.html
+Summary: This section covers the Abstract Syntax Tree (AST) representations for various comprehensions in Python, including list comprehensions, set comprehensions, generator expressions, and dictionary comprehensions. Each type has specific elements and generator nodes that define their structure.
+---
+
+```
+
+#### Comprehensions[¶](https://docs.python.org/3/library/ast.html#comprehensions "Link to this heading") 
+
+_class_ ast.ListComp(_elt_ , _generators_)[¶](https://docs.python.org/3/library/ast.html#ast.ListComp "Link to this definition")
+
+
+_class_ ast.SetComp(_elt_ , _generators_)[¶](https://docs.python.org/3/library/ast.html#ast.SetComp "Link to this definition")
+
+
+_class_ ast.GeneratorExp(_elt_ , _generators_)[¶](https://docs.python.org/3/library/ast.html#ast.GeneratorExp "Link to this definition")
+
+
+_class_ ast.DictComp(_key_ , _value_ , _generators_)[¶](https://docs.python.org/3/library/ast.html#ast.DictComp "Link to this definition")
+    
+List and set comprehensions, generator expressions, and dictionary comprehensions. `elt` (or `key` and `value`) is a single node representing the part that will be evaluated for each item.
+`generators` is a list of [`comprehension`](https://docs.python.org/3/library/ast.html#ast.comprehension "ast.comprehension") nodes.
+>>>```
+>>> print(ast.dump(
+...   ast.parse('[x for x in numbers]', mode='eval'),
+...   indent=4,
+... ))
+Expression(
+  body=ListComp(
+    elt=Name(id='x', ctx=Load()),
+    generators=[
+      comprehension(
+        target=Name(id='x', ctx=Store()),
+        iter=Name(id='numbers', ctx=Load()),
+        is_async=0)]))
+>>> print(ast.dump(
+...   ast.parse('{x: x**2 for x in numbers}', mode='eval'),
+...   indent=4,
+... ))
+Expression(
+  body=DictComp(
+    key=Name(id='x', ctx=Load()),
+    value=BinOp(
+      left=Name(id='x', ctx=Load()),
+      op=Pow(),
+      right=Constant(value=2)),
+    generators=[
+      comprehension(
+        target=Name(id='x', ctx=Store()),
+        iter=Name(id='numbers', ctx=Load()),
+        is_async=0)]))
+>>> print(ast.dump(
+...   ast.parse('{x for x in numbers}', mode='eval'),
+...   indent=4,
+... ))
+Expression(
+  body=SetComp(
+    elt=Name(id='x', ctx=Load()),
+    generators=[
+      comprehension(
+        target=Name(id='x', ctx=Store()),
+        iter=Name(id='numbers', ctx=Load()),
+        is_async=0)]))
+
+```
+
+
+_class_ ast.comprehension(_target_ , _iter_ , _ifs_ , _is_async_)[¶](https://docs.python.org/3/library/ast.html#ast.comprehension "Link to this definition")
+    
+One `for` clause in a comprehension. `target` is the reference to use for each element - typically a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name") or [`Tuple`](https://docs.python.org/3/library/ast.html#ast.Tuple "ast.Tuple") node. `iter` is the object to iterate over. `ifs` is a list of test expressions: each `for` clause can have multiple `ifs`.
+`is_async` indicates a comprehension is asynchronous (using an `async for` instead of `for`). The value is an integer (0 or 1).
+>>>```
+>>> print(ast.dump(ast.parse('[ord(c) for line in file for c in line]', mode='eval'),
+...         indent=4)) # Multiple comprehensions in one.
+Expression(
+  body=ListComp(
+    elt=Call(
+      func=Name(id='ord', ctx=Load()),
+      args=[
+        Name(id='c', ctx=Load())]),
+    generators=[
+      comprehension(
+        target=Name(id='line', ctx=Store()),
+        iter=Name(id='file', ctx=Load()),
+        is_async=0),
+      comprehension(
+        target=Name(id='c', ctx=Store()),
+        iter=Name(id='line', ctx=Load()),
+        is_async=0)]))
+>>> print(ast.dump(ast.parse('(n**2 for n in it if n>5 if n<10)', mode='eval'),
+...         indent=4)) # generator comprehension
+Expression(
+  body=GeneratorExp(
+    elt=BinOp(
+      left=Name(id='n', ctx=Load()),
+      op=Pow(),
+      right=Constant(value=2)),
+    generators=[
+      comprehension(
+        target=Name(id='n', ctx=Store()),
+        iter=Name(id='it', ctx=Load()),
+        ifs=[
+          Compare(
+            left=Name(id='n', ctx=Load()),
+            ops=[
+              Gt()],
+            comparators=[
+              Constant(value=5)]),
+          Compare(
+            left=Name(id='n', ctx=Load()),
+            ops=[
+              Lt()],
+            comparators=[
+              Constant(value=10)])],
+        is_async=0)]))
+>>> print(ast.dump(ast.parse('[i async for i in soc]', mode='eval'),
+...         indent=4)) # Async comprehension
+Expression(
+  body=ListComp(
+    elt=Name(id='i', ctx=Load()),
+    generators=[
+      comprehension(
+        target=Name(id='i', ctx=Store()),
+        iter=Name(id='soc', ctx=Load()),
+        is_async=1)]))

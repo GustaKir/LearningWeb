@@ -1,0 +1,44 @@
+Title: Python 2.4 Release Notes
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: Python 2.4 introduces new functions in the socket module, deprecates the sys.exitfunc() function in favor of the atexit module for better exit function handling, and adds updates to the tarfile module. Notable contributions were made by Dave Cole and Barry Warsaw.
+---
+
+ml#RuntimeError "RuntimeError") exception.
+  * Two new functions were added to the [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.") module. `socketpair()` returns a pair of connected sockets and `getservbyport(port)` looks up the service name for a given port number. (Contributed by Dave Cole and Barry Warsaw.)
+  * The `sys.exitfunc()` function has been deprecated. Code should be using the existing [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions.") module, which correctly handles calling multiple exit functions. Eventually `sys.exitfunc()` will become a purely internal interface, accessed only by [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions.").
+  * The [`tarfile`](https://docs.python.org/3/library/tarfile.html#module-tarfile "tarfile: Read and write tar-format archive files.") module now generates GNU-format tar files by default. (Contributed by Lars Gustäbel.)
+  * The [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module now has an elegantly simple way to support thread-local data. The module contains a `local` class whose attribute values are local to different threads.
+```
+importthreading
+data = threading.local()
+data.number = 42
+data.url = ('www.python.org', 80)
+
+```
+
+Other threads can assign and retrieve their own values for the `number` and `url` attributes. You can subclass `local` to initialize attributes or to add methods. (Contributed by Jim Fulton.)
+  * The [`timeit`](https://docs.python.org/3/library/timeit.html#module-timeit "timeit: Measure the execution time of small code snippets.") module now automatically disables periodic garbage collection during the timing loop. This change makes consecutive timings more comparable. (Contributed by Raymond Hettinger.)
+  * The [`weakref`](https://docs.python.org/3/library/weakref.html#module-weakref "weakref: Support for weak references and weak dictionaries.") module now supports a wider variety of objects including Python functions, class instances, sets, frozensets, deques, arrays, files, sockets, and regular expression pattern objects. (Contributed by Raymond Hettinger.)
+  * The [`xmlrpclib`](https://docs.python.org/3/library/xmlrpc.client.html#module-xmlrpc.client "xmlrpc.client: XML-RPC client access.") module now supports a multi-call extension for transmitting multiple XML-RPC calls in a single HTTP operation. (Contributed by Brian Quinlan.)
+  * The `mpz`, `rotor`, and `xreadlines` modules have been removed.
+
+
+### cookielib[¶](https://docs.python.org/3/whatsnew/2.4.html#cookielib "Link to this heading")
+The [`cookielib`](https://docs.python.org/3/library/http.cookiejar.html#module-http.cookiejar "http.cookiejar: Classes for automatic handling of HTTP cookies.") library supports client-side handling for HTTP cookies, mirroring the [`Cookie`](https://docs.python.org/3/library/http.cookies.html#module-http.cookies "http.cookies: Support for HTTP state management \(cookies\).") module’s server-side cookie support. Cookies are stored in cookie jars; the library transparently stores cookies offered by the web server in the cookie jar, and fetches the cookie from the jar when connecting to the server. As in web browsers, policy objects control whether cookies are accepted or not.
+In order to store cookies across sessions, two implementations of cookie jars are provided: one that stores cookies in the Netscape format so applications can use the Mozilla or Lynx cookie files, and one that stores cookies in the same format as the Perl libwww library.
+[`urllib2`](https://docs.python.org/3/library/urllib.request.html#module-urllib.request "urllib.request: Extensible library for opening URLs.") has been changed to interact with [`cookielib`](https://docs.python.org/3/library/http.cookiejar.html#module-http.cookiejar "http.cookiejar: Classes for automatic handling of HTTP cookies."): `HTTPCookieProcessor` manages a cookie jar that is used when accessing URLs.
+This module was contributed by John J. Lee.
+### doctest[¶](https://docs.python.org/3/whatsnew/2.4.html#doctest "Link to this heading")
+The [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") module underwent considerable refactoring thanks to Edward Loper and Tim Peters. Testing can still be as simple as running [`doctest.testmod()`](https://docs.python.org/3/library/doctest.html#doctest.testmod "doctest.testmod"), but the refactorings allow customizing the module’s operation in various ways
+The new `DocTestFinder` class extracts the tests from a given object’s docstrings:
+```
+deff (x, y):
+""">>> f(2,2)
+4
+>>> f(3,2)
+6
+  """
+  return x*y
+finder = doctest.DocTestFinder()
+# Get list of DocTest instances
+tests = finder.find(f)

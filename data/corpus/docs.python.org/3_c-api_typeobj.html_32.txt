@@ -1,0 +1,36 @@
+Title: Creating New Python Objects
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section discusses the usage of the _subtype_ argument in the creation of new Python objects, detailing how it may differ from the type calling the tp_new function. It emphasizes the role of tp_new for allocating space for the object and suggests that further initialization should be handled in tp_init, with special consideration given to immutable types.
+---
+
+```
+
+The _subtype_ argument is the type of the object being created; the _args_ and _kwds_ arguments represent positional and keyword arguments of the call to the type. Note that _subtype_ doesn’t have to equal the type whose [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") function is called; it may be a subtype of that type (but not an unrelated type).
+The [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") function should call `subtype->tp_alloc(subtype, nitems)` to allocate space for the object, and then do only as much further initialization as is absolutely necessary. Initialization that can safely be ignored or repeated should be placed in the [`tp_init`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_init "PyTypeObject.tp_init") handler. A good rule of thumb is that for immutable types, all initialization should take place in [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new"), while for mutable types, most initialization should be deferred to [`tp_init`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_init "PyTypeObject.tp_init").
+Set the [`Py_TPFLAGS_DISALLOW_INSTANTIATION`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_DISALLOW_INSTANTIATION "Py_TPFLAGS_DISALLOW_INSTANTIATION") flag to disallow creating instances of the type in Python.
+**Inheritance:**
+This field is inherited by subtypes, except it is not inherited by [static types](https://docs.python.org/3/c-api/typeobj.html#static-types) whose [`tp_base`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_base "PyTypeObject.tp_base") is `NULL` or `&PyBaseObject_Type`.
+**Default:**
+For [static types](https://docs.python.org/3/c-api/typeobj.html#static-types) this field has no default. This means if the slot is defined as `NULL`, the type cannot be called to create new instances; presumably there is some other way to create instances, like a factory function. 
+
+[freefunc](https://docs.python.org/3/c-api/typeobj.html#c.freefunc "freefunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_free[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_free "Link to this definition")
+    
+An optional pointer to an instance deallocation function. Its signature is:
+```
+voidtp_free(void*self);
+
+```
+
+An initializer that is compatible with this signature is [`PyObject_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Free "PyObject_Free").
+**Inheritance:**
+This field is inherited by static subtypes, but not by dynamic subtypes (subtypes created by a class statement)
+**Default:**
+In dynamic subtypes, this field is set to a deallocator suitable to match [`PyType_GenericAlloc()`](https://docs.python.org/3/c-api/type.html#c.PyType_GenericAlloc "PyType_GenericAlloc") and the value of the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit.
+For static subtypes, [`PyBaseObject_Type`](https://docs.python.org/3/c-api/structures.html#c.PyBaseObject_Type "PyBaseObject_Type") uses [`PyObject_Del()`](https://docs.python.org/3/c-api/allocation.html#c.PyObject_Del "PyObject_Del"). 
+
+[inquiry](https://docs.python.org/3/c-api/gcsupport.html#c.inquiry "inquiry")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_is_gc[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_is_gc "Link to this definition")
+    
+An optional pointer to a function called by the garbage collector.
+The garbage collector needs to know whether a particular object is collectible or not. Normally, it is sufficient to look at the object’s type’s [`tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags") field, and check the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit. But some types have a mixture of statically and dynamically allocated instances, and the statically allocated instances are not collectible. Such types should define this function; it should return `1` for a collectible instance, and `0` for a non-collectible instance. The signature is:
+```
+inttp_is_gc(PyObject*self);

@@ -1,0 +1,69 @@
+Title: Nesting Patch Decorators in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section demonstrates how to use multiple patch decorators in the 'unittest.mock' library by stacking them on a class method and static method. It shows a test function that asserts the correctness of the mock objects and their calls.
+---
+
+```
+>>> patch.TEST_PREFIX = 'foo'
+>>> value = 3
+>>>
+>>> @patch('__main__.value', 'not three')
+... classThing:
+...   deffoo_one(self):
+...     print(value)
+...   deffoo_two(self):
+...     print(value)
+...
+>>>
+>>> Thing().foo_one()
+not three
+>>> Thing().foo_two()
+not three
+>>> value
+3
+
+```
+
+### Nesting Patch Decorators[¶](https://docs.python.org/3/library/unittest.mock.html#nesting-patch-decorators "Link to this heading")
+If you want to perform multiple patches then you can simply stack up the decorators.
+You can stack up multiple patch decorators using this pattern:
+>>>```
+>>> @patch.object(SomeClass, 'class_method')
+... @patch.object(SomeClass, 'static_method')
+... deftest(mock1, mock2):
+...   assert SomeClass.static_method is mock1
+...   assert SomeClass.class_method is mock2
+...   SomeClass.static_method('foo')
+...   SomeClass.class_method('bar')
+...   return mock1, mock2
+...
+>>> mock1, mock2 = test()
+>>> mock1.assert_called_once_with('foo')
+>>> mock2.assert_called_once_with('bar')
+
+```
+
+Note that the decorators are applied from the bottom upwards. This is the standard way that Python applies decorators. The order of the created mocks passed into your test function matches this order.
+### Where to patch[¶](https://docs.python.org/3/library/unittest.mock.html#where-to-patch "Link to this heading")
+[`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") works by (temporarily) changing the object that a _name_ points to with another one. There can be many names pointing to any individual object, so for patching to work you must ensure that you patch the name used by the system under test.
+The basic principle is that you patch where an object is _looked up_ , which is not necessarily the same place as where it is defined. A couple of examples will help to clarify this.
+Imagine we have a project that we want to test with the following structure:
+```
+a.py
+  -> Defines SomeClass
+b.py
+  -> fromaimport SomeClass
+  -> some_function instantiates SomeClass
+
+```
+
+Now we want to test `some_function` but we want to mock out `SomeClass` using [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch"). The problem is that when we import module b, which we will have to do when it imports `SomeClass` from module a. If we use [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") to mock out `a.SomeClass` then it will have no effect on our test; module b already has a reference to the _real_ `SomeClass` and it looks like our patching had no effect.
+The key is to patch out `SomeClass` where it is used (or where it is looked up). In this case `some_function` will actually look up `SomeClass` in module b, where we have imported it. The patching should look like:
+```
+@patch('b.SomeClass')
+
+```
+
+However, consider the alternative scenario where instead of `from a import SomeClass` module b does `import a` and `some_function` uses `a.SomeClass`. Both of these import forms are common. In this case the class we want to patch is being looked up in the module and so we have to patch `a.SomeClass` instead:
+```
+@patch('a.SomeClass')

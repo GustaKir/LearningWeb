@@ -1,0 +1,63 @@
+Title: Python C API: Dictionary Functions
+URL: https://docs.python.org/3/c-api/dict.html
+Summary: This documentation section describes the functions PyDict_Items and PyDict_Keys, which return new references to PyListObject containing all items and keys of a given dictionary, respectively. These functions are part of the Stable ABI.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyDict_Items([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*p)[¶](https://docs.python.org/3/c-api/dict.html#c.PyDict_Items "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a [`PyListObject`](https://docs.python.org/3/c-api/list.html#c.PyListObject "PyListObject") containing all the items from the dictionary. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyDict_Keys([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*p)[¶](https://docs.python.org/3/c-api/dict.html#c.PyDict_Keys "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a [`PyListObject`](https://docs.python.org/3/c-api/list.html#c.PyListObject "PyListObject") containing all the keys from the dictionary. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyDict_Values([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*p)[¶](https://docs.python.org/3/c-api/dict.html#c.PyDict_Values "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a [`PyListObject`](https://docs.python.org/3/c-api/list.html#c.PyListObject "PyListObject") containing all the values from the dictionary _p_. 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")PyDict_Size([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*p)[¶](https://docs.python.org/3/c-api/dict.html#c.PyDict_Size "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return the number of items in the dictionary. This is equivalent to `len(p)` on a dictionary. 
+
+intPyDict_Next([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*p, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*ppos, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**pkey, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**pvalue)[¶](https://docs.python.org/3/c-api/dict.html#c.PyDict_Next "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Iterate over all key-value pairs in the dictionary _p_. The [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") referred to by _ppos_ must be initialized to `0` prior to the first call to this function to start the iteration; the function returns true for each pair in the dictionary, and false once all pairs have been reported. The parameters _pkey_ and _pvalue_ should either point to [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* variables that will be filled in with each key and value, respectively, or may be `NULL`. Any references returned through them are borrowed. _ppos_ should not be altered during iteration. Its value represents offsets within the internal dictionary structure, and since the structure is sparse, the offsets are not consecutive.
+For example:
+```
+PyObject*key,*value;
+Py_ssize_tpos=0;
+while(PyDict_Next(self->dict,&pos,&key,&value)){
+/* do something interesting with the values... */
+...
+}
+
+```
+
+The dictionary _p_ should not be mutated during iteration. It is safe to modify the values of the keys as you iterate over the dictionary, but only so long as the set of keys does not change. For example:
+```
+PyObject*key,*value;
+Py_ssize_tpos=0;
+while(PyDict_Next(self->dict,&pos,&key,&value)){
+longi=PyLong_AsLong(value);
+if(i==-1&&PyErr_Occurred()){
+return-1;
+}
+PyObject*o=PyLong_FromLong(i+1);
+if(o==NULL)
+return-1;
+if(PyDict_SetItem(self->dict,key,o)<0){
+Py_DECREF(o);
+return-1;
+}
+Py_DECREF(o);
+}
+
+```
+
+The function is not thread-safe in the [free-threaded](https://docs.python.org/3/glossary.html#term-free-threading) build without external synchronization. You can use [`Py_BEGIN_CRITICAL_SECTION`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_CRITICAL_SECTION "Py_BEGIN_CRITICAL_SECTION") to lock the dictionary while iterating over it:
+```
+Py_BEGIN_CRITICAL_SECTION(self->dict);
+while(PyDict_Next(self->dict,&pos,&key,&value)){
+...
+}
+Py_END_CRITICAL_SECTION();

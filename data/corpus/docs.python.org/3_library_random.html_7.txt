@@ -1,0 +1,98 @@
+Title: Statistical Analysis using Randomization
+URL: https://docs.python.org/3/library/random.html
+Summary: This example illustrates the use of randomization to assess the efficacy of a drug versus a placebo. By shuffling the combined dataset and calculating the observed difference in means, it determines a one-sided p-value to evaluate the null hypothesis of no difference.
+---
+
+```
+# Example from "Statistics is Easy" by Dennis Shasha and Manda Wilson
+fromstatisticsimport fmean as mean
+fromrandomimport shuffle
+drug = [54, 73, 53, 70, 73, 68, 52, 65, 65]
+placebo = [54, 51, 58, 44, 55, 52, 42, 47, 58, 46]
+observed_diff = mean(drug) - mean(placebo)
+n = 10_000
+count = 0
+combined = drug + placebo
+for i in range(n):
+  shuffle(combined)
+  new_diff = mean(combined[:len(drug)]) - mean(combined[len(drug):])
+  count += (new_diff >= observed_diff)
+print(f'{n} label reshufflings produced only {count} instances with a difference')
+print(f'at least as extreme as the observed difference of {observed_diff:.1f}.')
+print(f'The one-sided p-value of {count/n:.4f} leads us to reject the null')
+print(f'hypothesis that there is no difference between the drug and the placebo.')
+
+```
+
+Simulation of arrival times and service deliveries for a multiserver queue:
+```
+fromheapqimport heapify, heapreplace
+fromrandomimport expovariate, gauss
+fromstatisticsimport mean, quantiles
+average_arrival_interval = 5.6
+average_service_time = 15.0
+stdev_service_time = 3.5
+num_servers = 3
+waits = []
+arrival_time = 0.0
+servers = [0.0] * num_servers # time when each server becomes available
+heapify(servers)
+for i in range(1_000_000):
+  arrival_time += expovariate(1.0 / average_arrival_interval)
+  next_server_available = servers[0]
+  wait = max(0.0, next_server_available - arrival_time)
+  waits.append(wait)
+  service_duration = max(0.0, gauss(average_service_time, stdev_service_time))
+  service_completed = arrival_time + wait + service_duration
+  heapreplace(servers, service_completed)
+print(f'Mean wait: {mean(waits):.1f}  Max wait: {max(waits):.1f}')
+print('Quartiles:', [round(q, 1) for q in quantiles(waits)])
+
+```
+
+See also
+[Statistics for Hackers](https://www.youtube.com/watch?v=Iq9DzN6mvYA) a video tutorial by [Jake Vanderplas](https://us.pycon.org/2016/speaker/profile/295/) on statistical analysis using just a few fundamental concepts including simulation, sampling, shuffling, and cross-validation.
+[Economics Simulation](https://nbviewer.org/url/norvig.com/ipython/Economics.ipynb) a simulation of a marketplace by [Peter Norvig](https://norvig.com/bio.html) that shows effective use of many of the tools and distributions provided by this module (gauss, uniform, sample, betavariate, choice, triangular, and randrange).
+[A Concrete Introduction to Probability (using Python)](https://nbviewer.org/url/norvig.com/ipython/Probability.ipynb) a tutorial by [Peter Norvig](https://norvig.com/bio.html) covering the basics of probability theory, how to write simulations, and how to perform data analysis using Python.
+## Recipes[¶](https://docs.python.org/3/library/random.html#recipes "Link to this heading")
+These recipes show how to efficiently make random selections from the combinatoric iterators in the [`itertools`](https://docs.python.org/3/library/itertools.html#module-itertools "itertools: Functions creating iterators for efficient looping.") module:
+```
+defrandom_product(*args, repeat=1):
+  "Random selection from itertools.product(*args, **kwds)"
+  pools = [tuple(pool) for pool in args] * repeat
+  return tuple(map(random.choice, pools))
+defrandom_permutation(iterable, r=None):
+  "Random selection from itertools.permutations(iterable, r)"
+  pool = tuple(iterable)
+  r = len(pool) if r is None else r
+  return tuple(random.sample(pool, r))
+defrandom_combination(iterable, r):
+  "Random selection from itertools.combinations(iterable, r)"
+  pool = tuple(iterable)
+  n = len(pool)
+  indices = sorted(random.sample(range(n), r))
+  return tuple(pool[i] for i in indices)
+defrandom_combination_with_replacement(iterable, r):
+  "Choose r elements with replacement. Order the result to match the iterable."
+  # Result will be in set(itertools.combinations_with_replacement(iterable, r)).
+  pool = tuple(iterable)
+  n = len(pool)
+  indices = sorted(random.choices(range(n), k=r))
+  return tuple(pool[i] for i in indices)
+
+```
+
+The default [`random()`](https://docs.python.org/3/library/random.html#random.random "random.random") returns multiples of 2⁻⁵³ in the range _0.0 ≤ x < 1.0_. All such numbers are evenly spaced and are exactly representable as Python floats. However, many other representable floats in that interval are not possible selections. For example, `0.05954861408025609` isn’t an integer multiple of 2⁻⁵³.
+The following recipe takes a different approach. All floats in the interval are possible selections. The mantissa comes from a uniform distribution of integers in the range _2⁵² ≤ mantissa < 2⁵³_. The exponent comes from a geometric distribution where exponents smaller than _-53_ occur half as often as the next larger exponent.
+```
+fromrandomimport Random
+frommathimport ldexp
+classFullRandom(Random):
+  defrandom(self):
+    mantissa = 0x10_0000_0000_0000 | self.getrandbits(52)
+    exponent = -53
+    x = 0
+    while not x:
+      x = self.getrandbits(32)
+      exponent += x.bit_length() - 32
+    return ldexp(mantissa, exponent)

@@ -1,0 +1,38 @@
+Title: Comparison of Sequences in Python
+URL: https://docs.python.org/3/reference/expressions.html
+Summary: This section explains how different types of sequences in Python, such as strings, tuples, lists, and ranges, are compared. Strings compare lexicographically based on Unicode code points. Other sequences can only be compared within their types, and trying to compare different types will result in a TypeError.
+---
+
+their types. They compare lexicographically using the numeric values of their elements.
+  * Strings (instances of [`str`](https://docs.python.org/3/library/stdtypes.html#str "str")) compare lexicographically using the numerical Unicode code points (the result of the built-in function [`ord()`](https://docs.python.org/3/library/functions.html#ord "ord")) of their characters. [[3]](https://docs.python.org/3/reference/expressions.html#id21)
+Strings and binary sequences cannot be directly compared.
+  * Sequences (instances of [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple"), [`list`](https://docs.python.org/3/library/stdtypes.html#list "list"), or [`range`](https://docs.python.org/3/library/stdtypes.html#range "range")) can be compared only within each of their types, with the restriction that ranges do not support order comparison. Equality comparison across these types results in inequality, and ordering comparison across these types raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError").
+Sequences compare lexicographically using comparison of corresponding elements. The built-in containers typically assume identical objects are equal to themselves. That lets them bypass equality tests for identical objects to improve performance and to maintain their internal invariants.
+Lexicographical comparison between built-in collections works as follows:
+    * For two collections to compare equal, they must be of the same type, have the same length, and each pair of corresponding elements must compare equal (for example, `[1,2] == (1,2)` is false because the type is not the same).
+    * Collections that support order comparison are ordered the same as their first unequal elements (for example, `[1,2,x] <= [1,2,y]` has the same value as `x <= y`). If a corresponding element does not exist, the shorter collection is ordered first (for example, `[1,2] < [1,2,3]` is true).
+  * Mappings (instances of [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict")) compare equal if and only if they have equal `(key, value)` pairs. Equality comparison of the keys and values enforces reflexivity.
+Order comparisons (`<`, `>`, `<=`, and `>=`) raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError").
+  * Sets (instances of [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") or [`frozenset`](https://docs.python.org/3/library/stdtypes.html#frozenset "frozenset")) can be compared within and across their types.
+They define order comparison operators to mean subset and superset tests. Those relations do not define total orderings (for example, the two sets `{1,2}` and `{2,3}` are not equal, nor subsets of one another, nor supersets of one another). Accordingly, sets are not appropriate arguments for functions which depend on total ordering (for example, [`min()`](https://docs.python.org/3/library/functions.html#min "min"), [`max()`](https://docs.python.org/3/library/functions.html#max "max"), and [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") produce undefined results given a list of sets as inputs).
+Comparison of sets enforces reflexivity of its elements.
+  * Most other built-in types have no comparison methods implemented, so they inherit the default comparison behavior.
+
+
+User-defined classes that customize their comparison behavior should follow some consistency rules, if possible:
+  * Equality comparison should be reflexive. In other words, identical objects should compare equal:
+> `x is y` implies `x == y`
+  * Comparison should be symmetric. In other words, the following expressions should have the same result:
+> `x == y` and `y == x`
+> `x != y` and `y != x`
+> `x < y` and `y > x`
+> `x <= y` and `y >= x`
+  * Comparison should be transitive. The following (non-exhaustive) examples illustrate that:
+> `x > y and y > z` implies `x > z`
+> `x < y and y <= z` implies `x < z`
+  * Inverse comparison should result in the boolean negation. In other words, the following expressions should have the same result:
+> `x == y` and `not x != y`
+> `x < y` and `not x >= y` (for total ordering)
+> `x > y` and `not x <= y` (for total ordering)
+The last two expressions apply to totally ordered collections (e.g. to sequences, but not to sets or mappings). See also the [`total_ordering()`](https://docs.python.org/3/library/functools.html#functools.total_ordering "functools.total_ordering") decorator.
+  * The [`hash()`](https://docs.python.org/3/library/functions.html#hash "hash") result should be consistent with equality. Objects that are equal should either have the same hash value, or be marked as unhashable.

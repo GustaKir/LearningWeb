@@ -1,0 +1,61 @@
+Title: Understanding Generators in Python
+URL: https://docs.python.org/3/howto/functional.html
+Summary: Generators are a type of function that simplify writing iterators by allowing functions to yield multiple values over time without losing state. Unlike regular functions that return a single value and discard local variables, generators maintain their state and can be resumed, enabling them to produce a stream of values.
+---
+
+```
+
+## Generators[¶](https://docs.python.org/3/howto/functional.html#generators "Link to this heading")
+Generators are a special class of functions that simplify the task of writing iterators. Regular functions compute a value and return it, but generators return an iterator that returns a stream of values.
+You’re doubtless familiar with how regular function calls work in Python or C. When you call a function, it gets a private namespace where its local variables are created. When the function reaches a `return` statement, the local variables are destroyed and the value is returned to the caller. A later call to the same function creates a new private namespace and a fresh set of local variables. But, what if the local variables weren’t thrown away on exiting a function? What if you could later resume the function where it left off? This is what generators provide; they can be thought of as resumable functions.
+Here’s the simplest example of a generator function:
+>>>```
+>>> defgenerate_ints(N):
+...   for i in range(N):
+...     yield i
+
+```
+
+Any function containing a [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) keyword is a generator function; this is detected by Python’s [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) compiler which compiles the function specially as a result.
+When you call a generator function, it doesn’t return a single value; instead it returns a generator object that supports the iterator protocol. On executing the `yield` expression, the generator outputs the value of `i`, similar to a `return` statement. The big difference between `yield` and a `return` statement is that on reaching a `yield` the generator’s state of execution is suspended and local variables are preserved. On the next call to the generator’s [`__next__()`](https://docs.python.org/3/reference/expressions.html#generator.__next__ "generator.__next__") method, the function will resume executing.
+Here’s a sample usage of the `generate_ints()` generator:
+>>>```
+>>> gen = generate_ints(3)
+>>> gen
+<generator object generate_ints at ...>
+>>> next(gen)
+0
+>>> next(gen)
+1
+>>> next(gen)
+2
+>>> next(gen)
+Traceback (most recent call last):
+ File "stdin", line 1, in <module>
+ File "stdin", line 2, in generate_ints
+StopIteration
+
+```
+
+You could equally write `for i in generate_ints(5)`, or `a, b, c = generate_ints(3)`.
+Inside a generator function, `return value` causes `StopIteration(value)` to be raised from the [`__next__()`](https://docs.python.org/3/reference/expressions.html#generator.__next__ "generator.__next__") method. Once this happens, or the bottom of the function is reached, the procession of values ends and the generator cannot yield any further values.
+You could achieve the effect of generators manually by writing your own class and storing all the local variables of the generator as instance variables. For example, returning a list of integers could be done by setting `self.count` to 0, and having the [`__next__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__next__ "iterator.__next__") method increment `self.count` and return it. However, for a moderately complicated generator, writing a corresponding class can be much messier.
+The test suite included with Python’s library, [Lib/test/test_generators.py](https://github.com/python/cpython/tree/3.13/Lib/test/test_generators.py), contains a number of more interesting examples. Here’s one generator that implements an in-order traversal of a tree using generators recursively.
+```
+# A recursive generator that generates Tree leaves in in-order.
+definorder(t):
+  if t:
+    for x in inorder(t.left):
+      yield x
+    yield t.label
+    for x in inorder(t.right):
+      yield x
+
+```
+
+Two other examples in `test_generators.py` produce solutions for the N-Queens problem (placing N queens on an NxN chess board so that no queen threatens another) and the Knight’s Tour (finding a route that takes a knight to every square of an NxN chessboard without visiting any square twice).
+### Passing values into a generator[¶](https://docs.python.org/3/howto/functional.html#passing-values-into-a-generator "Link to this heading")
+In Python 2.4 and earlier, generators only produced output. Once a generator’s code was invoked to create an iterator, there was no way to pass any new information into the function when its execution is resumed. You could hack together this ability by making the generator look at a global variable or by passing in some mutable object that callers then modify, but these approaches are messy.
+In Python 2.5 there’s a simple way to pass values into a generator. [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) became an expression, returning a value that can be assigned to a variable or otherwise operated on:
+```
+val = (yield i)

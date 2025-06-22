@@ -1,0 +1,99 @@
+Title: Advanced Path Operation Configuration in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/
+Summary: This section demonstrates how to create a POST endpoint in FastAPI for creating an item using Pydantic models. It defines an Item class with various attributes and describes how to handle user input through the `create_item` function, which incorporates response modeling and optional parameters.
+---
+
+```
+fromtypingimport Set, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: Set[str] = set()
+@app.post("/items/", response_model=Item, summary="Create an item")
+async defcreate_item(item: Item):
+"""
+  Create an item with all the information:
+  - **name**: each item must have a name
+  - **description**: a long description
+  - **price**: required
+  - **tax**: if the item doesn't have tax, you can omit this
+  - **tags**: a set of unique tag strings for this item
+  \f
+  :param item: User input.
+  """
+  return item
+
+```
+
+## Additional Responses[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#additional-responses "Permanent link")
+You probably have seen how to declare the `response_model` and `status_code` for a _path operation_.
+That defines the metadata about the main response of a _path operation_.
+You can also declare additional responses with their models, status codes, etc.
+There's a whole chapter here in the documentation about it, you can read it at [Additional Responses in OpenAPI](https://fastapi.tiangolo.com/advanced/additional-responses/).
+## OpenAPI Extra[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#openapi-extra "Permanent link")
+When you declare a _path operation_ in your application, **FastAPI** automatically generates the relevant metadata about that _path operation_ to be included in the OpenAPI schema.
+Technical details
+In the OpenAPI specification it is called the [Operation Object](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#operation-object).
+It has all the information about the _path operation_ and is used to generate the automatic documentation.
+It includes the `tags`, `parameters`, `requestBody`, `responses`, etc.
+This _path operation_ -specific OpenAPI schema is normally generated automatically by **FastAPI** , but you can also extend it.
+Tip
+This is a low level extension point.
+If you only need to declare additional responses, a more convenient way to do it is with [Additional Responses in OpenAPI](https://fastapi.tiangolo.com/advanced/additional-responses/).
+You can extend the OpenAPI schema for a _path operation_ using the parameter `openapi_extra`.
+### OpenAPI Extensions[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#openapi-extensions "Permanent link")
+This `openapi_extra` can be helpful, for example, to declare [OpenAPI Extensions](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#specificationExtensions):
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/", openapi_extra={"x-aperture-labs-portal": "blue"})
+async defread_items():
+  return [{"item_id": "portal-gun"}]
+
+```
+
+If you open the automatic API docs, your extension will show up at the bottom of the specific _path operation_.
+![](https://fastapi.tiangolo.com/img/tutorial/path-operation-advanced-configuration/image01.png)
+And if you see the resulting OpenAPI (at `/openapi.json` in your API), you will see your extension as part of the specific _path operation_ too:
+```
+{
+"openapi":"3.1.0",
+"info":{
+"title":"FastAPI",
+"version":"0.1.0"
+},
+"paths":{
+"/items/":{
+"get":{
+"summary":"Read Items",
+"operationId":"read_items_items__get",
+"responses":{
+"200":{
+"description":"Successful Response",
+"content":{
+"application/json":{
+"schema":{}
+}
+}
+}
+},
+"x-aperture-labs-portal":"blue"
+}
+}
+}
+}
+
+```
+
+### Custom OpenAPI _path operation_ schema[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#custom-openapi-path-operation-schema "Permanent link")
+The dictionary in `openapi_extra` will be deeply merged with the automatically generated OpenAPI schema for the _path operation_.
+So, you could add additional data to the automatically generated schema.
+For example, you could decide to read and validate the request with your own code, without using the automatic features of FastAPI with Pydantic, but you could still want to define the request in the OpenAPI schema.
+You could do that with `openapi_extra`:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_6_1)

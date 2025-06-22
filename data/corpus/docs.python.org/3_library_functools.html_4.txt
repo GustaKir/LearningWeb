@@ -1,0 +1,91 @@
+Title: functools.partialmethod
+URL: https://docs.python.org/3/library/functools.html
+Summary: The `functools.partialmethod` function creates a new descriptor that works like `partial`, but is specifically intended for use in method definitions. It requires a descriptor or callable as the first argument and allows for partial application of arguments and keywords.
+---
+
+```
+
+
+_class_ functools.partialmethod(_func_ , _/_ , _* args_, _** keywords_)[¶](https://docs.python.org/3/library/functools.html#functools.partialmethod "Link to this definition")
+    
+Return a new [`partialmethod`](https://docs.python.org/3/library/functools.html#functools.partialmethod "functools.partialmethod") descriptor which behaves like [`partial`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") except that it is designed to be used as a method definition rather than being directly callable.
+_func_ must be a [descriptor](https://docs.python.org/3/glossary.html#term-descriptor) or a callable (objects which are both, like normal functions, are handled as descriptors).
+When _func_ is a descriptor (such as a normal Python function, [`classmethod()`](https://docs.python.org/3/library/functions.html#classmethod "classmethod"), [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod"), `abstractmethod()` or another instance of [`partialmethod`](https://docs.python.org/3/library/functools.html#functools.partialmethod "functools.partialmethod")), calls to `__get__` are delegated to the underlying descriptor, and an appropriate [partial object](https://docs.python.org/3/library/functools.html#partial-objects) returned as the result.
+When _func_ is a non-descriptor callable, an appropriate bound method is created dynamically. This behaves like a normal Python function when used as a method: the _self_ argument will be inserted as the first positional argument, even before the _args_ and _keywords_ supplied to the [`partialmethod`](https://docs.python.org/3/library/functools.html#functools.partialmethod "functools.partialmethod") constructor.
+Example:
+>>>```
+>>> classCell:
+...   def__init__(self):
+...     self._alive = False
+...   @property
+...   defalive(self):
+...     return self._alive
+...   defset_state(self, state):
+...     self._alive = bool(state)
+...   set_alive = partialmethod(set_state, True)
+...   set_dead = partialmethod(set_state, False)
+...
+>>> c = Cell()
+>>> c.alive
+False
+>>> c.set_alive()
+>>> c.alive
+True
+
+```
+
+Added in version 3.4. 
+
+functools.reduce(_function_ , _iterable_ , [_initial_ , ]_/_)[¶](https://docs.python.org/3/library/functools.html#functools.reduce "Link to this definition")
+    
+Apply _function_ of two arguments cumulatively to the items of _iterable_ , from left to right, so as to reduce the iterable to a single value. For example, `reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])` calculates `((((1+2)+3)+4)+5)`. The left argument, _x_ , is the accumulated value and the right argument, _y_ , is the update value from the _iterable_. If the optional _initial_ is present, it is placed before the items of the iterable in the calculation, and serves as a default when the iterable is empty. If _initial_ is not given and _iterable_ contains only one item, the first item is returned.
+Roughly equivalent to:
+```
+initial_missing = object()
+defreduce(function, iterable, initial=initial_missing, /):
+  it = iter(iterable)
+  if initial is initial_missing:
+    value = next(it)
+  else:
+    value = initial
+  for element in it:
+    value = function(value, element)
+  return value
+
+```
+
+See [`itertools.accumulate()`](https://docs.python.org/3/library/itertools.html#itertools.accumulate "itertools.accumulate") for an iterator that yields all intermediate values. 
+
+@functools.singledispatch[¶](https://docs.python.org/3/library/functools.html#functools.singledispatch "Link to this definition")
+    
+Transform a function into a [single-dispatch](https://docs.python.org/3/glossary.html#term-single-dispatch) [generic function](https://docs.python.org/3/glossary.html#term-generic-function).
+To define a generic function, decorate it with the `@singledispatch` decorator. When defining a function using `@singledispatch`, note that the dispatch happens on the type of the first argument:
+>>>```
+>>> fromfunctoolsimport singledispatch
+>>> @singledispatch
+... deffun(arg, verbose=False):
+...   if verbose:
+...     print("Let me just say,", end=" ")
+...   print(arg)
+
+```
+
+To add overloaded implementations to the function, use the `register()` attribute of the generic function, which can be used as a decorator. For functions annotated with types, the decorator will infer the type of the first argument automatically:
+>>>```
+>>> @fun.register
+... def_(arg: int, verbose=False):
+...   if verbose:
+...     print("Strength in numbers, eh?", end=" ")
+...   print(arg)
+...
+>>> @fun.register
+... def_(arg: list, verbose=False):
+...   if verbose:
+...     print("Enumerate this:")
+...   for i, elem in enumerate(arg):
+...     print(i, elem)
+
+```
+
+[`types.UnionType`](https://docs.python.org/3/library/types.html#types.UnionType "types.UnionType") and [`typing.Union`](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union") can also be used:
+>>>

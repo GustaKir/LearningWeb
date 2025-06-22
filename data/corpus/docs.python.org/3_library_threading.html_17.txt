@@ -1,0 +1,51 @@
+Title: Threading: Barrier Behavior and Resetting
+URL: https://docs.python.org/3/library/threading.html
+Summary: This section explains the behavior of the threading barrier when an action is provided during its construction, including how it enters a broken state on errors or timeouts. It also details the reset method, which returns the barrier to its default state and raises a BrokenBarrierError for waiting threads.
+---
+
+```
+
+If an _action_ was provided to the constructor, one of the threads will have called it prior to being released. Should this call raise an error, the barrier is put into the broken state.
+If the call times out, the barrier is put into the broken state.
+This method may raise a [`BrokenBarrierError`](https://docs.python.org/3/library/threading.html#threading.BrokenBarrierError "threading.BrokenBarrierError") exception if the barrier is broken or reset while a thread is waiting. 
+
+reset()[¶](https://docs.python.org/3/library/threading.html#threading.Barrier.reset "Link to this definition")
+    
+Return the barrier to the default, empty state. Any threads waiting on it will receive the [`BrokenBarrierError`](https://docs.python.org/3/library/threading.html#threading.BrokenBarrierError "threading.BrokenBarrierError") exception.
+Note that using this function may require some external synchronization if there are other threads whose state is unknown. If a barrier is broken it may be better to just leave it and create a new one. 
+
+abort()[¶](https://docs.python.org/3/library/threading.html#threading.Barrier.abort "Link to this definition")
+    
+Put the barrier into a broken state. This causes any active or future calls to [`wait()`](https://docs.python.org/3/library/threading.html#threading.Barrier.wait "threading.Barrier.wait") to fail with the [`BrokenBarrierError`](https://docs.python.org/3/library/threading.html#threading.BrokenBarrierError "threading.BrokenBarrierError"). Use this for example if one of the threads needs to abort, to avoid deadlocking the application.
+It may be preferable to simply create the barrier with a sensible _timeout_ value to automatically guard against one of the threads going awry. 
+
+parties[¶](https://docs.python.org/3/library/threading.html#threading.Barrier.parties "Link to this definition")
+    
+The number of threads required to pass the barrier. 
+
+n_waiting[¶](https://docs.python.org/3/library/threading.html#threading.Barrier.n_waiting "Link to this definition")
+    
+The number of threads currently waiting in the barrier. 
+
+broken[¶](https://docs.python.org/3/library/threading.html#threading.Barrier.broken "Link to this definition")
+    
+A boolean that is `True` if the barrier is in the broken state. 
+
+_exception_ threading.BrokenBarrierError[¶](https://docs.python.org/3/library/threading.html#threading.BrokenBarrierError "Link to this definition")
+    
+This exception, a subclass of [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError"), is raised when the [`Barrier`](https://docs.python.org/3/library/threading.html#threading.Barrier "threading.Barrier") object is reset or broken.
+## Using locks, conditions, and semaphores in the `with` statement[¶](https://docs.python.org/3/library/threading.html#using-locks-conditions-and-semaphores-in-the-with-statement "Link to this heading")
+All of the objects provided by this module that have `acquire` and `release` methods can be used as context managers for a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement. The `acquire` method will be called when the block is entered, and `release` will be called when the block is exited. Hence, the following snippet:
+```
+with some_lock:
+  # do something...
+
+```
+
+is equivalent to:
+```
+some_lock.acquire()
+try:
+  # do something...
+finally:
+  some_lock.release()

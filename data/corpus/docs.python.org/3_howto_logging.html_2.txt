@@ -1,0 +1,82 @@
+Title: Logging Basics in Python
+URL: https://docs.python.org/3/howto/logging.html
+Summary: This section demonstrates how to use the logging module in Python, highlighting that the default logging level is WARNING. An example shows that messages below this level, such as INFO, do not appear in the output, which provides a warning message to the console. It notes that logging functions can be used directly on the module for convenience, but larger applications should configure logging explicitly.
+---
+
+```
+
+If you type these lines into a script and run it, you’ll see:
+```
+WARNING:root:Watch out!
+
+```
+
+printed out on the console. The `INFO` message doesn’t appear because the default level is `WARNING`. The printed message includes the indication of the level and the description of the event provided in the logging call, i.e. ‘Watch out!’. The actual output can be formatted quite flexibly if you need that; formatting options will also be explained later.
+Notice that in this example, we use functions directly on the `logging` module, like `logging.debug`, rather than creating a logger and calling functions on it. These functions operation on the root logger, but can be useful as they will call [`basicConfig()`](https://docs.python.org/3/library/logging.html#logging.basicConfig "logging.basicConfig") for you if it has not been called yet, like in this example. In larger programs you’ll usually want to control the logging configuration explicitly however - so for that reason as well as others, it’s better to create loggers and call their methods.
+### Logging to a file[¶](https://docs.python.org/3/howto/logging.html#logging-to-a-file "Link to this heading")
+A very common situation is that of recording logging events in a file, so let’s look at that next. Be sure to try the following in a newly started Python interpreter, and don’t just continue from the session described above:
+```
+importlogging
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
+logger.debug('This message should go to the log file')
+logger.info('So should this')
+logger.warning('And this, too')
+logger.error('And non-ASCII stuff, too, like Øresund and Malmö')
+
+```
+
+Changed in version 3.9: The _encoding_ argument was added. In earlier Python versions, or if not specified, the encoding used is the default value used by [`open()`](https://docs.python.org/3/library/functions.html#open "open"). While not shown in the above example, an _errors_ argument can also now be passed, which determines how encoding errors are handled. For available values and the default, see the documentation for [`open()`](https://docs.python.org/3/library/functions.html#open "open").
+And now if we open the file and look at what we have, we should find the log messages:
+```
+DEBUG:__main__:This message should go to the log file
+INFO:__main__:So should this
+WARNING:__main__:And this, too
+ERROR:__main__:And non-ASCII stuff, too, like Øresund and Malmö
+
+```
+
+This example also shows how you can set the logging level which acts as the threshold for tracking. In this case, because we set the threshold to `DEBUG`, all of the messages were printed.
+If you want to set the logging level from a command-line option such as:
+```
+--log=INFO
+
+```
+
+and you have the value of the parameter passed for `--log` in some variable _loglevel_ , you can use:
+```
+getattr(logging, loglevel.upper())
+
+```
+
+to get the value which you’ll pass to [`basicConfig()`](https://docs.python.org/3/library/logging.html#logging.basicConfig "logging.basicConfig") via the _level_ argument. You may want to error check any user input value, perhaps as in the following example:
+```
+# assuming loglevel is bound to the string value obtained from the
+# command line argument. Convert to upper case to allow the user to
+# specify --log=DEBUG or --log=debug
+numeric_level = getattr(logging, loglevel.upper(), None)
+if not isinstance(numeric_level, int):
+  raise ValueError('Invalid log level: %s' % loglevel)
+logging.basicConfig(level=numeric_level, ...)
+
+```
+
+The call to [`basicConfig()`](https://docs.python.org/3/library/logging.html#logging.basicConfig "logging.basicConfig") should come _before_ any calls to a logger’s methods such as [`debug()`](https://docs.python.org/3/library/logging.html#logging.Logger.debug "logging.Logger.debug"), [`info()`](https://docs.python.org/3/library/logging.html#logging.Logger.info "logging.Logger.info"), etc. Otherwise, that logging event may not be handled in the desired manner.
+If you run the above script several times, the messages from successive runs are appended to the file _example.log_. If you want each run to start afresh, not remembering the messages from earlier runs, you can specify the _filemode_ argument, by changing the call in the above example to:
+```
+logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
+
+```
+
+The output will be the same as before, but the log file is no longer appended to, so the messages from earlier runs are lost.
+### Logging variable data[¶](https://docs.python.org/3/howto/logging.html#logging-variable-data "Link to this heading")
+To log variable data, use a format string for the event description message and append the variable data as arguments. For example:
+```
+importlogging
+logging.warning('%s before you %s', 'Look', 'leap!')
+
+```
+
+will display:
+```
+WARNING:root:Look before you leap!

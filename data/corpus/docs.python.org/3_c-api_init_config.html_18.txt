@@ -1,0 +1,88 @@
+Title: PyWideStringList and Command Line Options
+URL: https://docs.python.org/3/c-api/init_config.html
+Summary: This section discusses the `xoptions` attribute of the `PyWideStringList`, which holds values from the `-X` command line options. By default, it is an empty list. It explains that if `parse_argv` is enabled, command line arguments are parsed similarly to standard Python, where Python-related arguments are excluded from `argv`.
+---
+
+[PyWideStringList](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList "PyWideStringList")xoptions[¶](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.xoptions "Link to this definition")
+    
+Values of the [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) command line options: [`sys._xoptions`](https://docs.python.org/3/library/sys.html#sys._xoptions "sys._xoptions").
+Default: empty list.
+If [`parse_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.parse_argv "PyConfig.parse_argv") is non-zero, [`argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.argv "PyConfig.argv") arguments are parsed the same way the regular Python parses [command line arguments](https://docs.python.org/3/using/cmdline.html#using-on-cmdline), and Python arguments are stripped from [`argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.argv "PyConfig.argv").
+The [`xoptions`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.xoptions "PyConfig.xoptions") options are parsed to set other options: see the [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) command line option.
+Changed in version 3.9: The `show_alloc_count` field has been removed.
+## Initialization with PyConfig[¶](https://docs.python.org/3/c-api/init_config.html#initialization-with-pyconfig "Link to this heading")
+Initializing the interpreter from a populated configuration struct is handled by calling [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig").
+The caller is responsible to handle exceptions (error or exit) using [`PyStatus_Exception()`](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_Exception "PyStatus_Exception") and [`Py_ExitStatusException()`](https://docs.python.org/3/c-api/init_config.html#c.Py_ExitStatusException "Py_ExitStatusException").
+If [`PyImport_FrozenModules()`](https://docs.python.org/3/c-api/import.html#c.PyImport_FrozenModules "PyImport_FrozenModules"), [`PyImport_AppendInittab()`](https://docs.python.org/3/c-api/import.html#c.PyImport_AppendInittab "PyImport_AppendInittab") or [`PyImport_ExtendInittab()`](https://docs.python.org/3/c-api/import.html#c.PyImport_ExtendInittab "PyImport_ExtendInittab") are used, they must be set or called after Python preinitialization and before the Python initialization. If Python is initialized multiple times, [`PyImport_AppendInittab()`](https://docs.python.org/3/c-api/import.html#c.PyImport_AppendInittab "PyImport_AppendInittab") or [`PyImport_ExtendInittab()`](https://docs.python.org/3/c-api/import.html#c.PyImport_ExtendInittab "PyImport_ExtendInittab") must be called before each Python initialization.
+The current configuration (`PyConfig` type) is stored in `PyInterpreterState.config`.
+Example setting the program name:
+```
+voidinit_python(void)
+{
+PyStatusstatus;
+PyConfigconfig;
+PyConfig_InitPythonConfig(&config);
+/* Set the program name. Implicitly preinitialize Python. */
+status=PyConfig_SetString(&config,&config.program_name,
+L"/path/to/my_program");
+if(PyStatus_Exception(status)){
+gotoexception;
+}
+status=Py_InitializeFromConfig(&config);
+if(PyStatus_Exception(status)){
+gotoexception;
+}
+PyConfig_Clear(&config);
+return;
+exception:
+PyConfig_Clear(&config);
+Py_ExitStatusException(status);
+}
+
+```
+
+More complete example modifying the default configuration, read the configuration, and then override some parameters. Note that since 3.11, many parameters are not calculated until initialization, and so values cannot be read from the configuration structure. Any values set before initialize is called will be left unchanged by initialization:
+```
+PyStatusinit_python(constchar*program_name)
+{
+PyStatusstatus;
+PyConfigconfig;
+PyConfig_InitPythonConfig(&config);
+/* Set the program name before reading the configuration
+    (decode byte string from the locale encoding).
+    Implicitly preinitialize Python. */
+status=PyConfig_SetBytesString(&config,&config.program_name,
+program_name);
+if(PyStatus_Exception(status)){
+gotodone;
+}
+/* Read all configuration at once */
+status=PyConfig_Read(&config);
+if(PyStatus_Exception(status)){
+gotodone;
+}
+/* Specify sys.path explicitly */
+/* If you want to modify the default set of paths, finish
+    initialization first and then use PySys_GetObject("path") */
+config.module_search_paths_set=1;
+status=PyWideStringList_Append(&config.module_search_paths,
+L"/path/to/stdlib");
+if(PyStatus_Exception(status)){
+gotodone;
+}
+status=PyWideStringList_Append(&config.module_search_paths,
+L"/path/to/more/modules");
+if(PyStatus_Exception(status)){
+gotodone;
+}
+/* Override executable computed by PyConfig_Read() */
+status=PyConfig_SetString(&config,&config.executable,
+L"/path/to/my_executable");
+if(PyStatus_Exception(status)){
+gotodone;
+}
+status=Py_InitializeFromConfig(&config);
+done:
+PyConfig_Clear(&config);
+returnstatus;
+}

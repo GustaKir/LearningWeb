@@ -1,0 +1,57 @@
+Title: OptionParser Methods in optparse Library
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section highlights the `get_option_group` method of the `OptionParser`, which retrieves the `OptionGroup` for a given option string. It also mentions the functionality of printing a version string for the program using the `optparse` library.
+---
+
+```
+
+Another interesting method, in particular when working programmatically with option groups is: 
+
+OptionParser.get_option_group(_opt_str_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.get_option_group "Link to this definition")
+    
+Return the [`OptionGroup`](https://docs.python.org/3/library/optparse.html#optparse.OptionGroup "optparse.OptionGroup") to which the short or long option string _opt_str_ (e.g. `'-o'` or `'--option'`) belongs. If there’s no such [`OptionGroup`](https://docs.python.org/3/library/optparse.html#optparse.OptionGroup "optparse.OptionGroup"), return `None`.
+### Printing a version string[¶](https://docs.python.org/3/library/optparse.html#printing-a-version-string "Link to this heading")
+Similar to the brief usage string, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") can also print a version string for your program. You have to supply the string as the `version` argument to OptionParser:
+```
+parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
+
+```
+
+`%prog` is expanded just like it is in `usage`. Apart from that, `version` can contain anything you like. When you supply it, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") automatically adds a `--version` option to your parser. If it encounters this option on the command line, it expands your `version` string (by replacing `%prog`), prints it to stdout, and exits.
+For example, if your script is called `/usr/bin/foo`:
+```
+$ /usr/bin/foo--version
+foo 1.0
+
+```
+
+The following two methods can be used to print and get the `version` string: 
+
+OptionParser.print_version(_file =None_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.print_version "Link to this definition")
+    
+Print the version message for the current program (`self.version`) to _file_ (default stdout). As with [`print_usage()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.print_usage "optparse.OptionParser.print_usage"), any occurrence of `%prog` in `self.version` is replaced with the name of the current program. Does nothing if `self.version` is empty or undefined. 
+
+OptionParser.get_version()[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.get_version "Link to this definition")
+    
+Same as [`print_version()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.print_version "optparse.OptionParser.print_version") but returns the version string instead of printing it.
+### How [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") handles errors[¶](https://docs.python.org/3/library/optparse.html#how-optparse-handles-errors "Link to this heading")
+There are two broad classes of errors that [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") has to worry about: programmer errors and user errors. Programmer errors are usually erroneous calls to [`OptionParser.add_option()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.add_option "optparse.OptionParser.add_option"), e.g. invalid option strings, unknown option attributes, missing option attributes, etc. These are dealt with in the usual way: raise an exception (either [`optparse.OptionError`](https://docs.python.org/3/library/optparse.html#optparse.OptionError "optparse.OptionError") or [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError")) and let the program crash.
+Handling user errors is much more important, since they are guaranteed to happen no matter how stable your code is. [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") can automatically detect some user errors, such as bad option arguments (passing `-n 4x` where `-n` takes an integer argument), missing arguments (`-n` at the end of the command line, where `-n` takes an argument of any type). Also, you can call `OptionParser.error()` to signal an application-defined error condition:
+```
+(options, args) = parser.parse_args()
+...
+if options.a and options.b:
+  parser.error("options -a and -b are mutually exclusive")
+
+```
+
+In either case, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") handles the error the same way: it prints the program’s usage message and an error message to standard error and exits with error status 2.
+Consider the first example above, where the user passes `4x` to an option that takes an integer:
+```
+$ /usr/bin/foo-n4x
+Usage: foo [options]
+foo: error: option -n: invalid integer value: '4x'
+
+```
+
+Or, where the user fails to pass a value at all:

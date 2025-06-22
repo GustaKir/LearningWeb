@@ -1,0 +1,123 @@
+Title: NamedTuple in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section describes the `typing.NamedTuple` class, a typed version of `collections.namedtuple`, used for creating and declaring types. It provides examples of how to define a named tuple with and without default field values, highlighting that fields with default values must be declared after those without.
+---
+
+```
+
+#### Other special directives[¶](https://docs.python.org/3/library/typing.html#other-special-directives "Link to this heading")
+These functions and classes should not be used directly as annotations. Their intended purpose is to be building blocks for creating and declaring types. 
+
+_class_ typing.NamedTuple[¶](https://docs.python.org/3/library/typing.html#typing.NamedTuple "Link to this definition")
+    
+Typed version of [`collections.namedtuple()`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple").
+Usage:
+```
+classEmployee(NamedTuple):
+  name: str
+  id: int
+
+```
+
+This is equivalent to:
+```
+Employee = collections.namedtuple('Employee', ['name', 'id'])
+
+```
+
+To give a field a default value, you can assign to it in the class body:
+```
+classEmployee(NamedTuple):
+  name: str
+  id: int = 3
+employee = Employee('Guido')
+assert employee.id == 3
+
+```
+
+Fields with a default value must come after any fields without a default.
+The resulting class has an extra attribute `__annotations__` giving a dict that maps the field names to the field types. (The field names are in the `_fields` attribute and the default values are in the `_field_defaults` attribute, both of which are part of the [`namedtuple()`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple") API.)
+`NamedTuple` subclasses can also have docstrings and methods:
+```
+classEmployee(NamedTuple):
+"""Represents an employee."""
+  name: str
+  id: int = 3
+  def__repr__(self) -> str:
+    return f'<Employee {self.name}, id={self.id}>'
+
+```
+
+`NamedTuple` subclasses can be generic:
+```
+classGroup[T](NamedTuple):
+  key: T
+  group: list[T]
+
+```
+
+Backward-compatible usage:
+```
+# For creating a generic NamedTuple on Python 3.11
+T = TypeVar("T")
+classGroup(NamedTuple, Generic[T]):
+  key: T
+  group: list[T]
+# A functional syntax is also supported
+Employee = NamedTuple('Employee', [('name', str), ('id', int)])
+
+```
+
+Changed in version 3.6: Added support for [**PEP 526**](https://peps.python.org/pep-0526/) variable annotation syntax.
+Changed in version 3.6.1: Added support for default values, methods, and docstrings.
+Changed in version 3.8: The `_field_types` and `__annotations__` attributes are now regular dictionaries instead of instances of `OrderedDict`.
+Changed in version 3.9: Removed the `_field_types` attribute in favor of the more standard `__annotations__` attribute which has the same information.
+Changed in version 3.11: Added support for generic namedtuples.
+Deprecated since version 3.13, will be removed in version 3.15: The undocumented keyword argument syntax for creating NamedTuple classes (`NT = NamedTuple("NT", x=int)`) is deprecated, and will be disallowed in 3.15. Use the class-based syntax or the functional syntax instead.
+Deprecated since version 3.13, will be removed in version 3.15: When using the functional syntax to create a NamedTuple class, failing to pass a value to the ‘fields’ parameter (`NT = NamedTuple("NT")`) is deprecated. Passing `None` to the ‘fields’ parameter (`NT = NamedTuple("NT", None)`) is also deprecated. Both will be disallowed in Python 3.15. To create a NamedTuple class with 0 fields, use `class NT(NamedTuple): pass` or `NT = NamedTuple("NT", [])`. 
+
+_class_ typing.NewType(_name_ , _tp_)[¶](https://docs.python.org/3/library/typing.html#typing.NewType "Link to this definition")
+    
+Helper class to create low-overhead [distinct types](https://docs.python.org/3/library/typing.html#distinct).
+A `NewType` is considered a distinct type by a typechecker. At runtime, however, calling a `NewType` returns its argument unchanged.
+Usage:
+```
+UserId = NewType('UserId', int) # Declare the NewType "UserId"
+first_user = UserId(1) # "UserId" returns the argument unchanged at runtime
+
+```
+
+
+__module__[¶](https://docs.python.org/3/library/typing.html#typing.NewType.__module__ "Link to this definition")
+    
+The module in which the new type is defined. 
+
+__name__[¶](https://docs.python.org/3/library/typing.html#typing.NewType.__name__ "Link to this definition")
+    
+The name of the new type. 
+
+__supertype__[¶](https://docs.python.org/3/library/typing.html#typing.NewType.__supertype__ "Link to this definition")
+    
+The type that the new type is based on.
+Added in version 3.5.2.
+Changed in version 3.10: `NewType` is now a class rather than a function. 
+
+_class_ typing.Protocol(_Generic_)[¶](https://docs.python.org/3/library/typing.html#typing.Protocol "Link to this definition")
+    
+Base class for protocol classes.
+Protocol classes are defined like this:
+```
+classProto(Protocol):
+  defmeth(self) -> int:
+    ...
+
+```
+
+Such classes are primarily used with static type checkers that recognize structural subtyping (static duck-typing), for example:
+```
+classC:
+  defmeth(self) -> int:
+    return 0
+deffunc(x: Proto) -> int:
+  return x.meth()
+func(C()) # Passes static type check

@@ -1,0 +1,35 @@
+Title: Building a Function for Monthly Sales Data Display
+URL: https://docs.streamlit.io/develop/tutorials/execution-flow/trigger-a-full-script-rerun-from-a-fragment
+Summary: This section outlines the creation of a function named `show_monthly_sales` designed to display monthly sales data in a Streamlit app. Unlike the daily sales function, it only reruns when the entire app is triggered. Key components include selecting the current month based on a selected date, filtering sales data, and displaying it with visualizations.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/trigger-a-full-script-rerun-from-a-fragment#build-a-function-to-show-monthly-sales-data)Build a function to show monthly sales data
+Finally, let's build a function to display monthly sales data. It will be similar to your `show_daily_sales` function but doesn't need to be fragment. You only need to rerun this function when the whole app is rerunning.
+Complete function to display daily sales data _expand_more_
+`def show_monthly_sales(data):   time.sleep(1)   selected_date = st.session_state.selected_date   this_month = selected_date.replace(day=1)   next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1)   st.header(f"Daily sales for all products, {this_month:%B %Y}")   monthly_sales = data[(data.index < next_month) & (data.index >= this_month)]   st.write(monthly_sales)   st.header(f"Total sales for all products, {this_month:%B %Y}")   st.bar_chart(monthly_sales.sum()) `
+  1. Start your function definition.
+`def show_monthly_sales(data): `
+  2. Optional: Add `time.sleep(1)` to slow down the function and show off how the fragment works.
+`  time.sleep(1) `
+  3. Get the selected date from Session State and compute the first days of this and next month.
+`  selected_date = st.session_state.selected_date   this_month = selected_date.replace(day=1)   next_month = (selected_date.replace(day=28) + timedelta(days=4)).replace(day=1) `
+  4. Show the daily sales values for all products within the selected month.
+`  st.header(f"Daily sales for all products, {this_month:%B %Y}")   monthly_sales = data[(data.index < next_month) & (data.index >= this_month)]   st.write(monthly_sales) `
+  5. Show the total sales of each product within the selected month.
+`  st.header(f"Total sales for all products, {this_month:%B %Y}")   st.bar_chart(monthly_sales.sum()) `
+  6. Optional: Test out your function by calling it and displaying the data.
+`data = get_data() show_daily_sales(data) show_monthly_sales(data) `
+Save your `app.py` file to see the preview. Delete these three lines when finished.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/trigger-a-full-script-rerun-from-a-fragment#put-the-functions-together-together-to-create-an-app)Put the functions together together to create an app
+Let's show these elements side-by-side. You'll display the daily data on the left and the monthly data on the right.
+  1. If you added optional lines at the end of your code to test your functions, clear them out now.
+  2. Give your app a wide layout.
+`st.set_page_config(layout="wide") `
+  3. Get your data.
+`data = get_data() `
+  4. Add a title and description for your app.
+`st.title("Daily vs monthly sales, by product") st.markdown("This app shows the 2023 daily sales for Widget A through Widget Z.") `
+  5. Create columns and call the functions to display data.
+`daily, monthly = st.columns(2) with daily:   show_daily_sales(data) with monthly:   show_monthly_sales(data) `

@@ -1,0 +1,119 @@
+Title: Importing Modules in a FastAPI Application
+URL: https://fastapi.tiangolo.com/tutorial/bigger-applications/
+Summary: This section explains how to perform imports in a FastAPI application, specifically using relative and absolute imports for router modules. It highlights the structure of the application, such as importing `items` and `users` from the `routers` subpackage, and clarifies the distinction between relative and absolute import syntax.
+---
+
+```
+
+means:
+  * Starting in the same package that this module (the file `app/main.py`) lives in (the directory `app/`)...
+  * look for the subpackage `routers` (the directory at `app/routers/`)...
+  * and from it, import the submodule `items` (the file at `app/routers/items.py`) and `users` (the file at `app/routers/users.py`)...
+
+
+The module `items` will have a variable `router` (`items.router`). This is the same one we created in the file `app/routers/items.py`, it's an `APIRouter` object.
+And then we do the same for the module `users`.
+We could also import them like:
+```
+fromapp.routersimport items, users
+
+```
+
+Info
+The first version is a "relative import":
+```
+from.routersimport items, users
+
+```
+
+The second version is an "absolute import":
+```
+fromapp.routersimport items, users
+
+```
+
+To learn more about Python Packages and Modules, read [the official Python documentation about Modules](https://docs.python.org/3/tutorial/modules.html).
+### Avoid name collisions[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#avoid-name-collisions "Permanent link")
+We are importing the submodule `items` directly, instead of importing just its variable `router`.
+This is because we also have another variable named `router` in the submodule `users`.
+If we had imported one after the other, like:
+```
+from.routers.itemsimport router
+from.routers.usersimport router
+
+```
+
+the `router` from `users` would overwrite the one from `items` and we wouldn't be able to use them at the same time.
+So, to be able to use both of them in the same file, we import the submodules directly:
+app/main.py```
+fromfastapiimport Depends, FastAPI
+from.dependenciesimport get_query_token, get_token_header
+from.internalimport admin
+from.routersimport items, users
+app = FastAPI(dependencies=[Depends(get_query_token)])
+app.include_router(users.router)
+app.include_router(items.router)
+app.include_router(
+  admin.router,
+  prefix="/admin",
+  tags=["admin"],
+  dependencies=[Depends(get_token_header)],
+  responses={418: {"description": "I'm a teapot"}},
+)
+@app.get("/")
+async defroot():
+  return {"message": "Hello Bigger Applications!"}
+
+```
+
+### Include the `APIRouter`s for `users` and `items`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#include-the-apirouters-for-users-and-items "Permanent link")
+Now, let's include the `router`s from the submodules `users` and `items`:
+app/main.py```
+fromfastapiimport Depends, FastAPI
+from.dependenciesimport get_query_token, get_token_header
+from.internalimport admin
+from.routersimport items, users
+app = FastAPI(dependencies=[Depends(get_query_token)])
+app.include_router(users.router)
+app.include_router(items.router)
+app.include_router(
+  admin.router,
+  prefix="/admin",
+  tags=["admin"],
+  dependencies=[Depends(get_token_header)],
+  responses={418: {"description": "I'm a teapot"}},
+)
+@app.get("/")
+async defroot():
+  return {"message": "Hello Bigger Applications!"}
+
+```
+
+Info
+`users.router` contains the `APIRouter` inside of the file `app/routers/users.py`.
+And `items.router` contains the `APIRouter` inside of the file `app/routers/items.py`.
+With `app.include_router()` we can add each `APIRouter` to the main `FastAPI` application.
+It will include all the routes from that router as part of it.
+Technical Details
+It will actually internally create a _path operation_ for each _path operation_ that was declared in the `APIRouter`.
+So, behind the scenes, it will actually work as if everything was the same single app.
+Check
+You don't have to worry about performance when including routers.
+This will take microseconds and will only happen at startup.
+So it won't affect performance. ⚡
+### Include an `APIRouter` with a custom `prefix`, `tags`, `responses`, and `dependencies`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#include-an-apirouter-with-a-custom-prefix-tags-responses-and-dependencies "Permanent link")
+Now, let's imagine your organization gave you the `app/internal/admin.py` file.
+It contains an `APIRouter` with some admin _path operations_ that your organization shares between several projects.
+For this example it will be super simple. But let's say that because it is shared with other projects in the organization, we cannot modify it and add a `prefix`, `dependencies`, `tags`, etc. directly to the `APIRouter`:
+app/internal/admin.py```
+fromfastapiimport APIRouter
+router = APIRouter()
+@router.post("/")
+async defupdate_admin():
+  return {"message": "Admin getting schwifty"}
+
+```
+
+But we still want to set a custom `prefix` when including the `APIRouter` so that all its _path operations_ start with `/admin`, we want to secure it with the `dependencies` we already have for this project, and we want to include `tags` and `responses`.
+We can declare all that without having to modify the original `APIRouter` by passing those parameters to `app.include_router()`:
+app/main.py

@@ -1,0 +1,125 @@
+Title: AsyncMock Assertions in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section describes methods to assert calls on an AsyncMock object in Python's unittest.mock module. It details 'assert_awaited_once_with', which checks if the mock was awaited exactly once with specific arguments, and includes an example demonstrating its usage and potential AssertionError if the mock is awaited more than once. Additionally, it introduces 'assert_any_await', which verifies if the mock was ever awaited with the given arguments.
+---
+
+```
+
+
+assert_awaited_once_with(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.assert_awaited_once_with "Link to this definition")
+    
+Assert that the mock was awaited exactly once and with the specified arguments.
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain(*args, **kwargs):
+...   await mock(*args, **kwargs)
+...
+>>> asyncio.run(main('foo', bar='bar'))
+>>> mock.assert_awaited_once_with('foo', bar='bar')
+>>> asyncio.run(main('foo', bar='bar'))
+>>> mock.assert_awaited_once_with('foo', bar='bar')
+Traceback (most recent call last):
+...
+AssertionError: Expected mock to have been awaited once. Awaited 2 times.
+
+```
+
+
+assert_any_await(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.assert_any_await "Link to this definition")
+    
+Assert the mock has ever been awaited with the specified arguments.
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain(*args, **kwargs):
+...   await mock(*args, **kwargs)
+...
+>>> asyncio.run(main('foo', bar='bar'))
+>>> asyncio.run(main('hello'))
+>>> mock.assert_any_await('foo', bar='bar')
+>>> mock.assert_any_await('other')
+Traceback (most recent call last):
+...
+AssertionError: mock('other') await not found
+
+```
+
+
+assert_has_awaits(_calls_ , _any_order =False_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.assert_has_awaits "Link to this definition")
+    
+Assert the mock has been awaited with the specified calls. The [`await_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_args_list "unittest.mock.AsyncMock.await_args_list") list is checked for the awaits.
+If _any_order_ is false then the awaits must be sequential. There can be extra calls before or after the specified awaits.
+If _any_order_ is true then the awaits can be in any order, but they must all appear in [`await_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_args_list "unittest.mock.AsyncMock.await_args_list").
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain(*args, **kwargs):
+...   await mock(*args, **kwargs)
+...
+>>> calls = [call("foo"), call("bar")]
+>>> mock.assert_has_awaits(calls)
+Traceback (most recent call last):
+...
+AssertionError: Awaits not found.
+Expected: [call('foo'), call('bar')]
+Actual: []
+>>> asyncio.run(main('foo'))
+>>> asyncio.run(main('bar'))
+>>> mock.assert_has_awaits(calls)
+
+```
+
+
+assert_not_awaited()[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.assert_not_awaited "Link to this definition")
+    
+Assert that the mock was never awaited.
+>>>```
+>>> mock = AsyncMock()
+>>> mock.assert_not_awaited()
+
+```
+
+
+reset_mock(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.reset_mock "Link to this definition")
+    
+See [`Mock.reset_mock()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.reset_mock "unittest.mock.Mock.reset_mock"). Also sets [`await_count`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_count "unittest.mock.AsyncMock.await_count") to 0, [`await_args`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_args "unittest.mock.AsyncMock.await_args") to None, and clears the [`await_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_args_list "unittest.mock.AsyncMock.await_args_list"). 
+
+await_count[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_count "Link to this definition")
+    
+An integer keeping track of how many times the mock object has been awaited.
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain():
+...   await mock()
+...
+>>> asyncio.run(main())
+>>> mock.await_count
+1
+>>> asyncio.run(main())
+>>> mock.await_count
+2
+
+```
+
+
+await_args[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_args "Link to this definition")
+    
+This is either `None` (if the mock hasn’t been awaited), or the arguments that the mock was last awaited with. Functions the same as [`Mock.call_args`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args "unittest.mock.Mock.call_args").
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain(*args):
+...   await mock(*args)
+...
+>>> mock.await_args
+>>> asyncio.run(main('foo'))
+>>> mock.await_args
+call('foo')
+>>> asyncio.run(main('bar'))
+>>> mock.await_args
+call('bar')
+
+```
+
+
+await_args_list[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.await_args_list "Link to this definition")
+    
+This is a list of all the awaits made to the mock object in sequence (so the length of the list is the number of times it has been awaited). Before any awaits have been made it is an empty list.
+>>>

@@ -1,0 +1,94 @@
+Title: Asynchronous Timeout Management in asyncio
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: The `asyncio.timeout()` context manager allows for rescheduling deadlines and inspecting timeouts. The `asyncio.Timeout` class manages the cancellation of overdue coroutines, where `when` specifies the absolute timeout. A value of `None` disables the timeout, while a value less than the current loop time triggers immediately.
+---
+
+```
+
+The context manager produced by [`asyncio.timeout()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout "asyncio.timeout") can be rescheduled to a different deadline and inspected. 
+
+_class_ asyncio.Timeout(_when_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Timeout "Link to this definition")
+    
+An [asynchronous context manager](https://docs.python.org/3/reference/datamodel.html#async-context-managers) for cancelling overdue coroutines.
+`when` should be an absolute time at which the context should time out, as measured by the event loop’s clock:
+  * If `when` is `None`, the timeout will never trigger.
+  * If `when < loop.time()`, the timeout will trigger on the next iteration of the event loop.
+
+
+> 
+
+when() → [float](https://docs.python.org/3/library/functions.html#float "float")|[None](https://docs.python.org/3/library/constants.html#None "None")[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Timeout.when "Link to this definition")
+    
+> Return the current deadline, or `None` if the current deadline is not set. 
+
+reschedule(_when :[float](https://docs.python.org/3/library/functions.html#float "float")|[None](https://docs.python.org/3/library/constants.html#None "None")_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Timeout.reschedule "Link to this definition")
+    
+> Reschedule the timeout. 
+
+expired() → [bool](https://docs.python.org/3/library/functions.html#bool "bool")[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Timeout.expired "Link to this definition")
+    
+> Return whether the context manager has exceeded its deadline (expired).
+Example:
+```
+async defmain():
+  try:
+    # We do not know the timeout when starting, so we pass ``None``.
+    async with asyncio.timeout(None) as cm:
+      # We know the timeout now, so we reschedule it.
+      new_deadline = get_running_loop().time() + 10
+      cm.reschedule(new_deadline)
+      await long_running_task()
+  except TimeoutError:
+    pass
+  if cm.expired():
+    print("Looks like we haven't finished on time.")
+
+```
+
+Timeout context managers can be safely nested.
+Added in version 3.11. 
+
+asyncio.timeout_at(_when_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout_at "Link to this definition")
+    
+Similar to [`asyncio.timeout()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout "asyncio.timeout"), except _when_ is the absolute time to stop waiting, or `None`.
+Example:
+```
+async defmain():
+  loop = get_running_loop()
+  deadline = loop.time() + 20
+  try:
+    async with asyncio.timeout_at(deadline):
+      await long_running_task()
+  except TimeoutError:
+    print("The long operation timed out, but we've handled it.")
+  print("This statement will run regardless.")
+
+```
+
+Added in version 3.11. 
+
+_async_ asyncio.wait_for(_aw_ , _timeout_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.wait_for "Link to this definition")
+    
+Wait for the _aw_ [awaitable](https://docs.python.org/3/library/asyncio-task.html#asyncio-awaitables) to complete with a timeout.
+If _aw_ is a coroutine it is automatically scheduled as a Task.
+_timeout_ can either be `None` or a float or int number of seconds to wait for. If _timeout_ is `None`, block until the future completes.
+If a timeout occurs, it cancels the task and raises [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError").
+To avoid the task [`cancellation`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel"), wrap it in [`shield()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.shield "asyncio.shield").
+The function will wait until the future is actually cancelled, so the total wait time may exceed the _timeout_. If an exception happens during cancellation, it is propagated.
+If the wait is cancelled, the future _aw_ is also cancelled.
+Example:
+```
+async defeternity():
+  # Sleep for one hour
+  await asyncio.sleep(3600)
+  print('yay!')
+async defmain():
+  # Wait for at most 1 second
+  try:
+    await asyncio.wait_for(eternity(), timeout=1.0)
+  except TimeoutError:
+    print('timeout!')
+asyncio.run(main())
+# Expected output:
+#
+#   timeout!

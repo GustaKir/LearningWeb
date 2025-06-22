@@ -1,0 +1,39 @@
+Title: PyEval_SetTrace Function
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The `PyEval_SetTrace` function sets a tracing function for Python's runtime, allowing it to receive line-number and per-opcode events. Unlike profiling functions, it does not handle events associated with calls to C function objects.
+---
+
+voidPyEval_SetTrace([Py_tracefunc](https://docs.python.org/3/c-api/init.html#c.Py_tracefunc "Py_tracefunc")func, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*obj)[¶](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTrace "Link to this definition")
+    
+Set the tracing function to _func_. This is similar to [`PyEval_SetProfile()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetProfile "PyEval_SetProfile"), except the tracing function does receive line-number events and per-opcode events, but does not receive any event related to C function objects being called. Any trace function registered using [`PyEval_SetTrace()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTrace "PyEval_SetTrace") will not receive [`PyTrace_C_CALL`](https://docs.python.org/3/c-api/init.html#c.PyTrace_C_CALL "PyTrace_C_CALL"), [`PyTrace_C_EXCEPTION`](https://docs.python.org/3/c-api/init.html#c.PyTrace_C_EXCEPTION "PyTrace_C_EXCEPTION") or [`PyTrace_C_RETURN`](https://docs.python.org/3/c-api/init.html#c.PyTrace_C_RETURN "PyTrace_C_RETURN") as a value for the _what_ parameter.
+See also the [`sys.settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace") function.
+The caller must hold the [GIL](https://docs.python.org/3/glossary.html#term-GIL). 
+
+voidPyEval_SetTraceAllThreads([Py_tracefunc](https://docs.python.org/3/c-api/init.html#c.Py_tracefunc "Py_tracefunc")func, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*obj)[¶](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTraceAllThreads "Link to this definition")
+    
+Like [`PyEval_SetTrace()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTrace "PyEval_SetTrace") but sets the tracing function in all running threads belonging to the current interpreter instead of the setting it only on the current thread.
+The caller must hold the [GIL](https://docs.python.org/3/glossary.html#term-GIL).
+As [`PyEval_SetTrace()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTrace "PyEval_SetTrace"), this function ignores any exceptions raised while setting the trace functions in all threads.
+Added in version 3.12.
+## Reference tracing[¶](https://docs.python.org/3/c-api/init.html#reference-tracing "Link to this heading")
+Added in version 3.13. 
+
+typedefint(*PyRefTracer)([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*,intevent,void*data)[¶](https://docs.python.org/3/c-api/init.html#c.PyRefTracer "Link to this definition")
+    
+The type of the trace function registered using [`PyRefTracer_SetTracer()`](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_SetTracer "PyRefTracer_SetTracer"). The first parameter is a Python object that has been just created (when **event** is set to [`PyRefTracer_CREATE`](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_CREATE "PyRefTracer_CREATE")) or about to be destroyed (when **event** is set to [`PyRefTracer_DESTROY`](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_DESTROY "PyRefTracer_DESTROY")). The **data** argument is the opaque pointer that was provided when [`PyRefTracer_SetTracer()`](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_SetTracer "PyRefTracer_SetTracer") was called.
+Added in version 3.13. 
+
+intPyRefTracer_CREATE[¶](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_CREATE "Link to this definition")
+    
+The value for the _event_ parameter to [`PyRefTracer`](https://docs.python.org/3/c-api/init.html#c.PyRefTracer "PyRefTracer") functions when a Python object has been created. 
+
+intPyRefTracer_DESTROY[¶](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_DESTROY "Link to this definition")
+    
+The value for the _event_ parameter to [`PyRefTracer`](https://docs.python.org/3/c-api/init.html#c.PyRefTracer "PyRefTracer") functions when a Python object has been destroyed. 
+
+intPyRefTracer_SetTracer([PyRefTracer](https://docs.python.org/3/c-api/init.html#c.PyRefTracer "PyRefTracer")tracer, void*data)[¶](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_SetTracer "Link to this definition")
+    
+Register a reference tracer function. The function will be called when a new Python has been created or when an object is going to be destroyed. If **data** is provided it must be an opaque pointer that will be provided when the tracer function is called. Return `0` on success. Set an exception and return `-1` on error.
+Not that tracer functions **must not** create Python objects inside or otherwise the call will be re-entrant. The tracer also **must not** clear any existing exception or set an exception. The GIL will be held every time the tracer function is called.
+The GIL must be held when calling this function.
+Added in version 3.13.

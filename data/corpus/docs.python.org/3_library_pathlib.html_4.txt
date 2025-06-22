@@ -1,0 +1,153 @@
+Title: Changes to PurePath Parent Functionality in Python 3.10
+URL: https://docs.python.org/3/library/pathlib.html
+Summary: In Python 3.10, the 'parents' sequence in 'PurePath' now supports slices and negative indexing. The 'parent' property returns the logical parent of a path, with care that it cannot traverse past an anchor or empty path. It is recommended to use 'Path.resolve()' for navigating filesystem paths to handle symlinks and eliminate parent directory components.
+---
+
+```
+
+Changed in version 3.10: The parents sequence now supports [slices](https://docs.python.org/3/glossary.html#term-slice) and negative index values. 
+
+PurePath.parent[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.parent "Link to this definition")
+    
+The logical parent of the path:
+>>>```
+>>> p = PurePosixPath('/a/b/c/d')
+>>> p.parent
+PurePosixPath('/a/b/c')
+
+```
+
+You cannot go past an anchor, or empty path:
+>>>```
+>>> p = PurePosixPath('/')
+>>> p.parent
+PurePosixPath('/')
+>>> p = PurePosixPath('.')
+>>> p.parent
+PurePosixPath('.')
+
+```
+
+Note
+This is a purely lexical operation, hence the following behaviour:
+>>>```
+>>> p = PurePosixPath('foo/..')
+>>> p.parent
+PurePosixPath('foo')
+
+```
+
+If you want to walk an arbitrary filesystem path upwards, it is recommended to first call [`Path.resolve()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.resolve "pathlib.Path.resolve") so as to resolve symlinks and eliminate `".."` components. 
+
+PurePath.name[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.name "Link to this definition")
+    
+A string representing the final path component, excluding the drive and root, if any:
+>>>```
+>>> PurePosixPath('my/library/setup.py').name
+'setup.py'
+
+```
+
+UNC drive names are not considered:
+>>>```
+>>> PureWindowsPath('//some/share/setup.py').name
+'setup.py'
+>>> PureWindowsPath('//some/share').name
+''
+
+```
+
+
+PurePath.suffix[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffix "Link to this definition")
+    
+The last dot-separated portion of the final component, if any:
+>>>```
+>>> PurePosixPath('my/library/setup.py').suffix
+'.py'
+>>> PurePosixPath('my/library.tar.gz').suffix
+'.gz'
+>>> PurePosixPath('my/library').suffix
+''
+
+```
+
+This is commonly called the file extension. 
+
+PurePath.suffixes[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffixes "Link to this definition")
+    
+A list of the path’s suffixes, often called file extensions:
+>>>```
+>>> PurePosixPath('my/library.tar.gar').suffixes
+['.tar', '.gar']
+>>> PurePosixPath('my/library.tar.gz').suffixes
+['.tar', '.gz']
+>>> PurePosixPath('my/library').suffixes
+[]
+
+```
+
+
+PurePath.stem[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.stem "Link to this definition")
+    
+The final path component, without its suffix:
+>>>```
+>>> PurePosixPath('my/library.tar.gz').stem
+'library.tar'
+>>> PurePosixPath('my/library.tar').stem
+'library'
+>>> PurePosixPath('my/library').stem
+'library'
+
+```
+
+
+PurePath.as_posix()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.as_posix "Link to this definition")
+    
+Return a string representation of the path with forward slashes (`/`):
+>>>```
+>>> p = PureWindowsPath('c:\\windows')
+>>> str(p)
+'c:\\windows'
+>>> p.as_posix()
+'c:/windows'
+
+```
+
+
+PurePath.is_absolute()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_absolute "Link to this definition")
+    
+Return whether the path is absolute or not. A path is considered absolute if it has both a root and (if the flavour allows) a drive:
+>>>```
+>>> PurePosixPath('/a/b').is_absolute()
+True
+>>> PurePosixPath('a/b').is_absolute()
+False
+>>> PureWindowsPath('c:/a/b').is_absolute()
+True
+>>> PureWindowsPath('/a/b').is_absolute()
+False
+>>> PureWindowsPath('c:').is_absolute()
+False
+>>> PureWindowsPath('//some/share').is_absolute()
+True
+
+```
+
+
+PurePath.is_relative_to(_other_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_relative_to "Link to this definition")
+    
+Return whether or not this path is relative to the _other_ path.
+>>>```
+>>> p = PurePath('/etc/passwd')
+>>> p.is_relative_to('/etc')
+True
+>>> p.is_relative_to('/usr')
+False
+
+```
+
+This method is string-based; it neither accesses the filesystem nor treats “`..`” segments specially. The following code is equivalent:
+>>>```
+>>> u = PurePath('/usr')
+>>> u == p or u in p.parents
+False

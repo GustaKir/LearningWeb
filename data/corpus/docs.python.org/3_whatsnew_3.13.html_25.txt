@@ -1,0 +1,29 @@
+Title: Python 3.13 Optimizations
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: Python 3.13 introduces significant improvements in import times for several standard library modules, including a reduction of about one third for the 'typing' module by eliminating dependencies on 're' and 'contextlib'. Other modules, such as 'email.utils', 'enum', and 'functools', have also benefited from these optimizations.
+---
+
+## Optimizations[¶](https://docs.python.org/3/whatsnew/3.13.html#optimizations "Link to this heading")
+  * Several standard library modules have had their import times significantly improved. For example, the import time of the [`typing`](https://docs.python.org/3/library/typing.html#module-typing "typing: Support for type hints \(see :pep:`484`\).") module has been reduced by around a third by removing dependencies on [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") and [`contextlib`](https://docs.python.org/3/library/contextlib.html#module-contextlib "contextlib: Utilities for with-statement contexts."). Other modules to enjoy import-time speedups include [`email.utils`](https://docs.python.org/3/library/email.utils.html#module-email.utils "email.utils: Miscellaneous email package utilities."), [`enum`](https://docs.python.org/3/library/enum.html#module-enum "enum: Implementation of an enumeration class."), [`functools`](https://docs.python.org/3/library/functools.html#module-functools "functools: Higher-order functions and operations on callable objects."), [`importlib.metadata`](https://docs.python.org/3/library/importlib.metadata.html#module-importlib.metadata "importlib.metadata: Accessing package metadata"), and [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism."). (Contributed by Alex Waygood, Shantanu Jain, Adam Turner, Daniel Hollas, and others in [gh-109653](https://github.com/python/cpython/issues/109653).)
+  * [`textwrap.indent()`](https://docs.python.org/3/library/textwrap.html#textwrap.indent "textwrap.indent") is now around 30% faster than before for large input. (Contributed by Inada Naoki in [gh-107369](https://github.com/python/cpython/issues/107369).)
+  * The [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") module now uses the [`posix_spawn()`](https://docs.python.org/3/library/os.html#os.posix_spawn "os.posix_spawn") function in more situations, including when _close_fds_ is `True` (the default) on many modern platforms. This should provide a notable performance increase when launching processes on FreeBSD and Solaris. See the [subprocess](https://docs.python.org/3/whatsnew/3.13.html#whatsnew313-subprocess) section above for details. (Contributed by Jakub Kulik in [gh-113117](https://github.com/python/cpython/issues/113117).)
+
+
+## Removed Modules And APIs[¶](https://docs.python.org/3/whatsnew/3.13.html#removed-modules-and-apis "Link to this heading")
+### PEP 594: Remove “dead batteries” from the standard library[¶](https://docs.python.org/3/whatsnew/3.13.html#pep-594-remove-dead-batteries-from-the-standard-library "Link to this heading")
+[**PEP 594**](https://peps.python.org/pep-0594/) proposed removing 19 modules from the standard library, colloquially referred to as ‘dead batteries’ due to their historic, obsolete, or insecure status. All of the following modules were deprecated in Python 3.11, and are now removed:
+  * `aifc`
+    * [standard-aifc](https://pypi.org/project/standard-aifc/): Use the redistribution of `aifc` library from PyPI.
+  * `audioop`
+    * [audioop-lts](https://pypi.org/project/audioop-lts/): Use `audioop-lts` library from PyPI.
+  * `chunk`
+    * [standard-chunk](https://pypi.org/project/standard-chunk/): Use the redistribution of `chunk` library from PyPI.
+  * `cgi` and `cgitb`
+    * `cgi.FieldStorage` can typically be replaced with [`urllib.parse.parse_qsl()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.parse_qsl "urllib.parse.parse_qsl") for `GET` and `HEAD` requests, and the [`email.message`](https://docs.python.org/3/library/email.message.html#module-email.message "email.message: The base class representing email messages.") module or the [multipart](https://pypi.org/project/multipart/) library for `POST` and `PUT` requests.
+    * `cgi.parse()` can be replaced by calling [`urllib.parse.parse_qs()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.parse_qs "urllib.parse.parse_qs") directly on the desired query string, unless the input is `multipart/form-data`, which should be replaced as described below for `cgi.parse_multipart()`.
+    * `cgi.parse_header()` can be replaced with the functionality in the [`email`](https://docs.python.org/3/library/email.html#module-email "email: Package supporting the parsing, manipulating, and generating email messages.") package, which implements the same MIME RFCs. For example, with [`email.message.EmailMessage`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage "email.message.EmailMessage"):
+```
+fromemail.messageimport EmailMessage
+msg = EmailMessage()
+msg['content-type'] = 'application/json; charset="utf8"'
+main, params = msg.get_content_type(), msg['content-type'].params

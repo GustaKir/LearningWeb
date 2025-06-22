@@ -1,0 +1,41 @@
+Title: Garbage Collection Functions in Python
+URL: https://docs.python.org/3/library/gc.html
+Summary: The `gc.get_objects` function retrieves a list of all objects tracked by the garbage collector, with an optional parameter to specify the generation. The `gc.get_stats` function provides collection statistics per generation since interpreter start, detailing the number of collections, total objects collected, and other related metrics.
+---
+
+gc.get_objects(_generation =None_)[¶](https://docs.python.org/3/library/gc.html#gc.get_objects "Link to this definition")
+    
+Returns a list of all objects tracked by the collector, excluding the list returned. If _generation_ is not `None`, return only the objects tracked by the collector that are in that generation.
+Changed in version 3.8: New _generation_ parameter.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `gc.get_objects` with argument `generation`. 
+
+gc.get_stats()[¶](https://docs.python.org/3/library/gc.html#gc.get_stats "Link to this definition")
+    
+Return a list of three per-generation dictionaries containing collection statistics since interpreter start. The number of keys may change in the future, but currently each dictionary will contain the following items:
+  * `collections` is the number of times this generation was collected;
+  * `collected` is the total number of objects collected inside this generation;
+  * `uncollectable` is the total number of objects which were found to be uncollectable (and were therefore moved to the [`garbage`](https://docs.python.org/3/library/gc.html#gc.garbage "gc.garbage") list) inside this generation.
+
+
+Added in version 3.4. 
+
+gc.set_threshold(_threshold0_[, _threshold1_[, _threshold2_]])[¶](https://docs.python.org/3/library/gc.html#gc.set_threshold "Link to this definition")
+    
+Set the garbage collection thresholds (the collection frequency). Setting _threshold0_ to zero disables collection.
+The GC classifies objects into three generations depending on how many collection sweeps they have survived. New objects are placed in the youngest generation (generation `0`). If an object survives a collection it is moved into the next older generation. Since generation `2` is the oldest generation, objects in that generation remain there after a collection. In order to decide when to run, the collector keeps track of the number object allocations and deallocations since the last collection. When the number of allocations minus the number of deallocations exceeds _threshold0_ , collection starts. Initially only generation `0` is examined. If generation `0` has been examined more than _threshold1_ times since generation `1` has been examined, then generation `1` is examined as well. With the third generation, things are a bit more complicated, see [Collecting the oldest generation](https://devguide.python.org/garbage_collector/#collecting-the-oldest-generation) for more information. 
+
+gc.get_count()[¶](https://docs.python.org/3/library/gc.html#gc.get_count "Link to this definition")
+    
+Return the current collection counts as a tuple of `(count0, count1, count2)`. 
+
+gc.get_threshold()[¶](https://docs.python.org/3/library/gc.html#gc.get_threshold "Link to this definition")
+    
+Return the current collection thresholds as a tuple of `(threshold0, threshold1, threshold2)`. 
+
+gc.get_referrers(_* objs_)[¶](https://docs.python.org/3/library/gc.html#gc.get_referrers "Link to this definition")
+    
+Return the list of objects that directly refer to any of objs. This function will only locate those containers which support garbage collection; extension types which do refer to other objects but do not support garbage collection will not be found.
+Note that objects which have already been dereferenced, but which live in cycles and have not yet been collected by the garbage collector can be listed among the resulting referrers. To get only currently live objects, call [`collect()`](https://docs.python.org/3/library/gc.html#gc.collect "gc.collect") before calling [`get_referrers()`](https://docs.python.org/3/library/gc.html#gc.get_referrers "gc.get_referrers").
+Warning
+Care must be taken when using objects returned by [`get_referrers()`](https://docs.python.org/3/library/gc.html#gc.get_referrers "gc.get_referrers") because some of them could still be under construction and hence in a temporarily invalid state. Avoid using [`get_referrers()`](https://docs.python.org/3/library/gc.html#gc.get_referrers "gc.get_referrers") for any purpose other than debugging.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `gc.get_referrers` with argument `objs`.

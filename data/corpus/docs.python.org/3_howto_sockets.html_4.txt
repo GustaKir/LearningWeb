@@ -1,0 +1,22 @@
+Title: Managing Socket Connections in Python
+URL: https://docs.python.org/3/howto/sockets.html
+Summary: This section emphasizes the importance of explicitly closing sockets when done to avoid issues, such as indefinite hanging of the socket if the other end goes down without closing. It discusses the potential problems with blocking sockets and the behavior of TCP connections in case of ungraceful disconnections.
+---
+
+ete request. The server sends a reply. If the `send` completes successfully then, indeed, the client was still receiving.
+Python takes the automatic shutdown a step further, and says that when a socket is garbage collected, it will automatically do a `close` if it’s needed. But relying on this is a very bad habit. If your socket just disappears without doing a `close`, the socket at the other end may hang indefinitely, thinking you’re just being slow. _Please_ `close` your sockets when you’re done.
+### When Sockets Die[¶](https://docs.python.org/3/howto/sockets.html#when-sockets-die "Link to this heading")
+Probably the worst thing about using blocking sockets is what happens when the other side comes down hard (without doing a `close`). Your socket is likely to hang. TCP is a reliable protocol, and it will wait a long, long time before giving up on a connection. If you’re using threads, the entire thread is essentially dead. There’s not much you can do about it. As long as you aren’t doing something dumb, like holding a lock while doing a blocking read, the thread isn’t really consuming much in the way of resources. Do _not_ try to kill the thread - part of the reason that threads are more efficient than processes is that they avoid the overhead associated with the automatic recycling of resources. In other words, if you do manage to kill the thread, your whole process is likely to be screwed up.
+## Non-blocking Sockets[¶](https://docs.python.org/3/howto/sockets.html#non-blocking-sockets "Link to this heading")
+If you’ve understood the preceding, you already know most of what you need to know about the mechanics of using sockets. You’ll still use the same calls, in much the same ways. It’s just that, if you do it right, your app will be almost inside-out.
+In Python, you use `socket.setblocking(False)` to make it non-blocking. In C, it’s more complex, (for one thing, you’ll need to choose between the BSD flavor `O_NONBLOCK` and the almost indistinguishable POSIX flavor `O_NDELAY`, which is completely different from `TCP_NODELAY`), but it’s the exact same idea. You do this after creating the socket, but before using it. (Actually, if you’re nuts, you can switch back and forth.)
+The major mechanical difference is that `send`, `recv`, `connect` and `accept` can return without having done anything. You have (of course) a number of choices. You can check return code and error codes and generally drive yourself crazy. If you don’t believe me, try it sometime. Your app will grow large, buggy and suck CPU. So let’s skip the brain-dead solutions and do it right.
+Use `select`.
+In C, coding `select` is fairly complex. In Python, it’s a piece of cake, but it’s close enough to the C version that if you understand `select` in Python, you’ll have little trouble with it in C:
+```
+ready_to_read, ready_to_write, in_error = \
+        select.select(
+         potential_readers,
+         potential_writers,
+         potential_errs,
+         timeout)

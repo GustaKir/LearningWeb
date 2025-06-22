@@ -1,0 +1,36 @@
+Title: FastAPI Release Notes for Version 0.23.0
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: The 0.23.0 update includes an upgrade of Starlette to version 0.12.0, introducing support for ASGI 3 and enabling the use of `StreamingResponse` with iterators. Additionally, it adds an OAuth2 redirect page for the Swagger UI, facilitating delegated authentication through various OAuth2 providers.
+---
+
+## 0.23.0[¶](https://fastapi.tiangolo.com/release-notes/#0230 "Permanent link")
+  * Upgrade the compatible version of Starlette to `0.12.0`.
+    * This includes support for ASGI 3 (the latest version of the standard).
+    * It's now possible to use [Starlette's `StreamingResponse`](https://www.starlette.io/responses/#streamingresponse) with iterators, like [file-like](https://docs.python.org/3/glossary.html#term-file-like-object) objects (as those returned by `open()`).
+    * It's now possible to use the low level utility `iterate_in_threadpool` from `starlette.concurrency` (for advanced scenarios).
+    * PR [#243](https://github.com/tiangolo/fastapi/pull/243).
+  * Add OAuth2 redirect page for Swagger UI. This allows having delegated authentication in the Swagger UI docs. For this to work, you need to add `{your_origin}/docs/oauth2-redirect` to the allowed callbacks in your OAuth2 provider (in Auth0, Facebook, Google, etc).
+    * For example, during development, it could be `http://localhost:8000/docs/oauth2-redirect`.
+    * Keep in mind that this callback URL is independent of whichever one is used by your frontend. You might also have another callback at `https://yourdomain.com/login/callback`.
+    * This is only to allow delegated authentication in the API docs with Swagger UI.
+    * PR [#198](https://github.com/tiangolo/fastapi/pull/198) by [@steinitzu](https://github.com/steinitzu).
+  * Make Swagger UI and ReDoc route handlers (_path operations_) be `async` functions instead of lambdas to improve performance. PR [#241](https://github.com/tiangolo/fastapi/pull/241) by [@Trim21](https://github.com/Trim21).
+  * Make Swagger UI and ReDoc URLs parameterizable, allowing to host and serve local versions of them and have offline docs. PR [#112](https://github.com/tiangolo/fastapi/pull/112) by [@euri10](https://github.com/euri10).
+
+
+## 0.22.0[¶](https://fastapi.tiangolo.com/release-notes/#0220 "Permanent link")
+  * Add support for `dependencies` parameter:
+    * A parameter in _path operation decorators_ , for dependencies that should be executed but the return value is not important or not used in the _path operation function_.
+    * A parameter in the `.include_router()` method of FastAPI applications and routers, to include dependencies that should be executed in each _path operation_ in a router.
+      * This is useful, for example, to require authentication or permissions in specific group of _path operations_.
+      * Different `dependencies` can be applied to different routers.
+    * These `dependencies` are run before the normal parameter dependencies. And normal dependencies are run too. They can be combined.
+    * Dependencies declared in a router are executed first, then the ones defined in _path operation decorators_ , and then the ones declared in normal parameters. They are all combined and executed.
+    * All this also supports using `Security` with `scopes` in those `dependencies` parameters, for more advanced OAuth 2.0 security scenarios with scopes.
+    * New documentation about [dependencies in _path operation decorators_](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-in-path-operation-decorators/).
+    * New documentation about [dependencies in the `include_router()` method](https://fastapi.tiangolo.com/tutorial/bigger-applications/#include-an-apirouter-with-a-prefix-tags-responses-and-dependencies).
+    * PR [#235](https://github.com/tiangolo/fastapi/pull/235).
+  * Fix OpenAPI documentation of Starlette URL convertors. Specially useful when using `path` convertors, to take a whole path as a parameter, like `/some/url/{p:path}`. PR [#234](https://github.com/tiangolo/fastapi/pull/234) by [@euri10](https://github.com/euri10).
+  * Make default parameter utilities exported from `fastapi` be functions instead of classes (the new functions return instances of those classes). To be able to override the return types and fix `mypy` errors in FastAPI's users' code. Applies to `Path`, `Query`, `Header`, `Cookie`, `Body`, `Form`, `File`, `Depends`, and `Security`. PR [#226](https://github.com/tiangolo/fastapi/pull/226) and PR [#231](https://github.com/tiangolo/fastapi/pull/231).
+  * Separate development scripts `test.sh`, `lint.sh`, and `format.sh`. PR [#232](https://github.com/tiangolo/fastapi/pull/232).
+  * Re-enable `black` formatting checks for Python 3.7. PR [#229](https://github.com/tiangolo/fastapi/pull/229) by [@zamiramir](https://github.com/zamiramir).

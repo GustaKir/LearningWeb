@@ -1,0 +1,35 @@
+Title: Asyncio Runner Documentation
+URL: https://docs.python.org/3/library/asyncio-runner.html
+Summary: This document details the `asyncio.Runner` class introduced in Python 3.11, which includes methods to run coroutines and manage the event loop. The `run` method executes a coroutine with an optional custom context, while the `close` method finalizes asynchronous generators, shuts down the executor, and releases the event loop resources.
+---
+
+```
+
+Added in version 3.11. 
+
+run(_coro_ , _*_ , _context =None_)[¶](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner.run "Link to this definition")
+    
+Run a [coroutine](https://docs.python.org/3/glossary.html#term-coroutine) _coro_ in the embedded loop.
+Return the coroutine’s result or raise its exception.
+An optional keyword-only _context_ argument allows specifying a custom [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") for the _coro_ to run in. The runner’s default context is used if `None`.
+This function cannot be called when another asyncio event loop is running in the same thread. 
+
+close()[¶](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner.close "Link to this definition")
+    
+Close the runner.
+Finalize asynchronous generators, shutdown default executor, close the event loop and release embedded [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context"). 
+
+get_loop()[¶](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner.get_loop "Link to this definition")
+    
+Return the event loop associated with the runner instance.
+Note
+[`Runner`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner "asyncio.Runner") uses the lazy initialization strategy, its constructor doesn’t initialize underlying low-level structures.
+Embedded _loop_ and _context_ are created at the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) body entering or the first call of [`run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run") or [`get_loop()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner.get_loop "asyncio.Runner.get_loop").
+## [Handling Keyboard Interruption](https://docs.python.org/3/library/asyncio-runner.html#id3)[¶](https://docs.python.org/3/library/asyncio-runner.html#handling-keyboard-interruption "Link to this heading")
+Added in version 3.11.
+When [`signal.SIGINT`](https://docs.python.org/3/library/signal.html#signal.SIGINT "signal.SIGINT") is raised by `Ctrl`-`C`, [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt") exception is raised in the main thread by default. However this doesn’t work with [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") because it can interrupt asyncio internals and can hang the program from exiting.
+To mitigate this issue, [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") handles [`signal.SIGINT`](https://docs.python.org/3/library/signal.html#signal.SIGINT "signal.SIGINT") as follows:
+  1. [`asyncio.Runner.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner.run "asyncio.Runner.run") installs a custom [`signal.SIGINT`](https://docs.python.org/3/library/signal.html#signal.SIGINT "signal.SIGINT") handler before any user code is executed and removes it when exiting from the function.
+  2. The [`Runner`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner "asyncio.Runner") creates the main task for the passed coroutine for its execution.
+  3. When [`signal.SIGINT`](https://docs.python.org/3/library/signal.html#signal.SIGINT "signal.SIGINT") is raised by `Ctrl`-`C`, the custom signal handler cancels the main task by calling [`asyncio.Task.cancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel") which raises [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") inside the main task. This causes the Python stack to unwind, `try/except` and `try/finally` blocks can be used for resource cleanup. After the main task is cancelled, [`asyncio.Runner.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner.run "asyncio.Runner.run") raises [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt").
+  4. A user could write a tight loop which cannot be interrupted by [`asyncio.Task.cancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel"), in which case the second following `Ctrl`-`C` immediately raises the [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt") without cancelling the main task.

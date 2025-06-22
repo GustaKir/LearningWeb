@@ -1,0 +1,64 @@
+Title: Handling Positional Arguments in Optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: The `args` variable represents the leftover positional arguments after processing all options. Typically, no keyword argument is supplied, but if `values` is provided, it will be modified with `setattr()` calls for each option argument and returned by `parse_args()`. Errors in the argument list trigger the `error()` method, resulting in a process termination with an exit status of 2.
+---
+
+`args`
+    
+the leftover positional arguments after all options have been processed
+The most common usage is to supply neither keyword argument. If you supply `values`, it will be modified with repeated [`setattr()`](https://docs.python.org/3/library/functions.html#setattr "setattr") calls (roughly one for every option argument stored to an option destination) and returned by [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args").
+If [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args") encounters any errors in the argument list, it calls the OptionParser’s `error()` method with an appropriate end-user error message. This ultimately terminates your process with an exit status of 2 (the traditional Unix exit status for command-line errors).
+### Querying and manipulating your option parser[¶](https://docs.python.org/3/library/optparse.html#querying-and-manipulating-your-option-parser "Link to this heading")
+The default behavior of the option parser can be customized slightly, and you can also poke around your option parser and see what’s there. OptionParser provides several methods to help you out: 
+
+OptionParser.disable_interspersed_args()[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.disable_interspersed_args "Link to this definition")
+    
+Set parsing to stop on the first non-option. For example, if `-a` and `-b` are both simple options that take no arguments, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") normally accepts this syntax:
+```
+prog -a arg1 -b arg2
+
+```
+
+and treats it as equivalent to
+```
+prog -a -b arg1 arg2
+
+```
+
+To disable this feature, call [`disable_interspersed_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.disable_interspersed_args "optparse.OptionParser.disable_interspersed_args"). This restores traditional Unix syntax, where option parsing stops with the first non-option argument.
+Use this if you have a command processor which runs another command which has options of its own and you want to make sure these options don’t get confused. For example, each command might have a different set of options. 
+
+OptionParser.enable_interspersed_args()[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.enable_interspersed_args "Link to this definition")
+    
+Set parsing to not stop on the first non-option, allowing interspersing switches with command arguments. This is the default behavior. 
+
+OptionParser.get_option(_opt_str_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.get_option "Link to this definition")
+    
+Returns the Option instance with the option string _opt_str_ , or `None` if no options have that option string. 
+
+OptionParser.has_option(_opt_str_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.has_option "Link to this definition")
+    
+Return `True` if the OptionParser has an option with option string _opt_str_ (e.g., `-q` or `--verbose`). 
+
+OptionParser.remove_option(_opt_str_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.remove_option "Link to this definition")
+    
+If the [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser") has an option corresponding to _opt_str_ , that option is removed. If that option provided any other option strings, all of those option strings become invalid. If _opt_str_ does not occur in any option belonging to this [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser"), raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError").
+### Conflicts between options[¶](https://docs.python.org/3/library/optparse.html#conflicts-between-options "Link to this heading")
+If you’re not careful, it’s easy to define options with conflicting option strings:
+```
+parser.add_option("-n", "--dry-run", ...)
+...
+parser.add_option("-n", "--noisy", ...)
+
+```
+
+(This is particularly true if you’ve defined your own OptionParser subclass with some standard options.)
+Every time you add an option, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") checks for conflicts with existing options. If it finds any, it invokes the current conflict-handling mechanism. You can set the conflict-handling mechanism either in the constructor:
+```
+parser = OptionParser(..., conflict_handler=handler)
+
+```
+
+or with a separate call:
+```
+parser.set_conflict_handler(handler)

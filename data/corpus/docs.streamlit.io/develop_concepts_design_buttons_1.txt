@@ -1,0 +1,44 @@
+Title: Streamlit Button Design Concepts
+URL: https://docs.streamlit.io/develop/concepts/design/buttons
+Summary: This documentation focuses on various design concepts for buttons in Streamlit applications, including guidelines for usage, handling common logic, showing temporary messages, and implementing stateful and toggle buttons. It also covers buttons for controlling processes and modifying session state.
+---
+
+1. Contents
+  2. [Summary](https://docs.streamlit.io/develop/concepts/design/buttons#summary)
+  3. [When to use if st.button()](https://docs.streamlit.io/develop/concepts/design/buttons#when-to-use-if-stbutton)
+  4. [Common logic with buttons](https://docs.streamlit.io/develop/concepts/design/buttons#common-logic-with-buttons)
+  5. [Show a temporary message with a button](https://docs.streamlit.io/develop/concepts/design/buttons#show-a-temporary-message-with-a-button)
+  6. [Stateful button](https://docs.streamlit.io/develop/concepts/design/buttons#stateful-button)
+  7. [Toggle button](https://docs.streamlit.io/develop/concepts/design/buttons#toggle-button)
+  8. [Buttons to continue or control stages of a process](https://docs.streamlit.io/develop/concepts/design/buttons#buttons-to-continue-or-control-stages-of-a-process)
+  9. [Buttons to modify st.session_state](https://docs.streamlit.io/develop/concepts/design/buttons#buttons-to-modify-stsession_state)
+  10. [A slight problem](https://docs.streamlit.io/develop/concepts/design/buttons#a-slight-problem)
+  11. [Logic used in a callback](https://docs.streamlit.io/develop/concepts/design/buttons#logic-used-in-a-callback)
+  12. [Logic nested in a button with a rerun](https://docs.streamlit.io/develop/concepts/design/buttons#logic-nested-in-a-button-with-a-rerun)
+  13. [Buttons to modify or reset other widgets](https://docs.streamlit.io/develop/concepts/design/buttons#buttons-to-modify-or-reset-other-widgets)
+  14. [Option 1: Use a key for the button and put the logic before the widget](https://docs.streamlit.io/develop/concepts/design/buttons#option-1-use-a-key-for-the-button-and-put-the-logic-before-the-widget)
+  15. [Option 2: Use a callback](https://docs.streamlit.io/develop/concepts/design/buttons#option-2-use-a-callback)
+  16. [Option 3: Use containers](https://docs.streamlit.io/develop/concepts/design/buttons#option-3-use-containers)
+  17. [Buttons to add other widgets dynamically](https://docs.streamlit.io/develop/concepts/design/buttons#buttons-to-add-other-widgets-dynamically)
+  18. [Buttons to handle expensive or file-writing processes](https://docs.streamlit.io/develop/concepts/design/buttons#buttons-to-handle-expensive-or-file-writing-processes)
+  19. [Anti-patterns](https://docs.streamlit.io/develop/concepts/design/buttons#anti-patterns)
+  20. [Buttons nested inside buttons](https://docs.streamlit.io/develop/concepts/design/buttons#buttons-nested-inside-buttons)
+  21. [Other widgets nested inside buttons](https://docs.streamlit.io/develop/concepts/design/buttons#other-widgets-nested-inside-buttons)
+  22. [Nesting a process inside a button without saving to session state](https://docs.streamlit.io/develop/concepts/design/buttons#nesting-a-process-inside-a-button-without-saving-to-session-state)
+
+
+# [](https://docs.streamlit.io/develop/concepts/design/buttons#button-behavior-and-examples)Button behavior and examples
+## [](https://docs.streamlit.io/develop/concepts/design/buttons#summary)Summary
+Buttons created with [`st.button`](https://docs.streamlit.io/develop/api-reference/widgets/st.button) do not retain state. They return `True` on the script rerun resulting from their click and immediately return to `False` on the next script rerun. If a displayed element is nested inside `if st.button('Click me'):`, the element will be visible when the button is clicked and disappear as soon as the user takes their next action. This is because the script reruns and the button return value becomes `False`.
+In this guide, we will illustrate the use of buttons and explain common misconceptions. Read on to see a variety of examples that expand on `st.button` using [`st.session_state`](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state). [Anti-patterns](https://docs.streamlit.io/develop/concepts/design/buttons#anti-patterns) are included at the end. Go ahead and pull up your favorite code editor so you can `streamlit run` the examples as you read. Check out Streamlit's [Basic concepts](https://docs.streamlit.io/get-started/fundamentals/main-concepts) if you haven't run your own Streamlit scripts yet.
+## [](https://docs.streamlit.io/develop/concepts/design/buttons#when-to-use-if-stbutton)When to use `if st.button()`
+When code is conditioned on a button's value, it will execute once in response to the button being clicked and not again (until the button is clicked again).
+Good to nest inside buttons:
+  * Transient messages that immediately disappear.
+  * Once-per-click processes that saves data to session state, a file, or a database.
+
+
+Bad to nest inside buttons:
+  * Displayed items that should persist as the user continues.
+  * Other widgets which cause the script to rerun when used.
+  * Processes that neither modify session state nor write to a file/database.*

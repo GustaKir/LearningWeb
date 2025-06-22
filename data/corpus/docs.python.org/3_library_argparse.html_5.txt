@@ -1,0 +1,46 @@
+Title: MetavarTypeHelpFormatter in argparse Library
+URL: https://docs.python.org/3/library/argparse.html
+Summary: The MetavarTypeHelpFormatter in the argparse library formats help messages by using the argument's type name instead of its destination name. This is demonstrated with an example where a parser uses this formatter, showcasing how command-line options are displayed.
+---
+
+```
+
+[`MetavarTypeHelpFormatter`](https://docs.python.org/3/library/argparse.html#argparse.MetavarTypeHelpFormatter "argparse.MetavarTypeHelpFormatter") uses the name of the [type](https://docs.python.org/3/library/argparse.html#type) argument for each argument as the display name for its values (rather than using the [dest](https://docs.python.org/3/library/argparse.html#dest) as the regular formatter does):
+>>>```
+>>> parser = argparse.ArgumentParser(
+...   prog='PROG',
+...   formatter_class=argparse.MetavarTypeHelpFormatter)
+>>> parser.add_argument('--foo', type=int)
+>>> parser.add_argument('bar', type=float)
+>>> parser.print_help()
+usage: PROG [-h] [--foo int] float
+positional arguments:
+ float
+options:
+ -h, --help show this help message and exit
+ --foo int
+
+```
+
+### prefix_chars[¶](https://docs.python.org/3/library/argparse.html#prefix-chars "Link to this heading")
+Most command-line options will use `-` as the prefix, e.g. `-f/--foo`. Parsers that need to support different or additional prefix characters, e.g. for options like `+f` or `/foo`, may specify them using the `prefix_chars=` argument to the [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") constructor:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG', prefix_chars='-+')
+>>> parser.add_argument('+f')
+>>> parser.add_argument('++bar')
+>>> parser.parse_args('+f X ++bar Y'.split())
+Namespace(bar='Y', f='X')
+
+```
+
+The `prefix_chars=` argument defaults to `'-'`. Supplying a set of characters that does not include `-` will cause `-f/--foo` options to be disallowed.
+### fromfile_prefix_chars[¶](https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars "Link to this heading")
+Sometimes, when dealing with a particularly long argument list, it may make sense to keep the list of arguments in a file rather than typing it out at the command line. If the `fromfile_prefix_chars=` argument is given to the [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") constructor, then arguments that start with any of the specified characters will be treated as files, and will be replaced by the arguments they contain. For example:
+>>>```
+>>> with open('args.txt', 'w', encoding=sys.getfilesystemencoding()) as fp:
+...   fp.write('-f\nbar')
+...
+>>> parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
+>>> parser.add_argument('-f')
+>>> parser.parse_args(['-f', 'foo', '@args.txt'])
+Namespace(f='bar')

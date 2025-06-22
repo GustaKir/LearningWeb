@@ -1,0 +1,27 @@
+Title: WSGIRequestHandler Methods: get_environ and get_stderr
+URL: https://docs.python.org/3/library/wsgiref.html
+Summary: The `get_environ` method retrieves a WSGIEnvironment dictionary for a request, copying from the WSGIServer's `base_environ` and adding relevant HTTP headers, following PEP 3333 specifications. The `get_stderr` method returns the object to be used as the `wsgi.errors` stream.
+---
+
+get_environ()[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.simple_server.WSGIRequestHandler.get_environ "Link to this definition")
+    
+Return a [`WSGIEnvironment`](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.WSGIEnvironment "wsgiref.types.WSGIEnvironment") dictionary for a request. The default implementation copies the contents of the [`WSGIServer`](https://docs.python.org/3/library/wsgiref.html#wsgiref.simple_server.WSGIServer "wsgiref.simple_server.WSGIServer") object’s `base_environ` dictionary attribute and then adds various headers derived from the HTTP request. Each call to this method should return a new dictionary containing all of the relevant CGI environment variables as specified in [**PEP 3333**](https://peps.python.org/pep-3333/). 
+
+get_stderr()[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.simple_server.WSGIRequestHandler.get_stderr "Link to this definition")
+    
+Return the object that should be used as the `wsgi.errors` stream. The default implementation just returns `sys.stderr`. 
+
+handle()[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.simple_server.WSGIRequestHandler.handle "Link to this definition")
+    
+Process the HTTP request. The default implementation creates a handler instance using a [`wsgiref.handlers`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.handlers "wsgiref.handlers: WSGI server/gateway base classes.") class to implement the actual WSGI application interface.
+## [`wsgiref.validate`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.validate "wsgiref.validate: WSGI conformance checker.") — WSGI conformance checker[¶](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.validate "Link to this heading")
+When creating new WSGI application objects, frameworks, servers, or middleware, it can be useful to validate the new code’s conformance using [`wsgiref.validate`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.validate "wsgiref.validate: WSGI conformance checker."). This module provides a function that creates WSGI application objects that validate communications between a WSGI server or gateway and a WSGI application object, to check both sides for protocol conformance.
+Note that this utility does not guarantee complete [**PEP 3333**](https://peps.python.org/pep-3333/) compliance; an absence of errors from this module does not necessarily mean that errors do not exist. However, if this module does produce an error, then it is virtually certain that either the server or application is not 100% compliant.
+This module is based on the `paste.lint` module from Ian Bicking’s “Python Paste” library. 
+
+wsgiref.validate.validator(_application_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.validate.validator "Link to this definition")
+    
+Wrap _application_ and return a new WSGI application object. The returned application will forward all requests to the original _application_ , and will check that both the _application_ and the server invoking it are conforming to the WSGI specification and to [**RFC 2616**](https://datatracker.ietf.org/doc/html/rfc2616.html).
+Any detected nonconformance results in an [`AssertionError`](https://docs.python.org/3/library/exceptions.html#AssertionError "AssertionError") being raised; note, however, that how these errors are handled is server-dependent. For example, [`wsgiref.simple_server`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.simple_server "wsgiref.simple_server: A simple WSGI HTTP server.") and other servers based on [`wsgiref.handlers`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.handlers "wsgiref.handlers: WSGI server/gateway base classes.") (that don’t override the error handling methods to do something else) will simply output a message that an error has occurred, and dump the traceback to `sys.stderr` or some other error stream.
+This wrapper may also generate output using the [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module to indicate behaviors that are questionable but which may not actually be prohibited by [**PEP 3333**](https://peps.python.org/pep-3333/). Unless they are suppressed using Python command-line options or the [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") API, any such warnings will be written to `sys.stderr` (_not_ `wsgi.errors`, unless they happen to be the same object).
+Example usage:

@@ -1,0 +1,116 @@
+Title: The _spawn_ and _forkserver_ Start Methods in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: This section outlines the additional restrictions associated with the _spawn_ and _forkserver_ start methods in Python's multiprocessing module, emphasizing the importance of ensuring that all arguments to Process.__init__() are picklable, and the implications for global variables when executed in child processes.
+---
+
+```
+
+> For more information, see [bpo-5155](https://bugs.python.org/issue?@action=redirect&bpo=5155), [bpo-5313](https://bugs.python.org/issue?@action=redirect&bpo=5313) and [bpo-5331](https://bugs.python.org/issue?@action=redirect&bpo=5331)
+### The _spawn_ and _forkserver_ start methods[¶](https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods "Link to this heading")
+There are a few extra restrictions which don’t apply to the _fork_ start method.
+More picklability
+> Ensure that all arguments to `Process.__init__()` are picklable. Also, if you subclass [`Process`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process "multiprocessing.Process") then make sure that instances will be picklable when the [`Process.start`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.start "multiprocessing.Process.start") method is called.
+Global variables
+> Bear in mind that if code run in a child process tries to access a global variable, then the value it sees (if any) may not be the same as the value in the parent process at the time that [`Process.start`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.start "multiprocessing.Process.start") was called.
+> However, global variables which are just module level constants cause no problems.
+Safe importing of main module
+> Make sure that the main module can be safely imported by a new Python interpreter without causing unintended side effects (such as starting a new process).
+> For example, using the _spawn_ or _forkserver_ start method running the following module would fail with a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError"):
+> ```
+frommultiprocessingimport Process
+deffoo():
+  print('hello')
+p = Process(target=foo)
+p.start()
+
+```
+
+> Instead one should protect the “entry point” of the program by using `if __name__ == '__main__':` as follows:
+> ```
+frommultiprocessingimport Process, freeze_support, set_start_method
+deffoo():
+  print('hello')
+if __name__ == '__main__':
+  freeze_support()
+  set_start_method('spawn')
+  p = Process(target=foo)
+  p.start()
+
+```
+
+> (The `freeze_support()` line can be omitted if the program will be run normally instead of frozen.)
+> This allows the newly spawned Python interpreter to safely import the module and then run the module’s `foo()` function.
+> Similar restrictions apply if a pool or manager is created in the main module.
+## Examples[¶](https://docs.python.org/3/library/multiprocessing.html#examples "Link to this heading")
+Demonstration of how to create and use customized managers and proxies:
+```
+frommultiprocessingimport freeze_support
+frommultiprocessing.managersimport BaseManager, BaseProxy
+importoperator
+##
+classFoo:
+  deff(self):
+    print('you called Foo.f()')
+  defg(self):
+    print('you called Foo.g()')
+  def_h(self):
+    print('you called Foo._h()')
+# A simple generator function
+defbaz():
+  for i in range(10):
+    yield i*i
+# Proxy type for generator objects
+classGeneratorProxy(BaseProxy):
+  _exposed_ = ['__next__']
+  def__iter__(self):
+    return self
+  def__next__(self):
+    return self._callmethod('__next__')
+# Function to return the operator module
+defget_operator_module():
+  return operator
+##
+classMyManager(BaseManager):
+  pass
+# register the Foo class; make `f()` and `g()` accessible via proxy
+MyManager.register('Foo1', Foo)
+# register the Foo class; make `g()` and `_h()` accessible via proxy
+MyManager.register('Foo2', Foo, exposed=('g', '_h'))
+# register the generator function baz; use `GeneratorProxy` to make proxies
+MyManager.register('baz', baz, proxytype=GeneratorProxy)
+# register get_operator_module(); make public functions accessible via proxy
+MyManager.register('operator', get_operator_module)
+##
+deftest():
+  manager = MyManager()
+  manager.start()
+  print('-' * 20)
+  f1 = manager.Foo1()
+  f1.f()
+  f1.g()
+  assert not hasattr(f1, '_h')
+  assert sorted(f1._exposed_) == sorted(['f', 'g'])
+  print('-' * 20)
+  f2 = manager.Foo2()
+  f2.g()
+  f2._h()
+  assert not hasattr(f2, 'f')
+  assert sorted(f2._exposed_) == sorted(['g', '_h'])
+  print('-' * 20)
+  it = manager.baz()
+  for i in it:
+    print('<%d>' % i, end=' ')
+  print()
+  print('-' * 20)
+  op = manager.operator()
+  print('op.add(23, 45) =', op.add(23, 45))
+  print('op.pow(2, 94) =', op.pow(2, 94))
+  print('op._exposed_ =', op._exposed_)
+##
+if __name__ == '__main__':
+  freeze_support()
+  test()
+
+```
+
+Using [`Pool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "multiprocessing.pool.Pool"):

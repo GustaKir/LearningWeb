@@ -1,0 +1,73 @@
+Title: Custom Window Function Example in SQLite
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: This example demonstrates how to create a custom window function in SQLite using a Python class. The WindowSumInt class manages an aggregate value and includes methods for adding, removing, and finalizing the count of values over a specified window. The example inserts test data into a SQLite database and utilizes the custom window function to calculate a running total of 'y' values associated with 'x' in a specified order.
+---
+
+```
+# Example taken from https://www.sqlite.org/windowfunctions.html#udfwinfunc
+classWindowSumInt:
+  def__init__(self):
+    self.count = 0
+  defstep(self, value):
+"""Add a row to the current window."""
+    self.count += value
+  defvalue(self):
+"""Return the current value of the aggregate."""
+    return self.count
+  definverse(self, value):
+"""Remove a row from the current window."""
+    self.count -= value
+  deffinalize(self):
+"""Return the final value of the aggregate.
+    Any clean-up actions should be placed here.
+    """
+    return self.count
+
+con = sqlite3.connect(":memory:")
+cur = con.execute("CREATE TABLE test(x, y)")
+values = [
+  ("a", 4),
+  ("b", 5),
+  ("c", 3),
+  ("d", 8),
+  ("e", 1),
+]
+cur.executemany("INSERT INTO test VALUES(?, ?)", values)
+con.create_window_function("sumint", 1, WindowSumInt)
+cur.execute("""
+  SELECT x, sumint(y) OVER (
+    ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) AS sum_y
+  FROM test ORDER BY x
+""")
+print(cur.fetchall())
+con.close()
+
+```
+
+
+create_collation(_name_ , _callable_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.create_collation "Link to this definition")
+    
+Create a collation named _name_ using the collating function _callable_. _callable_ is passed two [`string`](https://docs.python.org/3/library/stdtypes.html#str "str") arguments, and it should return an [`integer`](https://docs.python.org/3/library/functions.html#int "int"):
+  * `1` if the first is ordered higher than the second
+  * `-1` if the first is ordered lower than the second
+  * `0` if they are ordered equal
+
+
+The following example shows a reverse sorting collation:
+```
+defcollate_reverse(string1, string2):
+  if string1 == string2:
+    return 0
+  elif string1 < string2:
+    return 1
+  else:
+    return -1
+con = sqlite3.connect(":memory:")
+con.create_collation("reverse", collate_reverse)
+cur = con.execute("CREATE TABLE test(x)")
+cur.executemany("INSERT INTO test(x) VALUES(?)", [("a",), ("b",)])
+cur.execute("SELECT x FROM test ORDER BY x COLLATE reverse")
+for row in cur:
+  print(row)
+con.close()

@@ -1,0 +1,75 @@
+Title: cProfile Command-Line Options
+URL: https://docs.python.org/3/library/profile.html
+Summary: This section outlines command-line options for the cProfile module in Python, including output file specification with '-o', sorting options with '-s', and module profiling with '-m'. Version additions for these options are also noted.
+---
+
+```
+
+
+-o <output_file>[¶](https://docs.python.org/3/library/profile.html#cmdoption-cProfile-o "Link to this definition")
+    
+Writes the profile results to a file instead of to stdout. 
+
+-s <sort_order>[¶](https://docs.python.org/3/library/profile.html#cmdoption-cProfile-s "Link to this definition")
+    
+Specifies one of the [`sort_stats()`](https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats "pstats.Stats.sort_stats") sort values to sort the output by. This only applies when [`-o`](https://docs.python.org/3/library/profile.html#cmdoption-cProfile-o) is not supplied. 
+
+-m <module>[¶](https://docs.python.org/3/library/profile.html#cmdoption-cProfile-m "Link to this definition")
+    
+Specifies that a module is being profiled instead of a script.
+Added in version 3.7: Added the `-m` option to [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile "cProfile").
+Added in version 3.8: Added the `-m` option to [`profile`](https://docs.python.org/3/library/profile.html#module-profile "profile: Python source profiler.").
+The [`pstats`](https://docs.python.org/3/library/profile.html#module-pstats "pstats: Statistics object for use with the profiler.") module’s [`Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") class has a variety of methods for manipulating and printing the data saved into a profile results file:
+```
+importpstats
+frompstatsimport SortKey
+p = pstats.Stats('restats')
+p.strip_dirs().sort_stats(-1).print_stats()
+
+```
+
+The [`strip_dirs()`](https://docs.python.org/3/library/profile.html#pstats.Stats.strip_dirs "pstats.Stats.strip_dirs") method removed the extraneous path from all the module names. The [`sort_stats()`](https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats "pstats.Stats.sort_stats") method sorted all the entries according to the standard module/line/name string that is printed. The [`print_stats()`](https://docs.python.org/3/library/profile.html#pstats.Stats.print_stats "pstats.Stats.print_stats") method printed out all the statistics. You might try the following sort calls:
+```
+p.sort_stats(SortKey.NAME)
+p.print_stats()
+
+```
+
+The first call will actually sort the list by function name, and the second call will print out the statistics. The following are some interesting calls to experiment with:
+```
+p.sort_stats(SortKey.CUMULATIVE).print_stats(10)
+
+```
+
+This sorts the profile by cumulative time in a function, and then only prints the ten most significant lines. If you want to understand what algorithms are taking time, the above line is what you would use.
+If you were looking to see what functions were looping a lot, and taking a lot of time, you would do:
+```
+p.sort_stats(SortKey.TIME).print_stats(10)
+
+```
+
+to sort according to time spent within each function, and then print the statistics for the top ten functions.
+You might also try:
+```
+p.sort_stats(SortKey.FILENAME).print_stats('__init__')
+
+```
+
+This will sort all the statistics by file name, and then print out statistics for only the class init methods (since they are spelled with `__init__` in them). As one final example, you could try:
+```
+p.sort_stats(SortKey.TIME, SortKey.CUMULATIVE).print_stats(.5, 'init')
+
+```
+
+This line sorts statistics with a primary key of time, and a secondary key of cumulative time, and then prints out some of the statistics. To be specific, the list is first culled down to 50% (re: `.5`) of its original size, then only lines containing `init` are maintained, and that sub-sub-list is printed.
+If you wondered what functions called the above functions, you could now (`p` is still sorted according to the last criteria) do:
+```
+p.print_callers(.5, 'init')
+
+```
+
+and you would get a list of callers for each of the listed functions.
+If you want more functionality, you’re going to have to read the manual, or guess what the following functions do:
+```
+p.print_callees()
+p.add('restats')

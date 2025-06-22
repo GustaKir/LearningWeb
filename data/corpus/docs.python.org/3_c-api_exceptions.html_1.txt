@@ -1,0 +1,27 @@
+Title: Exception Handling in Python C API
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: This section covers the basics of handling and raising exceptions in the Python C API, describing how error indicators work similarly to the POSIX `errno`. It explains that there is a thread-specific global indicator for the last error, and discusses the return values of C API functions in the context of success and failure, including the structure of error indicators consisting of exception type, value, and traceback objects.
+---
+
+# Exception Handling[¶](https://docs.python.org/3/c-api/exceptions.html#exception-handling "Link to this heading")
+The functions described in this chapter will let you handle and raise Python exceptions. It is important to understand some of the basics of Python exception handling. It works somewhat like the POSIX `errno` variable: there is a global indicator (per thread) of the last error that occurred. Most C API functions don’t clear this on success, but will set it to indicate the cause of the error on failure. Most C API functions also return an error indicator, usually `NULL` if they are supposed to return a pointer, or `-1` if they return an integer (exception: the `PyArg_*` functions return `1` for success and `0` for failure).
+Concretely, the error indicator consists of three object pointers: the exception’s type, the exception’s value, and the traceback object. Any of those pointers can be `NULL` if non-set (although some combinations are forbidden, for example you can’t have a non-`NULL` traceback if the exception type is `NULL`).
+When a function must fail because some function it called failed, it generally doesn’t set the error indicator; the function it called already set it. It is responsible for either handling the error and clearing the exception or returning after cleaning up any resources it holds (such as object references or memory allocations); it should _not_ continue normally if it is not prepared to handle the error. If returning due to an error, it is important to indicate to the caller that an error has been set. If the error is not handled or carefully propagated, additional calls into the Python/C API may not behave as intended and may fail in mysterious ways.
+Note
+The error indicator is **not** the result of [`sys.exc_info()`](https://docs.python.org/3/library/sys.html#sys.exc_info "sys.exc_info"). The former corresponds to an exception that is not yet caught (and is therefore still propagating), while the latter returns an exception after it is caught (and has therefore stopped propagating).
+## Printing and clearing[¶](https://docs.python.org/3/c-api/exceptions.html#printing-and-clearing "Link to this heading") 
+
+voidPyErr_Clear()[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Clear "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Clear the error indicator. If the error indicator is not set, there is no effect. 
+
+voidPyErr_PrintEx(intset_sys_last_vars)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_PrintEx "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Print a standard traceback to `sys.stderr` and clear the error indicator. **Unless** the error is a `SystemExit`, in that case no traceback is printed and the Python process will exit with the error code specified by the `SystemExit` instance.
+Call this function **only** when the error indicator is set. Otherwise it will cause a fatal error!
+If _set_sys_last_vars_ is nonzero, the variable [`sys.last_exc`](https://docs.python.org/3/library/sys.html#sys.last_exc "sys.last_exc") is set to the printed exception. For backwards compatibility, the deprecated variables [`sys.last_type`](https://docs.python.org/3/library/sys.html#sys.last_type "sys.last_type"), [`sys.last_value`](https://docs.python.org/3/library/sys.html#sys.last_value "sys.last_value") and [`sys.last_traceback`](https://docs.python.org/3/library/sys.html#sys.last_traceback "sys.last_traceback") are also set to the type, value and traceback of this exception, respectively.
+Changed in version 3.12: The setting of [`sys.last_exc`](https://docs.python.org/3/library/sys.html#sys.last_exc "sys.last_exc") was added. 
+
+voidPyErr_Print()[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Print "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Alias for `PyErr_PrintEx(1)`.

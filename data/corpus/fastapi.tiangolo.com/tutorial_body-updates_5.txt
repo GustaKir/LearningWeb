@@ -1,0 +1,117 @@
+Title: Understanding Partial Updates with PATCH in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/body-updates/
+Summary: This section explains how to perform partial updates using the HTTP PATCH method in FastAPI. It highlights the difference between PATCH and PUT, clarifying that PATCH allows updating only specified fields while leaving others unchanged. Additionally, it mentions the use of Pydantic's exclude_unset parameter for further customization.
+---
+
+```
+
+because it doesn't include the already stored attribute `"tax": 20.2`, the input model would take the default value of `"tax": 10.5`.
+And the data would be saved with that "new" `tax` of `10.5`.
+## Partial updates with `PATCH`[¶](https://fastapi.tiangolo.com/tutorial/body-updates/#partial-updates-with-patch "Permanent link")
+You can also use the [HTTP `PATCH`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/PATCH) operation to _partially_ update data.
+This means that you can send only the data that you want to update, leaving the rest intact.
+Note
+`PATCH` is less commonly used and known than `PUT`.
+And many teams use only `PUT`, even for partial updates.
+You are **free** to use them however you want, **FastAPI** doesn't impose any restrictions.
+But this guide shows you, more or less, how they are intended to be used.
+### Using Pydantic's `exclude_unset` parameter[¶](https://fastapi.tiangolo.com/tutorial/body-updates/#using-pydantics-exclude_unset-parameter "Permanent link")
+If you want to receive partial updates, it's very useful to use the parameter `exclude_unset` in Pydantic's model's `.model_dump()`.
+Like `item.model_dump(exclude_unset=True)`.
+Info
+In Pydantic v1 the method was called `.dict()`, it was deprecated (but still supported) in Pydantic v2, and renamed to `.model_dump()`.
+The examples here use `.dict()` for compatibility with Pydantic v1, but you should use `.model_dump()` instead if you can use Pydantic v2.
+That would generate a `dict` with only the data that was set when creating the `item` model, excluding default values.
+Then you can use this to generate a `dict` with only the data that was set (sent in the request), omitting default values:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str | None = None
+  description: str | None = None
+  price: float | None = None
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_4_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_4_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: Union[str, None] = None
+  description: Union[str, None] = None
+  price: Union[float, None] = None
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: Union[str, None] = None
+  description: Union[str, None] = None
+  price: Union[float, None] = None
+  tax: float = 10.5
+  tags: List[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item

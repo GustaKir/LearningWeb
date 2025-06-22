@@ -1,0 +1,109 @@
+Title: Using C Types for Sorting in Python
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: This section demonstrates how to use the `qsort` function from the ctypes library to sort an array in Python. A comparison function (`py_cmp_func`) is defined to compare elements, with print statements to show the comparisons made during sorting. The example also shows how to utilize the function as a decorator factory for cleaner function definitions.
+---
+
+```
+>>> qsort(ia, len(ia), sizeof(c_int), cmp_func)
+py_cmp_func 5 1
+py_cmp_func 33 99
+py_cmp_func 7 33
+py_cmp_func 5 7
+py_cmp_func 1 7
+>>>
+
+```
+
+Now we can actually compare the two items and return a useful result:
+>>>```
+>>> defpy_cmp_func(a, b):
+...   print("py_cmp_func", a[0], b[0])
+...   return a[0] - b[0]
+...
+>>>
+>>> qsort(ia, len(ia), sizeof(c_int), CMPFUNC(py_cmp_func))
+py_cmp_func 5 1
+py_cmp_func 33 99
+py_cmp_func 7 33
+py_cmp_func 1 7
+py_cmp_func 5 7
+>>>
+
+```
+
+As we can easily check, our array is sorted now:
+>>>```
+>>> for i in ia: print(i, end=" ")
+...
+1 5 7 33 99
+>>>
+
+```
+
+The function factories can be used as decorator factories, so we may as well write:
+>>>```
+>>> @CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
+... defpy_cmp_func(a, b):
+...   print("py_cmp_func", a[0], b[0])
+...   return a[0] - b[0]
+...
+>>> qsort(ia, len(ia), sizeof(c_int), py_cmp_func)
+py_cmp_func 5 1
+py_cmp_func 33 99
+py_cmp_func 7 33
+py_cmp_func 1 7
+py_cmp_func 5 7
+>>>
+
+```
+
+Note
+Make sure you keep references to [`CFUNCTYPE()`](https://docs.python.org/3/library/ctypes.html#ctypes.CFUNCTYPE "ctypes.CFUNCTYPE") objects as long as they are used from C code. [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") doesn’t, and if you don’t, they may be garbage collected, crashing your program when a callback is made.
+Also, note that if the callback function is called in a thread created outside of Python’s control (e.g. by the foreign code that calls the callback), ctypes creates a new dummy Python thread on every invocation. This behavior is correct for most purposes, but it means that values stored with [`threading.local`](https://docs.python.org/3/library/threading.html#threading.local "threading.local") will _not_ survive across different callbacks, even when those calls are made from the same C thread.
+### Accessing values exported from dlls[¶](https://docs.python.org/3/library/ctypes.html#accessing-values-exported-from-dlls "Link to this heading")
+Some shared libraries not only export functions, they also export variables. An example in the Python library itself is the [`Py_Version`](https://docs.python.org/3/c-api/apiabiversion.html#c.Py_Version "Py_Version"), Python runtime version number encoded in a single constant integer.
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") can access values like this with the [`in_dll()`](https://docs.python.org/3/library/ctypes.html#ctypes._CData.in_dll "ctypes._CData.in_dll") class methods of the type. _pythonapi_ is a predefined symbol giving access to the Python C api:
+>>>```
+>>> version = ctypes.c_int.in_dll(ctypes.pythonapi, "Py_Version")
+>>> print(hex(version.value))
+0x30c00a0
+
+```
+
+An extended example which also demonstrates the use of pointers accesses the [`PyImport_FrozenModules`](https://docs.python.org/3/c-api/import.html#c.PyImport_FrozenModules "PyImport_FrozenModules") pointer exported by Python.
+Quoting the docs for that value:
+> This pointer is initialized to point to an array of [`_frozen`](https://docs.python.org/3/c-api/import.html#c._frozen "_frozen") records, terminated by one whose members are all `NULL` or zero. When a frozen module is imported, it is searched in this table. Third-party code could play tricks with this to provide a dynamically created collection of frozen modules.
+So manipulating this pointer could even prove useful. To restrict the example size, we show only how this table can be read with [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python."):
+>>>```
+>>> fromctypesimport *
+>>>
+>>> classstruct_frozen(Structure):
+...   _fields_ = [("name", c_char_p),
+...         ("code", POINTER(c_ubyte)),
+...         ("size", c_int),
+...         ("get_code", POINTER(c_ubyte)), # Function pointer
+...         ]
+...
+>>>
+
+```
+
+We have defined the [`_frozen`](https://docs.python.org/3/c-api/import.html#c._frozen "_frozen") data type, so we can get the pointer to the table:
+>>>```
+>>> FrozenTable = POINTER(struct_frozen)
+>>> table = FrozenTable.in_dll(pythonapi, "_PyImport_FrozenBootstrap")
+>>>
+
+```
+
+Since `table` is a `pointer` to the array of `struct_frozen` records, we can iterate over it, but we just have to make sure that our loop terminates, because pointers have no size. Sooner or later it would probably crash with an access violation or whatever, so it’s better to break out of the loop when we hit the `NULL` entry:
+>>>```
+>>> for item in table:
+...   if item.name is None:
+...     break
+...   print(item.name.decode("ascii"), item.size)
+...
+_frozen_importlib 31764
+_frozen_importlib_external 41499
+zipimport 12345
+>>>

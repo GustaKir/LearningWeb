@@ -1,0 +1,36 @@
+Title: Security Considerations in SSL
+URL: https://docs.python.org/3/library/ssl.html
+Summary: This section emphasizes the importance of using the `create_default_context()` function for creating SSL contexts in client applications. It highlights the function's capability to load trusted CA certificates, enable certificate validation and hostname checking, and select secure protocols and ciphers.
+---
+
+ticket_lifetime_hint[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLSession.ticket_lifetime_hint "Link to this definition")
+
+
+has_ticket[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLSession.has_ticket "Link to this definition")
+
+## Security considerations[¶](https://docs.python.org/3/library/ssl.html#security-considerations "Link to this heading")
+### Best defaults[¶](https://docs.python.org/3/library/ssl.html#best-defaults "Link to this heading")
+For **client use** , if you don’t have any special requirements for your security policy, it is highly recommended that you use the [`create_default_context()`](https://docs.python.org/3/library/ssl.html#ssl.create_default_context "ssl.create_default_context") function to create your SSL context. It will load the system’s trusted CA certificates, enable certificate validation and hostname checking, and try to choose reasonably secure protocol and cipher settings.
+For example, here is how you would use the [`smtplib.SMTP`](https://docs.python.org/3/library/smtplib.html#smtplib.SMTP "smtplib.SMTP") class to create a trusted, secure connection to a SMTP server:
+>>>```
+>>> importssl,smtplib
+>>> smtp = smtplib.SMTP("mail.python.org", port=587)
+>>> context = ssl.create_default_context()
+>>> smtp.starttls(context=context)
+(220, b'2.0.0 Ready to start TLS')
+
+```
+
+If a client certificate is needed for the connection, it can be added with [`SSLContext.load_cert_chain()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.load_cert_chain "ssl.SSLContext.load_cert_chain").
+By contrast, if you create the SSL context by calling the [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") constructor yourself, it will not have certificate validation nor hostname checking enabled by default. If you do so, please read the paragraphs below to achieve a good security level.
+### Manual settings[¶](https://docs.python.org/3/library/ssl.html#manual-settings "Link to this heading")
+#### Verifying certificates[¶](https://docs.python.org/3/library/ssl.html#verifying-certificates "Link to this heading")
+When calling the [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") constructor directly, [`CERT_NONE`](https://docs.python.org/3/library/ssl.html#ssl.CERT_NONE "ssl.CERT_NONE") is the default. Since it does not authenticate the other peer, it can be insecure, especially in client mode where most of the time you would like to ensure the authenticity of the server you’re talking to. Therefore, when in client mode, it is highly recommended to use [`CERT_REQUIRED`](https://docs.python.org/3/library/ssl.html#ssl.CERT_REQUIRED "ssl.CERT_REQUIRED"). However, it is in itself not sufficient; you also have to check that the server certificate, which can be obtained by calling [`SSLSocket.getpeercert()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.getpeercert "ssl.SSLSocket.getpeercert"), matches the desired service. For many protocols and applications, the service can be identified by the hostname. This common check is automatically performed when [`SSLContext.check_hostname`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.check_hostname "ssl.SSLContext.check_hostname") is enabled.
+Changed in version 3.7: Hostname matchings is now performed by OpenSSL. Python no longer uses `match_hostname()`.
+In server mode, if you want to authenticate your clients using the SSL layer (rather than using a higher-level authentication mechanism), you’ll also have to specify [`CERT_REQUIRED`](https://docs.python.org/3/library/ssl.html#ssl.CERT_REQUIRED "ssl.CERT_REQUIRED") and similarly check the client certificate.
+#### Protocol versions[¶](https://docs.python.org/3/library/ssl.html#protocol-versions "Link to this heading")
+SSL versions 2 and 3 are considered insecure and are therefore dangerous to use. If you want maximum compatibility between clients and servers, it is recommended to use [`PROTOCOL_TLS_CLIENT`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS_CLIENT "ssl.PROTOCOL_TLS_CLIENT") or [`PROTOCOL_TLS_SERVER`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS_SERVER "ssl.PROTOCOL_TLS_SERVER") as the protocol version. SSLv2 and SSLv3 are disabled by default.
+>>>```
+>>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+>>> client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+>>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3

@@ -1,0 +1,77 @@
+Title: Logging Configuration Server Example
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section provides an example of a Python module that utilizes a logging configuration server. It demonstrates how to read a logging configuration from a file, start a listener on port 9999, and create a logger to handle log messages through a loop until interrupted.
+---
+
+```
+
+We can see the results are as expected:
+```
+$more*.log
+::::::::::::::
+app.log
+::::::::::::::
+DEBUG-ADEBUGmessage
+INFO-AnINFOmessage
+WARNING-AWARNINGmessage
+ERROR-AnERRORmessage
+CRITICAL-ACRITICALmessage
+::::::::::::::
+stderr.log
+::::::::::::::
+ERROR-AnERRORmessage
+CRITICAL-ACRITICALmessage
+::::::::::::::
+stdout.log
+::::::::::::::
+INFO-AnINFOmessage
+WARNING-AWARNINGmessage
+
+```
+
+## Configuration server example[¶](https://docs.python.org/3/howto/logging-cookbook.html#configuration-server-example "Link to this heading")
+Here is an example of a module using the logging configuration server:
+```
+importlogging
+importlogging.config
+importtime
+importos
+# read initial config file
+logging.config.fileConfig('logging.conf')
+# create and start listener on port 9999
+t = logging.config.listen(9999)
+t.start()
+logger = logging.getLogger('simpleExample')
+try:
+  # loop through logging calls to see the difference
+  # new configurations make, until Ctrl+C is pressed
+  while True:
+    logger.debug('debug message')
+    logger.info('info message')
+    logger.warning('warn message')
+    logger.error('error message')
+    logger.critical('critical message')
+    time.sleep(5)
+except KeyboardInterrupt:
+  # cleanup
+  logging.config.stopListening()
+  t.join()
+
+```
+
+And here is a script that takes a filename and sends that file to the server, properly preceded with the binary-encoded length, as the new logging configuration:
+```
+#!/usr/bin/env python
+importsocket,sys,struct
+with open(sys.argv[1], 'rb') as f:
+  data_to_send = f.read()
+HOST = 'localhost'
+PORT = 9999
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print('connecting...')
+s.connect((HOST, PORT))
+print('sending config...')
+s.send(struct.pack('>L', len(data_to_send)))
+s.send(data_to_send)
+s.close()
+print('complete')

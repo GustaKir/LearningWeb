@@ -1,0 +1,17 @@
+Title: shelve.open() - Persistent Dictionary
+URL: https://docs.python.org/3/library/shelve.html
+Summary: The `shelve.open()` function opens a persistent dictionary with a specified filename, allowing for reading and writing by default. It accepts options for file access mode through the `flag` parameter and supports custom pickle protocol versions. However, it lacks automatic tracking of modifications to mutable entries.
+---
+
+shelve.open(_filename_ , _flag ='c'_, _protocol =None_, _writeback =False_)[¶](https://docs.python.org/3/library/shelve.html#shelve.open "Link to this definition")
+    
+Open a persistent dictionary. The filename specified is the base filename for the underlying database. As a side-effect, an extension may be added to the filename and more than one file may be created. By default, the underlying database file is opened for reading and writing. The optional _flag_ parameter has the same interpretation as the _flag_ parameter of [`dbm.open()`](https://docs.python.org/3/library/dbm.html#dbm.open "dbm.open").
+By default, pickles created with [`pickle.DEFAULT_PROTOCOL`](https://docs.python.org/3/library/pickle.html#pickle.DEFAULT_PROTOCOL "pickle.DEFAULT_PROTOCOL") are used to serialize values. The version of the pickle protocol can be specified with the _protocol_ parameter.
+Because of Python semantics, a shelf cannot know when a mutable persistent-dictionary entry is modified. By default modified objects are written _only_ when assigned to the shelf (see [Example](https://docs.python.org/3/library/shelve.html#shelve-example)). If the optional _writeback_ parameter is set to `True`, all entries accessed are also cached in memory, and written back on [`sync()`](https://docs.python.org/3/library/shelve.html#shelve.Shelf.sync "shelve.Shelf.sync") and [`close()`](https://docs.python.org/3/library/shelve.html#shelve.Shelf.close "shelve.Shelf.close"); this can make it handier to mutate mutable entries in the persistent dictionary, but, if many entries are accessed, it can consume vast amounts of memory for the cache, and it can make the close operation very slow since all accessed entries are written back (there is no way to determine which accessed entries are mutable, nor which ones were actually mutated).
+Changed in version 3.10: [`pickle.DEFAULT_PROTOCOL`](https://docs.python.org/3/library/pickle.html#pickle.DEFAULT_PROTOCOL "pickle.DEFAULT_PROTOCOL") is now used as the default pickle protocol.
+Changed in version 3.11: Accepts [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object) for filename.
+Note
+Do not rely on the shelf being closed automatically; always call [`close()`](https://docs.python.org/3/library/shelve.html#shelve.Shelf.close "shelve.Shelf.close") explicitly when you don’t need it any more, or use [`shelve.open()`](https://docs.python.org/3/library/shelve.html#shelve.open "shelve.open") as a context manager:
+```
+with shelve.open('spam') as db:
+  db['eggs'] = 'eggs'

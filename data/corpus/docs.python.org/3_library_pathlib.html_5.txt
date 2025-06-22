@@ -1,0 +1,98 @@
+Title: Pathlib Module - PurePath.is_reserved() Method
+URL: https://docs.python.org/3/library/pathlib.html
+Summary: The `is_reserved()` method in `PurePath` was added in Python 3.9 and is used to check if a path is reserved in Windows. It will be deprecated in version 3.13 and removed in version 3.15, with a recommendation to use `os.path.isreserved()` instead. Changes in version 3.13 include new criteria for what constitutes a reserved path on Windows.
+---
+
+```
+
+Added in version 3.9.
+Deprecated since version 3.12, will be removed in version 3.14: Passing additional arguments is deprecated; if supplied, they are joined with _other_. 
+
+PurePath.is_reserved()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_reserved "Link to this definition")
+    
+With [`PureWindowsPath`](https://docs.python.org/3/library/pathlib.html#pathlib.PureWindowsPath "pathlib.PureWindowsPath"), return `True` if the path is considered reserved under Windows, `False` otherwise. With [`PurePosixPath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePosixPath "pathlib.PurePosixPath"), `False` is always returned.
+Changed in version 3.13: Windows path names that contain a colon, or end with a dot or a space, are considered reserved. UNC paths may be reserved.
+Deprecated since version 3.13, will be removed in version 3.15: This method is deprecated; use [`os.path.isreserved()`](https://docs.python.org/3/library/os.path.html#os.path.isreserved "os.path.isreserved") to detect reserved paths on Windows. 
+
+PurePath.joinpath(_* pathsegments_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.joinpath "Link to this definition")
+    
+Calling this method is equivalent to combining the path with each of the given _pathsegments_ in turn:
+>>>```
+>>> PurePosixPath('/etc').joinpath('passwd')
+PurePosixPath('/etc/passwd')
+>>> PurePosixPath('/etc').joinpath(PurePosixPath('passwd'))
+PurePosixPath('/etc/passwd')
+>>> PurePosixPath('/etc').joinpath('init.d', 'apache2')
+PurePosixPath('/etc/init.d/apache2')
+>>> PureWindowsPath('c:').joinpath('/Program Files')
+PureWindowsPath('c:/Program Files')
+
+```
+
+
+PurePath.full_match(_pattern_ , _*_ , _case_sensitive =None_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.full_match "Link to this definition")
+    
+Match this path against the provided glob-style pattern. Return `True` if matching is successful, `False` otherwise. For example:
+>>>```
+>>> PurePath('a/b.py').full_match('a/*.py')
+True
+>>> PurePath('a/b.py').full_match('*.py')
+False
+>>> PurePath('/a/b/c.py').full_match('/a/**')
+True
+>>> PurePath('/a/b/c.py').full_match('**/*.py')
+True
+
+```
+
+See also
+[Pattern language](https://docs.python.org/3/library/pathlib.html#pathlib-pattern-language) documentation.
+As with other methods, case-sensitivity follows platform defaults:
+>>>```
+>>> PurePosixPath('b.py').full_match('*.PY')
+False
+>>> PureWindowsPath('b.py').full_match('*.PY')
+True
+
+```
+
+Set _case_sensitive_ to `True` or `False` to override this behaviour.
+Added in version 3.13. 
+
+PurePath.match(_pattern_ , _*_ , _case_sensitive =None_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.match "Link to this definition")
+    
+Match this path against the provided non-recursive glob-style pattern. Return `True` if matching is successful, `False` otherwise.
+This method is similar to [`full_match()`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.full_match "pathlib.PurePath.full_match"), but empty patterns aren’t allowed ([`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised), the recursive wildcard “`**`” isn’t supported (it acts like non-recursive “`*`”), and if a relative pattern is provided, then matching is done from the right:
+>>>```
+>>> PurePath('a/b.py').match('*.py')
+True
+>>> PurePath('/a/b/c.py').match('b/*.py')
+True
+>>> PurePath('/a/b/c.py').match('a/*.py')
+False
+
+```
+
+Changed in version 3.12: The _pattern_ parameter accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+Changed in version 3.12: The _case_sensitive_ parameter was added. 
+
+PurePath.relative_to(_other_ , _walk_up =False_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.relative_to "Link to this definition")
+    
+Compute a version of this path relative to the path represented by _other_. If it’s impossible, [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised:
+>>>```
+>>> p = PurePosixPath('/etc/passwd')
+>>> p.relative_to('/')
+PurePosixPath('etc/passwd')
+>>> p.relative_to('/etc')
+PurePosixPath('passwd')
+>>> p.relative_to('/usr')
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ File "pathlib.py", line 941, in relative_to
+raise ValueError(error_message.format(str(self), str(formatted)))
+ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
+
+```
+
+When _walk_up_ is false (the default), the path must start with _other_. When the argument is true, `..` entries may be added to form the relative path. In all other cases, such as the paths referencing different drives, [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised.:
+>>>

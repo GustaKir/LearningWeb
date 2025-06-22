@@ -1,0 +1,22 @@
+Title: Enhancements to unittest in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: Python 2.7 introduces new options for the `unittest.main()` function, including `-b`/`--buffer` for buffering output during tests and `-c`/`--catch` for graceful handling of keyboard interrupts. Additional details can be found in the unittest module documentation.
+---
+
+```
+
+Consult the [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") module documentation for more details. (Developed in [bpo-6001](https://bugs.python.org/issue?@action=redirect&bpo=6001).)
+The [`main()`](https://docs.python.org/3/library/unittest.html#unittest.main "unittest.main") function supports some other new options:
+  * [`-b`](https://docs.python.org/3/library/unittest.html#cmdoption-unittest-b) or `--buffer` will buffer the standard output and standard error streams during each test. If the test passes, any resulting output will be discarded; on failure, the buffered output will be displayed.
+  * [`-c`](https://docs.python.org/3/library/unittest.html#cmdoption-unittest-c) or `--catch` will cause the control-C interrupt to be handled more gracefully. Instead of interrupting the test process immediately, the currently running test will be completed and then the partial results up to the interruption will be reported. If you’re impatient, a second press of control-C will cause an immediate interruption.
+This control-C handler tries to avoid causing problems when the code being tested or the tests being run have defined a signal handler of their own, by noticing that a signal handler was already set and calling it. If this doesn’t work for you, there’s a [`removeHandler()`](https://docs.python.org/3/library/unittest.html#unittest.removeHandler "unittest.removeHandler") decorator that can be used to mark tests that should have the control-C handling disabled.
+  * [`-f`](https://docs.python.org/3/library/unittest.html#cmdoption-unittest-f) or `--failfast` makes test execution stop immediately when a test fails instead of continuing to execute further tests. (Suggested by Cliff Dyer and implemented by Michael Foord; [bpo-8074](https://bugs.python.org/issue?@action=redirect&bpo=8074).)
+
+
+The progress messages now show ‘x’ for expected failures and ‘u’ for unexpected successes when run in verbose mode. (Contributed by Benjamin Peterson.)
+Test cases can raise the [`SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest") exception to skip a test ([bpo-1034053](https://bugs.python.org/issue?@action=redirect&bpo=1034053)).
+The error messages for [`assertEqual()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertEqual "unittest.TestCase.assertEqual"), [`assertTrue()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertTrue "unittest.TestCase.assertTrue"), and [`assertFalse()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertFalse "unittest.TestCase.assertFalse") failures now provide more information. If you set the [`longMessage`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.longMessage "unittest.TestCase.longMessage") attribute of your [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") classes to true, both the standard error message and any additional message you provide will be printed for failures. (Added by Michael Foord; [bpo-5663](https://bugs.python.org/issue?@action=redirect&bpo=5663).)
+The [`assertRaises()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertRaises "unittest.TestCase.assertRaises") method now returns a context handler when called without providing a callable object to run. For example, you can write this:
+```
+with self.assertRaises(KeyError):
+  {}['foo']

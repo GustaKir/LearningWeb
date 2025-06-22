@@ -1,0 +1,35 @@
+Title: JSON Module Character Encoding Compliance
+URL: https://docs.python.org/3/library/json.html
+Summary: This section discusses the compliance of the JSON module's deserializer with RFC standards and character encoding requirements. It specifies that JSON must be represented in UTF-8, UTF-16, or UTF-32, with UTF-8 recommended for interoperability. The serializer defaults to _ensure_ascii=True_, ensuring output contains only ASCII characters, while the module primarily deals with the conversion of Python objects to Unicode strings.
+---
+
+Since the RFC permits RFC-compliant parsers to accept input texts that are not RFC-compliant, this module’s deserializer is technically RFC-compliant under default settings.
+### Character Encodings[¶](https://docs.python.org/3/library/json.html#character-encodings "Link to this heading")
+The RFC requires that JSON be represented using either UTF-8, UTF-16, or UTF-32, with UTF-8 being the recommended default for maximum interoperability.
+As permitted, though not required, by the RFC, this module’s serializer sets _ensure_ascii=True_ by default, thus escaping the output so that the resulting strings only contain ASCII characters.
+Other than the _ensure_ascii_ parameter, this module is defined strictly in terms of conversion between Python objects and [`Unicode strings`](https://docs.python.org/3/library/stdtypes.html#str "str"), and thus does not otherwise directly address the issue of character encodings.
+The RFC prohibits adding a byte order mark (BOM) to the start of a JSON text, and this module’s serializer does not add a BOM to its output. The RFC permits, but does not require, JSON deserializers to ignore an initial BOM in their input. This module’s deserializer raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") when an initial BOM is present.
+The RFC does not explicitly forbid JSON strings which contain byte sequences that don’t correspond to valid Unicode characters (e.g. unpaired UTF-16 surrogates), but it does note that they may cause interoperability problems. By default, this module accepts and outputs (when present in the original [`str`](https://docs.python.org/3/library/stdtypes.html#str "str")) code points for such sequences.
+### Infinite and NaN Number Values[¶](https://docs.python.org/3/library/json.html#infinite-and-nan-number-values "Link to this heading")
+The RFC does not permit the representation of infinite or NaN number values. Despite that, by default, this module accepts and outputs `Infinity`, `-Infinity`, and `NaN` as if they were valid JSON number literal values:
+>>>```
+>>> # Neither of these calls raises an exception, but the results are not valid JSON
+>>> json.dumps(float('-inf'))
+'-Infinity'
+>>> json.dumps(float('nan'))
+'NaN'
+>>> # Same when deserializing
+>>> json.loads('-Infinity')
+-inf
+>>> json.loads('NaN')
+nan
+
+```
+
+In the serializer, the _allow_nan_ parameter can be used to alter this behavior. In the deserializer, the _parse_constant_ parameter can be used to alter this behavior.
+### Repeated Names Within an Object[¶](https://docs.python.org/3/library/json.html#repeated-names-within-an-object "Link to this heading")
+The RFC specifies that the names within a JSON object should be unique, but does not mandate how repeated names in JSON objects should be handled. By default, this module does not raise an exception; instead, it ignores all but the last name-value pair for a given name:
+>>>```
+>>> weird_json = '{"x": 1, "x": 2, "x": 3}'
+>>> json.loads(weird_json)
+{'x': 3}

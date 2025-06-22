@@ -1,0 +1,131 @@
+Title: Using Argparse for Command-Line Arguments in Python
+URL: https://docs.python.org/3/howto/argparse.html
+Summary: This document chunk demonstrates how to use the argparse module to handle command-line arguments in Python scripts. It includes examples of required positional arguments (x and y), optional verbosity levels for output modification, and shows how to implement these features in a script to display results based on user input.
+---
+
+```
+$ pythonprog.py
+usage: prog.py [-h] [-v] x y
+prog.py: error: the following arguments are required: x, y
+$ pythonprog.py-h
+usage: prog.py [-h] [-v] x y
+positional arguments:
+ x        the base
+ y        the exponent
+options:
+ -h, --help    show this help message and exit
+ -v, --verbosity
+$ pythonprog.py42-v
+4^2 == 16
+
+```
+
+Notice that so far we’ve been using verbosity level to _change_ the text that gets displayed. The following example instead uses verbosity level to display _more_ text instead:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.add_argument("x", type=int, help="the base")
+parser.add_argument("y", type=int, help="the exponent")
+parser.add_argument("-v", "--verbosity", action="count", default=0)
+args = parser.parse_args()
+answer = args.x**args.y
+if args.verbosity >= 2:
+  print(f"Running '{__file__}'")
+if args.verbosity >= 1:
+  print(f"{args.x}^{args.y} == ", end="")
+print(answer)
+
+```
+
+Output:
+```
+$ pythonprog.py42
+16
+$ pythonprog.py42-v
+4^2 == 16
+$ pythonprog.py42-vv
+Running 'prog.py'
+4^2 == 16
+
+```
+
+### Specifying ambiguous arguments[¶](https://docs.python.org/3/howto/argparse.html#specifying-ambiguous-arguments "Link to this heading")
+When there is ambiguity in deciding whether an argument is positional or for an argument, `--` can be used to tell [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") that everything after that is a positional argument:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('-n', nargs='+')
+>>> parser.add_argument('args', nargs='*')
+>>> # ambiguous, so parse_args assumes it's an option
+>>> parser.parse_args(['-f'])
+usage: PROG [-h] [-n N [N ...]] [args ...]
+PROG: error: unrecognized arguments: -f
+>>> parser.parse_args(['--', '-f'])
+Namespace(args=['-f'], n=None)
+>>> # ambiguous, so the -n option greedily accepts arguments
+>>> parser.parse_args(['-n', '1', '2', '3'])
+Namespace(args=[], n=['1', '2', '3'])
+>>> parser.parse_args(['-n', '1', '--', '2', '3'])
+Namespace(args=['2', '3'], n=['1'])
+
+```
+
+### Conflicting options[¶](https://docs.python.org/3/howto/argparse.html#conflicting-options "Link to this heading")
+So far, we have been working with two methods of an [`argparse.ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") instance. Let’s introduce a third one, [`add_mutually_exclusive_group()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_mutually_exclusive_group "argparse.ArgumentParser.add_mutually_exclusive_group"). It allows for us to specify options that conflict with each other. Let’s also change the rest of the program so that the new functionality makes more sense: we’ll introduce the `--quiet` option, which will be the opposite of the `--verbose` one:
+```
+importargparse
+parser = argparse.ArgumentParser()
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-v", "--verbose", action="store_true")
+group.add_argument("-q", "--quiet", action="store_true")
+parser.add_argument("x", type=int, help="the base")
+parser.add_argument("y", type=int, help="the exponent")
+args = parser.parse_args()
+answer = args.x**args.y
+if args.quiet:
+  print(answer)
+elif args.verbose:
+  print(f"{args.x} to the power {args.y} equals {answer}")
+else:
+  print(f"{args.x}^{args.y} == {answer}")
+
+```
+
+Our program is now simpler, and we’ve lost some functionality for the sake of demonstration. Anyways, here’s the output:
+```
+$ pythonprog.py42
+4^2 == 16
+$ pythonprog.py42-q
+16
+$ pythonprog.py42-v
+4 to the power 2 equals 16
+$ pythonprog.py42-vq
+usage: prog.py [-h] [-v | -q] x y
+prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
+$ pythonprog.py42-v--quiet
+usage: prog.py [-h] [-v | -q] x y
+prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
+
+```
+
+That should be easy to follow. I’ve added that last output so you can see the sort of flexibility you get, i.e. mixing long form options with short form ones.
+Before we conclude, you probably want to tell your users the main purpose of your program, just in case they don’t know:
+```
+importargparse
+parser = argparse.ArgumentParser(description="calculate X to the power of Y")
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-v", "--verbose", action="store_true")
+group.add_argument("-q", "--quiet", action="store_true")
+parser.add_argument("x", type=int, help="the base")
+parser.add_argument("y", type=int, help="the exponent")
+args = parser.parse_args()
+answer = args.x**args.y
+if args.quiet:
+  print(answer)
+elif args.verbose:
+  print(f"{args.x} to the power {args.y} equals {answer}")
+else:
+  print(f"{args.x}^{args.y} == {answer}")
+
+```
+
+Note that slight difference in the usage text. Note the `[-v | -q]`, which tells us that we can either use `-v` or `-q`, but not both at the same time:

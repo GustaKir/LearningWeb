@@ -1,0 +1,86 @@
+Title: Overview of Itertools Functions
+URL: https://docs.python.org/3/library/itertools.html
+Summary: This section introduces itertools functions in Python, highlighting 'combinations()', 'combinations_with_replacement()', and providing examples of using 'product()', 'permutations()', and 'combinations()' to generate tuples of elements. It emphasizes the generation of permutations and combinations with and without repetitions.
+---
+
+orderings, no repeated elements  
+[`combinations()`](https://docs.python.org/3/library/itertools.html#itertools.combinations "itertools.combinations") | p, r | r-length tuples, in sorted order, no repeated elements  
+[`combinations_with_replacement()`](https://docs.python.org/3/library/itertools.html#itertools.combinations_with_replacement "itertools.combinations_with_replacement") | p, r | r-length tuples, in sorted order, with repeated elements  
+Examples | Results  
+---|---  
+`product('ABCD', repeat=2)` | `AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD`  
+`permutations('ABCD', 2)` | `AB AC AD BA BC BD CA CB CD DA DB DC`  
+`combinations('ABCD', 2)` | `AB AC AD BC BD CD`  
+`combinations_with_replacement('ABCD', 2)` | `AA AB AC AD BB BC BD CC CD DD`  
+## Itertool Functions[¶](https://docs.python.org/3/library/itertools.html#itertool-functions "Link to this heading")
+The following functions all construct and return iterators. Some provide streams of infinite length, so they should only be accessed by functions or loops that truncate the stream. 
+
+itertools.accumulate(_iterable_[, _function_ , _*_ , _initial=None_])[¶](https://docs.python.org/3/library/itertools.html#itertools.accumulate "Link to this definition")
+    
+Make an iterator that returns accumulated sums or accumulated results from other binary functions.
+The _function_ defaults to addition. The _function_ should accept two arguments, an accumulated total and a value from the _iterable_.
+If an _initial_ value is provided, the accumulation will start with that value and the output will have one more element than the input iterable.
+Roughly equivalent to:
+```
+defaccumulate(iterable, function=operator.add, *, initial=None):
+  'Return running totals'
+  # accumulate([1,2,3,4,5]) → 1 3 6 10 15
+  # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
+  # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
+  iterator = iter(iterable)
+  total = initial
+  if initial is None:
+    try:
+      total = next(iterator)
+    except StopIteration:
+      return
+  yield total
+  for element in iterator:
+    total = function(total, element)
+    yield total
+
+```
+
+To compute a running minimum, set _function_ to [`min()`](https://docs.python.org/3/library/functions.html#min "min"). For a running maximum, set _function_ to [`max()`](https://docs.python.org/3/library/functions.html#max "max"). Or for a running product, set _function_ to [`operator.mul()`](https://docs.python.org/3/library/operator.html#operator.mul "operator.mul"). To build an [amortization table](https://www.ramseysolutions.com/real-estate/amortization-schedule), accumulate the interest and apply payments:
+>>>```
+>>> data = [3, 4, 6, 2, 1, 9, 0, 7, 5, 8]
+>>> list(accumulate(data, max))       # running maximum
+[3, 4, 6, 6, 6, 9, 9, 9, 9, 9]
+>>> list(accumulate(data, operator.mul))   # running product
+[3, 12, 72, 144, 144, 1296, 0, 0, 0, 0]
+# Amortize a 5% loan of 1000 with 10 annual payments of 90
+>>> update = lambda balance, payment: round(balance * 1.05) - payment
+>>> list(accumulate(repeat(90, 10), update, initial=1_000))
+[1000, 960, 918, 874, 828, 779, 728, 674, 618, 559, 497]
+
+```
+
+See [`functools.reduce()`](https://docs.python.org/3/library/functools.html#functools.reduce "functools.reduce") for a similar function that returns only the final accumulated value.
+Added in version 3.2.
+Changed in version 3.3: Added the optional _function_ parameter.
+Changed in version 3.8: Added the optional _initial_ parameter. 
+
+itertools.batched(_iterable_ , _n_ , _*_ , _strict =False_)[¶](https://docs.python.org/3/library/itertools.html#itertools.batched "Link to this definition")
+    
+Batch data from the _iterable_ into tuples of length _n_. The last batch may be shorter than _n_.
+If _strict_ is true, will raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if the final batch is shorter than _n_.
+Loops over the input iterable and accumulates data into tuples up to size _n_. The input is consumed lazily, just enough to fill a batch. The result is yielded as soon as the batch is full or when the input iterable is exhausted:
+>>>```
+>>> flattened_data = ['roses', 'red', 'violets', 'blue', 'sugar', 'sweet']
+>>> unflattened = list(batched(flattened_data, 2))
+>>> unflattened
+[('roses', 'red'), ('violets', 'blue'), ('sugar', 'sweet')]
+
+```
+
+Roughly equivalent to:
+```
+defbatched(iterable, n, *, strict=False):
+  # batched('ABCDEFG', 3) → ABC DEF G
+  if n < 1:
+    raise ValueError('n must be at least one')
+  iterator = iter(iterable)
+  while batch := tuple(islice(iterator, n)):
+    if strict and len(batch) != n:
+      raise ValueError('batched(): incomplete batch')
+    yield batch

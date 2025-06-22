@@ -1,0 +1,86 @@
+Title: Using asyncio to Handle Multiple Connections
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: This section demonstrates how to create and manage multiple asynchronous connection tasks using `asyncio`. It highlights using `create_task` to initiate connections, processing completed tasks with `as_completed`, and handling potential `TimeoutError` exceptions. Updates regarding changes in versions 3.10 and 3.12 are also noted.
+---
+
+```
+ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+ipv6_connect = create_task(open_connection("::1", 80))
+tasks = [ipv4_connect, ipv6_connect]
+for next_connect in as_completed(tasks):
+  # next_connect is not one of the original task objects. It must be
+  # awaited to obtain the result value or raise the exception of the
+  # awaitable that finishes next.
+  reader, writer = await next_connect
+
+```
+
+A [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError") is raised if the timeout occurs before all awaitables are done. This is raised by the `async for` loop during asynchronous iteration or by the coroutines yielded during plain iteration.
+Changed in version 3.10: Removed the _loop_ parameter.
+Deprecated since version 3.10: Deprecation warning is emitted if not all awaitable objects in the _aws_ iterable are Future-like objects and there is no running event loop.
+Changed in version 3.12: Added support for generators yielding tasks.
+Changed in version 3.13: The result can now be used as either an [asynchronous iterator](https://docs.python.org/3/glossary.html#term-asynchronous-iterator) or as a plain [iterator](https://docs.python.org/3/glossary.html#term-iterator) (previously it was only a plain iterator).
+## [Running in Threads](https://docs.python.org/3/library/asyncio-task.html#id13)[¶](https://docs.python.org/3/library/asyncio-task.html#running-in-threads "Link to this heading") 
+
+_async_ asyncio.to_thread(_func_ , _/_ , _* args_, _** kwargs_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread "Link to this definition")
+    
+Asynchronously run function _func_ in a separate thread.
+Any *args and **kwargs supplied for this function are directly passed to _func_. Also, the current [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") is propagated, allowing context variables from the event loop thread to be accessed in the separate thread.
+Return a coroutine that can be awaited to get the eventual result of _func_.
+This coroutine function is primarily intended to be used for executing IO-bound functions/methods that would otherwise block the event loop if they were run in the main thread. For example:
+```
+defblocking_io():
+  print(f"start blocking_io at {time.strftime('%X')}")
+  # Note that time.sleep() can be replaced with any blocking
+  # IO-bound operation, such as file operations.
+  time.sleep(1)
+  print(f"blocking_io complete at {time.strftime('%X')}")
+async defmain():
+  print(f"started main at {time.strftime('%X')}")
+  await asyncio.gather(
+    asyncio.to_thread(blocking_io),
+    asyncio.sleep(1))
+  print(f"finished main at {time.strftime('%X')}")
+
+asyncio.run(main())
+# Expected output:
+#
+# started main at 19:50:53
+# start blocking_io at 19:50:53
+# blocking_io complete at 19:50:54
+# finished main at 19:50:54
+
+```
+
+Directly calling `blocking_io()` in any coroutine would block the event loop for its duration, resulting in an additional 1 second of run time. Instead, by using `asyncio.to_thread()`, we can run it in a separate thread without blocking the event loop.
+Note
+Due to the [GIL](https://docs.python.org/3/glossary.html#term-GIL), `asyncio.to_thread()` can typically only be used to make IO-bound functions non-blocking. However, for extension modules that release the GIL or alternative Python implementations that don’t have one, `asyncio.to_thread()` can also be used for CPU-bound functions.
+Added in version 3.9.
+## [Scheduling From Other Threads](https://docs.python.org/3/library/asyncio-task.html#id14)[¶](https://docs.python.org/3/library/asyncio-task.html#scheduling-from-other-threads "Link to this heading") 
+
+asyncio.run_coroutine_threadsafe(_coro_ , _loop_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.run_coroutine_threadsafe "Link to this definition")
+    
+Submit a coroutine to the given event loop. Thread-safe.
+Return a [`concurrent.futures.Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") to wait for the result from another OS thread.
+This function is meant to be called from a different OS thread than the one where the event loop is running. Example:
+```
+# Create a coroutine
+coro = asyncio.sleep(1, result=3)
+# Submit the coroutine to a given loop
+future = asyncio.run_coroutine_threadsafe(coro, loop)
+# Wait for the result with an optional timeout argument
+assert future.result(timeout) == 3
+
+```
+
+If an exception is raised in the coroutine, the returned Future will be notified. It can also be used to cancel the task in the event loop:
+```
+try:
+  result = future.result(timeout)
+except TimeoutError:
+  print('The coroutine took too long, cancelling the task...')
+  future.cancel()
+except Exception as exc:
+  print(f'The coroutine raised an exception: {exc!r}')
+else:
+  print(f'The coroutine returned: {result!r}')

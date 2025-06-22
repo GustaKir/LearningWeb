@@ -1,0 +1,48 @@
+Title: Avoiding Metaclass Confusion in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: This section discusses the concept of 'metaclass confusion', which occurs when an unbound method of a class is invoked incorrectly. It emphasizes the importance of bypassing instance attributes for correct special method lookup. Examples illustrate how to correctly utilize the `__hash__` method without invoking instance-specific behavior and highlight the implications of overriding the `__getattribute__` method in classes and metaclasses.
+---
+
+```
+
+Incorrectly attempting to invoke an unbound method of a class in this way is sometimes referred to as ‘metaclass confusion’, and is avoided by bypassing the instance when looking up special methods:
+>>>```
+>>> type(1).__hash__(1) == hash(1)
+True
+>>> type(int).__hash__(int) == hash(int)
+True
+
+```
+
+In addition to bypassing any instance attributes in the interest of correctness, implicit special method lookup generally also bypasses the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") method even of the object’s metaclass:
+>>>```
+>>> classMeta(type):
+...   def__getattribute__(*args):
+...     print("Metaclass getattribute invoked")
+...     return type.__getattribute__(*args)
+...
+>>> classC(object, metaclass=Meta):
+...   def__len__(self):
+...     return 10
+...   def__getattribute__(*args):
+...     print("Class getattribute invoked")
+...     return object.__getattribute__(*args)
+...
+>>> c = C()
+>>> c.__len__()         # Explicit lookup via instance
+Class getattribute invoked
+10
+>>> type(c).__len__(c)     # Explicit lookup via type
+Metaclass getattribute invoked
+10
+>>> len(c)           # Implicit lookup
+10
+
+```
+
+Bypassing the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") machinery in this fashion provides significant scope for speed optimisations within the interpreter, at the cost of some flexibility in the handling of special methods (the special method _must_ be set on the class object itself in order to be consistently invoked by the interpreter).
+## 3.4. Coroutines[¶](https://docs.python.org/3/reference/datamodel.html#coroutines "Link to this heading")
+### 3.4.1. Awaitable Objects[¶](https://docs.python.org/3/reference/datamodel.html#awaitable-objects "Link to this heading")
+An [awaitable](https://docs.python.org/3/glossary.html#term-awaitable) object generally implements an [`__await__()`](https://docs.python.org/3/reference/datamodel.html#object.__await__ "object.__await__") method. [Coroutine objects](https://docs.python.org/3/glossary.html#term-coroutine) returned from [`async def`](https://docs.python.org/3/reference/compound_stmts.html#async-def) functions are awaitable.
+Note
+The [generator iterator](https://docs.python.org/3/glossary.html#term-generator-iterator) objects returned from generators decorated with [`types.coroutine()`](https://docs.python.org/3/library/types.html#types.coroutine "types.coroutine") are also awaitable, but they do not implement [`__await__()`](https://docs.python.org/3/reference/datamodel.html#object.__await__ "object.__await__").

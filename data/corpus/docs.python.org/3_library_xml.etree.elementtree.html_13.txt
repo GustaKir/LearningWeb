@@ -1,0 +1,20 @@
+Title: Changes to Element Truth Value and Attribute Order in ElementTree
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: As of Python 3.12, testing the truth value of an Element will raise a DeprecationWarning. Additionally, Python 3.8 removed the predictable sorting of XML attributes to maintain their original order as parsed or created by user code. Users should avoid relying on attribute order, and for deterministic XML output, canonical serialization is available.
+---
+
+```
+
+Changed in version 3.12: Testing the truth value of an Element emits [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning").
+Prior to Python 3.8, the serialisation order of the XML attributes of elements was artificially made predictable by sorting the attributes by their name. Based on the now guaranteed ordering of dicts, this arbitrary reordering was removed in Python 3.8 to preserve the order in which attributes were originally parsed or created by user code.
+In general, user code should try not to depend on a specific ordering of attributes, given that the [XML Information Set](https://www.w3.org/TR/xml-infoset/) explicitly excludes the attribute order from conveying information. Code should be prepared to deal with any ordering on input. In cases where deterministic XML output is required, e.g. for cryptographic signing or test data sets, canonical serialisation is available with the [`canonicalize()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.canonicalize "xml.etree.ElementTree.canonicalize") function.
+In cases where canonical output is not applicable but a specific attribute order is still desirable on output, code should aim for creating the attributes directly in the desired order, to avoid perceptual mismatches for readers of the code. In cases where this is difficult to achieve, a recipe like the following can be applied prior to serialisation to enforce an order independently from the Element creation:
+```
+defreorder_attributes(root):
+  for el in root.iter():
+    attrib = el.attrib
+    if len(attrib) > 1:
+      # adjust attribute order, e.g. by sorting
+      attribs = sorted(attrib.items())
+      attrib.clear()
+      attrib.update(attribs)

@@ -1,0 +1,89 @@
+Title: Asyncio Queue Example
+URL: https://docs.python.org/3/library/asyncio-queue.html
+Summary: This document illustrates how to implement worker tasks using Python's asyncio and queues. It demonstrates creating a workload of random sleep times, processing these sleep durations concurrently with multiple worker tasks, and notifying upon completion using the asyncio Queue class.
+---
+
+```
+importasyncio
+importrandom
+importtime
+
+async defworker(name, queue):
+  while True:
+    # Get a "work item" out of the queue.
+    sleep_for = await queue.get()
+    # Sleep for the "sleep_for" seconds.
+    await asyncio.sleep(sleep_for)
+    # Notify the queue that the "work item" has been processed.
+    queue.task_done()
+    print(f'{name} has slept for {sleep_for:.2f} seconds')
+
+async defmain():
+  # Create a queue that we will use to store our "workload".
+  queue = asyncio.Queue()
+  # Generate random timings and put them into the queue.
+  total_sleep_time = 0
+  for _ in range(20):
+    sleep_for = random.uniform(0.05, 1.0)
+    total_sleep_time += sleep_for
+    queue.put_nowait(sleep_for)
+  # Create three worker tasks to process the queue concurrently.
+  tasks = []
+  for i in range(3):
+    task = asyncio.create_task(worker(f'worker-{i}', queue))
+    tasks.append(task)
+  # Wait until the queue is fully processed.
+  started_at = time.monotonic()
+  await queue.join()
+  total_slept_for = time.monotonic() - started_at
+  # Cancel our worker tasks.
+  for task in tasks:
+    task.cancel()
+  # Wait until all worker tasks are cancelled.
+  await asyncio.gather(*tasks, return_exceptions=True)
+  print('====')
+  print(f'3 workers slept in parallel for {total_slept_for:.2f} seconds')
+  print(f'total expected sleep time: {total_sleep_time:.2f} seconds')
+
+asyncio.run(main())
+
+```
+
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Queues](https://docs.python.org/3/library/asyncio-queue.html)
+    * [Queue](https://docs.python.org/3/library/asyncio-queue.html#queue)
+    * [Priority Queue](https://docs.python.org/3/library/asyncio-queue.html#priority-queue)
+    * [LIFO Queue](https://docs.python.org/3/library/asyncio-queue.html#lifo-queue)
+    * [Exceptions](https://docs.python.org/3/library/asyncio-queue.html#exceptions)
+    * [Examples](https://docs.python.org/3/library/asyncio-queue.html#examples)
+
+
+#### Previous topic
+[Subprocesses](https://docs.python.org/3/library/asyncio-subprocess.html "previous chapter")
+#### Next topic
+[Exceptions](https://docs.python.org/3/library/asyncio-exceptions.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/asyncio-queue.rst)
+
+
+«
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/library/asyncio-exceptions.html "Exceptions") |
+  * [previous](https://docs.python.org/3/library/asyncio-subprocess.html "Subprocesses") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [The Python Standard Library](https://docs.python.org/3/library/index.html) »
+  * [Networking and Interprocess Communication](https://docs.python.org/3/library/ipc.html) »
+  * [`asyncio` — Asynchronous I/O](https://docs.python.org/3/library/asyncio.html) »
+  * [Queues](https://docs.python.org/3/library/asyncio-queue.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+© [ Copyright ](https://docs.python.org/3/copyright.html) 2001-2025, Python Software Foundation. This page is licensed under the Python Software Foundation License Version 2. Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License. See [History and License](https://docs.python.org/license.html) for more information. The Python Software Foundation is a non-profit corporation. [Please donate.](https://www.python.org/psf/donations/) Last updated on Apr 27, 2025 (05:38 UTC). [Found a bug](https://docs.python.org/bugs.html)? Created using [Sphinx](https://www.sphinx-doc.org/) 8.2.3.

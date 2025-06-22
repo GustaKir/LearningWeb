@@ -1,0 +1,42 @@
+Title: Python 2.0 Improvements Overview
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: Python 2.0 introduces several enhancements, including the requirement for ANSI C compilers for building from source, an increase in bytecode number limits from 16-bit to 32-bit, thereby expanding the maximum size of source files, and the addition of three new functions for module initialization: PyModule_AddObject(), PyModule_AddIntConstant(), and PyModule_AddStringConstant().
+---
+
+These improvements were contributed by Yakov Markovitch.
+Python 2.0’s source now uses only ANSI C prototypes, so compiling Python now requires an ANSI C compiler, and can no longer be done using a compiler that only supports K&R C.
+Previously the Python virtual machine used 16-bit numbers in its bytecode, limiting the size of source files. In particular, this affected the maximum size of literal lists and dictionaries in Python source; occasionally people who are generating Python code would run into this limit. A patch by Charles G. Waldman raises the limit from `2**16` to `2**32`.
+Three new convenience functions intended for adding constants to a module’s dictionary at module initialization time were added: [`PyModule_AddObject()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObject "PyModule_AddObject"), [`PyModule_AddIntConstant()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddIntConstant "PyModule_AddIntConstant"), and [`PyModule_AddStringConstant()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddStringConstant "PyModule_AddStringConstant"). Each of these functions takes a module object, a null-terminated C string containing the name to be added, and a third argument for the value to be assigned to the name. This third argument is, respectively, a Python object, a C long, or a C string.
+A wrapper API was added for Unix-style signal handlers. [`PyOS_getsig()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_getsig "PyOS_getsig") gets a signal handler and [`PyOS_setsig()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_setsig "PyOS_setsig") will set a new handler.
+## Distutils: Making Modules Easy to Install[¶](https://docs.python.org/3/whatsnew/2.0.html#distutils-making-modules-easy-to-install "Link to this heading")
+Before Python 2.0, installing modules was a tedious affair – there was no way to figure out automatically where Python is installed, or what compiler options to use for extension modules. Software authors had to go through an arduous ritual of editing Makefiles and configuration files, which only really work on Unix and leave Windows and MacOS unsupported. Python users faced wildly differing installation instructions which varied between different extension packages, which made administering a Python installation something of a chore.
+The SIG for distribution utilities, shepherded by Greg Ward, has created the Distutils, a system to make package installation much easier. They form the `distutils` package, a new part of Python’s standard library. In the best case, installing a Python module from source will require the same steps: first you simply mean unpack the tarball or zip archive, and the run “`python setup.py install`”. The platform will be automatically detected, the compiler will be recognized, C extension modules will be compiled, and the distribution installed into the proper directory. Optional command-line arguments provide more control over the installation process, the distutils package offers many places to override defaults – separating the build from the install, building or installing in non-default directories, and more.
+In order to use the Distutils, you need to write a `setup.py` script. For the simple case, when the software contains only .py files, a minimal `setup.py` can be just a few lines long:
+```
+fromdistutils.coreimport setup
+setup (name = "foo", version = "1.0",
+    py_modules = ["module1", "module2"])
+
+```
+
+The `setup.py` file isn’t much more complicated if the software consists of a few packages:
+```
+fromdistutils.coreimport setup
+setup (name = "foo", version = "1.0",
+    packages = ["package", "package.subpackage"])
+
+```
+
+A C extension can be the most complicated case; here’s an example taken from the PyXML package:
+```
+fromdistutils.coreimport setup, Extension
+expat_extension = Extension('xml.parsers.pyexpat',
+   define_macros = [('XML_NS', None)],
+   include_dirs = [ 'extensions/expat/xmltok',
+           'extensions/expat/xmlparse' ],
+   sources = [ 'extensions/pyexpat.c',
+         'extensions/expat/xmltok/xmltok.c',
+         'extensions/expat/xmltok/xmlrole.c', ]
+    )
+setup (name = "PyXML", version = "0.5.4",
+    ext_modules =[ expat_extension ] )

@@ -1,0 +1,41 @@
+Title: Logging Configuration: QueueHandler and QueueListener
+URL: https://docs.python.org/3/library/logging.config.html
+Summary: This section discusses the usage of `QueueListener` in the absence of the `listener` key in the logging configuration. It explains that handler names listed under the `handlers` key will be relayed to the queue listener and emphasizes the need for custom queue handlers and listeners to match the initialization signatures of `QueueHandler` and `QueueListener`. This feature was added in version 3.12.
+---
+
+If the `listener` key is absent, [`logging.handlers.QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") is used.
+The values under the `handlers` key are the names of other handlers in the configuration (not shown in the above snippet) which will be passed to the queue listener.
+Any custom queue handler and listener classes will need to be defined with the same initialization signatures as [`QueueHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler "logging.handlers.QueueHandler") and [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener").
+Added in version 3.12.
+## Configuration file format[¶](https://docs.python.org/3/library/logging.config.html#configuration-file-format "Link to this heading")
+The configuration file format understood by [`fileConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.fileConfig "logging.config.fileConfig") is based on [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") functionality. The file must contain sections called `[loggers]`, `[handlers]` and `[formatters]` which identify by name the entities of each type which are defined in the file. For each such entity, there is a separate section which identifies how that entity is configured. Thus, for a logger named `log01` in the `[loggers]` section, the relevant configuration details are held in a section `[logger_log01]`. Similarly, a handler called `hand01` in the `[handlers]` section will have its configuration held in a section called `[handler_hand01]`, while a formatter called `form01` in the `[formatters]` section will have its configuration specified in a section called `[formatter_form01]`. The root logger configuration must be specified in a section called `[logger_root]`.
+Note
+The [`fileConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.fileConfig "logging.config.fileConfig") API is older than the [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig") API and does not provide functionality to cover certain aspects of logging. For example, you cannot configure [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") objects, which provide for filtering of messages beyond simple integer levels, using [`fileConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.fileConfig "logging.config.fileConfig"). If you need to have instances of [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") in your logging configuration, you will need to use [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig"). Note that future enhancements to configuration functionality will be added to [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig"), so it’s worth considering transitioning to this newer API when it’s convenient to do so.
+Examples of these sections in the file are given below.
+```
+[loggers]
+keys=root,log02,log03,log04,log05,log06,log07
+[handlers]
+keys=hand01,hand02,hand03,hand04,hand05,hand06,hand07,hand08,hand09
+[formatters]
+keys=form01,form02,form03,form04,form05,form06,form07,form08,form09
+
+```
+
+The root logger must specify a level and a list of handlers. An example of a root logger section is given below.
+```
+[logger_root]
+level=NOTSET
+handlers=hand01
+
+```
+
+The `level` entry can be one of `DEBUG, INFO, WARNING, ERROR, CRITICAL` or `NOTSET`. For the root logger only, `NOTSET` means that all messages will be logged. Level values are [evaluated](https://docs.python.org/3/library/functions.html#func-eval) in the context of the `logging` package’s namespace.
+The `handlers` entry is a comma-separated list of handler names, which must appear in the `[handlers]` section. These names must appear in the `[handlers]` section and have corresponding sections in the configuration file.
+For loggers other than the root logger, some additional information is required. This is illustrated by the following example.
+```
+[logger_parser]
+level=DEBUG
+handlers=hand01
+propagate=1
+qualname=compiler.parser

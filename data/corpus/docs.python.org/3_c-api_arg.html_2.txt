@@ -1,0 +1,44 @@
+Title: Converting Unicode Objects to C Strings
+URL: https://docs.python.org/3/c-api/arg.html
+Summary: This section details how to convert a Unicode object in Python to a C pointer to a character string using the `s` format. The resulting C string is NUL-terminated and must not contain embedded null code points, or a `ValueError` will be raised. The conversion uses `'utf-8'` encoding, and if it fails, a `UnicodeError` will occur. It is noted that bytes-like objects are not accepted, and for filesystem paths, the `O&` format with `PyUnicode_FSConverter()` is recommended.
+---
+
+`s` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str")) [const char *]
+    
+Convert a Unicode object to a C pointer to a character string. A pointer to an existing string is stored in the character pointer variable whose address you pass. The C string is NUL-terminated. The Python string must not contain embedded null code points; if it does, a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") exception is raised. Unicode objects are converted to C strings using `'utf-8'` encoding. If this conversion fails, a [`UnicodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeError "UnicodeError") is raised.
+Note
+This format does not accept [bytes-like objects](https://docs.python.org/3/glossary.html#term-bytes-like-object). If you want to accept filesystem paths and convert them to C character strings, it is preferable to use the `O&` format with [`PyUnicode_FSConverter()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FSConverter "PyUnicode_FSConverter") as _converter_.
+Changed in version 3.5: Previously, [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") was raised when embedded null code points were encountered in the Python string. 
+
+`s*` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object)) [Py_buffer]
+    
+This format accepts Unicode objects as well as bytes-like objects. It fills a [`Py_buffer`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer") structure provided by the caller. In this case the resulting C string may contain embedded NUL bytes. Unicode objects are converted to C strings using `'utf-8'` encoding. 
+
+`s#` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), read-only [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object)) [const char *, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")]
+    
+Like `s*`, except that it provides a [borrowed buffer](https://docs.python.org/3/c-api/arg.html#c-arg-borrowed-buffer). The result is stored into two C variables, the first one a pointer to a C string, the second one its length. The string may contain embedded null bytes. Unicode objects are converted to C strings using `'utf-8'` encoding. 
+
+`z` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or `None`) [const char *]
+    
+Like `s`, but the Python object may also be `None`, in which case the C pointer is set to `NULL`. 
+
+`z*` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object) or `None`) [Py_buffer]
+    
+Like `s*`, but the Python object may also be `None`, in which case the `buf` member of the [`Py_buffer`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer") structure is set to `NULL`. 
+
+`z#` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), read-only [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object) or `None`) [const char *, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")]
+    
+Like `s#`, but the Python object may also be `None`, in which case the C pointer is set to `NULL`. 
+
+`y` (read-only [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object)) [const char *]
+    
+This format converts a bytes-like object to a C pointer to a [borrowed](https://docs.python.org/3/c-api/arg.html#c-arg-borrowed-buffer) character string; it does not accept Unicode objects. The bytes buffer must not contain embedded null bytes; if it does, a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") exception is raised.
+Changed in version 3.5: Previously, [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") was raised when embedded null bytes were encountered in the bytes buffer. 
+
+`y*` ([bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object)) [Py_buffer]
+    
+This variant on `s*` doesn’t accept Unicode objects, only bytes-like objects. **This is the recommended way to accept binary data.** 
+
+`y#` (read-only [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object)) [const char *, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")]
+    
+This variant on `s#` doesn’t accept Unicode objects, only bytes-like objects.

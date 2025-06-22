@@ -1,0 +1,118 @@
+Title: FastAPI Background Tasks Tutorial
+URL: https://fastapi.tiangolo.com/tutorial/background-tasks/
+Summary: This chunk provides a code example for implementing background tasks in FastAPI. It demonstrates how to log messages using a background task when sending a notification email. The function 'write_log' appends messages to a log file, and 'get_query' captures optional query parameters for logging. The '/send-notification/{email}' endpoint processes incoming requests, adds logging tasks to the background, and confirms message sending.
+---
+
+```
+fromtypingimport Annotated
+fromfastapiimport BackgroundTasks, Depends, FastAPI
+app = FastAPI()
+defwrite_log(message: str):
+  with open("log.txt", mode="a") as log:
+    log.write(message)
+defget_query(background_tasks: BackgroundTasks, q: str | None = None):
+  if q:
+    message = f"found query: {q}\n"
+    background_tasks.add_task(write_log, message)
+  return q
+@app.post("/send-notification/{email}")
+async defsend_notification(
+  email: str, background_tasks: BackgroundTasks, q: Annotated[str, Depends(get_query)]
+):
+  message = f"message to {email}\n"
+  background_tasks.add_task(write_log, message)
+  return {"message": "Message sent"}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/background-tasks/#__tabbed_5_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/background-tasks/#__tabbed_5_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/background-tasks/#__tabbed_5_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/background-tasks/#__tabbed_5_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport BackgroundTasks, Depends, FastAPI
+app = FastAPI()
+defwrite_log(message: str):
+  with open("log.txt", mode="a") as log:
+    log.write(message)
+defget_query(background_tasks: BackgroundTasks, q: Union[str, None] = None):
+  if q:
+    message = f"found query: {q}\n"
+    background_tasks.add_task(write_log, message)
+  return q
+@app.post("/send-notification/{email}")
+async defsend_notification(
+  email: str, background_tasks: BackgroundTasks, q: Annotated[str, Depends(get_query)]
+):
+  message = f"message to {email}\n"
+  background_tasks.add_task(write_log, message)
+  return {"message": "Message sent"}
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport BackgroundTasks, Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+defwrite_log(message: str):
+  with open("log.txt", mode="a") as log:
+    log.write(message)
+defget_query(background_tasks: BackgroundTasks, q: Union[str, None] = None):
+  if q:
+    message = f"found query: {q}\n"
+    background_tasks.add_task(write_log, message)
+  return q
+@app.post("/send-notification/{email}")
+async defsend_notification(
+  email: str, background_tasks: BackgroundTasks, q: Annotated[str, Depends(get_query)]
+):
+  message = f"message to {email}\n"
+  background_tasks.add_task(write_log, message)
+  return {"message": "Message sent"}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport BackgroundTasks, Depends, FastAPI
+app = FastAPI()
+defwrite_log(message: str):
+  with open("log.txt", mode="a") as log:
+    log.write(message)
+defget_query(background_tasks: BackgroundTasks, q: str | None = None):
+  if q:
+    message = f"found query: {q}\n"
+    background_tasks.add_task(write_log, message)
+  return q
+@app.post("/send-notification/{email}")
+async defsend_notification(
+  email: str, background_tasks: BackgroundTasks, q: str = Depends(get_query)
+):
+  message = f"message to {email}\n"
+  background_tasks.add_task(write_log, message)
+  return {"message": "Message sent"}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport BackgroundTasks, Depends, FastAPI
+app = FastAPI()
+defwrite_log(message: str):
+  with open("log.txt", mode="a") as log:
+    log.write(message)
+defget_query(background_tasks: BackgroundTasks, q: Union[str, None] = None):
+  if q:
+    message = f"found query: {q}\n"
+    background_tasks.add_task(write_log, message)
+  return q
+@app.post("/send-notification/{email}")
+async defsend_notification(
+  email: str, background_tasks: BackgroundTasks, q: str = Depends(get_query)
+):
+  message = f"message to {email}\n"
+  background_tasks.add_task(write_log, message)
+  return {"message": "Message sent"}

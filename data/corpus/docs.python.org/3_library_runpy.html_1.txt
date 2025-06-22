@@ -1,0 +1,22 @@
+Title: runpy.run_module Function
+URL: https://docs.python.org/3/library/runpy.html
+Summary: The runpy.run_module function executes the code of a specified module and returns its globals dictionary. The module is located via the standard import mechanism, and if it's a package, the __main__ submodule is executed. The function accepts the module name and optional parameters to customize the execution environment.
+---
+
+runpy.run_module(_mod_name_ , _init_globals =None_, _run_name =None_, _alter_sys =False_)[¶](https://docs.python.org/3/library/runpy.html#runpy.run_module "Link to this definition")
+    
+Execute the code of the specified module and return the resulting module’s globals dictionary. The module’s code is first located using the standard import mechanism (refer to [**PEP 302**](https://peps.python.org/pep-0302/) for details) and then executed in a fresh module namespace.
+The _mod_name_ argument should be an absolute module name. If the module name refers to a package rather than a normal module, then that package is imported and the [`__main__`](https://docs.python.org/3/library/__main__.html#module-__main__ "__main__: The environment where top-level code is run. Covers command-line interfaces, import-time behavior, and ``__name__ == '__main__'``.") submodule within that package is then executed and the resulting module globals dictionary returned.
+The optional dictionary argument _init_globals_ may be used to pre-populate the module’s globals dictionary before the code is executed. _init_globals_ will not be modified. If any of the special global variables below are defined in _init_globals_ , those definitions are overridden by [`run_module()`](https://docs.python.org/3/library/runpy.html#runpy.run_module "runpy.run_module").
+The special global variables `__name__`, `__spec__`, `__file__`, `__cached__`, `__loader__` and `__package__` are set in the globals dictionary before the module code is executed. (Note that this is a minimal set of variables - other variables may be set implicitly as an interpreter implementation detail.)
+`__name__` is set to _run_name_ if this optional argument is not [`None`](https://docs.python.org/3/library/constants.html#None "None"), to `mod_name + '.__main__'` if the named module is a package and to the _mod_name_ argument otherwise.
+`__spec__` will be set appropriately for the _actually_ imported module (that is, `__spec__.name` will always be _mod_name_ or `mod_name + '.__main__'`, never _run_name_).
+`__file__`, `__cached__`, `__loader__` and `__package__` are [set as normal](https://docs.python.org/3/reference/datamodel.html#import-mod-attrs) based on the module spec.
+If the argument _alter_sys_ is supplied and evaluates to [`True`](https://docs.python.org/3/library/constants.html#True "True"), then `sys.argv[0]` is updated with the value of `__file__` and `sys.modules[__name__]` is updated with a temporary module object for the module being executed. Both `sys.argv[0]` and `sys.modules[__name__]` are restored to their original values before the function returns.
+Note that this manipulation of [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") is not thread-safe. Other threads may see the partially initialised module, as well as the altered list of arguments. It is recommended that the `sys` module be left alone when invoking this function from threaded code.
+See also
+The [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m) option offering equivalent functionality from the command line.
+Changed in version 3.1: Added ability to execute packages by looking for a [`__main__`](https://docs.python.org/3/library/__main__.html#module-__main__ "__main__: The environment where top-level code is run. Covers command-line interfaces, import-time behavior, and ``__name__ == '__main__'``.") submodule.
+Changed in version 3.2: Added `__cached__` global variable (see [**PEP 3147**](https://peps.python.org/pep-3147/)).
+Changed in version 3.4: Updated to take advantage of the module spec feature added by [**PEP 451**](https://peps.python.org/pep-0451/). This allows `__cached__` to be set correctly for modules run this way, as well as ensuring the real module name is always accessible as `__spec__.name`.
+Changed in version 3.12: The setting of `__cached__`, `__loader__`, and `__package__` are deprecated. See [`ModuleSpec`](https://docs.python.org/3/library/importlib.html#importlib.machinery.ModuleSpec "importlib.machinery.ModuleSpec") for alternatives.

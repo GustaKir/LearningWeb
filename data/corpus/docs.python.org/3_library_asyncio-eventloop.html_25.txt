@@ -1,0 +1,69 @@
+Title: Asyncio Event Loop Classes
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This section discusses the `ProactorEventLoop`, a Windows-specific subclass of `AbstractEventLoop` that utilizes I/O Completion Ports, and the general `EventLoop`, which acts as an alias to the most efficient available subclass of `AbstractEventLoop` based on the platform.
+---
+
+```
+
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, Windows. 
+
+_class_ asyncio.ProactorEventLoop[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "Link to this definition")
+    
+A subclass of [`AbstractEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop "asyncio.AbstractEventLoop") for Windows that uses “I/O Completion Ports” (IOCP).
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows.
+See also
+[MSDN documentation on I/O Completion Ports](https://learn.microsoft.com/windows/win32/fileio/i-o-completion-ports). 
+
+_class_ asyncio.EventLoop[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.EventLoop "Link to this definition")
+    
+> An alias to the most efficient available subclass of [`AbstractEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop "asyncio.AbstractEventLoop") for the given platform.
+> It is an alias to [`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") on Unix and [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop") on Windows.
+Added in version 3.13. 
+
+_class_ asyncio.AbstractEventLoop[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.AbstractEventLoop "Link to this definition")
+    
+Abstract base class for asyncio-compliant event loops.
+The [Event Loop Methods](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop-methods) section lists all methods that an alternative implementation of `AbstractEventLoop` should have defined.
+## Examples[¶](https://docs.python.org/3/library/asyncio-eventloop.html#examples "Link to this heading")
+Note that all examples in this section **purposefully** show how to use the low-level event loop APIs, such as [`loop.run_forever()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_forever "asyncio.loop.run_forever") and [`loop.call_soon()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon "asyncio.loop.call_soon"). Modern asyncio applications rarely need to be written this way; consider using the high-level functions like [`asyncio.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run").
+### Hello World with call_soon()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#hello-world-with-call-soon "Link to this heading")
+An example using the [`loop.call_soon()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon "asyncio.loop.call_soon") method to schedule a callback. The callback displays `"Hello World"` and then stops the event loop:
+```
+importasyncio
+defhello_world(loop):
+"""A callback to print 'Hello World' and stop the event loop"""
+  print('Hello World')
+  loop.stop()
+loop = asyncio.new_event_loop()
+# Schedule a call to hello_world()
+loop.call_soon(hello_world, loop)
+# Blocking call interrupted by loop.stop()
+try:
+  loop.run_forever()
+finally:
+  loop.close()
+
+```
+
+See also
+A similar [Hello World](https://docs.python.org/3/library/asyncio-task.html#coroutine) example created with a coroutine and the [`run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run") function.
+### Display the current date with call_later()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#display-the-current-date-with-call-later "Link to this heading")
+An example of a callback displaying the current date every second. The callback uses the [`loop.call_later()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_later "asyncio.loop.call_later") method to reschedule itself after 5 seconds, and then stops the event loop:
+```
+importasyncio
+importdatetime
+defdisplay_date(end_time, loop):
+  print(datetime.datetime.now())
+  if (loop.time() + 1.0) < end_time:
+    loop.call_later(1, display_date, end_time, loop)
+  else:
+    loop.stop()
+loop = asyncio.new_event_loop()
+# Schedule the first call to display_date()
+end_time = loop.time() + 5.0
+loop.call_soon(display_date, end_time, loop)
+# Blocking call interrupted by loop.stop()
+try:
+  loop.run_forever()
+finally:
+  loop.close()

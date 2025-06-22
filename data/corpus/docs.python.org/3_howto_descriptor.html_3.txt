@@ -1,0 +1,62 @@
+Title: Customizing Descriptors in Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section addresses a limitation in the previous example of the LoggedAgeAccess class, which uses a hardcoded private name for logged attributes. It introduces a solution by demonstrating how to customize descriptor names in the Person class, allowing each descriptor to receive its unique public and private names through the __set_name__() callback.
+---
+
+```
+
+One major issue with this example is that the private name __age_ is hardwired in the _LoggedAgeAccess_ class. That means that each instance can only have one logged attribute and that its name is unchangeable. In the next example, we’ll fix that problem.
+### [Customized names](https://docs.python.org/3/howto/descriptor.html#id6)[¶](https://docs.python.org/3/howto/descriptor.html#customized-names "Link to this heading")
+When a class uses descriptors, it can inform each descriptor about which variable name was used.
+In this example, the `Person` class has two descriptor instances, _name_ and _age_. When the `Person` class is defined, it makes a callback to [`__set_name__()`](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "object.__set_name__") in _LoggedAccess_ so that the field names can be recorded, giving each descriptor its own _public_name_ and _private_name_ :
+```
+importlogging
+logging.basicConfig(level=logging.INFO)
+classLoggedAccess:
+  def__set_name__(self, owner, name):
+    self.public_name = name
+    self.private_name = '_' + name
+  def__get__(self, obj, objtype=None):
+    value = getattr(obj, self.private_name)
+    logging.info('Accessing %r giving %r', self.public_name, value)
+    return value
+  def__set__(self, obj, value):
+    logging.info('Updating %r to %r', self.public_name, value)
+    setattr(obj, self.private_name, value)
+classPerson:
+  name = LoggedAccess()        # First descriptor instance
+  age = LoggedAccess()         # Second descriptor instance
+  def__init__(self, name, age):
+    self.name = name         # Calls the first descriptor
+    self.age = age          # Calls the second descriptor
+  defbirthday(self):
+    self.age += 1
+
+```
+
+An interactive session shows that the `Person` class has called [`__set_name__()`](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "object.__set_name__") so that the field names would be recorded. Here we call [`vars()`](https://docs.python.org/3/library/functions.html#vars "vars") to look up the descriptor without triggering it:
+>>>```
+>>> vars(vars(Person)['name'])
+{'public_name': 'name', 'private_name': '_name'}
+>>> vars(vars(Person)['age'])
+{'public_name': 'age', 'private_name': '_age'}
+
+```
+
+The new class now logs access to both _name_ and _age_ :
+>>>```
+>>> pete = Person('Peter P', 10)
+INFO:root:Updating 'name' to 'Peter P'
+INFO:root:Updating 'age' to 10
+>>> kate = Person('Catherine C', 20)
+INFO:root:Updating 'name' to 'Catherine C'
+INFO:root:Updating 'age' to 20
+
+```
+
+The two _Person_ instances contain only the private names:
+>>>```
+>>> vars(pete)
+{'_name': 'Peter P', '_age': 10}
+>>> vars(kate)
+{'_name': 'Catherine C', '_age': 20}

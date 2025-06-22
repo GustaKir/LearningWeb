@@ -1,0 +1,42 @@
+Title: PyModule_Create2 Function
+URL: https://docs.python.org/3/c-api/module.html
+Summary: The `PyModule_Create2` function creates a new module object from a given `PyModuleDef` definition and specifies the API version. It returns a new reference and emits a `RuntimeWarning` if the API version does not match the interpreter's version. It is advised to use `PyModule_Create()` in most cases unless there's a specific need for this function.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyModule_Create2([PyModuleDef](https://docs.python.org/3/c-api/module.html#c.PyModuleDef "PyModuleDef")*def, intmodule_api_version)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_Create2 "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a new module object, given the definition in _def_ , assuming the API version _module_api_version_. If that version does not match the version of the running interpreter, a [`RuntimeWarning`](https://docs.python.org/3/library/exceptions.html#RuntimeWarning "RuntimeWarning") is emitted.
+Return `NULL` with an exception set on error.
+Note
+Most uses of this function should be using [`PyModule_Create()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Create "PyModule_Create") instead; only use this if you are sure you need it.
+Before it is returned from in the initialization function, the resulting module object is typically populated using functions like [`PyModule_AddObjectRef()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "PyModule_AddObjectRef").
+### Multi-phase initialization[¶](https://docs.python.org/3/c-api/module.html#multi-phase-initialization "Link to this heading")
+An alternate way to specify extensions is to request “multi-phase initialization”. Extension modules created this way behave more like Python modules: the initialization is split between the _creation phase_ , when the module object is created, and the _execution phase_ , when it is populated. The distinction is similar to the `__new__()` and `__init__()` methods of classes.
+Unlike modules created using single-phase initialization, these modules are not singletons: if the _sys.modules_ entry is removed and the module is re-imported, a new module object is created, and the old module is subject to normal garbage collection – as with Python modules. By default, multiple modules created from the same definition should be independent: changes to one should not affect the others. This means that all state should be specific to the module object (using e.g. using [`PyModule_GetState()`](https://docs.python.org/3/c-api/module.html#c.PyModule_GetState "PyModule_GetState")), or its contents (such as the module’s [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") or individual classes created with [`PyType_FromSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromSpec "PyType_FromSpec")).
+All modules created using multi-phase initialization are expected to support [sub-interpreters](https://docs.python.org/3/c-api/init.html#sub-interpreter-support). Making sure multiple modules are independent is typically enough to achieve this.
+To request multi-phase initialization, the initialization function (PyInit_modulename) returns a [`PyModuleDef`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef "PyModuleDef") instance with non-empty [`m_slots`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_slots "PyModuleDef.m_slots"). Before it is returned, the `PyModuleDef` instance must be initialized with the following function: 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyModuleDef_Init([PyModuleDef](https://docs.python.org/3/c-api/module.html#c.PyModuleDef "PyModuleDef")*def)[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef_Init "Link to this definition")
+    _Return value: Borrowed reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.5._
+Ensures a module definition is a properly initialized Python object that correctly reports its type and reference count.
+Returns _def_ cast to `PyObject*`, or `NULL` if an error occurred.
+Added in version 3.5.
+The _m_slots_ member of the module definition must point to an array of `PyModuleDef_Slot` structures: 
+
+typePyModuleDef_Slot[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef_Slot "Link to this definition")
+     
+
+intslot[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef_Slot.slot "Link to this definition")
+    
+A slot ID, chosen from the available values explained below. 
+
+void*value[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef_Slot.value "Link to this definition")
+    
+Value of the slot, whose meaning depends on the slot ID.
+Added in version 3.5.
+The _m_slots_ array must be terminated by a slot with id 0.
+The available slot types are: 
+
+Py_mod_create[¶](https://docs.python.org/3/c-api/module.html#c.Py_mod_create "Link to this definition")
+    
+Specifies a function that is called to create the module object itself. The _value_ pointer of this slot must point to a function of the signature:

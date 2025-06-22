@@ -1,0 +1,53 @@
+Title: namedtuple() - Factory Function for Tuples with Named Fields
+URL: https://docs.python.org/3/library/collections.html
+Summary: The `namedtuple()` function creates tuple subclasses with named fields, enhancing code readability and allowing access to fields by name instead of index. It supports additional options like field renaming and default values, making it a versatile tool for creating structured data.
+---
+
+```
+
+## [`namedtuple()`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple") Factory Function for Tuples with Named Fields[¶](https://docs.python.org/3/library/collections.html#namedtuple-factory-function-for-tuples-with-named-fields "Link to this heading")
+Named tuples assign meaning to each position in a tuple and allow for more readable, self-documenting code. They can be used wherever regular tuples are used, and they add the ability to access fields by name instead of position index. 
+
+collections.namedtuple(_typename_ , _field_names_ , _*_ , _rename =False_, _defaults =None_, _module =None_)[¶](https://docs.python.org/3/library/collections.html#collections.namedtuple "Link to this definition")
+    
+Returns a new tuple subclass named _typename_. The new subclass is used to create tuple-like objects that have fields accessible by attribute lookup as well as being indexable and iterable. Instances of the subclass also have a helpful docstring (with _typename_ and _field_names_) and a helpful [`__repr__()`](https://docs.python.org/3/reference/datamodel.html#object.__repr__ "object.__repr__") method which lists the tuple contents in a `name=value` format.
+The _field_names_ are a sequence of strings such as `['x', 'y']`. Alternatively, _field_names_ can be a single string with each fieldname separated by whitespace and/or commas, for example `'x y'` or `'x, y'`.
+Any valid Python identifier may be used for a fieldname except for names starting with an underscore. Valid identifiers consist of letters, digits, and underscores but do not start with a digit or underscore and cannot be a [`keyword`](https://docs.python.org/3/library/keyword.html#module-keyword "keyword: Test whether a string is a keyword in Python.") such as _class_ , _for_ , _return_ , _global_ , _pass_ , or _raise_.
+If _rename_ is true, invalid fieldnames are automatically replaced with positional names. For example, `['abc', 'def', 'ghi', 'abc']` is converted to `['abc', '_1', 'ghi', '_3']`, eliminating the keyword `def` and the duplicate fieldname `abc`.
+_defaults_ can be `None` or an [iterable](https://docs.python.org/3/glossary.html#term-iterable) of default values. Since fields with a default value must come after any fields without a default, the _defaults_ are applied to the rightmost parameters. For example, if the fieldnames are `['x', 'y', 'z']` and the defaults are `(1, 2)`, then `x` will be a required argument, `y` will default to `1`, and `z` will default to `2`.
+If _module_ is defined, the [`__module__`](https://docs.python.org/3/reference/datamodel.html#type.__module__ "type.__module__") attribute of the named tuple is set to that value.
+Named tuple instances do not have per-instance dictionaries, so they are lightweight and require no more memory than regular tuples.
+To support pickling, the named tuple class should be assigned to a variable that matches _typename_.
+Changed in version 3.1: Added support for _rename_.
+Changed in version 3.6: The _verbose_ and _rename_ parameters became [keyword-only arguments](https://docs.python.org/3/glossary.html#keyword-only-parameter).
+Changed in version 3.6: Added the _module_ parameter.
+Changed in version 3.7: Removed the _verbose_ parameter and the `_source` attribute.
+Changed in version 3.7: Added the _defaults_ parameter and the [`_field_defaults`](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._field_defaults "collections.somenamedtuple._field_defaults") attribute.
+>>>```
+>>> # Basic example
+>>> Point = namedtuple('Point', ['x', 'y'])
+>>> p = Point(11, y=22)   # instantiate with positional or keyword arguments
+>>> p[0] + p[1]       # indexable like the plain tuple (11, 22)
+33
+>>> x, y = p        # unpack like a regular tuple
+>>> x, y
+(11, 22)
+>>> p.x + p.y        # fields also accessible by name
+33
+>>> p            # readable __repr__ with a name=value style
+Point(x=11, y=22)
+
+```
+
+Named tuples are especially useful for assigning field names to result tuples returned by the [`csv`](https://docs.python.org/3/library/csv.html#module-csv "csv: Write and read tabular data to and from delimited files.") or [`sqlite3`](https://docs.python.org/3/library/sqlite3.html#module-sqlite3 "sqlite3: A DB-API 2.0 implementation using SQLite 3.x.") modules:
+```
+EmployeeRecord = namedtuple('EmployeeRecord', 'name, age, title, department, paygrade')
+importcsv
+for emp in map(EmployeeRecord._make, csv.reader(open("employees.csv", "rb"))):
+  print(emp.name, emp.title)
+importsqlite3
+conn = sqlite3.connect('/companydata')
+cursor = conn.cursor()
+cursor.execute('SELECT name, age, title, department, paygrade FROM employees')
+for emp in map(EmployeeRecord._make, cursor.fetchall()):
+  print(emp.name, emp.title)

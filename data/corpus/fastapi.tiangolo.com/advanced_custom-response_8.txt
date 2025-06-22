@@ -1,0 +1,101 @@
+Title: Custom Response Handling in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/custom-response/
+Summary: This section explains how to implement a generator function for custom responses in FastAPI, utilizing `yield` statements and a `with` block to ensure proper handling of file-like objects. It also highlights the use of standard `open()` in a synchronous context for file handling.
+---
+
+```
+
+  1. This is the generator function. It's a "generator function" because it contains `yield` statements inside.
+  2. By using a `with` block, we make sure that the file-like object is closed after the generator function is done. So, after it finishes sending the response.
+  3. This `yield from` tells the function to iterate over that thing named `file_like`. And then, for each part iterated, yield that part as coming from this generator function (`iterfile`).
+So, it is a generator function that transfers the "generating" work to something else internally.
+By doing it this way, we can put it in a `with` block, and that way, ensure that the file-like object is closed after finishing.
+
+
+Tip
+Notice that here as we are using standard `open()` that doesn't support `async` and `await`, we declare the path operation with normal `def`.
+### `FileResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#fileresponse "Permanent link")
+Asynchronously streams a file as the response.
+Takes a different set of arguments to instantiate than the other response types:
+  * `path` - The file path to the file to stream.
+  * `headers` - Any custom headers to include, as a dictionary.
+  * `media_type` - A string giving the media type. If unset, the filename or path will be used to infer a media type.
+  * `filename` - If set, this will be included in the response `Content-Disposition`.
+
+
+File responses will include appropriate `Content-Length`, `Last-Modified` and `ETag` headers.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_13_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport FileResponse
+some_file_path = "large-video-file.mp4"
+app = FastAPI()
+@app.get("/")
+async defmain():
+  return FileResponse(some_file_path)
+
+```
+
+You can also use the `response_class` parameter:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_14_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport FileResponse
+some_file_path = "large-video-file.mp4"
+app = FastAPI()
+@app.get("/", response_class=FileResponse)
+async defmain():
+  return some_file_path
+
+```
+
+In this case, you can return the file path directly from your _path operation_ function.
+## Custom response class[¶](https://fastapi.tiangolo.com/advanced/custom-response/#custom-response-class "Permanent link")
+You can create your own custom response class, inheriting from `Response` and using it.
+For example, let's say that you want to use [`orjson`](https://github.com/ijl/orjson), but with some custom settings not used in the included `ORJSONResponse` class.
+Let's say you want it to return indented and formatted JSON, so you want to use the orjson option `orjson.OPT_INDENT_2`.
+You could create a `CustomORJSONResponse`. The main thing you have to do is create a `Response.render(content)` method that returns the content as `bytes`:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_15_1)
+```
+fromtypingimport Any
+importorjson
+fromfastapiimport FastAPI, Response
+app = FastAPI()
+classCustomORJSONResponse(Response):
+  media_type = "application/json"
+  defrender(self, content: Any) -> bytes:
+    assert orjson is not None, "orjson must be installed"
+    return orjson.dumps(content, option=orjson.OPT_INDENT_2)
+@app.get("/", response_class=CustomORJSONResponse)
+async defmain():
+  return {"message": "Hello World"}
+
+```
+
+Now instead of returning:
+```
+{"message":"Hello World"}
+
+```
+
+...this response will return:
+```
+{
+"message":"Hello World"
+}
+
+```
+
+Of course, you will probably find much better ways to take advantage of this than formatting JSON. 😉
+## Default response class[¶](https://fastapi.tiangolo.com/advanced/custom-response/#default-response-class "Permanent link")
+When creating a **FastAPI** class instance or an `APIRouter` you can specify which response class to use by default.
+The parameter that defines this is `default_response_class`.
+In the example below, **FastAPI** will use `ORJSONResponse` by default, in all _path operations_ , instead of `JSONResponse`.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_16_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport ORJSONResponse
+app = FastAPI(default_response_class=ORJSONResponse)
+@app.get("/items/")
+async defread_items():
+  return [{"item_id": "Foo"}]

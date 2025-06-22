@@ -1,0 +1,74 @@
+Title: Handling tp_traverse for Heap Types in Python
+URL: https://docs.python.org/3/howto/isolating-extensions.html
+Summary: This section discusses the changes in the `tp_traverse` requirement introduced in Python 3.9, emphasizing that for Python 3.8 and lower, the traverse function must not visit the type. It provides code examples and notes on additional documentation related to garbage collection flags.
+---
+
+Please refer to the documentation of [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") and [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") for additional considerations.
+The API for defining heap types grew organically, leaving it somewhat awkward to use in its current state. The following sections will guide you through common issues.
+#### `tp_traverse` in Python 3.8 and lower[¶](https://docs.python.org/3/howto/isolating-extensions.html#tp-traverse-in-python-3-8-and-lower "Link to this heading")
+The requirement to visit the type from `tp_traverse` was added in Python 3.9. If you support Python 3.8 and lower, the traverse function must _not_ visit the type, so it must be more complicated:
+```
+staticintmy_traverse(PyObject*self,visitprocvisit,void*arg)
+{
+if(Py_Version>=0x03090000){
+Py_VISIT(Py_TYPE(self));
+}
+return0;
+}
+
+```
+
+Unfortunately, [`Py_Version`](https://docs.python.org/3/c-api/apiabiversion.html#c.Py_Version "Py_Version") was only added in Python 3.11. As a replacement, use:
+  * [`PY_VERSION_HEX`](https://docs.python.org/3/c-api/apiabiversion.html#c.PY_VERSION_HEX "PY_VERSION_HEX"), if not using the stable ABI, or
+  * [`sys.version_info`](https://docs.python.org/3/library/sys.html#sys.version_info "sys.version_info") (via [`PySys_GetObject()`](https://docs.python.org/3/c-api/sys.html#c.PySys_GetObject "PySys_GetObject") and [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple")).
+
+
+#### Delegating `tp_traverse`[¶](https://docs.python.org/3/howto/isolating-extensions.html#delegating-tp-traverse "Link to this heading")
+If your traverse function delegates to the [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") of its base class (or another type), ensure that `Py_TYPE(self)` is visited only once. Note that only heap type are expected to visit the type in `tp_traverse`.
+For example, if your traverse function includes:
+```
+base->tp_traverse(self,visit,arg)
+
+```
+
+…and `base` may be a static type, then it should also include:
+```
+if(base->tp_flags&Py_TPFLAGS_HEAPTYPE){
+// a heap type's tp_traverse already visited Py_TYPE(self)
+}else{
+if(Py_Version>=0x03090000){
+Py_VISIT(Py_TYPE(self));
+}
+}
+
+```
+
+It is not necessary to handle the type’s reference count in [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") and [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear").
+#### Defining `tp_dealloc`[¶](https://docs.python.org/3/howto/isolating-extensions.html#defining-tp-dealloc "Link to this heading")
+If your type has a custom [`tp_dealloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dealloc "PyTypeObject.tp_dealloc") function, it needs to:
+  * call [`PyObject_GC_UnTrack()`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_UnTrack "PyObject_GC_UnTrack") before any fields are invalidated, and
+  * decrement the reference count of the type.
+
+
+To keep the type valid while `tp_free` is called, the type’s refcount needs to be decremented _after_ the instance is deallocated. For example:
+```
+staticvoidmy_dealloc(PyObject*self)
+{
+PyObject_GC_UnTrack(self);
+...
+PyTypeObject*type=Py_TYPE(self);
+type->tp_free(self);
+Py_DECREF(type);
+}
+
+```
+
+The default `tp_dealloc` function does this, so if your type does _not_ override `tp_dealloc` you don’t need to add it.
+#### Not overriding `tp_free`[¶](https://docs.python.org/3/howto/isolating-extensions.html#not-overriding-tp-free "Link to this heading")
+The [`tp_free`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_free "PyTypeObject.tp_free") slot of a heap type must be set to [`PyObject_GC_Del()`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_Del "PyObject_GC_Del"). This is the default; do not override it.
+#### Avoiding `PyObject_New`[¶](https://docs.python.org/3/howto/isolating-extensions.html#avoiding-pyobject-new "Link to this heading")
+GC-tracked objects need to be allocated using GC-aware functions.
+If you use use [`PyObject_New()`](https://docs.python.org/3/c-api/allocation.html#c.PyObject_New "PyObject_New") or [`PyObject_NewVar()`](https://docs.python.org/3/c-api/allocation.html#c.PyObject_NewVar "PyObject_NewVar"):
+  * Get and call type’s [`tp_alloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_alloc "PyTypeObject.tp_alloc") slot, if possible. That is, replace `TYPE *o = PyObject_New(TYPE, typeobj)` with:
+```
+TYPE*o=typeobj->tp_alloc(typeobj,0);

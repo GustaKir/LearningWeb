@@ -1,0 +1,46 @@
+Title: Python's Use of Indentation for Statement Grouping
+URL: https://docs.python.org/3/faq/design.html
+Summary: Guido van Rossum advocates for Python's use of indentation for grouping statements, suggesting it enhances clarity and reduces ambiguities present in languages that use brackets. The lack of brackets prevents discrepancies between the parser's and the human reader's interpretation of code structure.
+---
+
+## [Why does Python use indentation for grouping of statements?](https://docs.python.org/3/faq/design.html#id3)[¶](https://docs.python.org/3/faq/design.html#why-does-python-use-indentation-for-grouping-of-statements "Link to this heading")
+Guido van Rossum believes that using indentation for grouping is extremely elegant and contributes a lot to the clarity of the average Python program. Most people learn to love this feature after a while.
+Since there are no begin/end brackets there cannot be a disagreement between grouping perceived by the parser and the human reader. Occasionally C programmers will encounter a fragment of code like this:
+```
+if (x <= y)
+    x++;
+    y--;
+z++;
+
+```
+
+Only the `x++` statement is executed if the condition is true, but the indentation leads many to believe otherwise. Even experienced C programmers will sometimes stare at it a long time wondering as to why `y` is being decremented even for `x > y`.
+Because there are no begin/end brackets, Python is much less prone to coding-style conflicts. In C there are many different ways to place the braces. After becoming used to reading and writing code using a particular style, it is normal to feel somewhat uneasy when reading (or being required to write) in a different one.
+Many coding styles place begin/end brackets on a line by themselves. This makes programs considerably longer and wastes valuable screen space, making it harder to get a good overview of a program. Ideally, a function should fit on one screen (say, 20–30 lines). 20 lines of Python can do a lot more work than 20 lines of C. This is not solely due to the lack of begin/end brackets – the lack of declarations and the high-level data types are also responsible – but the indentation-based syntax certainly helps.
+## [Why am I getting strange results with simple arithmetic operations?](https://docs.python.org/3/faq/design.html#id4)[¶](https://docs.python.org/3/faq/design.html#why-am-i-getting-strange-results-with-simple-arithmetic-operations "Link to this heading")
+See the next question.
+## [Why are floating-point calculations so inaccurate?](https://docs.python.org/3/faq/design.html#id5)[¶](https://docs.python.org/3/faq/design.html#why-are-floating-point-calculations-so-inaccurate "Link to this heading")
+Users are often surprised by results like this:
+>>>```
+>>> 1.2 - 1.0
+0.19999999999999996
+
+```
+
+and think it is a bug in Python. It’s not. This has little to do with Python, and much more to do with how the underlying platform handles floating-point numbers.
+The [`float`](https://docs.python.org/3/library/functions.html#float "float") type in CPython uses a C `double` for storage. A [`float`](https://docs.python.org/3/library/functions.html#float "float") object’s value is stored in binary floating-point with a fixed precision (typically 53 bits) and Python uses C operations, which in turn rely on the hardware implementation in the processor, to perform floating-point operations. This means that as far as floating-point operations are concerned, Python behaves like many popular languages including C and Java.
+Many numbers that can be written easily in decimal notation cannot be expressed exactly in binary floating point. For example, after:
+>>>```
+>>> x = 1.2
+
+```
+
+the value stored for `x` is a (very good) approximation to the decimal value `1.2`, but is not exactly equal to it. On a typical machine, the actual stored value is:
+```
+1.0011001100110011001100110011001100110011001100110011 (binary)
+
+```
+
+which is exactly:
+```
+1.1999999999999999555910790149937383830547332763671875 (decimal)

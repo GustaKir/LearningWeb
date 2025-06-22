@@ -1,0 +1,78 @@
+Title: Best Practices for Multiprocessing in Python
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: In Python's multiprocessing module, caution is advised against sending shared objects between processes via pipes or queues. Instead, leverage inheritance from ancestor processes for shared resources. Additionally, avoid terminating processes with `Process.terminate`, as it can destabilize shared resources like locks and queues.
+---
+
+n.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") need to be picklable so that child processes can use them. However, one should generally avoid sending shared objects to other processes using pipes or queues. Instead you should arrange the program so that a process which needs access to a shared resource created elsewhere can inherit it from an ancestor process.
+Avoid terminating processes
+> Using the [`Process.terminate`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.terminate "multiprocessing.Process.terminate") method to stop a process is liable to cause any shared resources (such as locks, semaphores, pipes and queues) currently being used by the process to become broken or unavailable to other processes.
+> Therefore it is probably best to only consider using [`Process.terminate`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.terminate "multiprocessing.Process.terminate") on processes which never use any shared resources.
+Joining processes that use queues
+> Bear in mind that a process that has put items in a queue will wait before terminating until all the buffered items are fed by the “feeder” thread to the underlying pipe. (The child process can call the [`Queue.cancel_join_thread`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue.cancel_join_thread "multiprocessing.Queue.cancel_join_thread") method of the queue to avoid this behaviour.)
+> This means that whenever you use a queue you need to make sure that all items which have been put on the queue will eventually be removed before the process is joined. Otherwise you cannot be sure that processes which have put items on the queue will terminate. Remember also that non-daemonic processes will be joined automatically.
+> An example which will deadlock is the following:
+> ```
+frommultiprocessingimport Process, Queue
+deff(q):
+  q.put('X' * 1000000)
+if __name__ == '__main__':
+  queue = Queue()
+  p = Process(target=f, args=(queue,))
+  p.start()
+  p.join()          # this deadlocks
+  obj = queue.get()
+
+```
+
+> A fix here would be to swap the last two lines (or simply remove the `p.join()` line).
+Explicitly pass resources to child processes
+> On POSIX using the _fork_ start method, a child process can make use of a shared resource created in a parent process using a global resource. However, it is better to pass the object as an argument to the constructor for the child process.
+> Apart from making the code (potentially) compatible with Windows and the other start methods this also ensures that as long as the child process is still alive the object will not be garbage collected in the parent process. This might be important if some resource is freed when the object is garbage collected in the parent process.
+> So for instance
+> ```
+frommultiprocessingimport Process, Lock
+deff():
+  ... do something using "lock" ...
+if __name__ == '__main__':
+  lock = Lock()
+  for i in range(10):
+    Process(target=f).start()
+
+```
+
+> should be rewritten as
+> ```
+frommultiprocessingimport Process, Lock
+deff(l):
+  ... do something using "l" ...
+if __name__ == '__main__':
+  lock = Lock()
+  for i in range(10):
+    Process(target=f, args=(lock,)).start()
+
+```
+
+Beware of replacing [`sys.stdin`](https://docs.python.org/3/library/sys.html#sys.stdin "sys.stdin") with a “file like object”
+> [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") originally unconditionally called:
+> ```
+os.close(sys.stdin.fileno())
+
+```
+
+> in the `multiprocessing.Process._bootstrap()` method — this resulted in issues with processes-in-processes. This has been changed to:
+> ```
+sys.stdin.close()
+sys.stdin = open(os.open(os.devnull, os.O_RDONLY), closefd=False)
+
+```
+
+> Which solves the fundamental issue of processes colliding with each other resulting in a bad file descriptor error, but introduces a potential danger to applications which replace [`sys.stdin()`](https://docs.python.org/3/library/sys.html#sys.stdin "sys.stdin") with a “file-like object” with output buffering. This danger is that if multiple processes call [`close()`](https://docs.python.org/3/library/io.html#io.IOBase.close "io.IOBase.close") on this file-like object, it could result in the same data being flushed to the object multiple times, resulting in corruption.
+> If you write a file-like object and implement your own caching, you can make it fork-safe by storing the pid whenever you append to the cache, and discarding the cache when the pid changes. For example:
+> ```
+@property
+defcache(self):
+  pid = os.getpid()
+  if pid != self._pid:
+    self._pid = pid
+    self._cache = []
+  return self._cache

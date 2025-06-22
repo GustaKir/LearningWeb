@@ -1,0 +1,40 @@
+Title: Connecting Write Pipe in Asyncio Event Loop
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: The `loop.connect_write_pipe` method registers the write end of a pipe in the event loop. It requires a protocol factory that returns an asyncio protocol implementation and a file-like object as the pipe. The method returns a pair consisting of a transport that supports the `WriteTransport` interface and a protocol instance. When using the `SelectorEventLoop`, the pipe is set to non-blocking mode.
+---
+
+_async_ loop.connect_write_pipe(_protocol_factory_ , _pipe_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.connect_write_pipe "Link to this definition")
+    
+Register the write end of _pipe_ in the event loop.
+_protocol_factory_ must be a callable returning an [asyncio protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-protocol) implementation.
+_pipe_ is [file-like object](https://docs.python.org/3/glossary.html#term-file-object).
+Return pair `(transport, protocol)`, where _transport_ supports [`WriteTransport`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport "asyncio.WriteTransport") interface and _protocol_ is an object instantiated by the _protocol_factory_.
+With [`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") event loop, the _pipe_ is set to non-blocking mode.
+Note
+[`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") does not support the above methods on Windows. Use [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop") instead for Windows.
+See also
+The [`loop.subprocess_exec()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.subprocess_exec "asyncio.loop.subprocess_exec") and [`loop.subprocess_shell()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.subprocess_shell "asyncio.loop.subprocess_shell") methods.
+### [Unix signals](https://docs.python.org/3/library/asyncio-eventloop.html#id13)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#unix-signals "Link to this heading") 
+
+loop.add_signal_handler(_signum_ , _callback_ , _* args_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_signal_handler "Link to this definition")
+    
+Set _callback_ as the handler for the _signum_ signal.
+The callback will be invoked by _loop_ , along with other queued callbacks and runnable coroutines of that event loop. Unlike signal handlers registered using [`signal.signal()`](https://docs.python.org/3/library/signal.html#signal.signal "signal.signal"), a callback registered with this function is allowed to interact with the event loop.
+Raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if the signal number is invalid or uncatchable. Raise [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") if there is a problem setting up the handler.
+Use [`functools.partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") [to pass keyword arguments](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-pass-keywords) to _callback_.
+Like [`signal.signal()`](https://docs.python.org/3/library/signal.html#signal.signal "signal.signal"), this function must be invoked in the main thread. 
+
+loop.remove_signal_handler(_sig_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.remove_signal_handler "Link to this definition")
+    
+Remove the handler for the _sig_ signal.
+Return `True` if the signal handler was removed, or `False` if no handler was set for the given signal.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+See also
+The [`signal`](https://docs.python.org/3/library/signal.html#module-signal "signal: Set handlers for asynchronous events.") module.
+### [Executing code in thread or process pools](https://docs.python.org/3/library/asyncio-eventloop.html#id14)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#executing-code-in-thread-or-process-pools "Link to this heading") 
+
+_awaitable _loop.run_in_executor(_executor_ , _func_ , _* args_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "Link to this definition")
+    
+Arrange for _func_ to be called in the specified executor.
+The _executor_ argument should be an [`concurrent.futures.Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor "concurrent.futures.Executor") instance. The default executor is used if _executor_ is `None`. The default executor can be set by [`loop.set_default_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.set_default_executor "asyncio.loop.set_default_executor"), otherwise, a [`concurrent.futures.ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor") will be lazy-initialized and used by [`run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor") if needed.
+Example:

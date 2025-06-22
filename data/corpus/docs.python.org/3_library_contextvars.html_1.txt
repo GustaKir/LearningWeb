@@ -1,0 +1,71 @@
+Title: Context Variables in Python
+URL: https://docs.python.org/3/library/contextvars.html
+Summary: This section explains the parameters of the `ContextVar` class, emphasizing the use of the required `_name_` parameter for debugging and the optional `_default_` parameter for handling absent values. It highlights the importance of creating context variables at the module level to ensure proper garbage collection, as `Context` objects maintain strong references to them.
+---
+
+```
+
+The required _name_ parameter is used for introspection and debug purposes.
+The optional keyword-only _default_ parameter is returned by [`ContextVar.get()`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.get "contextvars.ContextVar.get") when no value for the variable is found in the current context.
+**Important:** Context Variables should be created at the top module level and never in closures. [`Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") objects hold strong references to context variables which prevents context variables from being properly garbage collected. 
+
+name[¶](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.name "Link to this definition")
+    
+The name of the variable. This is a read-only property.
+Added in version 3.7.1. 
+
+get([_default_])[¶](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.get "Link to this definition")
+    
+Return a value for the context variable for the current context.
+If there is no value for the variable in the current context, the method will:
+  * return the value of the _default_ argument of the method, if provided; or
+  * return the default value for the context variable, if it was created with one; or
+  * raise a [`LookupError`](https://docs.python.org/3/library/exceptions.html#LookupError "LookupError").
+
+
+
+set(_value_)[¶](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.set "Link to this definition")
+    
+Call to set a new value for the context variable in the current context.
+The required _value_ argument is the new value for the context variable.
+Returns a [`Token`](https://docs.python.org/3/library/contextvars.html#contextvars.Token "contextvars.Token") object that can be used to restore the variable to its previous value via the [`ContextVar.reset()`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.reset "contextvars.ContextVar.reset") method. 
+
+reset(_token_)[¶](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.reset "Link to this definition")
+    
+Reset the context variable to the value it had before the [`ContextVar.set()`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.set "contextvars.ContextVar.set") that created the _token_ was used.
+For example:
+```
+var = ContextVar('var')
+token = var.set('new value')
+# code that uses 'var'; var.get() returns 'new value'.
+var.reset(token)
+# After the reset call the var has no value again, so
+# var.get() would raise a LookupError.
+
+```
+
+
+_class_ contextvars.Token[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Token "Link to this definition")
+    
+_Token_ objects are returned by the [`ContextVar.set()`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.set "contextvars.ContextVar.set") method. They can be passed to the [`ContextVar.reset()`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.reset "contextvars.ContextVar.reset") method to revert the value of the variable to what it was before the corresponding _set_. 
+
+var[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Token.var "Link to this definition")
+    
+A read-only property. Points to the [`ContextVar`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar "contextvars.ContextVar") object that created the token. 
+
+old_value[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Token.old_value "Link to this definition")
+    
+A read-only property. Set to the value the variable had before the [`ContextVar.set()`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar.set "contextvars.ContextVar.set") method call that created the token. It points to [`Token.MISSING`](https://docs.python.org/3/library/contextvars.html#contextvars.Token.MISSING "contextvars.Token.MISSING") if the variable was not set before the call. 
+
+MISSING[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Token.MISSING "Link to this definition")
+    
+A marker object used by [`Token.old_value`](https://docs.python.org/3/library/contextvars.html#contextvars.Token.old_value "contextvars.Token.old_value").
+## Manual Context Management[¶](https://docs.python.org/3/library/contextvars.html#manual-context-management "Link to this heading") 
+
+contextvars.copy_context()[¶](https://docs.python.org/3/library/contextvars.html#contextvars.copy_context "Link to this definition")
+    
+Returns a copy of the current [`Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") object.
+The following snippet gets a copy of the current context and prints all variables and their values that are set in it:
+```
+ctx: Context = copy_context()
+print(list(ctx.items()))

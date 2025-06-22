@@ -1,0 +1,122 @@
+Title: Function and Class Definitions in AST
+URL: https://docs.python.org/3/library/ast.html
+Summary: This section introduces the 'FunctionDef' class in the AST library, which represents a function definition in Python. It outlines the parameters of 'FunctionDef', including the function name, arguments, body, decorators, return annotations, and type parameters.
+---
+
+```
+
+Added in version 3.12.
+Changed in version 3.13: Added the _default_value_ parameter.
+### Function and class definitions[¶](https://docs.python.org/3/library/ast.html#function-and-class-definitions "Link to this heading") 
+
+_class_ ast.FunctionDef(_name_ , _args_ , _body_ , _decorator_list_ , _returns_ , _type_comment_ , _type_params_)[¶](https://docs.python.org/3/library/ast.html#ast.FunctionDef "Link to this definition")
+    
+A function definition.
+  * `name` is a raw string of the function name.
+  * `args` is an [`arguments`](https://docs.python.org/3/library/ast.html#ast.arguments "ast.arguments") node.
+  * `body` is the list of nodes inside the function.
+  * `decorator_list` is the list of decorators to be applied, stored outermost first (i.e. the first in the list will be applied last).
+  * `returns` is the return annotation.
+  * `type_params` is a list of [type parameters](https://docs.python.org/3/library/ast.html#ast-type-params).
+
+
+
+type_comment[¶](https://docs.python.org/3/library/ast.html#ast.FunctionDef.type_comment "Link to this definition")
+    
+`type_comment` is an optional string with the type annotation as a comment.
+Changed in version 3.12: Added `type_params`. 
+
+_class_ ast.Lambda(_args_ , _body_)[¶](https://docs.python.org/3/library/ast.html#ast.Lambda "Link to this definition")
+    
+`lambda` is a minimal function definition that can be used inside an expression. Unlike [`FunctionDef`](https://docs.python.org/3/library/ast.html#ast.FunctionDef "ast.FunctionDef"), `body` holds a single node.
+>>>```
+>>> print(ast.dump(ast.parse('lambda x,y: ...'), indent=4))
+Module(
+  body=[
+    Expr(
+      value=Lambda(
+        args=arguments(
+          args=[
+            arg(arg='x'),
+            arg(arg='y')]),
+        body=Constant(value=Ellipsis)))])
+
+```
+
+
+_class_ ast.arguments(_posonlyargs_ , _args_ , _vararg_ , _kwonlyargs_ , _kw_defaults_ , _kwarg_ , _defaults_)[¶](https://docs.python.org/3/library/ast.html#ast.arguments "Link to this definition")
+    
+The arguments for a function.
+  * `posonlyargs`, `args` and `kwonlyargs` are lists of [`arg`](https://docs.python.org/3/library/ast.html#ast.arg "ast.arg") nodes.
+  * `vararg` and `kwarg` are single [`arg`](https://docs.python.org/3/library/ast.html#ast.arg "ast.arg") nodes, referring to the `*args, **kwargs` parameters.
+  * `kw_defaults` is a list of default values for keyword-only arguments. If one is `None`, the corresponding argument is required.
+  * `defaults` is a list of default values for arguments that can be passed positionally. If there are fewer defaults, they correspond to the last n arguments.
+
+
+
+_class_ ast.arg(_arg_ , _annotation_ , _type_comment_)[¶](https://docs.python.org/3/library/ast.html#ast.arg "Link to this definition")
+    
+A single argument in a list. `arg` is a raw string of the argument name; `annotation` is its annotation, such as a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name") node. 
+
+type_comment[¶](https://docs.python.org/3/library/ast.html#ast.arg.type_comment "Link to this definition")
+    
+`type_comment` is an optional string with the type annotation as a comment
+>>>```
+>>> print(ast.dump(ast.parse("""\
+... @decorator1
+... @decorator2
+... def f(a: 'annotation', b=1, c=2, *d, e, f=3, **g) -> 'return annotation':
+...   pass
+... """), indent=4))
+Module(
+  body=[
+    FunctionDef(
+      name='f',
+      args=arguments(
+        args=[
+          arg(
+            arg='a',
+            annotation=Constant(value='annotation')),
+          arg(arg='b'),
+          arg(arg='c')],
+        vararg=arg(arg='d'),
+        kwonlyargs=[
+          arg(arg='e'),
+          arg(arg='f')],
+        kw_defaults=[
+          None,
+          Constant(value=3)],
+        kwarg=arg(arg='g'),
+        defaults=[
+          Constant(value=1),
+          Constant(value=2)]),
+      body=[
+        Pass()],
+      decorator_list=[
+        Name(id='decorator1', ctx=Load()),
+        Name(id='decorator2', ctx=Load())],
+      returns=Constant(value='return annotation'))])
+
+```
+
+
+_class_ ast.Return(_value_)[¶](https://docs.python.org/3/library/ast.html#ast.Return "Link to this definition")
+    
+A `return` statement.
+>>>```
+>>> print(ast.dump(ast.parse('return 4'), indent=4))
+Module(
+  body=[
+    Return(
+      value=Constant(value=4))])
+
+```
+
+
+_class_ ast.Yield(_value_)[¶](https://docs.python.org/3/library/ast.html#ast.Yield "Link to this definition")
+
+
+_class_ ast.YieldFrom(_value_)[¶](https://docs.python.org/3/library/ast.html#ast.YieldFrom "Link to this definition")
+    
+A `yield` or `yield from` expression. Because these are expressions, they must be wrapped in an [`Expr`](https://docs.python.org/3/library/ast.html#ast.Expr "ast.Expr") node if the value sent back is not used.
+>>>

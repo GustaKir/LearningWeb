@@ -1,0 +1,53 @@
+Title: PEP 314: Metadata for Python Software Packages v1.1
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This chunk discusses enhancements to the Distutils setup function introduced in PEP 314, including new keyword parameters such as `requires`, `provides`, and `obsoletes` for better dependency management. It also introduces the `download_url` parameter for specifying the source code URL, facilitating the retrieval of package dependencies.
+---
+
+```
+
+See also 
+
+[**PEP 309**](https://peps.python.org/pep-0309/) - Partial Function Application
+    
+PEP proposed and written by Peter Harris; implemented by Hye-Shik Chang and Nick Coghlan, with adaptations by Raymond Hettinger.
+## PEP 314: Metadata for Python Software Packages v1.1[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-314-metadata-for-python-software-packages-v1-1 "Link to this heading")
+Some simple dependency support was added to Distutils. The `setup()` function now has `requires`, `provides`, and `obsoletes` keyword parameters. When you build a source distribution using the `sdist` command, the dependency information will be recorded in the `PKG-INFO` file.
+Another new keyword parameter is `download_url`, which should be set to a URL for the package’s source code. This means it’s now possible to look up an entry in the package index, determine the dependencies for a package, and download the required packages.
+```
+VERSION = '1.0'
+setup(name='PyPackage',
+   version=VERSION,
+   requires=['numarray', 'zlib (>=1.1.4)'],
+   obsoletes=['OldPackage']
+   download_url=('http://www.example.com/pypackage/dist/pkg-%s.tar.gz'
+          % VERSION),
+   )
+
+```
+
+Another new enhancement to the Python package index at <https://pypi.org> is storing source and binary archives for a package. The new **upload** Distutils command will upload a package to the repository.
+Before a package can be uploaded, you must be able to build a distribution using the **sdist** Distutils command. Once that works, you can run `python setup.py upload` to add your package to the PyPI archive. Optionally you can GPG-sign the package by supplying the `--sign` and `--identity` options.
+Package uploading was implemented by Martin von Löwis and Richard Jones.
+See also 
+
+[**PEP 314**](https://peps.python.org/pep-0314/) - Metadata for Python Software Packages v1.1
+    
+PEP proposed and written by A.M. Kuchling, Richard Jones, and Fred Drake; implemented by Richard Jones and Fred Drake.
+## PEP 328: Absolute and Relative Imports[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-328-absolute-and-relative-imports "Link to this heading")
+The simpler part of [**PEP 328**](https://peps.python.org/pep-0328/) was implemented in Python 2.4: parentheses could now be used to enclose the names imported from a module using the `from ... import ...` statement, making it easier to import many different names.
+The more complicated part has been implemented in Python 2.5: importing a module can be specified to use absolute or package-relative imports. The plan is to move toward making absolute imports the default in future versions of Python.
+Let’s say you have a package directory like this:
+```
+pkg/
+pkg/__init__.py
+pkg/main.py
+pkg/string.py
+
+```
+
+This defines a package named `pkg` containing the `pkg.main` and `pkg.string` submodules.
+Consider the code in the `main.py` module. What happens if it executes the statement `import string`? In Python 2.4 and earlier, it will first look in the package’s directory to perform a relative import, finds `pkg/string.py`, imports the contents of that file as the `pkg.string` module, and that module is bound to the name `string` in the `pkg.main` module’s namespace.
+That’s fine if `pkg.string` was what you wanted. But what if you wanted Python’s standard [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") module? There’s no clean way to ignore `pkg.string` and look for the standard module; generally you had to look at the contents of `sys.modules`, which is slightly unclean. Holger Krekel’s `py.std` package provides a tidier way to perform imports from the standard library, `import py; py.std.string.join()`, but that package isn’t available on all Python installations.
+Reading code which relies on relative imports is also less clear, because a reader may be confused about which module, [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") or `pkg.string`, is intended to be used. Python users soon learned not to duplicate the names of standard library modules in the names of their packages’ submodules, but you can’t protect against having your submodule’s name being used for a new module added in a future version of Python.
+In Python 2.5, you can switch [`import`](https://docs.python.org/3/reference/simple_stmts.html#import)’s behaviour to absolute imports using a `from __future__ import absolute_import` directive. This absolute-import behaviour will become the default in a future version (probably Python 2.7). Once absolute imports are the default, `import string` will always find the standard library’s version. It’s suggested that users should begin using absolute imports as much as possible, so it’s preferable to begin writing `from pkg import string` in your code.
+Relative imports are still possible by adding a leading period to the module name when using the `from ... import` form:

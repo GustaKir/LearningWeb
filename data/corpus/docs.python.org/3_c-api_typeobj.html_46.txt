@@ -1,0 +1,140 @@
+Title: Python C API Type Object Functions
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section defines a function pointer type 'objobjargproc' used in Python's C API and provides examples of Python type definitions, including common usages and edge cases. For further examples and tutorials, it refers to additional documentation on defining extension types.
+---
+
+typedefint(*objobjargproc)([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*,[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*,[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*)[¶](https://docs.python.org/3/c-api/typeobj.html#c.objobjargproc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+## Examples[¶](https://docs.python.org/3/c-api/typeobj.html#examples "Link to this heading")
+The following are simple examples of Python type definitions. They include common usage you may encounter. Some demonstrate tricky corner cases. For more examples, practical info, and a tutorial, see [Defining Extension Types: Tutorial](https://docs.python.org/3/extending/newtypes_tutorial.html#defining-new-types) and [Defining Extension Types: Assorted Topics](https://docs.python.org/3/extending/newtypes.html#new-types-topics).
+A basic [static type](https://docs.python.org/3/c-api/typeobj.html#static-types):
+```
+typedefstruct{
+PyObject_HEAD
+constchar*data;
+}MyObject;
+staticPyTypeObjectMyObject_Type={
+PyVarObject_HEAD_INIT(NULL,0)
+.tp_name="mymod.MyObject",
+.tp_basicsize=sizeof(MyObject),
+.tp_doc=PyDoc_STR("My objects"),
+.tp_new=myobj_new,
+.tp_dealloc=(destructor)myobj_dealloc,
+.tp_repr=(reprfunc)myobj_repr,
+};
+
+```
+
+You may also find older code (especially in the CPython code base) with a more verbose initializer:
+```
+staticPyTypeObjectMyObject_Type={
+PyVarObject_HEAD_INIT(NULL,0)
+"mymod.MyObject",/* tp_name */
+sizeof(MyObject),/* tp_basicsize */
+0,/* tp_itemsize */
+(destructor)myobj_dealloc,/* tp_dealloc */
+0,/* tp_vectorcall_offset */
+0,/* tp_getattr */
+0,/* tp_setattr */
+0,/* tp_as_async */
+(reprfunc)myobj_repr,/* tp_repr */
+0,/* tp_as_number */
+0,/* tp_as_sequence */
+0,/* tp_as_mapping */
+0,/* tp_hash */
+0,/* tp_call */
+0,/* tp_str */
+0,/* tp_getattro */
+0,/* tp_setattro */
+0,/* tp_as_buffer */
+0,/* tp_flags */
+PyDoc_STR("My objects"),/* tp_doc */
+0,/* tp_traverse */
+0,/* tp_clear */
+0,/* tp_richcompare */
+0,/* tp_weaklistoffset */
+0,/* tp_iter */
+0,/* tp_iternext */
+0,/* tp_methods */
+0,/* tp_members */
+0,/* tp_getset */
+0,/* tp_base */
+0,/* tp_dict */
+0,/* tp_descr_get */
+0,/* tp_descr_set */
+0,/* tp_dictoffset */
+0,/* tp_init */
+0,/* tp_alloc */
+myobj_new,/* tp_new */
+};
+
+```
+
+A type that supports weakrefs, instance dicts, and hashing:
+```
+typedefstruct{
+PyObject_HEAD
+constchar*data;
+}MyObject;
+staticPyTypeObjectMyObject_Type={
+PyVarObject_HEAD_INIT(NULL,0)
+.tp_name="mymod.MyObject",
+.tp_basicsize=sizeof(MyObject),
+.tp_doc=PyDoc_STR("My objects"),
+.tp_flags=Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE|
+Py_TPFLAGS_HAVE_GC|Py_TPFLAGS_MANAGED_DICT|
+Py_TPFLAGS_MANAGED_WEAKREF,
+.tp_new=myobj_new,
+.tp_traverse=(traverseproc)myobj_traverse,
+.tp_clear=(inquiry)myobj_clear,
+.tp_alloc=PyType_GenericNew,
+.tp_dealloc=(destructor)myobj_dealloc,
+.tp_repr=(reprfunc)myobj_repr,
+.tp_hash=(hashfunc)myobj_hash,
+.tp_richcompare=PyBaseObject_Type.tp_richcompare,
+};
+
+```
+
+A str subclass that cannot be subclassed and cannot be called to create instances (e.g. uses a separate factory func) using [`Py_TPFLAGS_DISALLOW_INSTANTIATION`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_DISALLOW_INSTANTIATION "Py_TPFLAGS_DISALLOW_INSTANTIATION") flag:
+```
+typedefstruct{
+PyUnicodeObjectraw;
+char*extra;
+}MyStr;
+staticPyTypeObjectMyStr_Type={
+PyVarObject_HEAD_INIT(NULL,0)
+.tp_name="mymod.MyStr",
+.tp_basicsize=sizeof(MyStr),
+.tp_base=NULL,// set to &PyUnicode_Type in module init
+.tp_doc=PyDoc_STR("my custom str"),
+.tp_flags=Py_TPFLAGS_DEFAULT|Py_TPFLAGS_DISALLOW_INSTANTIATION,
+.tp_repr=(reprfunc)myobj_repr,
+};
+
+```
+
+The simplest [static type](https://docs.python.org/3/c-api/typeobj.html#static-types) with fixed-length instances:
+```
+typedefstruct{
+PyObject_HEAD
+}MyObject;
+staticPyTypeObjectMyObject_Type={
+PyVarObject_HEAD_INIT(NULL,0)
+.tp_name="mymod.MyObject",
+};
+
+```
+
+The simplest [static type](https://docs.python.org/3/c-api/typeobj.html#static-types) with variable-length instances:
+```
+typedefstruct{
+PyObject_VAR_HEAD
+constchar*data[1];
+}MyObject;
+staticPyTypeObjectMyObject_Type={
+PyVarObject_HEAD_INIT(NULL,0)
+.tp_name="mymod.MyObject",
+.tp_basicsize=sizeof(MyObject)-sizeof(char*),
+.tp_itemsize=sizeof(char*),
+};

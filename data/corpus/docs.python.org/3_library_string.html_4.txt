@@ -1,0 +1,30 @@
+Title: String Formatting in Python
+URL: https://docs.python.org/3/library/string.html
+Summary: This section explains the structure of replacement fields in Python's string formatting, detailing how to specify object values using _field_name_, _conversion_, and _format_spec_. It describes how _arg_name_ can be a positional or keyword argument, and clarifies how numerical arg_names are interpreted. Additional reference is made to the Format Specification Mini-Language.
+---
+
+```
+
+In less formal terms, the replacement field can start with a _field_name_ that specifies the object whose value is to be formatted and inserted into the output instead of the replacement field. The _field_name_ is optionally followed by a _conversion_ field, which is preceded by an exclamation point `'!'`, and a _format_spec_ , which is preceded by a colon `':'`. These specify a non-default format for the replacement value.
+See also the [Format Specification Mini-Language](https://docs.python.org/3/library/string.html#formatspec) section.
+The _field_name_ itself begins with an _arg_name_ that is either a number or a keyword. If it’s a number, it refers to a positional argument, and if it’s a keyword, it refers to a named keyword argument. An _arg_name_ is treated as a number if a call to [`str.isdecimal()`](https://docs.python.org/3/library/stdtypes.html#str.isdecimal "str.isdecimal") on the string would return true. If the numerical arg_names in a format string are 0, 1, 2, … in sequence, they can all be omitted (not just some) and the numbers 0, 1, 2, … will be automatically inserted in that order. Because _arg_name_ is not quote-delimited, it is not possible to specify arbitrary dictionary keys (e.g., the strings `'10'` or `':-]'`) within a format string. The _arg_name_ can be followed by any number of index or attribute expressions. An expression of the form `'.name'` selects the named attribute using [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr"), while an expression of the form `'[index]'` does an index lookup using [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__").
+Changed in version 3.1: The positional argument specifiers can be omitted for [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format"), so `'{} {}'.format(a, b)` is equivalent to `'{0} {1}'.format(a, b)`.
+Changed in version 3.4: The positional argument specifiers can be omitted for [`Formatter`](https://docs.python.org/3/library/string.html#string.Formatter "string.Formatter").
+Some simple format string examples:
+```
+"First, thou shalt count to {0}" # References first positional argument
+"Bring me a {}"          # Implicitly references the first positional argument
+"From {} to {}"          # Same as "From {0} to {1}"
+"My quest is {name}"       # References keyword argument 'name'
+"Weight in tons {0.weight}"    # 'weight' attribute of first positional arg
+"Units destroyed: {players[0]}"  # First element of keyword argument 'players'.
+
+```
+
+The _conversion_ field causes a type coercion before formatting. Normally, the job of formatting a value is done by the [`__format__()`](https://docs.python.org/3/reference/datamodel.html#object.__format__ "object.__format__") method of the value itself. However, in some cases it is desirable to force a type to be formatted as a string, overriding its own definition of formatting. By converting the value to a string before calling [`__format__()`](https://docs.python.org/3/reference/datamodel.html#object.__format__ "object.__format__"), the normal formatting logic is bypassed.
+Three conversion flags are currently supported: `'!s'` which calls [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") on the value, `'!r'` which calls [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") and `'!a'` which calls [`ascii()`](https://docs.python.org/3/library/functions.html#ascii "ascii").
+Some examples:
+```
+"Harold's a clever {0!s}"    # Calls str() on the argument first
+"Bring out the holy {name!r}"  # Calls repr() on the argument first
+"More {!a}"           # Calls ascii() on the argument first

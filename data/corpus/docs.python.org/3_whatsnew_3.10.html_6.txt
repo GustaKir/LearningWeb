@@ -1,0 +1,102 @@
+Title: Python 3.10: Structural Pattern Matching
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: This section discusses the introduction of structural pattern matching in Python 3.10, showcasing how to use positional parameters with classes like Point. It elaborates on defining positions for attributes in patterns through `__match_args__` and includes examples of matching points based on their coordinates.
+---
+
+```
+classPoint:
+  x: int
+  y: int
+deflocation(point):
+  match point:
+    case Point(x=0, y=0):
+      print("Origin is the point's location.")
+    case Point(x=0, y=y):
+      print(f"Y={y} and the point is on the y-axis.")
+    case Point(x=x, y=0):
+      print(f"X={x} and the point is on the x-axis.")
+    case Point():
+      print("The point is located somewhere else on the plane.")
+    case_:
+      print("Not a point")
+
+```
+
+##### Patterns with positional parameters[¶](https://docs.python.org/3/whatsnew/3.10.html#patterns-with-positional-parameters "Link to this heading")
+You can use positional parameters with some builtin classes that provide an ordering for their attributes (e.g. dataclasses). You can also define a specific position for attributes in patterns by setting the `__match_args__` special attribute in your classes. If it’s set to (“x”, “y”), the following patterns are all equivalent (and all bind the `y` attribute to the `var` variable):
+```
+Point(1, var)
+Point(1, y=var)
+Point(x=1, y=var)
+Point(y=var, x=1)
+
+```
+
+#### Nested patterns[¶](https://docs.python.org/3/whatsnew/3.10.html#nested-patterns "Link to this heading")
+Patterns can be arbitrarily nested. For example, if our data is a short list of points, it could be matched like this:
+```
+match points:
+  case []:
+    print("No points in the list.")
+  case [Point(0, 0)]:
+    print("The origin is the only point in the list.")
+  case [Point(x, y)]:
+    print(f"A single point {x}, {y} is in the list.")
+  case [Point(0, y1), Point(0, y2)]:
+    print(f"Two points on the Y axis at {y1}, {y2} are in the list.")
+  case_:
+    print("Something else is found in the list.")
+
+```
+
+#### Complex patterns and the wildcard[¶](https://docs.python.org/3/whatsnew/3.10.html#complex-patterns-and-the-wildcard "Link to this heading")
+To this point, the examples have used `_` alone in the last case statement. A wildcard can be used in more complex patterns, such as `('error', code, _)`. For example:
+```
+match test_variable:
+  case ('warning', code, 40):
+    print("A warning has been received.")
+  case('error', code, _):
+    print(f"An error {code} occurred.")
+
+```
+
+In the above case, `test_variable` will match for (‘error’, code, 100) and (‘error’, code, 800).
+#### Guard[¶](https://docs.python.org/3/whatsnew/3.10.html#guard "Link to this heading")
+We can add an `if` clause to a pattern, known as a “guard”. If the guard is false, `match` goes on to try the next case block. Note that value capture happens before the guard is evaluated:
+```
+match point:
+  case Point(x, y) if x == y:
+    print(f"The point is located on the diagonal Y=X at {x}.")
+  case Point(x, y):
+    print(f"Point is not on the diagonal.")
+
+```
+
+#### Other Key Features[¶](https://docs.python.org/3/whatsnew/3.10.html#other-key-features "Link to this heading")
+Several other key features:
+  * Like unpacking assignments, tuple and list patterns have exactly the same meaning and actually match arbitrary sequences. Technically, the subject must be a sequence. Therefore, an important exception is that patterns don’t match iterators. Also, to prevent a common mistake, sequence patterns don’t match strings.
+  * Sequence patterns support wildcards: `[x, y, *rest]` and `(x, y, *rest)` work similar to wildcards in unpacking assignments. The name after `*` may also be `_`, so `(x, y, *_)` matches a sequence of at least two items without binding the remaining items.
+  * Mapping patterns: `{"bandwidth": b, "latency": l}` captures the `"bandwidth"` and `"latency"` values from a dict. Unlike sequence patterns, extra keys are ignored. A wildcard `**rest` is also supported. (But `**_` would be redundant, so is not allowed.)
+  * Subpatterns may be captured using the `as` keyword:
+```
+case (Point(x1, y1), Point(x2, y2) as p2): ...
+
+```
+
+This binds x1, y1, x2, y2 like you would expect without the `as` clause, and p2 to the entire second item of the subject.
+  * Most literals are compared by equality. However, the singletons `True`, `False` and `None` are compared by identity.
+  * Named constants may be used in patterns. These named constants must be dotted names to prevent the constant from being interpreted as a capture variable:
+```
+fromenumimport Enum
+classColor(Enum):
+  RED = 0
+  GREEN = 1
+  BLUE = 2
+color = Color.GREEN
+match color:
+  case Color.RED:
+    print("I see red!")
+  case Color.GREEN:
+    print("Grass is green")
+  case Color.BLUE:
+    print("I'm feeling the blues :(")

@@ -1,0 +1,58 @@
+Title: PyModule_AddFunctions
+URL: https://docs.python.org/3/c-api/module.html
+Summary: The function PyModule_AddFunctions adds functions from a NULL-terminated array to a specified module. It is part of the Stable ABI since Python version 3.7. The functions typically accept the module as their first parameter, akin to instance methods in Python classes, and this operation is performed automatically when creating a module from PyModuleDef.
+---
+
+intPyModule_AddFunctions([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, [PyMethodDef](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef "PyMethodDef")*functions)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddFunctions "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Add the functions from the `NULL` terminated _functions_ array to _module_. Refer to the [`PyMethodDef`](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef "PyMethodDef") documentation for details on individual entries (due to the lack of a shared module namespace, module level “functions” implemented in C typically receive the module as their first parameter, making them similar to instance methods on Python classes). This function is called automatically when creating a module from `PyModuleDef`, using either `PyModule_Create` or `PyModule_FromDefAndSpec`.
+Added in version 3.5.
+### Support functions[¶](https://docs.python.org/3/c-api/module.html#support-functions "Link to this heading")
+The module initialization function (if using single phase initialization) or a function called from a module execution slot (if using multi-phase initialization), can use the following functions to help initialize the module state: 
+
+intPyModule_AddObjectRef([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, constchar*name, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.10._
+Add an object to _module_ as _name_. This is a convenience function which can be used from the module’s initialization function.
+On success, return `0`. On error, raise an exception and return `-1`.
+Example usage:
+```
+staticint
+add_spam(PyObject*module,intvalue)
+{
+PyObject*obj=PyLong_FromLong(value);
+if(obj==NULL){
+return-1;
+}
+intres=PyModule_AddObjectRef(module,"spam",obj);
+Py_DECREF(obj);
+returnres;
+}
+
+```
+
+To be convenient, the function accepts `NULL` _value_ with an exception set. In this case, return `-1` and just leave the raised exception unchanged.
+The example can also be written without checking explicitly if _obj_ is `NULL`:
+```
+staticint
+add_spam(PyObject*module,intvalue)
+{
+PyObject*obj=PyLong_FromLong(value);
+intres=PyModule_AddObjectRef(module,"spam",obj);
+Py_XDECREF(obj);
+returnres;
+}
+
+```
+
+Note that `Py_XDECREF()` should be used instead of `Py_DECREF()` in this case, since _obj_ can be `NULL`.
+The number of different _name_ strings passed to this function should be kept small, usually by only using statically allocated strings as _name_. For names that aren’t known at compile time, prefer calling [`PyUnicode_FromString()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FromString "PyUnicode_FromString") and [`PyObject_SetAttr()`](https://docs.python.org/3/c-api/object.html#c.PyObject_SetAttr "PyObject_SetAttr") directly. For more details, see [`PyUnicode_InternFromString()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_InternFromString "PyUnicode_InternFromString"), which may be used internally to create a key object.
+Added in version 3.10. 
+
+intPyModule_Add([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, constchar*name, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_Add "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Similar to [`PyModule_AddObjectRef()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "PyModule_AddObjectRef"), but “steals” a reference to _value_. It can be called with a result of function that returns a new reference without bothering to check its result or even saving it to a variable.
+Example usage:
+```
+if(PyModule_Add(module,"spam",PyBytes_FromString(value))<0){
+gotoerror;
+}

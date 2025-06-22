@@ -1,0 +1,35 @@
+Title: Introduction to Custom Components in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/custom-components/intro
+Summary: This section covers the basics of creating custom components in Streamlit. It includes instructions for adding dependencies using npm and details on setting up the Python API with `components.declare_component()` to facilitate data exchange between the frontend and backend of your component.
+---
+
+`npm add baseui `
+  * To build a static version of your component, run `npm run export`. See [Prepare your Component](https://docs.streamlit.io/publish#prepare-your-component) for more information
+
+
+### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#python-api)Python API
+`components.declare_component()` is all that's required to create your Component's Python API:
+` import streamlit.components.v1 as components  my_component = components.declare_component( "my_component",   url="http://localhost:3001" ) `
+You can then use the returned `my_component` function to send and receive data with your frontend code:
+`# Send data to the frontend using named arguments. return_value = my_component(name="Blackbeard", ship="Queen Anne's Revenge") # `my_component`'s return value is the data returned from the frontend. st.write("Value = ", return_value) `
+While the above is all you need to define from the Python side to have a working Component, we recommend creating a "wrapper" function with named arguments and default values, input validation and so on. This will make it easier for end-users to understand what data values your function accepts and allows for defining helpful docstrings.
+Please see [this example](https://github.com/streamlit/component-template/blob/master/template/my_component/__init__.py#L41-L77) from the Components-template for an example of creating a wrapper function.
+### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#data-serialization)Data serialization
+#### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#python--frontend)Python → Frontend
+You send data from Python to the frontend by passing keyword args to your Component's invoke function (that is, the function returned from `declare_component`). You can send the following types of data from Python to the frontend:
+  * Any JSON-serializable data
+  * `numpy.array`
+  * `pandas.DataFrame`
+
+
+Any JSON-serializable data gets serialized to a JSON string, and deserialized to its JavaScript equivalent. `numpy.array` and `pandas.DataFrame` get serialized using [Apache Arrow](https://arrow.apache.org/) and are deserialized as instances of `ArrowTable`, which is a custom type that wraps Arrow structures and provides a convenient API on top of them.
+Check out the [CustomDataframe](https://github.com/streamlit/component-template/tree/master/examples/CustomDataframe) and [SelectableDataTable](https://github.com/streamlit/component-template/tree/master/examples/SelectableDataTable) Component example code for more context on how to use `ArrowTable`.
+#### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#frontend--python)Frontend → Python
+You send data from the frontend to Python via the `Streamlit.setComponentValue()` API (which is part of the template code). Unlike arg-passing from Python → frontend, **this API takes a single value**. If you want to return multiple values, you'll need to wrap them in an `Array` or `Object`.
+Custom Components can send JSON-serializable data from the frontend to Python, as well as [Apache Arrow](http://arrow.apache.org/) `ArrowTable`s to represent dataframes.
+[Previous: Custom components](https://docs.streamlit.io/develop/concepts/custom-components)[Next: Create a Component](https://docs.streamlit.io/develop/concepts/custom-components/create) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

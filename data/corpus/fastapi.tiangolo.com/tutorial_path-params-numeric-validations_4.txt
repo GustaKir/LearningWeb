@@ -1,0 +1,110 @@
+Title: Path Parameters and Numeric Validations in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/
+Summary: This documentation chunk outlines the use of path parameters in FastAPI, including how to declare metadata, order parameters, and apply numeric validations such as checking for greater than or equal, and greater than/less than conditions.
+---
+
+Table of contents 
+  * [ Import Path  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#import-path)
+  * [ Declare metadata  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#declare-metadata)
+  * [ Order the parameters as you need  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#order-the-parameters-as-you-need)
+  * [ Order the parameters as you need, tricks  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#order-the-parameters-as-you-need-tricks)
+    * [ Better with `Annotated` ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#better-with-annotated)
+  * [ Number validations: greater than or equal  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#number-validations-greater-than-or-equal)
+  * [ Number validations: greater than and less than or equal  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#number-validations-greater-than-and-less-than-or-equal)
+  * [ Number validations: floats, greater than and less than  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#number-validations-floats-greater-than-and-less-than)
+  * [ Recap  ](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#recap)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+
+
+# Path Parameters and Numeric Validations[¶](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#path-parameters-and-numeric-validations "Permanent link")
+In the same way that you can declare more validations and metadata for query parameters with `Query`, you can declare the same type of validations and metadata for path parameters with `Path`.
+## Import Path[¶](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#import-path "Permanent link")
+First, import `Path` from `fastapi`, and import `Annotated`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: Annotated[int, Path(title="The ID of the item to get")],
+  q: Annotated[str | None, Query(alias="item-query")] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_2_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_2_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_2_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: Annotated[int, Path(title="The ID of the item to get")],
+  q: Annotated[Union[str, None], Query(alias="item-query")] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Path, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: Annotated[int, Path(title="The ID of the item to get")],
+  q: Annotated[Union[str, None], Query(alias="item-query")] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: int = Path(title="The ID of the item to get"),
+  q: str | None = Query(default=None, alias="item-query"),
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: int = Path(title="The ID of the item to get"),
+  q: Union[str, None] = Query(default=None, alias="item-query"),
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results

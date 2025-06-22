@@ -1,0 +1,101 @@
+Title: Raw String Notation in Regular Expressions
+URL: https://docs.python.org/3/library/re.html
+Summary: Raw string notation in Python (`r'text'`) simplifies the use of regular expressions by eliminating the need for double backslashes to escape characters. This section illustrates how raw strings make expressions more readable and maintainable when dealing with backslashes, providing examples for both cases.
+---
+
+```
+
+### Raw String Notation[¶](https://docs.python.org/3/library/re.html#raw-string-notation "Link to this heading")
+Raw string notation (`r"text"`) keeps regular expressions sane. Without it, every backslash (`'\'`) in a regular expression would have to be prefixed with another one to escape it. For example, the two following lines of code are functionally identical:
+>>>```
+>>> re.match(r"\W(.)\1\W", " ff ")
+<re.Match object; span=(0, 4), match=' ff '>
+>>> re.match("\\W(.)\\1\\W", " ff ")
+<re.Match object; span=(0, 4), match=' ff '>
+
+```
+
+When one wants to match a literal backslash, it must be escaped in the regular expression. With raw string notation, this means `r"\\"`. Without raw string notation, one must use `"\\\\"`, making the following lines of code functionally identical:
+>>>```
+>>> re.match(r"\\", r"\\")
+<re.Match object; span=(0, 1), match='\\'>
+>>> re.match("\\\\", r"\\")
+<re.Match object; span=(0, 1), match='\\'>
+
+```
+
+### Writing a Tokenizer[¶](https://docs.python.org/3/library/re.html#writing-a-tokenizer "Link to this heading")
+A [tokenizer or scanner](https://en.wikipedia.org/wiki/Lexical_analysis) analyzes a string to categorize groups of characters. This is a useful first step in writing a compiler or interpreter.
+The text categories are specified with regular expressions. The technique is to combine those into a single master regular expression and to loop over successive matches:
+```
+fromtypingimport NamedTuple
+importre
+classToken(NamedTuple):
+  type: str
+  value: str
+  line: int
+  column: int
+deftokenize(code):
+  keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}
+  token_specification = [
+    ('NUMBER',  r'\d+(\.\d*)?'), # Integer or decimal number
+    ('ASSIGN',  r':='),      # Assignment operator
+    ('END',   r';'),      # Statement terminator
+    ('ID',    r'[A-Za-z]+'),  # Identifiers
+    ('OP',    r'[+\-*/]'),   # Arithmetic operators
+    ('NEWLINE', r'\n'),      # Line endings
+    ('SKIP',   r'[ \t]+'),    # Skip over spaces and tabs
+    ('MISMATCH', r'.'),      # Any other character
+  ]
+  tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
+  line_num = 1
+  line_start = 0
+  for mo in re.finditer(tok_regex, code):
+    kind = mo.lastgroup
+    value = mo.group()
+    column = mo.start() - line_start
+    if kind == 'NUMBER':
+      value = float(value) if '.' in value else int(value)
+    elif kind == 'ID' and value in keywords:
+      kind = value
+    elif kind == 'NEWLINE':
+      line_start = mo.end()
+      line_num += 1
+      continue
+    elif kind == 'SKIP':
+      continue
+    elif kind == 'MISMATCH':
+      raise RuntimeError(f'{value!r} unexpected on line {line_num}')
+    yield Token(kind, value, line_num, column)
+statements = '''
+  IF quantity THEN
+    total := total + price * quantity;
+    tax := price * 0.05;
+  ENDIF;
+'''
+for token in tokenize(statements):
+  print(token)
+
+```
+
+The tokenizer produces the following output:
+```
+Token(type='IF', value='IF', line=2, column=4)
+Token(type='ID', value='quantity', line=2, column=7)
+Token(type='THEN', value='THEN', line=2, column=16)
+Token(type='ID', value='total', line=3, column=8)
+Token(type='ASSIGN', value=':=', line=3, column=14)
+Token(type='ID', value='total', line=3, column=17)
+Token(type='OP', value='+', line=3, column=23)
+Token(type='ID', value='price', line=3, column=25)
+Token(type='OP', value='*', line=3, column=31)
+Token(type='ID', value='quantity', line=3, column=33)
+Token(type='END', value=';', line=3, column=41)
+Token(type='ID', value='tax', line=4, column=8)
+Token(type='ASSIGN', value=':=', line=4, column=12)
+Token(type='ID', value='price', line=4, column=15)
+Token(type='OP', value='*', line=4, column=21)
+Token(type='NUMBER', value=0.05, line=4, column=23)
+Token(type='END', value=';', line=4, column=27)
+Token(type='ENDIF', value='ENDIF', line=5, column=4)
+Token(type='END', value=';', line=5, column=9)

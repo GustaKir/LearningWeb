@@ -1,0 +1,53 @@
+Title: Validating and Editing Chat Responses in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses
+Summary: This section outlines how to implement features for rewriting and updating chat responses in a Streamlit app. It includes a code snippet for a text area input where users can edit responses, as well as instructions for starting the app by creating 'app.py' in the specified repository.
+---
+
+:     new = st.text_area("Rewrite the answer", value=st.session_state.pending) if st.button( "Update", type="primary", disabled=new is None or new.strip(". ") == "" ):       st.session_state.history.append({"role": "assistant", "content": new})       st.session_state.pending = None       st.session_state.validation = {}       st.session_state.stage = "user"       st.rerun() `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-tutorial-chat-response-revision.streamlit.app/?utm_medium=oembed)
+## [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#build-the-example)Build the example
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#initialize-your-app)Initialize your app
+  1. In `your_repository`, create a file named `app.py`.
+  2. In a terminal, change directories to `your_repository`, and start your app:
+`streamlit run app.py `
+Your app will be blank because you still need to add code.
+  3. In `app.py`, write the following:
+`import streamlit as st import lorem from random import randint import time `
+You'll use `lorem`, `random`, and `time` to build a simulated chat response stream.
+  4. Save your `app.py` file, and view your running app.
+  5. In your app, select "**Always rerun** ", or press the "**A** " key.
+Your preview will be blank but will automatically update as you save changes to `app.py`.
+  6. Return to your code.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#build-a-function-to-simulate-a-chat-response-stream)Build a function to simulate a chat response stream
+To begin, you'll define a function to stream a random chat response. The simulated chat stream will use `lorem` to generate three to nine random sentences. You can skip this section if you just want to copy the function.
+Complete function to simulate a chat stream _expand_more_
+`def chat_stream(): for i in range(randint(3, 9)): yield lorem.sentence() + " "     time.sleep(0.2) `
+  1. Define a function for your simulated chat stream:
+`def chat_stream(): `
+For this example, the chat stream does not have any arguments. The streamed response will be random and independent of the user's prompt.
+  2. Create a loop that executes three to nine times:
+` for i in range(randint(3, 9)): `
+  3. Within the loop, yield a random sentence from `lorem` with a space at the end:
+` yield lorem.sentence() + " " `
+  4. To create a streaming effect, add a small delay with `time.sleep(0.2)` between yields:
+`    time.sleep(0.2) `
+
+
+You now have a complete generator function to simulate a chat stream object.
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#create-a-validation-function)Create a validation function
+The app will validate the streamed responses to assist users in identifying possible errors. To validate a response, you'll first create a list of its sentences. Any sentence with fewer than six words will be marked as a potential error. This is an arbitrary standard for the sake of illustration.
+Complete function to validate a response _expand_more_
+`def validate(response):   response_sentences = response.split(". ")   response_sentences = [     sentence.strip(". ") + "." for sentence in response_sentences     if sentence.strip(". ") != "" ]   validation_list = [ True if sentence.count(" ") > 4 else False for sentence in response_sentences   ] return response_sentences, validation_list `
+  1. Define a function that accepts a string response and breaks it into sentences:
+`def validate(response):   response_sentences = response.split(". ") `
+  2. Use list comprehension to clean the list of sentences. For each sentence, strip any leading and trailing spaces and periods, and then restore a period to the end:
+`  response_sentences = [     sentence.strip(". ") + "." for sentence in response_sentences     if sentence.strip(". ") != "" ] `
+Because the user will be modifying responses, whitespaces and punctuation may vary. The code `sentence.strip(". ") + "."` removes leading and trailing spaces and periods. It also ensures that each sentence ends with a single period. Furthermore, the code `if sentence.strip(". ") != ""` discards any empty sentences. This simple example doesn't address other punctuation that may terminate a sentence.
+  3. Create a Boolean list of sentence validations, using `True` for an approved sentence and `False` for an unapproved sentence:
+`  validation_list = [ True if sentence.count(" ") > 4 else False for sentence in response_sentences   ] `
+As stated previously, a "good" sentence has at least six words (i.e., at least five spaces). This code uses list comprehension to count the spaces in each sentence and saves a Boolean value.
+  4. Return the sentence and validation lists as a tuple:
+` return response_sentences, validation_list `

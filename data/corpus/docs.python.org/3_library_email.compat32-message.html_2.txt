@@ -1,0 +1,39 @@
+Title: Message.as_string Method in Python Email Library
+URL: https://docs.python.org/3/library/email.compat32-message.html
+Summary: The as_string method returns the entire email message as a flattened string. It includes an optional envelope header when unixfrom is set to true and allows customization of header length and formatting through maxheaderlen and policy arguments, respectively.
+---
+
+as_string(_unixfrom =False_, _maxheaderlen =0_, _policy =None_)[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.as_string "Link to this definition")
+    
+Return the entire message flattened as a string. When optional _unixfrom_ is true, the envelope header is included in the returned string. _unixfrom_ defaults to `False`. For backward compatibility reasons, _maxheaderlen_ defaults to `0`, so if you want a different value you must override it explicitly (the value specified for _max_line_length_ in the policy will be ignored by this method). The _policy_ argument may be used to override the default policy obtained from the message instance. This can be used to control some of the formatting produced by the method, since the specified _policy_ will be passed to the `Generator`.
+Flattening the message may trigger changes to the [`Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message") if defaults need to be filled in to complete the transformation to a string (for example, MIME boundaries may be generated or modified).
+Note that this method is provided as a convenience and may not always format the message the way you want. For example, by default it does not do the mangling of lines that begin with `From` that is required by the Unix mbox format. For more flexibility, instantiate a [`Generator`](https://docs.python.org/3/library/email.generator.html#email.generator.Generator "email.generator.Generator") instance and use its [`flatten()`](https://docs.python.org/3/library/email.generator.html#email.generator.Generator.flatten "email.generator.Generator.flatten") method directly. For example:
+```
+fromioimport StringIO
+fromemail.generatorimport Generator
+fp = StringIO()
+g = Generator(fp, mangle_from_=True, maxheaderlen=60)
+g.flatten(msg)
+text = fp.getvalue()
+
+```
+
+If the message object contains binary data that is not encoded according to RFC standards, the non-compliant data will be replaced by unicode “unknown character” code points. (See also [`as_bytes()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.as_bytes "email.message.Message.as_bytes") and [`BytesGenerator`](https://docs.python.org/3/library/email.generator.html#email.generator.BytesGenerator "email.generator.BytesGenerator").)
+Changed in version 3.4: the _policy_ keyword argument was added. 
+
+__str__()[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.__str__ "Link to this definition")
+    
+Equivalent to [`as_string()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.as_string "email.message.Message.as_string"). Allows `str(msg)` to produce a string containing the formatted message. 
+
+as_bytes(_unixfrom =False_, _policy =None_)[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.as_bytes "Link to this definition")
+    
+Return the entire message flattened as a bytes object. When optional _unixfrom_ is true, the envelope header is included in the returned string. _unixfrom_ defaults to `False`. The _policy_ argument may be used to override the default policy obtained from the message instance. This can be used to control some of the formatting produced by the method, since the specified _policy_ will be passed to the `BytesGenerator`.
+Flattening the message may trigger changes to the [`Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message") if defaults need to be filled in to complete the transformation to a string (for example, MIME boundaries may be generated or modified).
+Note that this method is provided as a convenience and may not always format the message the way you want. For example, by default it does not do the mangling of lines that begin with `From` that is required by the Unix mbox format. For more flexibility, instantiate a [`BytesGenerator`](https://docs.python.org/3/library/email.generator.html#email.generator.BytesGenerator "email.generator.BytesGenerator") instance and use its [`flatten()`](https://docs.python.org/3/library/email.generator.html#email.generator.BytesGenerator.flatten "email.generator.BytesGenerator.flatten") method directly. For example:
+```
+fromioimport BytesIO
+fromemail.generatorimport BytesGenerator
+fp = BytesIO()
+g = BytesGenerator(fp, mangle_from_=True, maxheaderlen=60)
+g.flatten(msg)
+text = fp.getvalue()

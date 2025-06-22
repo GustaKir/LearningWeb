@@ -1,0 +1,84 @@
+Title: Sorting with the key Parameter in Python
+URL: https://docs.python.org/3/howto/sorting.html
+Summary: This section explains the use of the _key_ parameter in sorting functions. It highlights how to sort strings using case-insensitive comparisons and demonstrates sorting complex objects like tuples and custom classes by their attributes using a lambda function.
+---
+
+```
+>>> sorted("This is a test string from Andrew".split(), key=str.casefold)
+['a', 'Andrew', 'from', 'is', 'string', 'test', 'This']
+
+```
+
+The value of the _key_ parameter should be a function (or other callable) that takes a single argument and returns a key to use for sorting purposes. This technique is fast because the key function is called exactly once for each input record.
+A common pattern is to sort complex objects using some of the object’s indices as keys. For example:
+>>>```
+>>> student_tuples = [
+...   ('john', 'A', 15),
+...   ('jane', 'B', 12),
+...   ('dave', 'B', 10),
+... ]
+>>> sorted(student_tuples, key=lambda student: student[2])  # sort by age
+[('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
+```
+
+The same technique works for objects with named attributes. For example:
+>>>```
+>>> classStudent:
+...   def__init__(self, name, grade, age):
+...     self.name = name
+...     self.grade = grade
+...     self.age = age
+...   def__repr__(self):
+...     return repr((self.name, self.grade, self.age))
+>>> student_objects = [
+...   Student('john', 'A', 15),
+...   Student('jane', 'B', 12),
+...   Student('dave', 'B', 10),
+... ]
+>>> sorted(student_objects, key=lambda student: student.age)  # sort by age
+[('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
+```
+
+Objects with named attributes can be made by a regular class as shown above, or they can be instances of [`dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass") or a [named tuple](https://docs.python.org/3/glossary.html#term-named-tuple).
+## Operator Module Functions and Partial Function Evaluation[¶](https://docs.python.org/3/howto/sorting.html#operator-module-functions-and-partial-function-evaluation "Link to this heading")
+The [key function](https://docs.python.org/3/glossary.html#term-key-function) patterns shown above are very common, so Python provides convenience functions to make accessor functions easier and faster. The [`operator`](https://docs.python.org/3/library/operator.html#module-operator "operator: Functions corresponding to the standard operators.") module has [`itemgetter()`](https://docs.python.org/3/library/operator.html#operator.itemgetter "operator.itemgetter"), [`attrgetter()`](https://docs.python.org/3/library/operator.html#operator.attrgetter "operator.attrgetter"), and a [`methodcaller()`](https://docs.python.org/3/library/operator.html#operator.methodcaller "operator.methodcaller") function.
+Using those functions, the above examples become simpler and faster:
+>>>```
+>>> fromoperatorimport itemgetter, attrgetter
+>>> sorted(student_tuples, key=itemgetter(2))
+[('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+>>> sorted(student_objects, key=attrgetter('age'))
+[('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
+```
+
+The operator module functions allow multiple levels of sorting. For example, to sort by _grade_ then by _age_ :
+>>>```
+>>> sorted(student_tuples, key=itemgetter(1,2))
+[('john', 'A', 15), ('dave', 'B', 10), ('jane', 'B', 12)]
+>>> sorted(student_objects, key=attrgetter('grade', 'age'))
+[('john', 'A', 15), ('dave', 'B', 10), ('jane', 'B', 12)]
+
+```
+
+The [`functools`](https://docs.python.org/3/library/functools.html#module-functools "functools: Higher-order functions and operations on callable objects.") module provides another helpful tool for making key-functions. The [`partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") function can reduce the [arity](https://en.wikipedia.org/wiki/Arity) of a multi-argument function making it suitable for use as a key-function.
+>>>```
+>>> fromfunctoolsimport partial
+>>> fromunicodedataimport normalize
+>>> names = 'Zoë Åbjørn Núñez Élana Zeke Abe Nubia Eloise'.split()
+>>> sorted(names, key=partial(normalize, 'NFD'))
+['Abe', 'Åbjørn', 'Eloise', 'Élana', 'Nubia', 'Núñez', 'Zeke', 'Zoë']
+>>> sorted(names, key=partial(normalize, 'NFC'))
+['Abe', 'Eloise', 'Nubia', 'Núñez', 'Zeke', 'Zoë', 'Åbjørn', 'Élana']
+
+```
+
+## Ascending and Descending[¶](https://docs.python.org/3/howto/sorting.html#ascending-and-descending "Link to this heading")
+Both [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") and [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") accept a _reverse_ parameter with a boolean value. This is used to flag descending sorts. For example, to get the student data in reverse _age_ order:
+>>>```
+>>> sorted(student_tuples, key=itemgetter(2), reverse=True)
+[('john', 'A', 15), ('jane', 'B', 12), ('dave', 'B', 10)]
+>>> sorted(student_objects, key=attrgetter('age'), reverse=True)
+[('john', 'A', 15), ('jane', 'B', 12), ('dave', 'B', 10)]

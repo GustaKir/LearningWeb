@@ -1,0 +1,34 @@
+Title: XMLPullParser Objects
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: The XMLPullParser class provides a non-blocking pull parser for XML parsing, allowing users to manually read a list of parsing events such as 'start', 'end', and 'comment' instead of utilizing callback functions.
+---
+
+```
+
+### XMLPullParser Objects[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xmlpullparser-objects "Link to this heading") 
+
+_class_ xml.etree.ElementTree.XMLPullParser(_events =None_)[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser "Link to this definition")
+    
+A pull parser suitable for non-blocking applications. Its input-side API is similar to that of [`XMLParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser "xml.etree.ElementTree.XMLParser"), but instead of pushing calls to a callback target, [`XMLPullParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser "xml.etree.ElementTree.XMLPullParser") collects an internal list of parsing events and lets the user read from it. _events_ is a sequence of events to report back. The supported events are the strings `"start"`, `"end"`, `"comment"`, `"pi"`, `"start-ns"` and `"end-ns"` (the “ns” events are used to get detailed namespace information). If _events_ is omitted, only `"end"` events are reported. 
+
+feed(_data_)[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.feed "Link to this definition")
+    
+Feed the given bytes data to the parser. 
+
+flush()[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.flush "Link to this definition")
+    
+Triggers parsing of any previously fed unparsed data, which can be used to ensure more immediate feedback, in particular with Expat >=2.6.0. The implementation of [`flush()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.flush "xml.etree.ElementTree.XMLPullParser.flush") temporarily disables reparse deferral with Expat (if currently enabled) and triggers a reparse. Disabling reparse deferral has security consequences; please see [`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled()`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.SetReparseDeferralEnabled "xml.parsers.expat.xmlparser.SetReparseDeferralEnabled") for details.
+Note that [`flush()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.flush "xml.etree.ElementTree.XMLPullParser.flush") has been backported to some prior releases of CPython as a security fix. Check for availability of [`flush()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.flush "xml.etree.ElementTree.XMLPullParser.flush") using [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") if used in code running across a variety of Python versions.
+Added in version 3.13. 
+
+close()[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.close "Link to this definition")
+    
+Signal the parser that the data stream is terminated. Unlike [`XMLParser.close()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser.close "xml.etree.ElementTree.XMLParser.close"), this method always returns [`None`](https://docs.python.org/3/library/constants.html#None "None"). Any events not yet retrieved when the parser is closed can still be read with [`read_events()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.read_events "xml.etree.ElementTree.XMLPullParser.read_events"). 
+
+read_events()[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.read_events "Link to this definition")
+    
+Return an iterator over the events which have been encountered in the data fed to the parser. The iterator yields `(event, elem)` pairs, where _event_ is a string representing the type of event (e.g. `"end"`) and _elem_ is the encountered [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") object, or other context value as follows.
+  * `start`, `end`: the current Element.
+  * `comment`, `pi`: the current comment / processing instruction
+  * `start-ns`: a tuple `(prefix, uri)` naming the declared namespace mapping.
+  * `end-ns`: [`None`](https://docs.python.org/3/library/constants.html#None "None") (this may change in a future version)

@@ -1,0 +1,29 @@
+Title: Clipboard Functionality in Streamlit Apps
+URL: https://docs.streamlit.io/develop/concepts/design/dataframes
+Summary: This section explains that when pasting data into DataFrame cells, each cell's content is evaluated based on its compatibility with the column type, ignoring incompatible data. Additionally, it provides tips for embedding apps with iframes, emphasizing the need for clipboard permissions and ensuring proper TLS certification to avoid copy-paste issues.
+---
+
+_push_pin_
+#### Note
+Every cell of the pasted data will be evaluated individually and inserted into the cells if the data is compatible with the column type. For example, pasting in non-numerical text data into a number column will be ignored.
+_star_
+#### Tip
+If you embed your apps with iframes, you'll need to allow the iframe to access the clipboard if you want to use the copy-paste functionality. To do so, give the iframe [`clipboard-write`](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write) and [`clipboard-read`](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/read) permissions. E.g.
+`<iframe allow="clipboard-write;clipboard-read;" ... src="https://your-app-url"></iframe> `
+As developers, ensure the app is served with a valid, trusted certificate when using TLS. If users encounter issues with copying and pasting data, direct them to check if their browser has activated clipboard access permissions for the Streamlit application, either when prompted or through the browser's site settings.
+### [](https://docs.streamlit.io/develop/concepts/design/dataframes#access-edited-data)Access edited data
+Sometimes, it is more convenient to know which cells have been changed rather than getting the entire edited dataframe back. Streamlit makes this easy through the use of [Session State](https://docs.streamlit.io/develop/concepts/architecture/session-state). If a `key` parameter is set, Streamlit will store any changes made to the dataframe in Session State.
+This snippet shows how you can access changed data using Session State:
+`st.data_editor(df, key="my_key", num_rows="dynamic") # 👈 Set a key st.write("Here's the value in Session State:") st.write(st.session_state["my_key"]) # 👈 Show the value in Session State `
+In this code snippet, the `key` parameter is set to `"my_key"`. After the data editor is created, the value associated to `"my_key"` in Session State is displayed in the app using `st.write`. This shows the additions, edits, and deletions that were made.
+This can be useful when working with large dataframes and you only need to know which cells have changed, rather than access the entire edited dataframe.
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-data-editor-changed.streamlit.app/?utm_medium=oembed)
+Use all we've learned so far and apply them to the above embedded app. Try editing cells, adding new rows, and deleting rows.
+Notice how edits to the table are reflected in Session State. When you make any edits, a rerun is triggered which sends the edits to the backend. The widget's state is a JSON object containing three properties: **edited_rows** , **added_rows** , and **deleted rows:**.
+_priority_high_
+#### Warning
+When going from `st.experimental_data_editor` to `st.data_editor` in 1.23.0, the data editor's representation in `st.session_state` was changed. The `edited_cells` dictionary is now called `edited_rows` and uses a different format (`{0: {"column name": "edited value"}}` instead of `{"0:1": "edited value"}`). You may need to adjust your code if your app uses `st.experimental_data_editor` in combination with `st.session_state`."
+  * `edited_rows` is a dictionary containing all edits. Keys are zero-based row indices and values are dictionaries that map column names to edits (e.g. `{0: {"col1": ..., "col2": ...}}`).
+  * `added_rows` is a list of newly added rows. Each value is a dictionary with the same format as above (e.g. `[{"col1": ..., "col2": ...}]`).
+  * `deleted_rows` is a list of row numbers that have been deleted from the table (e.g. `[0, 2]`).

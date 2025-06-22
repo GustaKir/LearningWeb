@@ -1,0 +1,50 @@
+Title: Using the `select` Module for Socket Management
+URL: https://docs.python.org/3/howto/sockets.html
+Summary: The `select` function manages multiple sockets by taking three lists: readable, writable, and error sockets. It blocks until there is activity and returns the actual subsets of sockets that are readable, writable, or in error. A timeout can be specified, with a longer duration generally preferred. If a socket is in the readable or writable output lists, data transmission can be expected.
+---
+
+```
+
+You pass `select` three lists: the first contains all sockets that you might want to try reading; the second all the sockets you might want to try writing to, and the last (normally left empty) those that you want to check for errors. You should note that a socket can go into more than one list. The `select` call is blocking, but you can give it a timeout. This is generally a sensible thing to do - give it a nice long timeout (say a minute) unless you have good reason to do otherwise.
+In return, you will get three lists. They contain the sockets that are actually readable, writable and in error. Each of these lists is a subset (possibly empty) of the corresponding list you passed in.
+If a socket is in the output readable list, you can be as-close-to-certain-as-we-ever-get-in-this-business that a `recv` on that socket will return _something_. Same idea for the writable list. You’ll be able to send _something_. Maybe not all you want to, but _something_ is better than nothing. (Actually, any reasonably healthy socket will return as writable - it just means outbound network buffer space is available.)
+If you have a “server” socket, put it in the potential_readers list. If it comes out in the readable list, your `accept` will (almost certainly) work. If you have created a new socket to `connect` to someone else, put it in the potential_writers list. If it shows up in the writable list, you have a decent chance that it has connected.
+Actually, `select` can be handy even with blocking sockets. It’s one way of determining whether you will block - the socket returns as readable when there’s something in the buffers. However, this still doesn’t help with the problem of determining whether the other end is done, or just busy with something else.
+**Portability alert** : On Unix, `select` works both with the sockets and files. Don’t try this on Windows. On Windows, `select` works with sockets only. Also note that in C, many of the more advanced socket options are done differently on Windows. In fact, on Windows I usually use threads (which work very, very well) with my sockets.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Socket Programming HOWTO](https://docs.python.org/3/howto/sockets.html)
+    * [Sockets](https://docs.python.org/3/howto/sockets.html#sockets)
+      * [History](https://docs.python.org/3/howto/sockets.html#history)
+    * [Creating a Socket](https://docs.python.org/3/howto/sockets.html#creating-a-socket)
+      * [IPC](https://docs.python.org/3/howto/sockets.html#ipc)
+    * [Using a Socket](https://docs.python.org/3/howto/sockets.html#using-a-socket)
+      * [Binary Data](https://docs.python.org/3/howto/sockets.html#binary-data)
+    * [Disconnecting](https://docs.python.org/3/howto/sockets.html#disconnecting)
+      * [When Sockets Die](https://docs.python.org/3/howto/sockets.html#when-sockets-die)
+    * [Non-blocking Sockets](https://docs.python.org/3/howto/sockets.html#non-blocking-sockets)
+
+
+#### Previous topic
+[Regular Expression HOWTO](https://docs.python.org/3/howto/regex.html "previous chapter")
+#### Next topic
+[Sorting Techniques](https://docs.python.org/3/howto/sorting.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/sockets.rst)
+
+
+«
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/sorting.html "Sorting Techniques") |
+  * [previous](https://docs.python.org/3/howto/regex.html "Regular Expression HOWTO") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Socket Programming HOWTO](https://docs.python.org/3/howto/sockets.html)
+  * | 
+  * Theme  Auto Light Dark |

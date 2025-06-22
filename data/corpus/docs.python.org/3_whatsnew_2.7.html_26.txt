@@ -1,0 +1,28 @@
+Title: URL Handling Update in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: The `urlparse` module's `urlsplit()` method now complies with RFC 3986 by treating text before '://' as a scheme, even if it's an unknown one. This update may affect existing code that relied on previous behavior, particularly regarding invented schemes.
+---
+
+5.2.0 (updated by Florent Xicluna; [bpo-8024](https://bugs.python.org/issue?@action=redirect&bpo=8024)).
+  * The [`urlparse`](https://docs.python.org/3/library/urllib.parse.html#module-urllib.parse "urllib.parse: Parse URLs into or assemble them from components.") module’s [`urlsplit()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlsplit "urllib.parse.urlsplit") now handles unknown URL schemes in a fashion compliant with [**RFC 3986**](https://datatracker.ietf.org/doc/html/rfc3986.html): if the URL is of the form `"<something>://..."`, the text before the `://` is treated as the scheme, even if it’s a made-up scheme that the module doesn’t know about. This change may break code that worked around the old behaviour. For example, Python 2.6.4 or 2.5 will return the following:
+>>>```
+>>> importurlparse
+>>> urlparse.urlsplit('invented://host/filename?query')
+('invented', '', '//host/filename?query', '', '')
+
+```
+
+Python 2.7 (and Python 2.6.5) will return:
+>>>```
+>>> importurlparse
+>>> urlparse.urlsplit('invented://host/filename?query')
+('invented', 'host', '/filename?query', '', '')
+
+```
+
+(Python 2.7 actually produces slightly different output, since it returns a named tuple instead of a standard tuple.)
+The [`urlparse`](https://docs.python.org/3/library/urllib.parse.html#module-urllib.parse "urllib.parse: Parse URLs into or assemble them from components.") module also supports IPv6 literal addresses as defined by [**RFC 2732**](https://datatracker.ietf.org/doc/html/rfc2732.html) (contributed by Senthil Kumaran; [bpo-2987](https://bugs.python.org/issue?@action=redirect&bpo=2987)).
+>>>```
+>>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
+ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',
+      path='/foo', params='', query='', fragment='')

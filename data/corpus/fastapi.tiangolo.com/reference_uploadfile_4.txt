@@ -1,0 +1,177 @@
+Title: FastAPI UploadFile Reference
+URL: https://fastapi.tiangolo.com/reference/uploadfile/
+Summary: This document outlines the 'UploadFile' class in FastAPI, detailing its properties and methods, including examples and functionalities such as file handling, filename retrieval, size, headers, content type, and various file operations.
+---
+
+Table of contents 
+  * [ UploadFile  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile)
+    * [ Example  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile--example)
+    * [ file  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.file)
+    * [ filename  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.filename)
+    * [ size  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.size)
+    * [ headers  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.headers)
+    * [ content_type  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.content_type)
+    * [ read  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.read)
+    * [ write  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.write)
+    * [ seek  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.seek)
+    * [ close  ](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.close)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Reference  ](https://fastapi.tiangolo.com/reference/)
+
+
+# `UploadFile` class[¶](https://fastapi.tiangolo.com/reference/uploadfile/#uploadfile-class "Permanent link")
+You can define _path operation function_ parameters to be of the type `UploadFile` to receive files from the request.
+You can import it directly from `fastapi`:
+```
+fromfastapiimport UploadFile
+
+```
+
+##  fastapi.UploadFile [¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile "Permanent link")
+```
+UploadFile(file, *, size=None, filename=None, headers=None)
+
+```
+
+Bases: `UploadFile`
+A file uploaded in a request.
+Define it as a _path operation function_ (or dependency) parameter.
+If you are using a regular `def` function, you can use the `upload_file.file` attribute to access the raw standard Python file (blocking, not async), useful and needed for non-async code.
+Read more about it in the [FastAPI docs for Request Files](https://fastapi.tiangolo.com/tutorial/request-files/).
+#### Example[¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile--example "Permanent link")
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[bytes, File()]):
+  return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: UploadFile):
+  return {"filename": file.filename}
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`file` |  **TYPE:** `BinaryIO`  
+`size` |  **TYPE:** `int | None` **DEFAULT:** `None`  
+`filename` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`headers` |  **TYPE:** `Headers | None` **DEFAULT:** `None`  
+Source code in `starlette/datastructures.py`
+```
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+```
+| ```
+def__init__(
+  self,
+  file: typing.BinaryIO,
+  *,
+  size: int | None = None,
+  filename: str | None = None,
+  headers: Headers | None = None,
+) -> None:
+  self.filename = filename
+  self.file = file
+  self.size = size
+  self.headers = headers or Headers()
+
+```
+  
+---|---  
+###  file `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.file "Permanent link")
+```
+file
+
+```
+
+The standard Python file object (non-async).
+###  filename `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.filename "Permanent link")
+```
+filename
+
+```
+
+The original file name.
+###  size `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.size "Permanent link")
+```
+size
+
+```
+
+The size of the file in bytes.
+###  headers `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.headers "Permanent link")
+```
+headers
+
+```
+
+The headers of the request.
+###  content_type `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.content_type "Permanent link")
+```
+content_type
+
+```
+
+The content type of the request, from the headers.
+###  read `async` [¶](https://fastapi.tiangolo.com/reference/uploadfile/#fastapi.UploadFile.read "Permanent link")
+```
+read(size=-1)
+
+```
+
+Read some bytes from the file.
+To be awaitable, compatible with async, this is run in threadpool.
+PARAMETER | DESCRIPTION  
+---|---  
+`size` |  The number of bytes to read from the file. **TYPE:** `int` **DEFAULT:** `-1`  
+Source code in `fastapi/datastructures.py`
+```
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+```
+| ```
+async defread(
+  self,
+  size: Annotated[
+    int,
+    Doc(
+"""
+      The number of bytes to read from the file.
+      """
+    ),
+  ] = -1,
+) -> bytes:
+"""
+  Read some bytes from the file.
+  To be awaitable, compatible with async, this is run in threadpool.
+  """
+  return await super().read(size)

@@ -1,0 +1,226 @@
+Title: HTTPConnection Class Reference
+URL: https://fastapi.tiangolo.com/reference/request/
+Summary: This section describes the `HTTPConnection` class found in FastAPI, detailing its parameters, including `scope`, `receive`, and `send`, along with their types and default values. It also provides insight into the initialization method and attributes related to the connection state.
+---
+
+```
+
+Bases: `HTTPConnection[](https://fastapi.tiangolo.com/reference/httpconnection/#fastapi.requests.HTTPConnection "<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>      <span class="doc doc-object-name doc-class-name">fastapi.requests.HTTPConnection</span> \(<code>starlette.requests.HTTPConnection</code>\)")`
+PARAMETER | DESCRIPTION  
+---|---  
+`scope` |  **TYPE:** `Scope`  
+`receive` |  **TYPE:** `Receive` **DEFAULT:** `empty_receive`  
+`send` |  **TYPE:** `Send` **DEFAULT:** `empty_send`  
+Source code in `starlette/requests.py`
+```
+201
+202
+203
+204
+205
+206
+207
+208
+```
+| ```
+def__init__(self, scope: Scope, receive: Receive = empty_receive, send: Send = empty_send):
+  super().__init__(scope)
+  assert scope["type"] == "http"
+  self._receive = receive
+  self._send = send
+  self._stream_consumed = False
+  self._is_disconnected = False
+  self._form = None
+
+```
+  
+---|---  
+###  scope `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.scope "Permanent link")
+```
+scope = scope
+
+```
+
+###  app `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.app "Permanent link")
+```
+app
+
+```
+
+###  url `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.url "Permanent link")
+```
+url
+
+```
+
+###  base_url `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.base_url "Permanent link")
+```
+base_url
+
+```
+
+###  headers `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.headers "Permanent link")
+```
+headers
+
+```
+
+###  query_params `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.query_params "Permanent link")
+```
+query_params
+
+```
+
+###  path_params `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.path_params "Permanent link")
+```
+path_params
+
+```
+
+###  cookies `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.cookies "Permanent link")
+```
+cookies
+
+```
+
+###  client `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.client "Permanent link")
+```
+client
+
+```
+
+###  session `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.session "Permanent link")
+```
+session
+
+```
+
+###  auth `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.auth "Permanent link")
+```
+auth
+
+```
+
+###  user `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.user "Permanent link")
+```
+user
+
+```
+
+###  state `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.state "Permanent link")
+```
+state
+
+```
+
+###  method `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.method "Permanent link")
+```
+method
+
+```
+
+###  receive `property` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.receive "Permanent link")
+```
+receive
+
+```
+
+###  url_for [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.url_for "Permanent link")
+```
+url_for(name, /, **path_params)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`name` |  **TYPE:** `str`  
+`**path_params` |  **TYPE:** `Any` **DEFAULT:** `{}`  
+Source code in `starlette/requests.py`
+```
+182
+183
+184
+185
+186
+187
+```
+| ```
+defurl_for(self, name: str, /, **path_params: typing.Any) -> URL:
+  url_path_provider: Router | Starlette | None = self.scope.get("router") or self.scope.get("app")
+  if url_path_provider is None:
+    raise RuntimeError("The `url_for` method can only be used inside a Starlette application or with a router.")
+  url_path = url_path_provider.url_path_for(name, **path_params)
+  return url_path.make_absolute_url(base_url=self.base_url)
+
+```
+  
+---|---  
+###  stream `async` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.stream "Permanent link")
+```
+stream()
+
+```
+
+Source code in `starlette/requests.py`
+```
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+```
+| ```
+async defstream(self) -> typing.AsyncGenerator[bytes, None]:
+  if hasattr(self, "_body"):
+    yield self._body
+    yield b""
+    return
+  if self._stream_consumed:
+    raise RuntimeError("Stream consumed")
+  while not self._stream_consumed:
+    message = await self._receive()
+    if message["type"] == "http.request":
+      body = message.get("body", b"")
+      if not message.get("more_body", False):
+        self._stream_consumed = True
+      if body:
+        yield body
+    elif message["type"] == "http.disconnect": # pragma: no branch
+      self._is_disconnected = True
+      raise ClientDisconnect()
+  yield b""
+
+```
+  
+---|---  
+###  body `async` [¶](https://fastapi.tiangolo.com/reference/request/#fastapi.Request.body "Permanent link")
+```
+body()
+
+```
+
+Source code in `starlette/requests.py`
+```
+238
+239
+240
+241
+242
+243
+244
+```
+|

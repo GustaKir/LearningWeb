@@ -1,0 +1,34 @@
+Title: Manager Methods in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: This section details the methods associated with multiprocessing managers, including 'shutdown()' for stopping the manager process and 'register()' for registering types or callables with the manager class.
+---
+
+```
+
+
+shutdown()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.shutdown "Link to this definition")
+    
+Stop the process used by the manager. This is only available if [`start()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.start "multiprocessing.managers.BaseManager.start") has been used to start the server process.
+This can be called multiple times. 
+
+register(_typeid_[, _callable_[, _proxytype_[, _exposed_[, _method_to_typeid_[, _create_method_]]]]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.register "Link to this definition")
+    
+A classmethod which can be used for registering a type or callable with the manager class.
+_typeid_ is a “type identifier” which is used to identify a particular type of shared object. This must be a string.
+_callable_ is a callable used for creating objects for this type identifier. If a manager instance will be connected to the server using the [`connect()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.connect "multiprocessing.managers.BaseManager.connect") method, or if the _create_method_ argument is `False` then this can be left as `None`.
+_proxytype_ is a subclass of [`BaseProxy`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseProxy "multiprocessing.managers.BaseProxy") which is used to create proxies for shared objects with this _typeid_. If `None` then a proxy class is created automatically.
+_exposed_ is used to specify a sequence of method names which proxies for this typeid should be allowed to access using [`BaseProxy._callmethod()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseProxy._callmethod "multiprocessing.managers.BaseProxy._callmethod"). (If _exposed_ is `None` then `proxytype._exposed_` is used instead if it exists.) In the case where no exposed list is specified, all “public methods” of the shared object will be accessible. (Here a “public method” means any attribute which has a [`__call__()`](https://docs.python.org/3/reference/datamodel.html#object.__call__ "object.__call__") method and whose name does not begin with `'_'`.)
+_method_to_typeid_ is a mapping used to specify the return type of those exposed methods which should return a proxy. It maps method names to typeid strings. (If _method_to_typeid_ is `None` then `proxytype._method_to_typeid_` is used instead if it exists.) If a method’s name is not a key of this mapping or if the mapping is `None` then the object returned by the method will be copied by value.
+_create_method_ determines whether a method should be created with name _typeid_ which can be used to tell the server process to create a new shared object and return a proxy for it. By default it is `True`.
+[`BaseManager`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager "multiprocessing.managers.BaseManager") instances also have one read-only property: 
+
+address[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.address "Link to this definition")
+    
+The address used by the manager.
+Changed in version 3.3: Manager objects support the context management protocol – see [Context Manager Types](https://docs.python.org/3/library/stdtypes.html#typecontextmanager). [`__enter__()`](https://docs.python.org/3/library/stdtypes.html#contextmanager.__enter__ "contextmanager.__enter__") starts the server process (if it has not already started) and then returns the manager object. [`__exit__()`](https://docs.python.org/3/library/stdtypes.html#contextmanager.__exit__ "contextmanager.__exit__") calls [`shutdown()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.shutdown "multiprocessing.managers.BaseManager.shutdown").
+In previous versions [`__enter__()`](https://docs.python.org/3/library/stdtypes.html#contextmanager.__enter__ "contextmanager.__enter__") did not start the manager’s server process if it was not already started. 
+
+_class_ multiprocessing.managers.SyncManager[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager "Link to this definition")
+    
+A subclass of [`BaseManager`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager "multiprocessing.managers.BaseManager") which can be used for the synchronization of processes. Objects of this type are returned by [`multiprocessing.Manager()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Manager "multiprocessing.Manager").
+Its methods create and return [Proxy Objects](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-proxy-objects) for a number of commonly used data types to be synchronized across processes. This notably includes shared lists and dictionaries.

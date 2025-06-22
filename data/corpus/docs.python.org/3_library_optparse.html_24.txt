@@ -1,0 +1,66 @@
+Title: Understanding Callbacks in Optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section explains the parameters used in callbacks within the `optparse` module. It describes the `option` instance handling the callback, the canonical `opt_str` of command-line options, and how the `value` parameter is determined based on the option's type and argument expectations.
+---
+
+```
+
+where 
+
+`option`
+    
+is the Option instance that’s calling the callback 
+
+`opt_str`
+    
+is the option string seen on the command-line that’s triggering the callback. (If an abbreviated long option was used, `opt_str` will be the full, canonical option string—e.g. if the user puts `--foo` on the command-line as an abbreviation for `--foobar`, then `opt_str` will be `"--foobar"`.) 
+
+`value`
+    
+is the argument to this option seen on the command-line. [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") will only expect an argument if [`type`](https://docs.python.org/3/library/optparse.html#optparse.Option.type "optparse.Option.type") is set; the type of `value` will be the type implied by the option’s type. If [`type`](https://docs.python.org/3/library/optparse.html#optparse.Option.type "optparse.Option.type") for this option is `None` (no argument expected), then `value` will be `None`. If [`nargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.nargs "optparse.Option.nargs") > 1, `value` will be a tuple of values of the appropriate type. 
+
+`parser`
+    
+is the OptionParser instance driving the whole thing, mainly useful because you can access some other interesting data through its instance attributes: 
+
+`parser.largs`
+    
+the current list of leftover arguments, ie. arguments that have been consumed but are neither options nor option arguments. Feel free to modify `parser.largs`, e.g. by adding more arguments to it. (This list will become `args`, the second return value of [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args").) 
+
+`parser.rargs`
+    
+the current list of remaining arguments, ie. with `opt_str` and `value` (if applicable) removed, and only the arguments following them still there. Feel free to modify `parser.rargs`, e.g. by consuming more arguments. 
+
+`parser.values`
+    
+the object where option values are by default stored (an instance of optparse.OptionValues). This lets callbacks use the same mechanism as the rest of [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") for storing option values; you don’t need to mess around with globals or closures. You can also access or modify the value(s) of any options already encountered on the command-line. 
+
+`args`
+    
+is a tuple of arbitrary positional arguments supplied via the [`callback_args`](https://docs.python.org/3/library/optparse.html#optparse.Option.callback_args "optparse.Option.callback_args") option attribute. 
+
+`kwargs`
+    
+is a dictionary of arbitrary keyword arguments supplied via [`callback_kwargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.callback_kwargs "optparse.Option.callback_kwargs").
+### Raising errors in a callback[¶](https://docs.python.org/3/library/optparse.html#raising-errors-in-a-callback "Link to this heading")
+The callback function should raise [`OptionValueError`](https://docs.python.org/3/library/optparse.html#optparse.OptionValueError "optparse.OptionValueError") if there are any problems with the option or its argument(s). [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") catches this and terminates the program, printing the error message you supply to stderr. Your message should be clear, concise, accurate, and mention the option at fault. Otherwise, the user will have a hard time figuring out what they did wrong.
+### Callback example 1: trivial callback[¶](https://docs.python.org/3/library/optparse.html#callback-example-1-trivial-callback "Link to this heading")
+Here’s an example of a callback option that takes no arguments, and simply records that the option was seen:
+```
+defrecord_foo_seen(option, opt_str, value, parser):
+  parser.values.saw_foo = True
+parser.add_option("--foo", action="callback", callback=record_foo_seen)
+
+```
+
+Of course, you could do that with the `"store_true"` action.
+### Callback example 2: check option order[¶](https://docs.python.org/3/library/optparse.html#callback-example-2-check-option-order "Link to this heading")
+Here’s a slightly more interesting example: record the fact that `-a` is seen, but blow up if it comes after `-b` in the command-line.
+```
+defcheck_order(option, opt_str, value, parser):
+  if parser.values.b:
+    raise OptionValueError("can't use -a after -b")
+  parser.values.a = 1
+...
+parser.add_option("-a", action="callback", callback=check_order)
+parser.add_option("-b", action="store_true", dest="b")

@@ -1,0 +1,30 @@
+Title: Using Named Groups in Regular Expressions
+URL: https://docs.python.org/3/howto/regex.html
+Summary: This section explains how to refer to named groups in regular expressions using the `(?P<name>...)` syntax and the `<name>` syntax for replacements. It highlights the equivalence of using numeric and named group references, and provides examples demonstrating these concepts in practice. Additionally, it mentions that the _replacement_ can also be a function for more control over substitutions.
+---
+
+```
+
+There’s also a syntax for referring to named groups as defined by the `(?P<name>...)` syntax. `\g<name>` will use the substring matched by the group named `name`, and `\g<number>` uses the corresponding group number. `\g<2>` is therefore equivalent to `\2`, but isn’t ambiguous in a replacement string such as `\g<2>0`. (`\20` would be interpreted as a reference to group 20, not a reference to group 2 followed by the literal character `'0'`.) The following substitutions are all equivalent, but use all three variations of the replacement string.
+>>>```
+>>> p = re.compile('section{ (?P<name> [^}]* ) }', re.VERBOSE)
+>>> p.sub(r'subsection{\1}','section{First}')
+'subsection{First}'
+>>> p.sub(r'subsection{\g<1>}','section{First}')
+'subsection{First}'
+>>> p.sub(r'subsection{\g<name>}','section{First}')
+'subsection{First}'
+
+```
+
+_replacement_ can also be a function, which gives you even more control. If _replacement_ is a function, the function is called for every non-overlapping occurrence of _pattern_. On each call, the function is passed a [match object](https://docs.python.org/3/library/re.html#match-objects) argument for the match and can use this information to compute the desired replacement string and return it.
+In the following example, the replacement function translates decimals into hexadecimal:
+>>>```
+>>> defhexrepl(match):
+...   "Return the hex string for a decimal number"
+...   value = int(match.group())
+...   return hex(value)
+...
+>>> p = re.compile(r'\d+')
+>>> p.sub(hexrepl, 'Call 65490 for printing, 49152 for user code.')
+'Call 0xffd2 for printing, 0xc000 for user code.'

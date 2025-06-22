@@ -1,0 +1,191 @@
+Title: Python Grammar Reference
+URL: https://docs.python.org/3/reference/grammar.html
+Summary: This section outlines the grammar rules for Python's arithmetic and bitwise operations, including definitions for expressions such as 'and', 'shift', 'sum', 'term', 'factor', 'power', and 'primary' elements, along with their respective syntax and hierarchies.
+---
+
+_and:
+  | bitwise_and '&' shift_expr 
+  | shift_expr
+shift_expr:
+  | shift_expr '<<' sum 
+  | shift_expr '>>' sum 
+  | sum
+# Arithmetic operators
+# --------------------
+sum:
+  | sum '+' term 
+  | sum '-' term 
+  | term
+term:
+  | term '*' factor 
+  | term '/' factor 
+  | term '//' factor 
+  | term '%' factor 
+  | term '@' factor 
+  | factor
+factor:
+  | '+' factor 
+  | '-' factor 
+  | '~' factor 
+  | power
+power:
+  | await_primary '**' factor 
+  | await_primary
+# Primary elements
+# ----------------
+# Primary elements are things like "obj.something.something", "obj[something]", "obj(something)", "obj" ...
+await_primary:
+  | 'await' primary 
+  | primary
+primary:
+  | primary '.' NAME 
+  | primary genexp 
+  | primary '(' [arguments] ')' 
+  | primary '[' slices ']' 
+  | atom
+slices:
+  | slice !',' 
+  | ','.(slice | starred_expression)+ [','] 
+slice:
+  | [expression] ':' [expression] [':' [expression] ] 
+  | named_expression 
+atom:
+  | NAME
+  | 'True' 
+  | 'False' 
+  | 'None' 
+  | strings
+  | NUMBER
+  | (tuple | group | genexp)
+  | (list | listcomp)
+  | (dict | set | dictcomp | setcomp)
+  | '...' 
+group:
+  | '(' (yield_expr | named_expression) ')' 
+# Lambda functions
+# ----------------
+lambdef:
+  | 'lambda' [lambda_params] ':' expression 
+lambda_params:
+  | lambda_parameters
+# lambda_parameters etc. duplicates parameters but without annotations
+# or type comments, and if there's no comma after a parameter, we expect
+# a colon, not a close parenthesis. (For more, see parameters above.)
+#
+lambda_parameters:
+  | lambda_slash_no_default lambda_param_no_default* lambda_param_with_default* [lambda_star_etc] 
+  | lambda_slash_with_default lambda_param_with_default* [lambda_star_etc] 
+  | lambda_param_no_default+ lambda_param_with_default* [lambda_star_etc] 
+  | lambda_param_with_default+ [lambda_star_etc] 
+  | lambda_star_etc 
+lambda_slash_no_default:
+  | lambda_param_no_default+ '/' ',' 
+  | lambda_param_no_default+ '/' &':' 
+lambda_slash_with_default:
+  | lambda_param_no_default* lambda_param_with_default+ '/' ',' 
+  | lambda_param_no_default* lambda_param_with_default+ '/' &':' 
+lambda_star_etc:
+  | '*' lambda_param_no_default lambda_param_maybe_default* [lambda_kwds] 
+  | '*' ',' lambda_param_maybe_default+ [lambda_kwds] 
+  | lambda_kwds 
+lambda_kwds:
+  | '**' lambda_param_no_default 
+lambda_param_no_default:
+  | lambda_param ',' 
+  | lambda_param &':' 
+lambda_param_with_default:
+  | lambda_param default ',' 
+  | lambda_param default &':' 
+lambda_param_maybe_default:
+  | lambda_param default? ',' 
+  | lambda_param default? &':' 
+lambda_param: NAME 
+# LITERALS
+# ========
+fstring_middle:
+  | fstring_replacement_field
+  | FSTRING_MIDDLE 
+fstring_replacement_field:
+  | '{' annotated_rhs '='? [fstring_conversion] [fstring_full_format_spec] '}' 
+fstring_conversion:
+  | "!" NAME 
+fstring_full_format_spec:
+  | ':' fstring_format_spec* 
+fstring_format_spec:
+  | FSTRING_MIDDLE 
+  | fstring_replacement_field
+fstring:
+  | FSTRING_START fstring_middle* FSTRING_END 
+string: STRING 
+strings: (fstring|string)+ 
+list:
+  | '[' [star_named_expressions] ']' 
+tuple:
+  | '(' [star_named_expression ',' [star_named_expressions] ] ')' 
+set: '{' star_named_expressions '}' 
+# Dicts
+# -----
+dict:
+  | '{' [double_starred_kvpairs] '}' 
+double_starred_kvpairs: ','.double_starred_kvpair+ [','] 
+double_starred_kvpair:
+  | '**' bitwise_or 
+  | kvpair
+kvpair: expression ':' expression 
+# Comprehensions & Generators
+# ---------------------------
+for_if_clauses:
+  | for_if_clause+ 
+for_if_clause:
+  | 'async' 'for' star_targets 'in' ~ disjunction ('if' disjunction )* 
+  | 'for' star_targets 'in' ~ disjunction ('if' disjunction )* 
+listcomp:
+  | '[' named_expression for_if_clauses ']' 
+setcomp:
+  | '{' named_expression for_if_clauses '}' 
+genexp:
+  | '(' ( assignment_expression | expression !':=') for_if_clauses ')' 
+dictcomp:
+  | '{' kvpair for_if_clauses '}' 
+# FUNCTION CALL ARGUMENTS
+# =======================
+arguments:
+  | args [','] &')' 
+args:
+  | ','.(starred_expression | ( assignment_expression | expression !':=') !'=')+ [',' kwargs ] 
+  | kwargs 
+kwargs:
+  | ','.kwarg_or_starred+ ',' ','.kwarg_or_double_starred+ 
+  | ','.kwarg_or_starred+
+  | ','.kwarg_or_double_starred+
+starred_expression:
+  | '*' expression 
+kwarg_or_starred:
+  | NAME '=' expression 
+  | starred_expression 
+kwarg_or_double_starred:
+  | NAME '=' expression 
+  | '**' expression 
+# ASSIGNMENT TARGETS
+# ==================
+# Generic targets
+# ---------------
+# NOTE: star_targets may contain *bitwise_or, targets may not.
+star_targets:
+  | star_target !',' 
+  | star_target (',' star_target )* [','] 
+star_targets_list_seq: ','.star_target+ [','] 
+star_targets_tuple_seq:
+  | star_target (',' star_target )+ [','] 
+  | star_target ',' 
+star_target:
+  | '*' (!'*' star_target) 
+  | target_with_star_atom
+target_with_star_atom:
+  | t_primary '.' NAME !t_lookahead 
+  | t_primary '[' slices ']' !t_lookahead 
+  | star_atom
+star_atom:
+  | NAME 
+  | '(' target_with_star_atom ')' 
+  | '(' [star_targ

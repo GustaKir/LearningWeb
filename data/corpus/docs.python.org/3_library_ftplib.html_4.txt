@@ -1,0 +1,34 @@
+Title: FTPLib: Storing Files and Initiating Transfers
+URL: https://docs.python.org/3/library/ftplib.html
+Summary: This section details the methods for storing files in line mode with `storlines`, which reads from a file object and supports an optional callback, and initiating a transfer with `transfercmd`, which begins data transfer over a connection.
+---
+
+storlines(_cmd_ , _fp_ , _callback =None_)[¶](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.storlines "Link to this definition")
+    
+Store a file in line mode. _cmd_ should be an appropriate `STOR` command (see [`storbinary()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.storbinary "ftplib.FTP.storbinary")). Lines are read until EOF from the [file object](https://docs.python.org/3/glossary.html#term-file-object) _fp_ (opened in binary mode) using its [`readline()`](https://docs.python.org/3/library/io.html#io.IOBase.readline "io.IOBase.readline") method to provide the data to be stored. _callback_ is an optional single parameter callable that is called on each line after it is sent. 
+
+transfercmd(_cmd_ , _rest =None_)[¶](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.transfercmd "Link to this definition")
+    
+Initiate a transfer over the data connection. If the transfer is active, send an `EPRT` or `PORT` command and the transfer command specified by _cmd_ , and accept the connection. If the server is passive, send an `EPSV` or `PASV` command, connect to it, and start the transfer command. Either way, return the socket for the connection.
+If optional _rest_ is given, a `REST` command is sent to the server, passing _rest_ as an argument. _rest_ is usually a byte offset into the requested file, telling the server to restart sending the file’s bytes at the requested offset, skipping over the initial bytes. Note however that the [`transfercmd()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.transfercmd "ftplib.FTP.transfercmd") method converts _rest_ to a string with the _encoding_ parameter specified at initialization, but no check is performed on the string’s contents. If the server does not recognize the `REST` command, an [`error_reply`](https://docs.python.org/3/library/ftplib.html#ftplib.error_reply "ftplib.error_reply") exception will be raised. If this happens, simply call [`transfercmd()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.transfercmd "ftplib.FTP.transfercmd") without a _rest_ argument. 
+
+ntransfercmd(_cmd_ , _rest =None_)[¶](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.ntransfercmd "Link to this definition")
+    
+Like [`transfercmd()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.transfercmd "ftplib.FTP.transfercmd"), but returns a tuple of the data connection and the expected size of the data. If the expected size could not be computed, `None` will be returned as the expected size. _cmd_ and _rest_ means the same thing as in [`transfercmd()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.transfercmd "ftplib.FTP.transfercmd"). 
+
+mlsd(_path =''_, _facts =[]_)[¶](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.mlsd "Link to this definition")
+    
+List a directory in a standardized format by using `MLSD` command ([**RFC 3659**](https://datatracker.ietf.org/doc/html/rfc3659.html)). If _path_ is omitted the current directory is assumed. _facts_ is a list of strings representing the type of information desired (e.g. `["type", "size", "perm"]`). Return a generator object yielding a tuple of two elements for every file found in path. First element is the file name, the second one is a dictionary containing facts about the file name. Content of this dictionary might be limited by the _facts_ argument but server is not guaranteed to return all requested facts.
+Added in version 3.3. 
+
+nlst(_argument_[, _..._])[¶](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.nlst "Link to this definition")
+    
+Return a list of file names as returned by the `NLST` command. The optional _argument_ is a directory to list (default is the current server directory). Multiple arguments can be used to pass non-standard options to the `NLST` command.
+Note
+If your server supports the command, [`mlsd()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.mlsd "ftplib.FTP.mlsd") offers a better API. 
+
+dir(_argument_[, _..._])[¶](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.dir "Link to this definition")
+    
+Produce a directory listing as returned by the `LIST` command, printing it to standard output. The optional _argument_ is a directory to list (default is the current server directory). Multiple arguments can be used to pass non-standard options to the `LIST` command. If the last argument is a function, it is used as a _callback_ function as for [`retrlines()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.retrlines "ftplib.FTP.retrlines"); the default prints to [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout"). This method returns `None`.
+Note
+If your server supports the command, [`mlsd()`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP.mlsd "ftplib.FTP.mlsd") offers a better API.

@@ -1,0 +1,113 @@
+Title: Applying Partial Updates in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/body-updates/
+Summary: This section outlines the steps for applying partial updates in FastAPI, including using the `PATCH` method, retrieving existing data, employing Pydantic models, utilizing the `exclude_unset` option to avoid overriding default values, creating a modified model, converting it for storage, and saving the updated data.
+---
+
+```
+
+### Partial updates recap[¶](https://fastapi.tiangolo.com/tutorial/body-updates/#partial-updates-recap "Permanent link")
+In summary, to apply partial updates you would:
+  * (Optionally) use `PATCH` instead of `PUT`.
+  * Retrieve the stored data.
+  * Put that data in a Pydantic model.
+  * Generate a `dict` without default values from the input model (using `exclude_unset`).
+    * This way you can update only the values actually set by the user, instead of overriding values already stored with default values in your model.
+  * Create a copy of the stored model, updating its attributes with the received partial updates (using the `update` parameter).
+  * Convert the copied model to something that can be stored in your DB (for example, using the `jsonable_encoder`).
+    * This is comparable to using the model's `.model_dump()` method again, but it makes sure (and converts) the values to data types that can be converted to JSON, for example, `datetime` to `str`.
+  * Save the data to your DB.
+  * Return the updated model.
+
+
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_7_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str | None = None
+  description: str | None = None
+  price: float | None = None
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_8_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_8_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: Union[str, None] = None
+  description: Union[str, None] = None
+  price: Union[float, None] = None
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: Union[str, None] = None
+  description: Union[str, None] = None
+  price: Union[float, None] = None
+  tax: float = 10.5
+  tags: List[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item

@@ -1,0 +1,66 @@
+Title: Using LogRecord Factory in Python Logging
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section discusses the use of a custom LogRecord factory in Python's logging module, which can be set via `setLogRecordFactory()` and queried with `getLogRecordFactory()`. It highlights considerations for logger filters and the impact of logging at different module levels.
+---
+
+```
+
+at module level). It’s probably one too many things to think about. Developers could also add the filter to a [`NullHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.NullHandler "logging.NullHandler") attached to their top-level logger, but this would not be invoked if an application developer attached a handler to a lower-level library logger — so output from that handler would not reflect the intentions of the library developer.
+In Python 3.2 and later, [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") creation is done through a factory, which you can specify. The factory is just a callable you can set with [`setLogRecordFactory()`](https://docs.python.org/3/library/logging.html#logging.setLogRecordFactory "logging.setLogRecordFactory"), and interrogate with [`getLogRecordFactory()`](https://docs.python.org/3/library/logging.html#logging.getLogRecordFactory "logging.getLogRecordFactory"). The factory is invoked with the same signature as the [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") constructor, as [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") is the default setting for the factory.
+This approach allows a custom factory to control all aspects of LogRecord creation. For example, you could return a subclass, or just add some additional attributes to the record once created, using a pattern similar to this:
+```
+old_factory = logging.getLogRecordFactory()
+defrecord_factory(*args, **kwargs):
+  record = old_factory(*args, **kwargs)
+  record.custom_attribute = 0xdecafbad
+  return record
+logging.setLogRecordFactory(record_factory)
+
+```
+
+This pattern allows different libraries to chain factories together, and as long as they don’t overwrite each other’s attributes or unintentionally overwrite the attributes provided as standard, there should be no surprises. However, it should be borne in mind that each link in the chain adds run-time overhead to all logging operations, and the technique should only be used when the use of a [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") does not provide the desired result.
+## Subclassing QueueHandler and QueueListener- a ZeroMQ example[¶](https://docs.python.org/3/howto/logging-cookbook.html#subclassing-queuehandler-and-queuelistener-a-zeromq-example "Link to this heading")
+### Subclass `QueueHandler`[¶](https://docs.python.org/3/howto/logging-cookbook.html#subclass-queuehandler "Link to this heading")
+You can use a [`QueueHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler "logging.handlers.QueueHandler") subclass to send messages to other kinds of queues, for example a ZeroMQ ‘publish’ socket. In the example below,the socket is created separately and passed to the handler (as its ‘queue’):
+```
+importzmq  # using pyzmq, the Python binding for ZeroMQ
+importjson # for serializing records portably
+ctx = zmq.Context()
+sock = zmq.Socket(ctx, zmq.PUB) # or zmq.PUSH, or other suitable value
+sock.bind('tcp://*:5556')    # or wherever
+classZeroMQSocketHandler(QueueHandler):
+  defenqueue(self, record):
+    self.queue.send_json(record.__dict__)
+
+handler = ZeroMQSocketHandler(sock)
+
+```
+
+Of course there are other ways of organizing this, for example passing in the data needed by the handler to create the socket:
+```
+classZeroMQSocketHandler(QueueHandler):
+  def__init__(self, uri, socktype=zmq.PUB, ctx=None):
+    self.ctx = ctx or zmq.Context()
+    socket = zmq.Socket(self.ctx, socktype)
+    socket.bind(uri)
+    super().__init__(socket)
+  defenqueue(self, record):
+    self.queue.send_json(record.__dict__)
+  defclose(self):
+    self.queue.close()
+
+```
+
+### Subclass `QueueListener`[¶](https://docs.python.org/3/howto/logging-cookbook.html#subclass-queuelistener "Link to this heading")
+You can also subclass [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") to get messages from other kinds of queues, for example a ZeroMQ ‘subscribe’ socket. Here’s an example:
+```
+classZeroMQSocketListener(QueueListener):
+  def__init__(self, uri, /, *handlers, **kwargs):
+    self.ctx = kwargs.get('ctx') or zmq.Context()
+    socket = zmq.Socket(self.ctx, zmq.SUB)
+    socket.setsockopt_string(zmq.SUBSCRIBE, '') # subscribe to everything
+    socket.connect(uri)
+    super().__init__(socket, *handlers, **kwargs)
+  defdequeue(self):
+    msg = self.queue.recv_json()
+    return logging.makeLogRecord(msg)

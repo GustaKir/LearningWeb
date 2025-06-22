@@ -1,0 +1,31 @@
+Title: Python 3.2 Updates: Improvements to String Handling and Context Management
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces distinct `maketrans` and `translate` methods for `str`, `bytes`, and `bytearray`, clarifying type support within the `string` module. Additionally, the deprecated `contextlib.nested()` function has been removed, encouraging the use of the `with` statement to manage multiple context managers.
+---
+
+d [`bytearray.maketrans()`](https://docs.python.org/3/library/stdtypes.html#bytearray.maketrans "bytearray.maketrans"). This change solves the confusion around which types were supported by the [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") module. Now, [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"), and [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") each have their own **maketrans** and **translate** methods with intermediate translation tables of the appropriate type.
+(Contributed by Georg Brandl; [bpo-5675](https://bugs.python.org/issue?@action=redirect&bpo=5675).)
+  * The previously deprecated `contextlib.nested()` function has been removed in favor of a plain [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement which can accept multiple context managers. The latter technique is faster (because it is built-in), and it does a better job finalizing multiple context managers when one of them raises an exception:
+```
+with open('mylog.txt') as infile, open('a.out', 'w') as outfile:
+  for line in infile:
+    if '<critical>' in line:
+      outfile.write(line)
+
+```
+
+(Contributed by Georg Brandl and Mattias Brändström; [appspot issue 53094](https://codereview.appspot.com/53094).)
+  * [`struct.pack()`](https://docs.python.org/3/library/struct.html#struct.pack "struct.pack") now only allows bytes for the `s` string pack code. Formerly, it would accept text arguments and implicitly encode them to bytes using UTF-8. This was problematic because it made assumptions about the correct encoding and because a variable-length encoding can fail when writing to fixed length segment of a structure.
+Code such as `struct.pack('<6sHHBBB', 'GIF87a', x, y)` should be rewritten with to use bytes instead of text, `struct.pack('<6sHHBBB', b'GIF87a', x, y)`.
+(Discovered by David Beazley and fixed by Victor Stinner; [bpo-10783](https://bugs.python.org/issue?@action=redirect&bpo=10783).)
+  * The [`xml.etree.ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "xml.etree.ElementTree: Implementation of the ElementTree API.") class now raises an [`xml.etree.ElementTree.ParseError`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.ParseError "xml.etree.ElementTree.ParseError") when a parse fails. Previously it raised an [`xml.parsers.expat.ExpatError`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.ExpatError "xml.parsers.expat.ExpatError").
+  * The new, longer [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") value on floats may break doctests which rely on the old output format.
+  * In [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen"), the default value for _close_fds_ is now `True` under Unix; under Windows, it is `True` if the three standard streams are set to `None`, `False` otherwise. Previously, _close_fds_ was always `False` by default, which produced difficult to solve bugs or race conditions when open file descriptors would leak into the child process.
+  * Support for legacy HTTP 0.9 has been removed from [`urllib.request`](https://docs.python.org/3/library/urllib.request.html#module-urllib.request "urllib.request: Extensible library for opening URLs.") and [`http.client`](https://docs.python.org/3/library/http.client.html#module-http.client "http.client: HTTP and HTTPS protocol client \(requires sockets\)."). Such support is still present on the server side (in [`http.server`](https://docs.python.org/3/library/http.server.html#module-http.server "http.server: HTTP server and request handlers.")).
+(Contributed by Antoine Pitrou, [bpo-10711](https://bugs.python.org/issue?@action=redirect&bpo=10711).)
+  * SSL sockets in timeout mode now raise [`socket.timeout`](https://docs.python.org/3/library/socket.html#socket.timeout "socket.timeout") when a timeout occurs, rather than a generic [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError").
+(Contributed by Antoine Pitrou, [bpo-10272](https://bugs.python.org/issue?@action=redirect&bpo=10272).)
+  * The misleading functions `PyEval_AcquireLock()` and `PyEval_ReleaseLock()` have been officially deprecated. The thread-state aware APIs (such as [`PyEval_SaveThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "PyEval_SaveThread") and [`PyEval_RestoreThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread")) should be used instead.
+  * Due to security risks, `asyncore.handle_accept()` has been deprecated, and a new function, `asyncore.handle_accepted()`, was added to replace it.
+(Contributed by Giampaolo Rodola in [bpo-6706](https://bugs.python.org/issue?@action=redirect&bpo=6706).)
+  * Due to the new [GIL](

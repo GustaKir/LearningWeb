@@ -1,0 +1,59 @@
+Title: Enhancements in Python 2.2: Unicode Support
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: Python 2.2 enhances Unicode support, allowing strings to use either UCS-2 or UCS-4 encoding. The latter expands the range of the `unichr()` function, enabling it to handle a wider range of Unicode characters when compiled with `--enable-unicode=ucs4`. Additionally, options to disable Unicode support entirely are introduced.
+---
+
+[**PEP 238**](https://peps.python.org/pep-0238/) - Changing the Division Operator
+    
+Written by Moshe Zadka and Guido van Rossum. Implemented by Guido van Rossum..
+## Unicode Changes[¶](https://docs.python.org/3/whatsnew/2.2.html#unicode-changes "Link to this heading")
+Python’s Unicode support has been enhanced a bit in 2.2. Unicode strings are usually stored as UCS-2, as 16-bit unsigned integers. Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned integers, as its internal encoding by supplying `--enable-unicode=ucs4` to the configure script. (It’s also possible to specify `--disable-unicode` to completely disable Unicode support.)
+When built to use UCS-4 (a “wide Python”), the interpreter can natively handle Unicode characters from U+000000 to U+110000, so the range of legal values for the `unichr()` function is expanded accordingly. Using an interpreter compiled to use UCS-2 (a “narrow Python”), values greater than 65535 will still cause `unichr()` to raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") exception. This is all described in [**PEP 261**](https://peps.python.org/pep-0261/), “Support for ‘wide’ Unicode characters”; consult it for further details.
+Another change is simpler to explain. Since their introduction, Unicode strings have supported an `encode()` method to convert the string to a selected encoding such as UTF-8 or Latin-1. A symmetric `decode([*encoding*])` method has been added to 8-bit strings (though not to Unicode strings) in 2.2. `decode()` assumes that the string is in the specified encoding and decodes it, returning whatever is returned by the codec.
+Using this new feature, codecs have been added for tasks not directly related to Unicode. For example, codecs have been added for uu-encoding, MIME’s base64 encoding, and compression with the [`zlib`](https://docs.python.org/3/library/zlib.html#module-zlib "zlib: Low-level interface to compression and decompression routines compatible with gzip.") module:
+>>>```
+>>> s = """Here is a lengthy piece of redundant, overly verbose,
+... and repetitive text.
+... """
+>>> data = s.encode('zlib')
+>>> data
+'x\x9c\r\xc9\xc1\r\x80 \x10\x04\xc0?Ul...'
+>>> data.decode('zlib')
+'Here is a lengthy piece of redundant, overly verbose,\nand repetitive text.\n'
+>>> print s.encode('uu')
+begin 666 <data>
+M2&5R92!I<R!A(&QE;F=T:'D@<&EE8V4@;V8@<F5D=6YD86YT+"!O=F5R;'D@
+>=F5R8F]S92P*86YD(')E<&5T:71I=F4@=&5X="X*
+end
+>>> "sheesh".encode('rot-13')
+'furrfu'
+
+```
+
+To convert a class instance to Unicode, a `__unicode__()` method can be defined by a class, analogous to `__str__()`.
+`encode()`, `decode()`, and `__unicode__()` were implemented by Marc-André Lemburg. The changes to support using UCS-4 internally were implemented by Fredrik Lundh and Martin von Löwis.
+See also 
+
+[**PEP 261**](https://peps.python.org/pep-0261/) - Support for ‘wide’ Unicode characters
+    
+Written by Paul Prescod.
+## PEP 227: Nested Scopes[¶](https://docs.python.org/3/whatsnew/2.2.html#pep-227-nested-scopes "Link to this heading")
+In Python 2.1, statically nested scopes were added as an optional feature, to be enabled by a `from __future__ import nested_scopes` directive. In 2.2 nested scopes no longer need to be specially enabled, and are now always present. The rest of this section is a copy of the description of nested scopes from my “What’s New in Python 2.1” document; if you read it when 2.1 came out, you can skip the rest of this section.
+The largest change introduced in Python 2.1, and made complete in 2.2, is to Python’s scoping rules. In Python 2.0, at any given time there are at most three namespaces used to look up variable names: local, module-level, and the built-in namespace. This often surprised people because it didn’t match their intuitive expectations. For example, a nested recursive function definition doesn’t work:
+```
+deff():
+  ...
+  defg(value):
+    ...
+    return g(value-1) + 1
+  ...
+
+```
+
+The function `g()` will always raise a [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") exception, because the binding of the name `g` isn’t in either its local namespace or in the module-level namespace. This isn’t much of a problem in practice (how often do you recursively define interior functions like this?), but this also made using the [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda) expression clumsier, and this was a problem in practice. In code which uses `lambda` you can often find local variables being copied by passing them as the default values of arguments.
+```
+deffind(self, name):
+  "Return list of any entries equal to 'name'"
+  L = filter(lambda x, name=name: x == name,
+        self.list_attribute)
+  return L

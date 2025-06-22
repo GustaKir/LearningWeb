@@ -1,0 +1,62 @@
+Title: Caching Method Calls in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section discusses two primary tools for caching method calls in Python: `functools.cached_property()` and `functools.lru_cache()`. The `cached_property` stores results at the instance level for methods without arguments, while `lru_cache` does so at the class level. The `cached_property` retains the result only as long as the instance exists.
+---
+
+```
+>>> FirstOfMonthDate(2012, 2, 14)
+FirstOfMonthDate(2012, 2, 1)
+>>> NamedInt('ten')
+10
+>>> NamedInt(20)
+20
+>>> TitleStr('Blog: Why Python Rocks')
+'blog-why-python-rocks'
+
+```
+
+### [How do I cache method calls?](https://docs.python.org/3/faq/programming.html#id70)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-cache-method-calls "Link to this heading")
+The two principal tools for caching methods are [`functools.cached_property()`](https://docs.python.org/3/library/functools.html#functools.cached_property "functools.cached_property") and [`functools.lru_cache()`](https://docs.python.org/3/library/functools.html#functools.lru_cache "functools.lru_cache"). The former stores results at the instance level and the latter at the class level.
+The _cached_property_ approach only works with methods that do not take any arguments. It does not create a reference to the instance. The cached method result will be kept only as long as the instance is alive.
+The advantage is that when an instance is no longer used, the cached method result will be released right away. The disadvantage is that if instances accumulate, so too will the accumulated method results. They can grow without bound.
+The _lru_cache_ approach works with methods that have [hashable](https://docs.python.org/3/glossary.html#term-hashable) arguments. It creates a reference to the instance unless special efforts are made to pass in weak references.
+The advantage of the least recently used algorithm is that the cache is bounded by the specified _maxsize_. The disadvantage is that instances are kept alive until they age out of the cache or until the cache is cleared.
+This example shows the various techniques:
+```
+classWeather:
+  "Lookup weather information on a government website"
+  def__init__(self, station_id):
+    self._station_id = station_id
+    # The _station_id is private and immutable
+  defcurrent_temperature(self):
+    "Latest hourly observation"
+    # Do not cache this because old results
+    # can be out of date.
+  @cached_property
+  deflocation(self):
+    "Return the longitude/latitude coordinates of the station"
+    # Result only depends on the station_id
+  @lru_cache(maxsize=20)
+  defhistoric_rainfall(self, date, units='mm'):
+    "Rainfall on a given date"
+    # Depends on the station_id, date, and units.
+
+```
+
+The above example assumes that the _station_id_ never changes. If the relevant instance attributes are mutable, the _cached_property_ approach can’t be made to work because it cannot detect changes to the attributes.
+To make the _lru_cache_ approach work when the _station_id_ is mutable, the class needs to define the [`__eq__()`](https://docs.python.org/3/reference/datamodel.html#object.__eq__ "object.__eq__") and [`__hash__()`](https://docs.python.org/3/reference/datamodel.html#object.__hash__ "object.__hash__") methods so that the cache can detect relevant attribute updates:
+```
+classWeather:
+  "Example with a mutable station identifier"
+  def__init__(self, station_id):
+    self.station_id = station_id
+  defchange_station(self, station_id):
+    self.station_id = station_id
+  def__eq__(self, other):
+    return self.station_id == other.station_id
+  def__hash__(self):
+    return hash(self.station_id)
+  @lru_cache(maxsize=20)
+  defhistoric_rainfall(self, date, units='cm'):
+    'Rainfall on a given date'
+    # Depends on the station_id, date, and units.

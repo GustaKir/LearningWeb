@@ -1,0 +1,52 @@
+Title: BaseExceptionGroup.derive Method
+URL: https://docs.python.org/3/library/exceptions.html
+Summary: The derive method creates an exception group that retains the same message but wraps the provided exceptions in the 'excs' parameter. It is utilized by the subgroup() and split() methods, which require subclasses to override it to return instances of the subclass.
+---
+
+derive(_excs_)[¶](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive "Link to this definition")
+    
+Returns an exception group with the same [`message`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.message "BaseExceptionGroup.message"), but which wraps the exceptions in `excs`.
+This method is used by [`subgroup()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.subgroup "BaseExceptionGroup.subgroup") and [`split()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.split "BaseExceptionGroup.split"), which are used in various contexts to break up an exception group. A subclass needs to override it in order to make [`subgroup()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.subgroup "BaseExceptionGroup.subgroup") and [`split()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.split "BaseExceptionGroup.split") return instances of the subclass rather than [`ExceptionGroup`](https://docs.python.org/3/library/exceptions.html#ExceptionGroup "ExceptionGroup").
+[`subgroup()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.subgroup "BaseExceptionGroup.subgroup") and [`split()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.split "BaseExceptionGroup.split") copy the [`__traceback__`](https://docs.python.org/3/library/exceptions.html#BaseException.__traceback__ "BaseException.__traceback__"), [`__cause__`](https://docs.python.org/3/library/exceptions.html#BaseException.__cause__ "BaseException.__cause__"), [`__context__`](https://docs.python.org/3/library/exceptions.html#BaseException.__context__ "BaseException.__context__") and [`__notes__`](https://docs.python.org/3/library/exceptions.html#BaseException.__notes__ "BaseException.__notes__") fields from the original exception group to the one returned by [`derive()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive "BaseExceptionGroup.derive"), so these fields do not need to be updated by [`derive()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive "BaseExceptionGroup.derive").
+>>>```
+>>> classMyGroup(ExceptionGroup):
+...   defderive(self, excs):
+...     return MyGroup(self.message, excs)
+...
+>>> e = MyGroup("eg", [ValueError(1), TypeError(2)])
+>>> e.add_note("a note")
+>>> e.__context__ = Exception("context")
+>>> e.__cause__ = Exception("cause")
+>>> try:
+...   raise e
+... except Exception as e:
+...   exc = e
+...
+>>> match, rest = exc.split(ValueError)
+>>> exc, exc.__context__, exc.__cause__, exc.__notes__
+(MyGroup('eg', [ValueError(1), TypeError(2)]), Exception('context'), Exception('cause'), ['a note'])
+>>> match, match.__context__, match.__cause__, match.__notes__
+(MyGroup('eg', [ValueError(1)]), Exception('context'), Exception('cause'), ['a note'])
+>>> rest, rest.__context__, rest.__cause__, rest.__notes__
+(MyGroup('eg', [TypeError(2)]), Exception('context'), Exception('cause'), ['a note'])
+>>> exc.__traceback__ is match.__traceback__ is rest.__traceback__
+True
+
+```
+
+Note that [`BaseExceptionGroup`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup "BaseExceptionGroup") defines [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__"), so subclasses that need a different constructor signature need to override that rather than [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__"). For example, the following defines an exception group subclass which accepts an exit_code and and constructs the group’s message from it.
+```
+classErrors(ExceptionGroup):
+  def__new__(cls, errors, exit_code):
+   self = super().__new__(Errors, f"exit code: {exit_code}", errors)
+   self.exit_code = exit_code
+   return self
+  defderive(self, excs):
+   return Errors(excs, self.exit_code)
+
+```
+
+Like [`ExceptionGroup`](https://docs.python.org/3/library/exceptions.html#ExceptionGroup "ExceptionGroup"), any subclass of [`BaseExceptionGroup`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup "BaseExceptionGroup") which is also a subclass of [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") can only wrap instances of [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception").
+Added in version 3.11.
+## Exception hierarchy[¶](https://docs.python.org/3/library/exceptions.html#exception-hierarchy "Link to this heading")
+The class hierarchy for built-in exceptions is:

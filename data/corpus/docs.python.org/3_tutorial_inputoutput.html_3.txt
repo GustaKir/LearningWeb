@@ -1,0 +1,47 @@
+Title: String Justification Methods in Python
+URL: https://docs.python.org/3/tutorial/inputoutput.html
+Summary: This section discusses the `str.rjust()`, `str.ljust()`, and `str.center()` methods for right-justifying, left-justifying, and centering strings in Python. It explains that these methods pad strings with spaces and do not truncate overly long strings, which avoids misrepresentation of values. It also mentions that slicing can be used for truncation if needed.
+---
+
+```
+
+(Note that the one space between each column was added by the way [`print()`](https://docs.python.org/3/library/functions.html#print "print") works: it always adds spaces between its arguments.)
+The [`str.rjust()`](https://docs.python.org/3/library/stdtypes.html#str.rjust "str.rjust") method of string objects right-justifies a string in a field of a given width by padding it with spaces on the left. There are similar methods [`str.ljust()`](https://docs.python.org/3/library/stdtypes.html#str.ljust "str.ljust") and [`str.center()`](https://docs.python.org/3/library/stdtypes.html#str.center "str.center"). These methods do not write anything, they just return a new string. If the input string is too long, they don’t truncate it, but return it unchanged; this will mess up your column lay-out but that’s usually better than the alternative, which would be lying about a value. (If you really want truncation you can always add a slice operation, as in `x.ljust(n)[:n]`.)
+There is another method, [`str.zfill()`](https://docs.python.org/3/library/stdtypes.html#str.zfill "str.zfill"), which pads a numeric string on the left with zeros. It understands about plus and minus signs:
+>>>```
+>>> '12'.zfill(5)
+'00012'
+>>> '-3.14'.zfill(7)
+'-003.14'
+>>> '3.14159265359'.zfill(5)
+'3.14159265359'
+
+```
+
+### 7.1.4. Old string formatting[¶](https://docs.python.org/3/tutorial/inputoutput.html#old-string-formatting "Link to this heading")
+The % operator (modulo) can also be used for string formatting. Given `format % values` (where _format_ is a string), `%` conversion specifications in _format_ are replaced with zero or more elements of _values_. This operation is commonly known as string interpolation. For example:
+>>>```
+>>> importmath
+>>> print('The value of pi is approximately %5.3f.' % math.pi)
+The value of pi is approximately 3.142.
+
+```
+
+More information can be found in the [printf-style String Formatting](https://docs.python.org/3/library/stdtypes.html#old-string-formatting) section.
+## 7.2. Reading and Writing Files[¶](https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files "Link to this heading")
+[`open()`](https://docs.python.org/3/library/functions.html#open "open") returns a [file object](https://docs.python.org/3/glossary.html#term-file-object), and is most commonly used with two positional arguments and one keyword argument: `open(filename, mode, encoding=None)`
+>>>```
+>>> f = open('workfile', 'w', encoding="utf-8")
+
+```
+
+The first argument is a string containing the filename. The second argument is another string containing a few characters describing the way in which the file will be used. _mode_ can be `'r'` when the file will only be read, `'w'` for only writing (an existing file with the same name will be erased), and `'a'` opens the file for appending; any data written to the file is automatically added to the end. `'r+'` opens the file for both reading and writing. The _mode_ argument is optional; `'r'` will be assumed if it’s omitted.
+Normally, files are opened in _text mode_ , that means, you read and write strings from and to the file, which are encoded in a specific _encoding_. If _encoding_ is not specified, the default is platform dependent (see [`open()`](https://docs.python.org/3/library/functions.html#open "open")). Because UTF-8 is the modern de-facto standard, `encoding="utf-8"` is recommended unless you know that you need to use a different encoding. Appending a `'b'` to the mode opens the file in _binary mode_. Binary mode data is read and written as [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") objects. You can not specify _encoding_ when opening file in binary mode.
+In text mode, the default when reading is to convert platform-specific line endings (`\n` on Unix, `\r\n` on Windows) to just `\n`. When writing in text mode, the default is to convert occurrences of `\n` back to platform-specific line endings. This behind-the-scenes modification to file data is fine for text files, but will corrupt binary data like that in `JPEG` or `EXE` files. Be very careful to use binary mode when reading and writing such files.
+It is good practice to use the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) keyword when dealing with file objects. The advantage is that the file is properly closed after its suite finishes, even if an exception is raised at some point. Using `with` is also much shorter than writing equivalent [`try`](https://docs.python.org/3/reference/compound_stmts.html#try)-[`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) blocks:
+>>>```
+>>> with open('workfile', encoding="utf-8") as f:
+...   read_data = f.read()
+>>> # We can check that the file has been automatically closed.
+>>> f.closed
+True

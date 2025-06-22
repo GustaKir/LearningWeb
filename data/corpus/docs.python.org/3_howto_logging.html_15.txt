@@ -1,0 +1,13 @@
+Title: Logging with Arbitrary Objects in Python
+URL: https://docs.python.org/3/howto/logging.html
+Summary: This section explains that logging in Python can accept arbitrary objects, using their `__str__()` method for conversion to a string. It also discusses optimizations in logging, emphasizing that message formatting is deferred to enhance performance and that the computation of arguments can also incur costs.
+---
+
+s "Link to this heading")
+In the preceding sections and examples, it has been assumed that the message passed when logging the event is a string. However, this is not the only possibility. You can pass an arbitrary object as a message, and its [`__str__()`](https://docs.python.org/3/reference/datamodel.html#object.__str__ "object.__str__") method will be called when the logging system needs to convert it to a string representation. In fact, if you want to, you can avoid computing a string representation altogether - for example, the [`SocketHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler "logging.handlers.SocketHandler") emits an event by pickling it and sending it over the wire.
+## Optimization[¶](https://docs.python.org/3/howto/logging.html#optimization "Link to this heading")
+Formatting of message arguments is deferred until it cannot be avoided. However, computing the arguments passed to the logging method can also be expensive, and you may want to avoid doing it if the logger will just throw away your event. To decide what to do, you can call the [`isEnabledFor()`](https://docs.python.org/3/library/logging.html#logging.Logger.isEnabledFor "logging.Logger.isEnabledFor") method which takes a level argument and returns true if the event would be created by the Logger for that level of call. You can write code like this:
+```
+if logger.isEnabledFor(logging.DEBUG):
+  logger.debug('Message with %s, %s', expensive_func1(),
+                    expensive_func2())

@@ -1,0 +1,39 @@
+Title: Vectorcall Functions in Python C API
+URL: https://docs.python.org/3/c-api/call.html
+Summary: This document segment discusses the use of `PyVectorcall_NARGS` for future extensions and the function `PyVectorcall_Function`, which checks if a given object supports the vectorcall protocol. It highlights that if the object does not support the protocol, it returns NULL, while also noting the versions in which these functions were added—3.8 and 3.9 respectively.
+---
+
+```
+
+However, the function `PyVectorcall_NARGS` should be used to allow for future extensions.
+Added in version 3.8. 
+
+[vectorcallfunc](https://docs.python.org/3/c-api/call.html#c.vectorcallfunc "vectorcallfunc")PyVectorcall_Function([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*op)[¶](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_Function "Link to this definition")
+    
+If _op_ does not support the vectorcall protocol (either because the type does not or because the specific instance does not), return _NULL_. Otherwise, return the vectorcall function pointer stored in _op_. This function never raises an exception.
+This is mostly useful to check whether or not _op_ supports vectorcall, which can be done by checking `PyVectorcall_Function(op) != NULL`.
+Added in version 3.9. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyVectorcall_Call([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*callable, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*tuple, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*dict)[¶](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_Call "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+Call _callable_ ’s [`vectorcallfunc`](https://docs.python.org/3/c-api/call.html#c.vectorcallfunc "vectorcallfunc") with positional and keyword arguments given in a tuple and dict, respectively.
+This is a specialized function, intended to be put in the [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call") slot or be used in an implementation of `tp_call`. It does not check the [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") flag and it does not fall back to `tp_call`.
+Added in version 3.8.
+## Object Calling API[¶](https://docs.python.org/3/c-api/call.html#object-calling-api "Link to this heading")
+Various functions are available for calling a Python object. Each converts its arguments to a convention supported by the called object – either _tp_call_ or vectorcall. In order to do as little conversion as possible, pick one that best fits the format of data you have available.
+The following table summarizes the available functions; please see individual documentation for details.
+Function | callable | args | kwargs  
+---|---|---|---  
+[`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call") | `PyObject *` | tuple | dict/`NULL`  
+[`PyObject_CallNoArgs()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallNoArgs "PyObject_CallNoArgs") | `PyObject *` | — | —  
+[`PyObject_CallOneArg()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallOneArg "PyObject_CallOneArg") | `PyObject *` | 1 object | —  
+[`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject") | `PyObject *` | tuple/`NULL` | —  
+[`PyObject_CallFunction()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallFunction "PyObject_CallFunction") | `PyObject *` | format | —  
+[`PyObject_CallMethod()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethod "PyObject_CallMethod") | obj + `char*` | format | —  
+[`PyObject_CallFunctionObjArgs()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallFunctionObjArgs "PyObject_CallFunctionObjArgs") | `PyObject *` | variadic | —  
+[`PyObject_CallMethodObjArgs()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethodObjArgs "PyObject_CallMethodObjArgs") | obj + name | variadic | —  
+[`PyObject_CallMethodNoArgs()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethodNoArgs "PyObject_CallMethodNoArgs") | obj + name | — | —  
+[`PyObject_CallMethodOneArg()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethodOneArg "PyObject_CallMethodOneArg") | obj + name | 1 object | —  
+[`PyObject_Vectorcall()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Vectorcall "PyObject_Vectorcall") | `PyObject *` | vectorcall | vectorcall  
+[`PyObject_VectorcallDict()`](https://docs.python.org/3/c-api/call.html#c.PyObject_VectorcallDict "PyObject_VectorcallDict") | `PyObject *` | vectorcall | dict/`NULL`  
+[`PyObject_VectorcallMethod()`](https://docs.python.org/3/c-api/call.html#c.PyObject_VectorcallMethod "PyObject_VectorcallMethod") | arg + name | vectorcall | vectorcall

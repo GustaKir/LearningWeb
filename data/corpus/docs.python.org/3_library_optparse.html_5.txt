@@ -1,0 +1,44 @@
+Title: Understanding Options in Command-Line Interfaces
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section explains the purpose of options in command-line programs, highlighting that they provide extra customization for program execution. It notes that options are typically optional and discusses common misconceptions about required options.
+---
+
+```
+
+`-v` and `--report` are both options. Assuming that `--report` takes one argument, `report.txt` is an option argument. `foo` and `bar` are positional arguments.
+### What are options for?[¶](https://docs.python.org/3/library/optparse.html#what-are-options-for "Link to this heading")
+Options are used to provide extra information to tune or customize the execution of a program. In case it wasn’t clear, options are usually _optional_. A program should be able to run just fine with no options whatsoever. (Pick a random program from the Unix or GNU toolsets. Can it run without any options at all and still make sense? The main exceptions are `find`, `tar`, and `dd`—all of which are mutant oddballs that have been rightly criticized for their non-standard syntax and confusing interfaces.)
+Lots of people want their programs to have “required options”. Think about it. If it’s required, then it’s _not optional_! If there is a piece of information that your program absolutely requires in order to run successfully, that’s what positional arguments are for.
+As an example of good command-line interface design, consider the humble `cp` utility, for copying files. It doesn’t make much sense to try to copy files without supplying a destination and at least one source. Hence, `cp` fails if you run it with no arguments. However, it has a flexible, useful syntax that does not require any options at all:
+```
+cp SOURCE DEST
+cp SOURCE ... DEST-DIR
+
+```
+
+You can get pretty far with just that. Most `cp` implementations provide a bunch of options to tweak exactly how the files are copied: you can preserve mode and modification time, avoid following symlinks, ask before clobbering existing files, etc. But none of this distracts from the core mission of `cp`, which is to copy either one file to another, or several files to another directory.
+### What are positional arguments for?[¶](https://docs.python.org/3/library/optparse.html#what-are-positional-arguments-for "Link to this heading")
+Positional arguments are for those pieces of information that your program absolutely, positively requires to run.
+A good user interface should have as few absolute requirements as possible. If your program requires 17 distinct pieces of information in order to run successfully, it doesn’t much matter _how_ you get that information from the user—most people will give up and walk away before they successfully run the program. This applies whether the user interface is a command-line, a configuration file, or a GUI: if you make that many demands on your users, most of them will simply give up.
+In short, try to minimize the amount of information that users are absolutely required to supply—use sensible defaults whenever possible. Of course, you also want to make your programs reasonably flexible. That’s what options are for. Again, it doesn’t matter if they are entries in a config file, widgets in the “Preferences” dialog of a GUI, or command-line options—the more options you implement, the more flexible your program is, and the more complicated its implementation becomes. Too much flexibility has drawbacks as well, of course; too many options can overwhelm users and make your code much harder to maintain.
+## Tutorial[¶](https://docs.python.org/3/library/optparse.html#tutorial "Link to this heading")
+While [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") is quite flexible and powerful, it’s also straightforward to use in most cases. This section covers the code patterns that are common to any [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.")-based program.
+First, you need to import the OptionParser class; then, early in the main program, create an OptionParser instance:
+```
+fromoptparseimport OptionParser
+...
+parser = OptionParser()
+
+```
+
+Then you can start defining options. The basic syntax is:
+```
+parser.add_option(opt_str, ...,
+         attr=value, ...)
+
+```
+
+Each option has one or more option strings, such as `-f` or `--file`, and several option attributes that tell [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") what to expect and what to do when it encounters that option on the command line.
+Typically, each option will have one short option string and one long option string, e.g.:
+```
+parser.add_option("-f", "--file", ...)

@@ -1,0 +1,32 @@
+Title: decode() Method in Python Codecs
+URL: https://docs.python.org/3/library/codecs.html
+Summary: The decode() method decodes an input object, returning a tuple of the output object and the length consumed. It requires the input to be a bytes object and allows for error handling via the _errors_ argument, which defaults to 'strict'. For stateful decoding, StreamReader should be used instead.
+---
+
+decode(_input_ , _errors ='strict'_)[¶](https://docs.python.org/3/library/codecs.html#codecs.Codec.decode "Link to this definition")
+    
+Decodes the object _input_ and returns a tuple (output object, length consumed). For instance, for a [text encoding](https://docs.python.org/3/glossary.html#term-text-encoding), decoding converts a bytes object encoded using a particular character set encoding to a string object.
+For text encodings and bytes-to-bytes codecs, _input_ must be a bytes object or one which provides the read-only buffer interface – for example, buffer objects and memory mapped files.
+The _errors_ argument defines the error handling to apply. It defaults to `'strict'` handling.
+The method may not store state in the [`Codec`](https://docs.python.org/3/library/codecs.html#codecs.Codec "codecs.Codec") instance. Use [`StreamReader`](https://docs.python.org/3/library/codecs.html#codecs.StreamReader "codecs.StreamReader") for codecs which have to keep state in order to make decoding efficient.
+The decoder must be able to handle zero length input and return an empty object of the output object type in this situation.
+### Incremental Encoding and Decoding[¶](https://docs.python.org/3/library/codecs.html#incremental-encoding-and-decoding "Link to this heading")
+The [`IncrementalEncoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder "codecs.IncrementalEncoder") and [`IncrementalDecoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder "codecs.IncrementalDecoder") classes provide the basic interface for incremental encoding and decoding. Encoding/decoding the input isn’t done with one call to the stateless encoder/decoder function, but with multiple calls to the [`encode()`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder.encode "codecs.IncrementalEncoder.encode")/[`decode()`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder.decode "codecs.IncrementalDecoder.decode") method of the incremental encoder/decoder. The incremental encoder/decoder keeps track of the encoding/decoding process during method calls.
+The joined output of calls to the [`encode()`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder.encode "codecs.IncrementalEncoder.encode")/[`decode()`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder.decode "codecs.IncrementalDecoder.decode") method is the same as if all the single inputs were joined into one, and this input was encoded/decoded with the stateless encoder/decoder.
+#### IncrementalEncoder Objects[¶](https://docs.python.org/3/library/codecs.html#incrementalencoder-objects "Link to this heading")
+The [`IncrementalEncoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder "codecs.IncrementalEncoder") class is used for encoding an input in multiple steps. It defines the following methods which every incremental encoder must define in order to be compatible with the Python codec registry. 
+
+_class_ codecs.IncrementalEncoder(_errors ='strict'_)[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder "Link to this definition")
+    
+Constructor for an [`IncrementalEncoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder "codecs.IncrementalEncoder") instance.
+All incremental encoders must provide this constructor interface. They are free to add additional keyword arguments, but only the ones defined here are used by the Python codec registry.
+The [`IncrementalEncoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder "codecs.IncrementalEncoder") may implement different error handling schemes by providing the _errors_ keyword argument. See [Error Handlers](https://docs.python.org/3/library/codecs.html#error-handlers) for possible values.
+The _errors_ argument will be assigned to an attribute of the same name. Assigning to this attribute makes it possible to switch between different error handling strategies during the lifetime of the [`IncrementalEncoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder "codecs.IncrementalEncoder") object. 
+
+encode(_object_ , _final =False_)[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder.encode "Link to this definition")
+    
+Encodes _object_ (taking the current state of the encoder into account) and returns the resulting encoded object. If this is the last call to [`encode()`](https://docs.python.org/3/library/codecs.html#codecs.encode "codecs.encode") _final_ must be true (the default is false). 
+
+reset()[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder.reset "Link to this definition")
+    
+Reset the encoder to the initial state. The output is discarded: call `.encode(object, final=True)`, passing an empty byte or text string if necessary, to reset the encoder and to get the output.

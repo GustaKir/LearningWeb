@@ -1,0 +1,29 @@
+Title: Adding GCS Key to Local Streamlit App Secrets
+URL: https://docs.streamlit.io/develop/tutorials/databases/gcs
+Summary: This section explains how to configure a local Streamlit application to read secrets from a `.streamlit/secrets.toml` file, specifically for Google Cloud Storage (GCS) access. It includes a code snippet for setting up the connection parameters and emphasizes the importance of adding the secrets file to `.gitignore` to prevent it from being committed to version control.
+---
+
+ot 12](https://docs.streamlit.io/images/databases/gcs-12.png)![GCS screenshot 13](https://docs.streamlit.io/images/databases/gcs-13.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/gcs#add-the-key-to-your-local-app-secrets)Add the key to your local app secrets
+Your local Streamlit app will read secrets from a file `.streamlit/secrets.toml` in your app's root directory. Create this file if it doesn't exist yet and add the access key to it as shown below:
+`# .streamlit/secrets.toml [connections.gcs] type = "service_account" project_id = "xxx" private_key_id = "xxx" private_key = "xxx" client_email = "xxx" client_id = "xxx" auth_uri = "https://accounts.google.com/o/oauth2/auth" token_uri = "https://oauth2.googleapis.com/token" auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs" client_x509_cert_url = "xxx" `
+_priority_high_
+#### Important
+Add this file to `.gitignore` and don't commit it to your GitHub repo!
+## [](https://docs.streamlit.io/develop/tutorials/databases/gcs#copy-your-app-secrets-to-the-cloud)Copy your app secrets to the cloud
+As the `secrets.toml` file above is not committed to GitHub, you need to pass its content to your deployed app (on Streamlit Community Cloud) separately. Go to the [app dashboard](https://share.streamlit.io/) and in the app's dropdown menu, click on **Edit Secrets**. Copy the content of `secrets.toml` into the text area. More information is available at [Secrets management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management).
+![Secrets manager screenshot](https://docs.streamlit.io/images/databases/edit-secrets.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/gcs#add-filesconnection-and-gcsfs-to-your-requirements-file)Add FilesConnection and gcsfs to your requirements file
+Add the [FilesConnection](https://github.com/streamlit/files-connection) and [gcsfs](https://github.com/fsspec/gcsfs) packages to your `requirements.txt` file, preferably pinning the versions (replace `x.x.x` with the version you want installed):
+`# requirements.txt gcsfs==x.x.x st-files-connection `
+## [](https://docs.streamlit.io/develop/tutorials/databases/gcs#write-your-streamlit-app)Write your Streamlit app
+Copy the code below to your Streamlit app and run it. Make sure to adapt the name of your bucket and file. Note that Streamlit automatically turns the access keys from your secrets file into environment variables.
+`# streamlit_app.py import streamlit as st from st_files_connection import FilesConnection # Create connection object and retrieve file contents. # Specify input format is a csv and to cache the result for 600 seconds. conn = st.connection('gcs', type=FilesConnection) df = conn.read("streamlit-bucket/myfile.csv", input_format="csv", ttl=600) # Print results. for row in df.itertuples():   st.write(f"{row.Owner} has a :{row.Pet}:") `
+See `st.connection` above? This handles secrets retrieval, setup, result caching and retries. By default, `read()` results are cached without expiring. In this case, we set `ttl=600` to ensure the file contents is cached for no longer than 10 minutes. You can also set `ttl=0` to disable caching. Learn more in [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+If everything worked out (and you used the example file given above), your app should look like this:
+![Finished app screenshot](https://docs.streamlit.io/images/databases/streamlit-app.png)[Previous: Firestore](https://blog.streamlit.io/streamlit-firestore/)[Next: Microsoft SQL Server](https://docs.streamlit.io/develop/tutorials/databases/mssql) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

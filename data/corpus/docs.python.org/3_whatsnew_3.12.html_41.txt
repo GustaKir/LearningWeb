@@ -1,0 +1,31 @@
+Title: C API Changes in Python 3.12
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: This section outlines new features in Python 3.12's C API, including the introduction of the Unstable C API tier (PEP 697) meant for low-level tools, which includes non-deprecated changes. It also lists renaming of key code object constructors and the addition of extra storage for code objects as per PEP 523.
+---
+
+## C API Changes[¶](https://docs.python.org/3/whatsnew/3.12.html#c-api-changes "Link to this heading")
+### New Features[¶](https://docs.python.org/3/whatsnew/3.12.html#id4 "Link to this heading")
+  * [**PEP 697**](https://peps.python.org/pep-0697/): Introduce the [Unstable C API tier](https://docs.python.org/3/c-api/stable.html#unstable-c-api), intended for low-level tools like debuggers and JIT compilers. This API may change in each minor release of CPython without deprecation warnings. Its contents are marked by the `PyUnstable_` prefix in names.
+Code object constructors:
+    * `PyUnstable_Code_New()` (renamed from `PyCode_New`)
+    * `PyUnstable_Code_NewWithPosOnlyArgs()` (renamed from `PyCode_NewWithPosOnlyArgs`)
+Extra storage for code objects ([**PEP 523**](https://peps.python.org/pep-0523/)):
+    * `PyUnstable_Eval_RequestCodeExtraIndex()` (renamed from `_PyEval_RequestCodeExtraIndex`)
+    * `PyUnstable_Code_GetExtra()` (renamed from `_PyCode_GetExtra`)
+    * `PyUnstable_Code_SetExtra()` (renamed from `_PyCode_SetExtra`)
+The original names will continue to be available until the respective API changes.
+(Contributed by Petr Viktorin in [gh-101101](https://github.com/python/cpython/issues/101101).)
+  * [**PEP 697**](https://peps.python.org/pep-0697/): Add an API for extending types whose instance memory layout is opaque:
+    * [`PyType_Spec.basicsize`](https://docs.python.org/3/c-api/type.html#c.PyType_Spec.basicsize "PyType_Spec.basicsize") can be zero or negative to specify inheriting or extending the base class size.
+    * [`PyObject_GetTypeData()`](https://docs.python.org/3/c-api/object.html#c.PyObject_GetTypeData "PyObject_GetTypeData") and [`PyType_GetTypeDataSize()`](https://docs.python.org/3/c-api/object.html#c.PyType_GetTypeDataSize "PyType_GetTypeDataSize") added to allow access to subclass-specific instance data.
+    * [`Py_TPFLAGS_ITEMS_AT_END`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_ITEMS_AT_END "Py_TPFLAGS_ITEMS_AT_END") and [`PyObject_GetItemData()`](https://docs.python.org/3/c-api/object.html#c.PyObject_GetItemData "PyObject_GetItemData") added to allow safely extending certain variable-sized types, including [`PyType_Type`](https://docs.python.org/3/c-api/type.html#c.PyType_Type "PyType_Type").
+    * [`Py_RELATIVE_OFFSET`](https://docs.python.org/3/c-api/structures.html#c.Py_RELATIVE_OFFSET "Py_RELATIVE_OFFSET") added to allow defining [`members`](https://docs.python.org/3/c-api/structures.html#c.PyMemberDef "PyMemberDef") in terms of a subclass-specific struct.
+(Contributed by Petr Viktorin in [gh-103509](https://github.com/python/cpython/issues/103509).)
+  * Add the new [limited C API](https://docs.python.org/3/c-api/stable.html#limited-c-api) function [`PyType_FromMetaclass()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromMetaclass "PyType_FromMetaclass"), which generalizes the existing [`PyType_FromModuleAndSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromModuleAndSpec "PyType_FromModuleAndSpec") using an additional metaclass argument. (Contributed by Wenzel Jakob in [gh-93012](https://github.com/python/cpython/issues/93012).)
+  * API for creating objects that can be called using [the vectorcall protocol](https://docs.python.org/3/c-api/call.html#vectorcall) was added to the [Limited API](https://docs.python.org/3/c-api/stable.html#stable):
+    * [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL")
+    * [`PyVectorcall_NARGS()`](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_NARGS "PyVectorcall_NARGS")
+    * [`PyVectorcall_Call()`](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_Call "PyVectorcall_Call")
+    * [`vectorcallfunc`](https://docs.python.org/3/c-api/call.html#c.vectorcallfunc "vectorcallfunc")
+The [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") flag is now removed from a class when the class’s [`__call__()`](https://docs.python.org/3/reference/datamodel.html#object.__call__ "object.__call__") method is reassigned. This makes vectorcall safe to use with mutable types (i.e. heap types without the immutable flag, [`Py_TPFLAGS_IMMUTABLETYPE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_IMMUTABLETYPE "Py_TPFLAGS_IMMUTABLETYPE")). Mutable types that do not override [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call") now inherit the `Py_TPFLAGS_HAVE_VECTORCALL` flag. (Contributed by Petr Viktorin in [gh-93274](https://github.com/python/cpython/issues/93274).)
+The [`Py_TPFLAGS_MANAGED_DICT`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_DICT "Py_TPFLAGS_MANAGED_DICT") and [`Py_TPFLAGS_MANAGED_WEAKREF`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_WEAKREF "Py_TPFLAGS_MANAGED_WEAKREF") flags have been added. This allows extensions classes to suppo

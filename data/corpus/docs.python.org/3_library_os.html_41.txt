@@ -1,0 +1,39 @@
+Title: Updates to os.statvfs and os.stat_result in Python
+URL: https://docs.python.org/3/library/os.html
+Summary: This chunk highlights changes in the Python os module, including the removal of the incorrect return value from _rdev and the addition of the st_birthtime member for Windows. It also describes the os.statvfs() function, which performs a system call to retrieve filesystem attributes through a statvfs structure.
+---
+
+_rdev") no longer returns a value. Previously it would contain the same as [`st_dev`](https://docs.python.org/3/library/os.html#os.stat_result.st_dev "os.stat_result.st_dev"), which was incorrect.
+Added the [`st_birthtime`](https://docs.python.org/3/library/os.html#os.stat_result.st_birthtime "os.stat_result.st_birthtime") member on Windows. 
+
+os.statvfs(_path_)[¶](https://docs.python.org/3/library/os.html#os.statvfs "Link to this definition")
+    
+Perform a `statvfs()` system call on the given path. The return value is an object whose attributes describe the filesystem on the given path, and correspond to the members of the `statvfs` structure, namely: `f_bsize`, `f_frsize`, `f_blocks`, `f_bfree`, `f_bavail`, `f_files`, `f_ffree`, `f_favail`, `f_flag`, `f_namemax`, `f_fsid`.
+Two module-level constants are defined for the `f_flag` attribute’s bit-flags: if `ST_RDONLY` is set, the filesystem is mounted read-only, and if `ST_NOSUID` is set, the semantics of setuid/setgid bits are disabled or not supported.
+Additional module-level constants are defined for GNU/glibc based systems. These are `ST_NODEV` (disallow access to device special files), `ST_NOEXEC` (disallow program execution), `ST_SYNCHRONOUS` (writes are synced at once), `ST_MANDLOCK` (allow mandatory locks on an FS), `ST_WRITE` (write on file/directory/symlink), `ST_APPEND` (append-only file), `ST_IMMUTABLE` (immutable file), `ST_NOATIME` (do not update access times), `ST_NODIRATIME` (do not update directory access times), `ST_RELATIME` (update atime relative to mtime/ctime).
+This function can support [specifying a file descriptor](https://docs.python.org/3/library/os.html#path-fd).
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+Changed in version 3.2: The `ST_RDONLY` and `ST_NOSUID` constants were added.
+Changed in version 3.3: Added support for specifying _path_ as an open file descriptor.
+Changed in version 3.4: The `ST_NODEV`, `ST_NOEXEC`, `ST_SYNCHRONOUS`, `ST_MANDLOCK`, `ST_WRITE`, `ST_APPEND`, `ST_IMMUTABLE`, `ST_NOATIME`, `ST_NODIRATIME`, and `ST_RELATIME` constants were added.
+Changed in version 3.6: Accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+Changed in version 3.7: Added the `f_fsid` attribute. 
+
+os.supports_dir_fd[¶](https://docs.python.org/3/library/os.html#os.supports_dir_fd "Link to this definition")
+    
+A [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") object indicating which functions in the [`os`](https://docs.python.org/3/library/os.html#module-os "os: Miscellaneous operating system interfaces.") module accept an open file descriptor for their _dir_fd_ parameter. Different platforms provide different features, and the underlying functionality Python uses to implement the _dir_fd_ parameter is not available on all platforms Python supports. For consistency’s sake, functions that may support _dir_fd_ always allow specifying the parameter, but will throw an exception if the functionality is used when it’s not locally available. (Specifying `None` for _dir_fd_ is always supported on all platforms.)
+To check whether a particular function accepts an open file descriptor for its _dir_fd_ parameter, use the `in` operator on `supports_dir_fd`. As an example, this expression evaluates to `True` if [`os.stat()`](https://docs.python.org/3/library/os.html#os.stat "os.stat") accepts open file descriptors for _dir_fd_ on the local platform:
+```
+os.stat in os.supports_dir_fd
+
+```
+
+Currently _dir_fd_ parameters only work on Unix platforms; none of them work on Windows.
+Added in version 3.3. 
+
+os.supports_effective_ids[¶](https://docs.python.org/3/library/os.html#os.supports_effective_ids "Link to this definition")
+    
+A [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") object indicating whether [`os.access()`](https://docs.python.org/3/library/os.html#os.access "os.access") permits specifying `True` for its _effective_ids_ parameter on the local platform. (Specifying `False` for _effective_ids_ is always supported on all platforms.) If the local platform supports it, the collection will contain [`os.access()`](https://docs.python.org/3/library/os.html#os.access "os.access"); otherwise it will be empty.
+This expression evaluates to `True` if [`os.access()`](https://docs.python.org/3/library/os.html#os.access "os.access") supports `effective_ids=True` on the local platform:
+```
+os.access in os.supports_effective_ids

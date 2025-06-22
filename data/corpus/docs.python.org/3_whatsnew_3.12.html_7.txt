@@ -1,0 +1,79 @@
+Title: Improvements in Error Handling for Python 3.12
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: Python 3.12 introduces enhanced error messages for `NameError` exceptions, suggesting `self.<NAME>` when an instance attribute matches the name in the error. Additionally, `SyntaxError` messages are improved for incorrect import statements.
+---
+
+```
+
+  * Improve the error suggestion for [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") exceptions for instances. Now if a [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") is raised in a method and the instance has an attribute that’s exactly equal to the name in the exception, the suggestion will include `self.<NAME>` instead of the closest match in the method scope. (Contributed by Pablo Galindo in [gh-99139](https://github.com/python/cpython/issues/99139).)
+>>>```
+>>> classA:
+...   def__init__(self):
+...     self.blech = 1
+...
+...   deffoo(self):
+...     somethin = blech
+...
+>>> A().foo()
+Traceback (most recent call last):
+ File "<stdin>", line 1
+somethin = blech
+^^^^^
+NameError: name 'blech' is not defined. Did you mean: 'self.blech'?
+
+```
+
+  * Improve the [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") error message when the user types `import x from y` instead of `from y import x`. (Contributed by Pablo Galindo in [gh-98931](https://github.com/python/cpython/issues/98931).)
+>>>```
+>>> importa.y.z fromb.y.z
+Traceback (most recent call last):
+ File "<stdin>", line 1
+importa.y.z fromb.y.z
+^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+```
+
+  * [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") exceptions raised from failed `from <module> import <name>` statements now include suggestions for the value of `<name>` based on the available names in `<module>`. (Contributed by Pablo Galindo in [gh-91058](https://github.com/python/cpython/issues/91058).)
+>>>```
+>>> fromcollectionsimport chainmap
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ImportError: cannot import name 'chainmap' from 'collections'. Did you mean: 'ChainMap'?
+
+```
+
+
+
+## New Features Related to Type Hints[¶](https://docs.python.org/3/whatsnew/3.12.html#new-features-related-to-type-hints "Link to this heading")
+This section covers major changes affecting [**type hints**](https://peps.python.org/pep-0484/) and the [`typing`](https://docs.python.org/3/library/typing.html#module-typing "typing: Support for type hints \(see :pep:`484`\).") module.
+### PEP 692: Using `TypedDict` for more precise `**kwargs` typing[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-692-using-typeddict-for-more-precise-kwargs-typing "Link to this heading")
+Typing `**kwargs` in a function signature as introduced by [**PEP 484**](https://peps.python.org/pep-0484/) allowed for valid annotations only in cases where all of the `**kwargs` were of the same type.
+[**PEP 692**](https://peps.python.org/pep-0692/) specifies a more precise way of typing `**kwargs` by relying on typed dictionaries:
+```
+fromtypingimport TypedDict, Unpack
+classMovie(TypedDict):
+ name: str
+ year: int
+deffoo(**kwargs: Unpack[Movie]): ...
+
+```
+
+See [**PEP 692**](https://peps.python.org/pep-0692/) for more details.
+(Contributed by Franek Magiera in [gh-103629](https://github.com/python/cpython/issues/103629).)
+### PEP 698: Override Decorator for Static Typing[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-698-override-decorator-for-static-typing "Link to this heading")
+A new decorator [`typing.override()`](https://docs.python.org/3/library/typing.html#typing.override "typing.override") has been added to the [`typing`](https://docs.python.org/3/library/typing.html#module-typing "typing: Support for type hints \(see :pep:`484`\).") module. It indicates to type checkers that the method is intended to override a method in a superclass. This allows type checkers to catch mistakes where a method that is intended to override something in a base class does not in fact do so.
+Example:
+```
+fromtypingimport override
+classBase:
+ defget_color(self) -> str:
+  return "blue"
+classGoodChild(Base):
+ @override # ok: overrides Base.get_color
+ defget_color(self) -> str:
+  return "yellow"
+classBadChild(Base):
+ @override # type checker error: does not override Base.get_color
+ defget_colour(self) -> str:
+  return "red"

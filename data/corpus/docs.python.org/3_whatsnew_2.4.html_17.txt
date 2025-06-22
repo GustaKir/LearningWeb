@@ -1,0 +1,75 @@
+Title: Introduction of DocTestRunner in Python 2.4
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: The new `DocTestRunner` class allows running individual tests and summarizing the results. It utilizes an `OutputChecker` to compare expected and actual outputs, with customizable options, including the `doctest.ELLIPSIS` flag, which facilitates matching outputs that vary slightly.
+---
+
+```
+
+The new `DocTestRunner` class then runs individual tests and can produce a summary of the results:
+```
+runner = doctest.DocTestRunner()
+for t in tests:
+  tried, failed = runner.run(t)
+runner.summarize(verbose=1)
+
+```
+
+The above example produces the following output:
+```
+1 items passed all tests:
+  2 tests in f
+2 tests in 1 items.
+2 passed and 0 failed.
+Test passed.
+
+```
+
+`DocTestRunner` uses an instance of the `OutputChecker` class to compare the expected output with the actual output. This class takes a number of different flags that customize its behaviour; ambitious users can also write a completely new subclass of `OutputChecker`.
+The default output checker provides a number of handy features. For example, with the [`doctest.ELLIPSIS`](https://docs.python.org/3/library/doctest.html#doctest.ELLIPSIS "doctest.ELLIPSIS") option flag, an ellipsis (`...`) in the expected output matches any substring, making it easier to accommodate outputs that vary in minor ways:
+```
+defo (n):
+""">>> o(1)
+<__main__.C instance at 0x...>
+>>>
+"""
+
+```
+
+Another special string, `<BLANKLINE>`, matches a blank line:
+```
+defp (n):
+""">>> p(1)
+<BLANKLINE>
+>>>
+"""
+
+```
+
+Another new capability is producing a diff-style display of the output by specifying the [`doctest.REPORT_UDIFF`](https://docs.python.org/3/library/doctest.html#doctest.REPORT_UDIFF "doctest.REPORT_UDIFF") (unified diffs), [`doctest.REPORT_CDIFF`](https://docs.python.org/3/library/doctest.html#doctest.REPORT_CDIFF "doctest.REPORT_CDIFF") (context diffs), or [`doctest.REPORT_NDIFF`](https://docs.python.org/3/library/doctest.html#doctest.REPORT_NDIFF "doctest.REPORT_NDIFF") (delta-style) option flags. For example:
+```
+defg (n):
+""">>> g(4)
+here
+is
+a
+lengthy
+>>>"""
+  L = 'here is a rather lengthy list of words'.split()
+  for word in L[:n]:
+    print word
+
+```
+
+Running the above function’s tests with [`doctest.REPORT_UDIFF`](https://docs.python.org/3/library/doctest.html#doctest.REPORT_UDIFF "doctest.REPORT_UDIFF") specified, you get the following output:
+```
+**********************************************************************
+File "t.py", line 15, in g
+Failed example:
+  g(4)
+Differences (unified diff with -expected +actual):
+  @@ -2,3 +2,3 @@
+   is
+   a
+  -lengthy
+  +rather
+**********************************************************************

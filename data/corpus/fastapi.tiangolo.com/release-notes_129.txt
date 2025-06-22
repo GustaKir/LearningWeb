@@ -1,0 +1,55 @@
+Title: Enhancements to APIRouter in FastAPI
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: The APIRouter in FastAPI now supports new parameters including `default_response_class`, `dependencies`, `callbacks`, `deprecated`, `include_in_schema`, `responses`, and `prefix`. These enhancements allow for greater flexibility in managing path operations, enabling router-level dependencies, marking operations as deprecated, and modifying schema visibility.
+---
+
+```
+
+**In`APIRouter`**
+This allows setting the (mostly new) parameters (additionally to the already existing parameters):
+  * `default_response_class`: updated to handle defaults in `APIRouter` and `include_router`. For example, it's not needed to set it explicitly when [creating callbacks](https://fastapi.tiangolo.com/advanced/openapi-callbacks/).
+  * `dependencies`: to include ✨ router-level dependencies ✨ that apply to all the _path operations_ in a router. Up to now, this was only possible with `include_router`.
+  * `callbacks`: OpenAPI callbacks that apply to all the _path operations_ in this router.
+  * `deprecated`: to mark all the _path operations_ in a router as deprecated.
+  * `include_in_schema`: to allow excluding all the _path operations_ in a router from the OpenAPI schema.
+  * `responses`: OpenAPI responses that apply to all the _path operations_ in a router.
+  * `prefix`: to set the path prefix for a router. Up to now, this was only possible when calling `include_router`.
+  * `tags`: OpenAPI tags to apply to all the _path operations_ in this router.
+
+
+For example:
+```
+fromfastapiimport APIRouter, Depends
+async defsome_dependency():
+  return
+router = APIRouter(prefix="/users", dependencies=[Depends(some_dependency)])
+
+```
+
+**In`include_router`**
+Most of these settings are now supported in `APIRouter`, which normally lives closer to the related code, so it is recommended to use `APIRouter` when possible.
+But `include_router` is still useful to, for example, adding options (like `dependencies`, `prefix`, and `tags`) when including a third party router, or a generic router that is shared between several projects.
+This PR allows setting the (mostly new) parameters (additionally to the already existing parameters):
+  * `default_response_class`: updated to handle defaults in `APIRouter` and `FastAPI`.
+  * `deprecated`: to mark all the _path operations_ in a router as deprecated in OpenAPI.
+  * `include_in_schema`: to allow disabling all the _path operations_ from showing in the OpenAPI schema.
+  * `callbacks`: OpenAPI callbacks that apply to all the _path operations_ in this router.
+
+
+Note: all the previous parameters are still there, so it's still possible to declare `dependencies` in `include_router`.
+### Breaking Changes[¶](https://fastapi.tiangolo.com/release-notes/#breaking-changes_6 "Permanent link")
+  * PR [#2434](https://github.com/tiangolo/fastapi/pull/2434) includes several improvements that shouldn't affect normal use cases, but could affect in advanced scenarios:
+    * If you are testing the generated OpenAPI (you shouldn't, FastAPI already tests it extensively for you): the order for `tags` in `include_router` and _path operations_ was updated for consistency, but it's a simple order change.
+    * If you have advanced custom logic to access each route's `route.response_class`, or the `router.default_response_class`, or the `app.default_response_class`: the default value for `response_class` in `APIRoute` and for `default_response_class` in `APIRouter` and `FastAPI` is now a `DefaultPlaceholder` used internally to handle and solve default values and overrides. The actual response class inside the `DefaultPlaceholder` is available at `route.response_class.value`.
+
+
+### Docs[¶](https://fastapi.tiangolo.com/release-notes/#docs_64 "Permanent link")
+  * PR [#2434](https://github.com/tiangolo/fastapi/pull/2434) (above) includes new or updated docs:
+    * [Advanced User Guide - OpenAPI Callbacks](https://fastapi.tiangolo.com/advanced/openapi-callbacks/).
+    * [Tutorial - Bigger Applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/).
+    * [Tutorial - Dependencies - Dependencies in path operation decorators](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-in-path-operation-decorators/).
+    * [Tutorial - Dependencies - Global Dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/).
+  * 📝 Add FastAPI monitoring blog post to External Links. PR [#2324](https://github.com/tiangolo/fastapi/pull/2324) by [@louisguitton](https://github.com/louisguitton).
+  * ✏️ Fix typo in Deta tutorial. PR [#2320](https://github.com/tiangolo/fastapi/pull/2320) by [@tiangolo](https://github.com/tiangolo).
+  * ✨ Add Discord chat. PR [#2322](https://github.com/tiangolo/fastapi/pull/2322) by [@tiangolo](https://github.com/tiangolo).
+  * 📝 Fix image links for sponsors. PR [#2304](https://github.com/tiangolo/fastapi/pull/2304) by [@tiangolo](https://github.com/tiangolo).

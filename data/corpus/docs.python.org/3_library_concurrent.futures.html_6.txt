@@ -1,0 +1,24 @@
+Title: add_done_callback Method in Future Class
+URL: https://docs.python.org/3/library/concurrent.futures.html
+Summary: The add_done_callback method attaches a callable to a Future object, which is executed when the future is completed or cancelled. Callables are invoked in the order added and in the same thread that added them. Exceptions raised by the callable are logged and ignored, while subclasses of BaseException may lead to undefined behavior. If the future is already completed or cancelled, the callable executes immediately.
+---
+
+add_done_callback(_fn_)[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.add_done_callback "Link to this definition")
+    
+Attaches the callable _fn_ to the future. _fn_ will be called, with the future as its only argument, when the future is cancelled or finishes running.
+Added callables are called in the order that they were added and are always called in a thread belonging to the process that added them. If the callable raises an [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") subclass, it will be logged and ignored. If the callable raises a [`BaseException`](https://docs.python.org/3/library/exceptions.html#BaseException "BaseException") subclass, the behavior is undefined.
+If the future has already completed or been cancelled, _fn_ will be called immediately.
+The following [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") methods are meant for use in unit tests and [`Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor "concurrent.futures.Executor") implementations. 
+
+set_running_or_notify_cancel()[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.set_running_or_notify_cancel "Link to this definition")
+    
+This method should only be called by [`Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor "concurrent.futures.Executor") implementations before executing the work associated with the [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") and by unit tests.
+If the method returns `False` then the [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") was cancelled, i.e. [`Future.cancel()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.cancel "concurrent.futures.Future.cancel") was called and returned `True`. Any threads waiting on the [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") completing (i.e. through [`as_completed()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed "concurrent.futures.as_completed") or [`wait()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.wait "concurrent.futures.wait")) will be woken up.
+If the method returns `True` then the [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") was not cancelled and has been put in the running state, i.e. calls to [`Future.running()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.running "concurrent.futures.Future.running") will return `True`.
+This method can only be called once and cannot be called after [`Future.set_result()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.set_result "concurrent.futures.Future.set_result") or [`Future.set_exception()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.set_exception "concurrent.futures.Future.set_exception") have been called. 
+
+set_result(_result_)[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.set_result "Link to this definition")
+    
+Sets the result of the work associated with the [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") to _result_.
+This method should only be used by [`Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor "concurrent.futures.Executor") implementations and unit tests.
+Changed in version 3.8: This method raises [`concurrent.futures.InvalidStateError`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.InvalidStateError "concurrent.futures.InvalidStateError") if the [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") is already done.

@@ -1,0 +1,44 @@
+Title: Asyncio Queue Methods Overview
+URL: https://docs.python.org/3/library/asyncio-queue.html
+Summary: This section describes methods related to the asyncio.Queue, including `full()`, which checks if the queue has reached its maximum size, and `_async_ get()`, which retrieves and removes an item from the queue, waiting if necessary. It also notes that `get()` can raise a QueueShutDown error under certain conditions.
+---
+
+full()[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.full "Link to this definition")
+    
+Return `True` if there are [`maxsize`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.maxsize "asyncio.Queue.maxsize") items in the queue.
+If the queue was initialized with `maxsize=0` (the default), then [`full()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.full "asyncio.Queue.full") never returns `True`. 
+
+_async_ get()[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.get "Link to this definition")
+    
+Remove and return an item from the queue. If queue is empty, wait until an item is available.
+Raises [`QueueShutDown`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.QueueShutDown "asyncio.QueueShutDown") if the queue has been shut down and is empty, or if the queue has been shut down immediately. 
+
+get_nowait()[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.get_nowait "Link to this definition")
+    
+Return an item if one is immediately available, else raise [`QueueEmpty`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.QueueEmpty "asyncio.QueueEmpty"). 
+
+_async_ join()[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.join "Link to this definition")
+    
+Block until all items in the queue have been received and processed.
+The count of unfinished tasks goes up whenever an item is added to the queue. The count goes down whenever a consumer coroutine calls [`task_done()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.task_done "asyncio.Queue.task_done") to indicate that the item was retrieved and all work on it is complete. When the count of unfinished tasks drops to zero, [`join()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.join "asyncio.Queue.join") unblocks. 
+
+_async_ put(_item_)[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.put "Link to this definition")
+    
+Put an item into the queue. If the queue is full, wait until a free slot is available before adding the item.
+Raises [`QueueShutDown`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.QueueShutDown "asyncio.QueueShutDown") if the queue has been shut down. 
+
+put_nowait(_item_)[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.put_nowait "Link to this definition")
+    
+Put an item into the queue without blocking.
+If no free slot is immediately available, raise [`QueueFull`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.QueueFull "asyncio.QueueFull"). 
+
+qsize()[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.qsize "Link to this definition")
+    
+Return the number of items in the queue. 
+
+shutdown(_immediate =False_)[¶](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.shutdown "Link to this definition")
+    
+Shut down the queue, making [`get()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.get "asyncio.Queue.get") and [`put()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.put "asyncio.Queue.put") raise [`QueueShutDown`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.QueueShutDown "asyncio.QueueShutDown").
+By default, [`get()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.get "asyncio.Queue.get") on a shut down queue will only raise once the queue is empty. Set _immediate_ to true to make [`get()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.get "asyncio.Queue.get") raise immediately instead.
+All blocked callers of [`put()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.put "asyncio.Queue.put") and [`get()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.get "asyncio.Queue.get") will be unblocked. If _immediate_ is true, a task will be marked as done for each remaining item in the queue, which may unblock callers of [`join()`](https://docs.python.org/3/library/asyncio-queue.html#asyncio.Queue.join "asyncio.Queue.join").
+Added in version 3.13.

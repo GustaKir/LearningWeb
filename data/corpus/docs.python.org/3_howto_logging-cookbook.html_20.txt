@@ -1,0 +1,30 @@
+Title: Using Logger for Efficient Logging in Python
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section explains how to use `logger.debug()` for logging with efficient formatting, noting that the performance impact is minimal as formatting occurs only when messages are output by a handler. It highlights the syntactical requirement for parentheses around the format string and its arguments, and introduces `LoggerAdapter` as an alternative for achieving similar logging effects.
+---
+
+```
+
+While the above examples use `print()` to show how the formatting works, you would of course use `logger.debug()` or similar to actually log using this approach.
+One thing to note is that you pay no significant performance penalty with this approach: the actual formatting happens not when you make the logging call, but when (and if) the logged message is actually about to be output to a log by a handler. So the only slightly unusual thing which might trip you up is that the parentheses go around the format string and the arguments, not just the format string. That’s because the __ notation is just syntax sugar for a constructor call to one of the `_XXX_Message`classes.
+If you prefer, you can use a [`LoggerAdapter`](https://docs.python.org/3/library/logging.html#logging.LoggerAdapter "logging.LoggerAdapter") to achieve a similar effect to the above, as in the following example:
+```
+importlogging
+classMessage:
+  def__init__(self, fmt, args):
+    self.fmt = fmt
+    self.args = args
+  def__str__(self):
+    return self.fmt.format(*self.args)
+classStyleAdapter(logging.LoggerAdapter):
+  deflog(self, level, msg, /, *args, stacklevel=1, **kwargs):
+    if self.isEnabledFor(level):
+      msg, kwargs = self.process(msg, kwargs)
+      self.logger.log(level, Message(msg, args), **kwargs,
+              stacklevel=stacklevel+1)
+logger = StyleAdapter(logging.getLogger(__name__))
+defmain():
+  logger.debug('Hello, {}', 'world!')
+if __name__ == '__main__':
+  logging.basicConfig(level=logging.DEBUG)
+  main()

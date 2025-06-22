@@ -1,0 +1,33 @@
+Title: Socket Module - Non-blocking Socket and Socket Pair Creation
+URL: https://docs.python.org/3/library/socket.html
+Summary: This section discusses the creation of non-blocking sockets on supported OSes, including updates in Python versions 3.9 and 3.10 regarding new protocols. It also details the `socket.socketpair` function, which creates a pair of connected socket objects, specifying defaults for address family and type.
+---
+
+```
+
+will still create a non-blocking socket on OSes that support `SOCK_NONBLOCK`, but `sock.type` will be set to `socket.SOCK_STREAM`.
+Changed in version 3.9: The CAN_J1939 protocol was added.
+Changed in version 3.10: The IPPROTO_MPTCP protocol was added. 
+
+socket.socketpair([_family_[, _type_[, _proto_]]])[¶](https://docs.python.org/3/library/socket.html#socket.socketpair "Link to this definition")
+    
+Build a pair of connected socket objects using the given address family, socket type, and protocol number. Address family, socket type, and protocol number are as for the [`socket()`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket") function above. The default family is [`AF_UNIX`](https://docs.python.org/3/library/socket.html#socket.AF_UNIX "socket.AF_UNIX") if defined on the platform; otherwise, the default is [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET").
+The newly created sockets are [non-inheritable](https://docs.python.org/3/library/os.html#fd-inheritance).
+Changed in version 3.2: The returned socket objects now support the whole socket API, rather than a subset.
+Changed in version 3.4: The returned sockets are now non-inheritable.
+Changed in version 3.5: Windows support added. 
+
+socket.create_connection(_address_ , _timeout =GLOBAL_DEFAULT_, _source_address =None_, _*_ , _all_errors =False_)[¶](https://docs.python.org/3/library/socket.html#socket.create_connection "Link to this definition")
+    
+Connect to a TCP service listening on the internet _address_ (a 2-tuple `(host, port)`), and return the socket object. This is a higher-level function than [`socket.connect()`](https://docs.python.org/3/library/socket.html#socket.socket.connect "socket.socket.connect"): if _host_ is a non-numeric hostname, it will try to resolve it for both [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET") and [`AF_INET6`](https://docs.python.org/3/library/socket.html#socket.AF_INET6 "socket.AF_INET6"), and then try to connect to all possible addresses in turn until a connection succeeds. This makes it easy to write clients that are compatible to both IPv4 and IPv6.
+Passing the optional _timeout_ parameter will set the timeout on the socket instance before attempting to connect. If no _timeout_ is supplied, the global default timeout setting returned by [`getdefaulttimeout()`](https://docs.python.org/3/library/socket.html#socket.getdefaulttimeout "socket.getdefaulttimeout") is used.
+If supplied, _source_address_ must be a 2-tuple `(host, port)` for the socket to bind to as its source address before connecting. If host or port are ‘’ or 0 respectively the OS default behavior will be used.
+When a connection cannot be created, an exception is raised. By default, it is the exception from the last address in the list. If _all_errors_ is `True`, it is an [`ExceptionGroup`](https://docs.python.org/3/library/exceptions.html#ExceptionGroup "ExceptionGroup") containing the errors of all attempts.
+Changed in version 3.2: _source_address_ was added.
+Changed in version 3.11: _all_errors_ was added. 
+
+socket.create_server(_address_ , _*_ , _family =AF_INET_, _backlog =None_, _reuse_port =False_, _dualstack_ipv6 =False_)[¶](https://docs.python.org/3/library/socket.html#socket.create_server "Link to this definition")
+    
+Convenience function which creates a TCP socket bound to _address_ (a 2-tuple `(host, port)`) and returns the socket object.
+_family_ should be either [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET") or [`AF_INET6`](https://docs.python.org/3/library/socket.html#socket.AF_INET6 "socket.AF_INET6"). _backlog_ is the queue size passed to [`socket.listen()`](https://docs.python.org/3/library/socket.html#socket.socket.listen "socket.socket.listen"); if not specified , a default reasonable value is chosen. _reuse_port_ dictates whether to set the `SO_REUSEPORT` socket option.
+If _dualstack_ipv6_ is true, _family_ is [`AF_INET6`](https://docs.python.org/3/library/socket.html#socket.AF_INET6 "socket.AF_INET6") and the platform supports it the socket will be able to accept both IPv4 and IPv6 connections, else it will raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"). Most POSIX platforms and Windows are supposed to support this functionality. When this functionality is enabled the address returned by [`socket.getpeername()`](https://docs.python.org/3/library/socket.html#socket.socket.getpeername "socket.socket.getpeername") when an IPv4 connection occurs will be an IPv6 address represented as an IPv4-mapped IPv6 address. If _dualstack_ipv6_ is false it will explicitly disable this functionality on platforms that enable it by default (e.g. Linux). This parameter can be used in conjunction with [`has_dualstack_ipv6()`](https://docs.python.org/3/library/socket.html#socket.has_dualstack_ipv6 "socket.has_dualstack_ipv6"):

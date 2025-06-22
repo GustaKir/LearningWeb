@@ -1,0 +1,98 @@
+Title: IP Address Network Operations
+URL: https://docs.python.org/3/library/ipaddress.html
+Summary: This section describes methods for IP networks in Python, including 'overlaps' to check if a network is contained within another network, and 'address_exclude' to compute the result of removing a specified network from the current one, returning an iterator of resulting network objects.
+---
+
+```
+
+
+overlaps(_other_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network.overlaps "Link to this definition")
+    
+`True` if this network is partly or wholly contained in _other_ or _other_ is wholly contained in this network. 
+
+address_exclude(_network_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network.address_exclude "Link to this definition")
+    
+Computes the network definitions resulting from removing the given _network_ from this one. Returns an iterator of network objects. Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if _network_ is not completely contained in this network.
+>>>```
+>>> n1 = ip_network('192.0.2.0/28')
+>>> n2 = ip_network('192.0.2.1/32')
+>>> list(n1.address_exclude(n2))
+[IPv4Network('192.0.2.8/29'), IPv4Network('192.0.2.4/30'),
+ IPv4Network('192.0.2.2/31'), IPv4Network('192.0.2.0/32')]
+
+```
+
+
+subnets(_prefixlen_diff =1_, _new_prefix =None_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network.subnets "Link to this definition")
+    
+The subnets that join to make the current network definition, depending on the argument values. _prefixlen_diff_ is the amount our prefix length should be increased by. _new_prefix_ is the desired new prefix of the subnets; it must be larger than our prefix. One and only one of _prefixlen_diff_ and _new_prefix_ must be set. Returns an iterator of network objects.
+>>>```
+>>> list(ip_network('192.0.2.0/24').subnets())
+[IPv4Network('192.0.2.0/25'), IPv4Network('192.0.2.128/25')]
+>>> list(ip_network('192.0.2.0/24').subnets(prefixlen_diff=2))
+[IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
+ IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
+>>> list(ip_network('192.0.2.0/24').subnets(new_prefix=26))
+[IPv4Network('192.0.2.0/26'), IPv4Network('192.0.2.64/26'),
+ IPv4Network('192.0.2.128/26'), IPv4Network('192.0.2.192/26')]
+>>> list(ip_network('192.0.2.0/24').subnets(new_prefix=23))
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+raise ValueError('new prefix must be longer')
+ValueError: new prefix must be longer
+>>> list(ip_network('192.0.2.0/24').subnets(new_prefix=25))
+[IPv4Network('192.0.2.0/25'), IPv4Network('192.0.2.128/25')]
+
+```
+
+
+supernet(_prefixlen_diff =1_, _new_prefix =None_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network.supernet "Link to this definition")
+    
+The supernet containing this network definition, depending on the argument values. _prefixlen_diff_ is the amount our prefix length should be decreased by. _new_prefix_ is the desired new prefix of the supernet; it must be smaller than our prefix. One and only one of _prefixlen_diff_ and _new_prefix_ must be set. Returns a single network object.
+>>>```
+>>> ip_network('192.0.2.0/24').supernet()
+IPv4Network('192.0.2.0/23')
+>>> ip_network('192.0.2.0/24').supernet(prefixlen_diff=2)
+IPv4Network('192.0.0.0/22')
+>>> ip_network('192.0.2.0/24').supernet(new_prefix=20)
+IPv4Network('192.0.0.0/20')
+
+```
+
+
+subnet_of(_other_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network.subnet_of "Link to this definition")
+    
+Return `True` if this network is a subnet of _other_.
+>>>```
+>>> a = ip_network('192.168.1.0/24')
+>>> b = ip_network('192.168.1.128/30')
+>>> b.subnet_of(a)
+True
+
+```
+
+Added in version 3.7. 
+
+supernet_of(_other_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network.supernet_of "Link to this definition")
+    
+Return `True` if this network is a supernet of _other_.
+>>>```
+>>> a = ip_network('192.168.1.0/24')
+>>> b = ip_network('192.168.1.128/30')
+>>> a.supernet_of(b)
+True
+
+```
+
+Added in version 3.7. 
+
+compare_networks(_other_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Network.compare_networks "Link to this definition")
+    
+Compare this network to _other_. In this comparison only the network addresses are considered; host bits aren’t. Returns either `-1`, `0` or `1`.
+>>>```
+>>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.2/32'))
+-1
+>>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.0/32'))
+1
+>>> ip_network('192.0.2.1/32').compare_networks(ip_network('192.0.2.1/32'))
+0

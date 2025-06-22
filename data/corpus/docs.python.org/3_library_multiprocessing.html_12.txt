@@ -1,0 +1,38 @@
+Title: Warnings Regarding Process Termination and Queues in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: Killing a process that is using a Queue can corrupt the queue, causing exceptions in other processes. Additionally, if items are buffered in a JoinableQueue, the child process will not terminate until they are flushed, potentially leading to a deadlock when trying to join the process.
+---
+
+Warning
+If a process is killed using [`Process.terminate()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.terminate "multiprocessing.Process.terminate") or [`os.kill()`](https://docs.python.org/3/library/os.html#os.kill "os.kill") while it is trying to use a [`Queue`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue "multiprocessing.Queue"), then the data in the queue is likely to become corrupted. This may cause any other process to get an exception when it tries to use the queue later on.
+Warning
+As mentioned above, if a child process has put items on a queue (and it has not used [`JoinableQueue.cancel_join_thread`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue.cancel_join_thread "multiprocessing.Queue.cancel_join_thread")), then that process will not terminate until all buffered items have been flushed to the pipe.
+This means that if you try joining that process you may get a deadlock unless you are sure that all items which have been put on the queue have been consumed. Similarly, if the child process is non-daemonic then the parent process may hang on exit when it tries to join all its non-daemonic children.
+Note that a queue created using a manager does not have this issue. See [Programming guidelines](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-programming).
+For an example of the usage of queues for interprocess communication see [Examples](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-examples). 
+
+multiprocessing.Pipe([_duplex_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe "Link to this definition")
+    
+Returns a pair `(conn1, conn2)` of [`Connection`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection "multiprocessing.connection.Connection") objects representing the ends of a pipe.
+If _duplex_ is `True` (the default) then the pipe is bidirectional. If _duplex_ is `False` then the pipe is unidirectional: `conn1` can only be used for receiving messages and `conn2` can only be used for sending messages.
+The `send()` method serializes the object using [`pickle`](https://docs.python.org/3/library/pickle.html#module-pickle "pickle: Convert Python objects to streams of bytes and back.") and the `recv()` re-creates the object. 
+
+_class_ multiprocessing.Queue([_maxsize_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue "Link to this definition")
+    
+Returns a process shared queue implemented using a pipe and a few locks/semaphores. When a process first puts an item on the queue a feeder thread is started which transfers objects from a buffer into the pipe.
+The usual [`queue.Empty`](https://docs.python.org/3/library/queue.html#queue.Empty "queue.Empty") and [`queue.Full`](https://docs.python.org/3/library/queue.html#queue.Full "queue.Full") exceptions from the standard library’s [`queue`](https://docs.python.org/3/library/queue.html#module-queue "queue: A synchronized queue class.") module are raised to signal timeouts.
+[`Queue`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue "multiprocessing.Queue") implements all the methods of [`queue.Queue`](https://docs.python.org/3/library/queue.html#queue.Queue "queue.Queue") except for [`task_done()`](https://docs.python.org/3/library/queue.html#queue.Queue.task_done "queue.Queue.task_done") and [`join()`](https://docs.python.org/3/library/queue.html#queue.Queue.join "queue.Queue.join"). 
+
+qsize()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue.qsize "Link to this definition")
+    
+Return the approximate size of the queue. Because of multithreading/multiprocessing semantics, this number is not reliable.
+Note that this may raise [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") on platforms like macOS where `sem_getvalue()` is not implemented. 
+
+empty()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue.empty "Link to this definition")
+    
+Return `True` if the queue is empty, `False` otherwise. Because of multithreading/multiprocessing semantics, this is not reliable.
+May raise an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") on closed queues. (not guaranteed) 
+
+full()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue.full "Link to this definition")
+    
+Return `True` if the queue is full, `False` otherwise. Because of multithreading/multiprocessing semantics, this is not reliable.

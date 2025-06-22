@@ -1,0 +1,43 @@
+Title: New and Improved Modules in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: Python 2.7 introduces enhancements and bug fixes across its standard library. Notably, the `bdb` module's base class `Bdb` now supports skipping modules based on specified glob-style patterns, improving the debugging process.
+---
+
+## New and Improved Modules[¶](https://docs.python.org/3/whatsnew/2.7.html#new-and-improved-modules "Link to this heading")
+As in every release, Python’s standard library received a number of enhancements and bug fixes. Here’s a partial list of the most notable changes, sorted alphabetically by module name. Consult the `Misc/NEWS` file in the source tree for a more complete list of changes, or look through the Subversion logs for all the details.
+  * The [`bdb`](https://docs.python.org/3/library/bdb.html#module-bdb "bdb: Debugger framework.") module’s base debugging class [`Bdb`](https://docs.python.org/3/library/bdb.html#bdb.Bdb "bdb.Bdb") gained a feature for skipping modules. The constructor now takes an iterable containing glob-style patterns such as `django.*`; the debugger will not step into stack frames from a module that matches one of these patterns. (Contributed by Maru Newby after a suggestion by Senthil Kumaran; [bpo-5142](https://bugs.python.org/issue?@action=redirect&bpo=5142).)
+  * The [`binascii`](https://docs.python.org/3/library/binascii.html#module-binascii "binascii: Tools for converting between binary and various ASCII-encoded binary representations.") module now supports the buffer API, so it can be used with [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview") instances and other similar buffer objects. (Backported from 3.x by Florent Xicluna; [bpo-7703](https://bugs.python.org/issue?@action=redirect&bpo=7703).)
+  * Updated module: the `bsddb` module has been updated from 4.7.2devel9 to version 4.8.4 of [the pybsddb package](https://www.jcea.es/programacion/pybsddb.htm). The new version features better Python 3.x compatibility, various bug fixes, and adds several new BerkeleyDB flags and methods. (Updated by Jesús Cea Avión; [bpo-8156](https://bugs.python.org/issue?@action=redirect&bpo=8156). The pybsddb changelog can be read at <https://hg.jcea.es/pybsddb/file/tip/ChangeLog>.)
+  * The [`bz2`](https://docs.python.org/3/library/bz2.html#module-bz2 "bz2: Interfaces for bzip2 compression and decompression.") module’s [`BZ2File`](https://docs.python.org/3/library/bz2.html#bz2.BZ2File "bz2.BZ2File") now supports the context management protocol, so you can write `with bz2.BZ2File(...) as f:`. (Contributed by Hagen Fürstenau; [bpo-3860](https://bugs.python.org/issue?@action=redirect&bpo=3860).)
+  * New class: the [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") class in the [`collections`](https://docs.python.org/3/library/collections.html#module-collections "collections: Container datatypes") module is useful for tallying data. [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") instances behave mostly like dictionaries but return zero for missing keys instead of raising a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError"):
+>>>```
+>>> fromcollectionsimport Counter
+>>> c = Counter()
+>>> for letter in 'here is a sample of english text':
+...  c[letter] += 1
+...
+>>> c
+Counter({' ': 6, 'e': 5, 's': 3, 'a': 2, 'i': 2, 'h': 2,
+'l': 2, 't': 2, 'g': 1, 'f': 1, 'm': 1, 'o': 1, 'n': 1,
+'p': 1, 'r': 1, 'x': 1})
+>>> c['e']
+5
+>>> c['z']
+0
+
+```
+
+There are three additional [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") methods. [`most_common()`](https://docs.python.org/3/library/collections.html#collections.Counter.most_common "collections.Counter.most_common") returns the N most common elements and their counts. [`elements()`](https://docs.python.org/3/library/collections.html#collections.Counter.elements "collections.Counter.elements") returns an iterator over the contained elements, repeating each element as many times as its count. [`subtract()`](https://docs.python.org/3/library/collections.html#collections.Counter.subtract "collections.Counter.subtract") takes an iterable and subtracts one for each element instead of adding; if the argument is a dictionary or another `Counter`, the counts are subtracted.
+>>>```
+>>> c.most_common(5)
+[(' ', 6), ('e', 5), ('s', 3), ('a', 2), ('i', 2)]
+>>> c.elements() ->
+  'a', 'a', ' ', ' ', ' ', ' ', ' ', ' ',
+  'e', 'e', 'e', 'e', 'e', 'g', 'f', 'i', 'i',
+  'h', 'h', 'm', 'l', 'l', 'o', 'n', 'p', 's',
+  's', 's', 'r', 't', 't', 'x'
+>>> c['e']
+5
+>>> c.subtract('very heavy on the letter e')
+>>> c['e']  # Count is now lower
+-1

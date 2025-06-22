@@ -1,0 +1,42 @@
+Title: Using `reset_peak()` in tracemalloc for Memory Tracking
+URL: https://docs.python.org/3/library/tracemalloc.html
+Summary: The `reset_peak()` function in the tracemalloc library allows for accurate tracking of memory peaks during computation by resetting the peak memory usage recorded. Without this function, the peak from previous computations remains, which may not reflect the current memory usage accurately. This demonstrates the importance of optimizing memory usage by avoiding unnecessary list calls and using functions like `sum()` directly.
+---
+
+```
+
+Using [`reset_peak()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.reset_peak "tracemalloc.reset_peak") ensured we could accurately record the peak during the computation of `small_sum`, even though it is much smaller than the overall peak size of memory blocks since the [`start()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.start "tracemalloc.start") call. Without the call to [`reset_peak()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.reset_peak "tracemalloc.reset_peak"), `second_peak` would still be the peak from the computation `large_sum` (that is, equal to `first_peak`). In this case, both peaks are much higher than the final memory usage, and which suggests we could optimise (by removing the unnecessary call to [`list`](https://docs.python.org/3/library/stdtypes.html#list "list"), and writing `sum(range(...))`).
+## API[¶](https://docs.python.org/3/library/tracemalloc.html#api "Link to this heading")
+### Functions[¶](https://docs.python.org/3/library/tracemalloc.html#functions "Link to this heading") 
+
+tracemalloc.clear_traces()[¶](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.clear_traces "Link to this definition")
+    
+Clear traces of memory blocks allocated by Python.
+See also [`stop()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.stop "tracemalloc.stop"). 
+
+tracemalloc.get_object_traceback(_obj_)[¶](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.get_object_traceback "Link to this definition")
+    
+Get the traceback where the Python object _obj_ was allocated. Return a [`Traceback`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.Traceback "tracemalloc.Traceback") instance, or `None` if the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module is not tracing memory allocations or did not trace the allocation of the object.
+See also [`gc.get_referrers()`](https://docs.python.org/3/library/gc.html#gc.get_referrers "gc.get_referrers") and [`sys.getsizeof()`](https://docs.python.org/3/library/sys.html#sys.getsizeof "sys.getsizeof") functions. 
+
+tracemalloc.get_traceback_limit()[¶](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.get_traceback_limit "Link to this definition")
+    
+Get the maximum number of frames stored in the traceback of a trace.
+The [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module must be tracing memory allocations to get the limit, otherwise an exception is raised.
+The limit is set by the [`start()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.start "tracemalloc.start") function. 
+
+tracemalloc.get_traced_memory()[¶](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.get_traced_memory "Link to this definition")
+    
+Get the current size and peak size of memory blocks traced by the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module as a tuple: `(current: int, peak: int)`. 
+
+tracemalloc.reset_peak()[¶](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.reset_peak "Link to this definition")
+    
+Set the peak size of memory blocks traced by the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module to the current size.
+Do nothing if the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module is not tracing memory allocations.
+This function only modifies the recorded peak size, and does not modify or clear any traces, unlike [`clear_traces()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.clear_traces "tracemalloc.clear_traces"). Snapshots taken with [`take_snapshot()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.take_snapshot "tracemalloc.take_snapshot") before a call to [`reset_peak()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.reset_peak "tracemalloc.reset_peak") can be meaningfully compared to snapshots taken after the call.
+See also [`get_traced_memory()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.get_traced_memory "tracemalloc.get_traced_memory").
+Added in version 3.9. 
+
+tracemalloc.get_tracemalloc_memory()[¶](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.get_tracemalloc_memory "Link to this definition")
+    
+Get the memory usage in bytes of the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module used to store traces of memory blocks. Return an [`int`](https://docs.python.org/3/library/functions.html#int "int").

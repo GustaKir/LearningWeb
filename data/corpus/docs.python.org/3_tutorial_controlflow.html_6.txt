@@ -1,0 +1,106 @@
+Title: Python Function Return and List Methods
+URL: https://docs.python.org/3/tutorial/controlflow.html
+Summary: This section introduces the `return` statement in Python, explaining that it can return a value or None. It also discusses list methods, specifically the `append()` method, which adds an element to a list. The text emphasizes that methods are functions attributed to object types and that different types may have methods with the same name.
+---
+
+```
+
+This example, as usual, demonstrates some new Python features:
+  * The [`return`](https://docs.python.org/3/reference/simple_stmts.html#return) statement returns with a value from a function. `return` without an expression argument returns `None`. Falling off the end of a function also returns `None`.
+  * The statement `result.append(a)` calls a _method_ of the list object `result`. A method is a function that ‘belongs’ to an object and is named `obj.methodname`, where `obj` is some object (this may be an expression), and `methodname` is the name of a method that is defined by the object’s type. Different types define different methods. Methods of different types may have the same name without causing ambiguity. (It is possible to define your own object types and methods, using _classes_ , see [Classes](https://docs.python.org/3/tutorial/classes.html#tut-classes)) The method `append()` shown in the example is defined for list objects; it adds a new element at the end of the list. In this example it is equivalent to `result = result + [a]`, but more efficient.
+
+
+## 4.9. More on Defining Functions[¶](https://docs.python.org/3/tutorial/controlflow.html#more-on-defining-functions "Link to this heading")
+It is also possible to define functions with a variable number of arguments. There are three forms, which can be combined.
+### 4.9.1. Default Argument Values[¶](https://docs.python.org/3/tutorial/controlflow.html#default-argument-values "Link to this heading")
+The most useful form is to specify a default value for one or more arguments. This creates a function that can be called with fewer arguments than it is defined to allow. For example:
+```
+defask_ok(prompt, retries=4, reminder='Please try again!'):
+  while True:
+    reply = input(prompt)
+    if reply in {'y', 'ye', 'yes'}:
+      return True
+    if reply in {'n', 'no', 'nop', 'nope'}:
+      return False
+    retries = retries - 1
+    if retries < 0:
+      raise ValueError('invalid user response')
+    print(reminder)
+
+```
+
+This function can be called in several ways:
+  * giving only the mandatory argument: `ask_ok('Do you really want to quit?')`
+  * giving one of the optional arguments: `ask_ok('OK to overwrite the file?', 2)`
+  * or even giving all arguments: `ask_ok('OK to overwrite the file?', 2, 'Come on, only yes or no!')`
+
+
+This example also introduces the [`in`](https://docs.python.org/3/reference/expressions.html#in) keyword. This tests whether or not a sequence contains a certain value.
+The default values are evaluated at the point of function definition in the _defining_ scope, so that
+```
+i = 5
+deff(arg=i):
+  print(arg)
+i = 6
+f()
+
+```
+
+will print `5`.
+**Important warning:** The default value is evaluated only once. This makes a difference when the default is a mutable object such as a list, dictionary, or instances of most classes. For example, the following function accumulates the arguments passed to it on subsequent calls:
+```
+deff(a, L=[]):
+  L.append(a)
+  return L
+print(f(1))
+print(f(2))
+print(f(3))
+
+```
+
+This will print
+```
+[1]
+[1, 2]
+[1, 2, 3]
+
+```
+
+If you don’t want the default to be shared between subsequent calls, you can write the function like this instead:
+```
+deff(a, L=None):
+  if L is None:
+    L = []
+  L.append(a)
+  return L
+
+```
+
+### 4.9.2. Keyword Arguments[¶](https://docs.python.org/3/tutorial/controlflow.html#keyword-arguments "Link to this heading")
+Functions can also be called using [keyword arguments](https://docs.python.org/3/glossary.html#term-keyword-argument) of the form `kwarg=value`. For instance, the following function:
+```
+defparrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
+  print("-- This parrot wouldn't", action, end=' ')
+  print("if you put", voltage, "volts through it.")
+  print("-- Lovely plumage, the", type)
+  print("-- It's", state, "!")
+
+```
+
+accepts one required argument (`voltage`) and three optional arguments (`state`, `action`, and `type`). This function can be called in any of the following ways:
+```
+parrot(1000)                     # 1 positional argument
+parrot(voltage=1000)                 # 1 keyword argument
+parrot(voltage=1000000, action='VOOOOOM')       # 2 keyword arguments
+parrot(action='VOOOOOM', voltage=1000000)       # 2 keyword arguments
+parrot('a million', 'bereft of life', 'jump')     # 3 positional arguments
+parrot('a thousand', state='pushing up the daisies') # 1 positional, 1 keyword
+
+```
+
+but all the following calls would be invalid:
+```
+parrot()           # required argument missing
+parrot(voltage=5.0, 'dead') # non-keyword argument after a keyword argument
+parrot(110, voltage=220)   # duplicate value for the same argument
+parrot(actor='John Cleese') # unknown keyword argument

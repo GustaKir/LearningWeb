@@ -1,0 +1,77 @@
+Title: Logging Configuration in Python
+URL: https://docs.python.org/3/library/logging.config.html
+Summary: This section outlines the configuration setup for formatters, handlers, and loggers in Python's logging module. It provides a YAML representation for defining formatters (like 'brief' and 'precise'), and handlers (identified by ids such as 'h1' and 'h2'), along with their associated formatters. Additionally, it explains logger identifiers and their role in programmatically accessing logger references.
+---
+
+```
+formatters:
+brief:
+# configuration for formatter with id 'brief' goes here
+precise:
+# configuration for formatter with id 'precise' goes here
+handlers:
+h1:#This is an id
+# configuration of handler with id 'h1' goes here
+formatter:brief
+h2:#This is another id
+# configuration of handler with id 'h2' goes here
+formatter:precise
+loggers:
+foo.bar.baz:
+# other configuration for logger 'foo.bar.baz'
+handlers:[h1,h2]
+
+```
+
+(Note: YAML used here because it’s a little more readable than the equivalent Python source form for the dictionary.)
+The ids for loggers are the logger names which would be used programmatically to obtain a reference to those loggers, e.g. `foo.bar.baz`. The ids for Formatters and Filters can be any string value (such as `brief`, `precise` above) and they are transient, in that they are only meaningful for processing the configuration dictionary and used to determine connections between objects, and are not persisted anywhere when the configuration call is complete.
+The above snippet indicates that logger named `foo.bar.baz` should have two handlers attached to it, which are described by the handler ids `h1` and `h2`. The formatter for `h1` is that described by id `brief`, and the formatter for `h2` is that described by id `precise`.
+### User-defined objects[¶](https://docs.python.org/3/library/logging.config.html#user-defined-objects "Link to this heading")
+The schema supports user-defined objects for handlers, filters and formatters. (Loggers do not need to have different types for different instances, so there is no support in this configuration schema for user-defined logger classes.)
+Objects to be configured are described by dictionaries which detail their configuration. In some places, the logging system will be able to infer from the context how an object is to be instantiated, but when a user-defined object is to be instantiated, the system will not know how to do this. In order to provide complete flexibility for user-defined object instantiation, the user needs to provide a ‘factory’ - a callable which is called with a configuration dictionary and which returns the instantiated object. This is signalled by an absolute import path to the factory being made available under the special key `'()'`. Here’s a concrete example:
+```
+formatters:
+brief:
+format:'%(message)s'
+default:
+format:'%(asctime)s%(levelname)-8s%(name)-15s%(message)s'
+datefmt:'%Y-%m-%d%H:%M:%S'
+custom:
+():my.package.customFormatterFactory
+bar:baz
+spam:99.9
+answer:42
+
+```
+
+The above YAML snippet defines three formatters. The first, with id `brief`, is a standard [`logging.Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter") instance with the specified format string. The second, with id `default`, has a longer format and also defines the time format explicitly, and will result in a [`logging.Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter") initialized with those two format strings. Shown in Python source form, the `brief` and `default` formatters have configuration sub-dictionaries:
+```
+{
+ 'format' : '%(message)s'
+}
+
+```
+
+and:
+```
+{
+ 'format' : '%(asctime)s%(levelname)-8s%(name)-15s%(message)s',
+ 'datefmt' : '%Y-%m-%d %H:%M:%S'
+}
+
+```
+
+respectively, and as these dictionaries do not contain the special key `'()'`, the instantiation is inferred from the context: as a result, standard [`logging.Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter") instances are created. The configuration sub-dictionary for the third formatter, with id `custom`, is:
+```
+{
+ '()' : 'my.package.customFormatterFactory',
+ 'bar' : 'baz',
+ 'spam' : 99.9,
+ 'answer' : 42
+}
+
+```
+
+and this contains the special key `'()'`, which means that user-defined instantiation is wanted. In this case, the specified factory callable will be used. If it is an actual callable it will be used directly - otherwise, if you specify a string (as in the example) the actual callable will be located using normal import mechanisms. The callable will be called with the **remaining** items in the configuration sub-dictionary as keyword arguments. In the above example, the formatter with id `custom` will be assumed to be returned by the call:
+```
+my.package.customFormatterFactory(bar='baz', spam=99.9, answer=42)

@@ -1,0 +1,50 @@
+Title: Creating the Settings Page in Streamlit Application
+URL: https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation
+Summary: This section describes how to add a settings page to a Streamlit app by creating a `settings.py` file that includes a header and user role display. It also mentions that user authentication will be implemented later and that no initialization of the 'role' key is needed for this page.
+---
+
+In your app, select "**Always rerun** ", or press the "**A** " key.
+Your preview will be blank but will automatically update as you save changes to `streamlit_app.py`.
+  6. Return to your code.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#add-your-page-and-image-files)Add your page and image files
+  1. In `your_repositoy`, create a file named `settings.py`.
+  2. In `settings.py` add the following stub.
+`import streamlit as st st.header("Settings") st.write(f"You are logged in as {st.session_state.role}.") `
+In later steps, you'll create an authentication method that saves the current user's role to `st.session_state.role`. Since you'll be blocking access to this page until a user is logged in, you don't need to initialize the `"role"` key in Session State for this page.
+  3. Create similar stubs by changing the value of `st.header` for the following six pages:
+`your-repository/ ├── admin │  ├── admin_1.py │  └── admin_2.py ├── request │  ├── request_1.py │  └── request_2.py └── respond   ├── respond_1.py   └── respond_2.py `
+For example, `admin/admin_1.py` should be the following:
+`import streamlit as st st.header("Admin 1") st.write(f"You are logged in as {st.session_state.role}.") `
+  4. Create an `images` subdirectory in `your-repository` and add the following two files:
+     * [horizontal_blue.png](https://docs.streamlit.io/images/horizontal_blue.png)
+     * [icon_blue.png](https://docs.streamlit.io/images/icon_blue.png)
+You now have all the files needed to build your app.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#initialize-global-values)Initialize global values
+  1. Return to `streamlit_app.py` and initialize `"role"` in Session State.
+`if "role" not in st.session_state:   st.session_state.role = None `
+You will use this value to gatekeep access to your app. This represents the role of the current, authenticated user.
+  2. Define the available roles.
+`ROLES = [None, "Requester", "Responder", "Admin"] `
+`None` is included as a role since that is the value corresponding to an unauthenticated user.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#define-your-user-authentication-pages)Define your user authentication pages
+`st.navigation` lets you define pages from Python functions. Here, you'll define the login and logout pages from Python functions.
+  1. Begin your login page (function definition).
+`def login(): `
+  2. Add a header for the page.
+`  st.header("Log in") `
+  3. Create a selectbox for the user to choose a role.
+`  role = st.selectbox("Choose your role", ROLES) `
+  4. Add a button to commit the user role to Session State.
+` if st.button("Log in"):     st.session_state.role = role     st.rerun() `
+This is an abstraction of an authentication workflow. When a user clicks the button, Streamlit saves the role to Session State and reruns the app. In later steps, you'll add logic to direct users to a role's default page when the value changes in `st.session_state.role`. This completes your login page function.
+  5. Begin your logout page (function definition).
+`def logout(): `
+  6. Immediately set the role to `None` and rerun the app.
+`  st.session_state.role = None   st.rerun() `
+Since the lougout page function immediately updates Session State and reruns, a user will never view this page. The page will execute in a fraction of a second and, upon rerunning, the app will send the user to the login page. Therefore, no additional elements are rendered on the page. If desired, you can change this page to also include a button, similar to the login page. A button would allow users to confirm they really intend to log out.

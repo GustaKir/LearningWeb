@@ -1,0 +1,157 @@
+Title: Response Model Tutorial in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/response-model/
+Summary: This section discusses the dangers of returning sensitive information, such as passwords, in API responses. It presents an example of a FastAPI endpoint that returns user data, including plaintext passwords, and warns against this practice. It hints at the introduction of an output model to safeguard sensitive data from being exposed in API responses.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+# Don't do this in production!
+@app.post("/user/")
+async defcreate_user(user: UserIn) -> UserIn:
+  return user
+
+```
+
+Now, whenever a browser is creating a user with a password, the API will return the same password in the response.
+In this case, it might not be a problem, because it's the same user sending the password.
+But if we use the same model for another _path operation_ , we could be sending our user's passwords to every client.
+Danger
+Never store the plain password of a user or send it in a response like this, unless you know all the caveats and you know what you are doing.
+## Add an output model[¶](https://fastapi.tiangolo.com/tutorial/response-model/#add-an-output-model "Permanent link")
+We can instead create an input model with the plaintext password and an output model without it:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_9_1)
+```
+fromtypingimport Any
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: str | None = None
+classUserOut(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: str | None = None
+@app.post("/user/", response_model=UserOut)
+async defcreate_user(user: UserIn) -> Any:
+  return user
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_10_1)
+```
+fromtypingimport Any, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+classUserOut(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+@app.post("/user/", response_model=UserOut)
+async defcreate_user(user: UserIn) -> Any:
+  return user
+
+```
+
+Here, even though our _path operation function_ is returning the same input user that contains the password:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_11_1)
+```
+fromtypingimport Any
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: str | None = None
+classUserOut(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: str | None = None
+@app.post("/user/", response_model=UserOut)
+async defcreate_user(user: UserIn) -> Any:
+  return user
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_12_1)
+```
+fromtypingimport Any, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+classUserOut(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+@app.post("/user/", response_model=UserOut)
+async defcreate_user(user: UserIn) -> Any:
+  return user
+
+```
+
+...we declared the `response_model` to be our model `UserOut`, that doesn't include the password:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_13_1)
+```
+fromtypingimport Any
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: str | None = None
+classUserOut(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: str | None = None
+@app.post("/user/", response_model=UserOut)
+async defcreate_user(user: UserIn) -> Any:
+  return user
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_14_1)
+```
+fromtypingimport Any, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+classUserOut(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+@app.post("/user/", response_model=UserOut)
+async defcreate_user(user: UserIn) -> Any:
+  return user

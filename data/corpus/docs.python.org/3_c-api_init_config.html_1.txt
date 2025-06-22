@@ -1,0 +1,106 @@
+Title: Python Configuration Initialization Example
+URL: https://docs.python.org/3/c-api/init_config.html
+Summary: This code snippet demonstrates the initialization of Python's configuration through command-line arguments in an isolated mode. It sets up a `PyConfig` structure, processes the arguments, and initializes the Python interpreter while handling potential exceptions.
+---
+
+```
+intmain(intargc,char**argv)
+{
+PyStatusstatus;
+PyConfigconfig;
+PyConfig_InitPythonConfig(&config);
+config.isolated=1;
+/* Decode command line arguments.
+    Implicitly preinitialize Python (in isolated mode). */
+status=PyConfig_SetBytesArgv(&config,argc,argv);
+if(PyStatus_Exception(status)){
+gotoexception;
+}
+status=Py_InitializeFromConfig(&config);
+if(PyStatus_Exception(status)){
+gotoexception;
+}
+PyConfig_Clear(&config);
+returnPy_RunMain();
+exception:
+PyConfig_Clear(&config);
+if(PyStatus_IsExit(status)){
+returnstatus.exitcode;
+}
+/* Display the error message and exit the process with
+    non-zero exit code */
+Py_ExitStatusException(status);
+}
+
+```
+
+## PyWideStringList[¶](https://docs.python.org/3/c-api/init_config.html#pywidestringlist "Link to this heading") 
+
+typePyWideStringList[¶](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList "Link to this definition")
+    
+List of `wchar_t*` strings.
+If _length_ is non-zero, _items_ must be non-`NULL` and all strings must be non-`NULL`.
+Methods: 
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")PyWideStringList_Append([PyWideStringList](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList "PyWideStringList")*list, constwchar_t*item)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList_Append "Link to this definition")
+    
+Append _item_ to _list_.
+Python must be preinitialized to call this function. 
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")PyWideStringList_Insert([PyWideStringList](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList "PyWideStringList")*list, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")index, constwchar_t*item)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList_Insert "Link to this definition")
+    
+Insert _item_ into _list_ at _index_.
+If _index_ is greater than or equal to _list_ length, append _item_ to _list_.
+_index_ must be greater than or equal to `0`.
+Python must be preinitialized to call this function.
+Structure fields: 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")length[¶](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList.length "Link to this definition")
+    
+List length. 
+
+wchar_t**items[¶](https://docs.python.org/3/c-api/init_config.html#c.PyWideStringList.items "Link to this definition")
+    
+List items.
+## PyStatus[¶](https://docs.python.org/3/c-api/init_config.html#pystatus "Link to this heading") 
+
+typePyStatus[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "Link to this definition")
+    
+Structure to store an initialization function status: success, error or exit.
+For an error, it can store the C function name which created the error.
+Structure fields: 
+
+intexitcode[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus.exitcode "Link to this definition")
+    
+Exit code. Argument passed to `exit()`. 
+
+constchar*err_msg[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus.err_msg "Link to this definition")
+    
+Error message. 
+
+constchar*func[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus.func "Link to this definition")
+    
+Name of the function which created an error, can be `NULL`.
+Functions to create a status: 
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")PyStatus_Ok(void)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_Ok "Link to this definition")
+    
+Success. 
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")PyStatus_Error(constchar*err_msg)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_Error "Link to this definition")
+    
+Initialization error with a message.
+_err_msg_ must not be `NULL`. 
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")PyStatus_NoMemory(void)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_NoMemory "Link to this definition")
+    
+Memory allocation failure (out of memory). 
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")PyStatus_Exit(intexitcode)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_Exit "Link to this definition")
+    
+Exit Python with the specified exit code.
+Functions to handle a status: 
+
+intPyStatus_Exception([PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")status)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_Exception "Link to this definition")
+    
+Is the status an error or an exit? If true, the exception must be handled; by calling [`Py_ExitStatusException()`](https://docs.python.org/3/c-api/init_config.html#c.Py_ExitStatusException "Py_ExitStatusException") for example.

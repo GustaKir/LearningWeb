@@ -1,0 +1,38 @@
+Title: PyEval_InitThreads Function Documentation
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The `PyEval_InitThreads` function is a deprecated function that previously created the Global Interpreter Lock (GIL) in older Python versions. As of Python 3.9, this function has been removed and now does nothing. It was automatically called by `Py_Initialize()` starting from version 3.7, and it cannot be called before `Py_Initialize()` since version 3.2.
+---
+
+voidPyEval_InitThreads()[¶](https://docs.python.org/3/c-api/init.html#c.PyEval_InitThreads "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Deprecated function which does nothing.
+In Python 3.6 and older, this function created the GIL if it didn’t exist.
+Changed in version 3.9: The function now does nothing.
+Changed in version 3.7: This function is now called by [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize"), so you don’t have to call it yourself anymore.
+Changed in version 3.2: This function cannot be called before [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize") anymore.
+Deprecated since version 3.9. 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyEval_SaveThread()[¶](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Release the global interpreter lock (if it has been created) and reset the thread state to `NULL`, returning the previous thread state (which is not `NULL`). If the lock has been created, the current thread must have acquired it. 
+
+voidPyEval_RestoreThread([PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*tstate)[¶](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Acquire the global interpreter lock (if it has been created) and set the thread state to _tstate_ , which must not be `NULL`. If the lock has been created, the current thread must not have acquired it, otherwise deadlock ensues.
+Note
+Calling this function from a thread when the runtime is finalizing will terminate the thread, even if the thread was not created by Python. You can use [`Py_IsFinalizing()`](https://docs.python.org/3/c-api/init.html#c.Py_IsFinalizing "Py_IsFinalizing") or [`sys.is_finalizing()`](https://docs.python.org/3/library/sys.html#sys.is_finalizing "sys.is_finalizing") to check if the interpreter is in process of being finalized before calling this function to avoid unwanted termination. 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyThreadState_Get()[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState_Get "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return the current thread state. The global interpreter lock must be held. When the current thread state is `NULL`, this issues a fatal error (so that the caller needn’t check for `NULL`).
+See also [`PyThreadState_GetUnchecked()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_GetUnchecked "PyThreadState_GetUnchecked"). 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyThreadState_GetUnchecked()[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState_GetUnchecked "Link to this definition")
+    
+Similar to [`PyThreadState_Get()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_Get "PyThreadState_Get"), but don’t kill the process with a fatal error if it is NULL. The caller is responsible to check if the result is NULL.
+Added in version 3.13: In Python 3.5 to 3.12, the function was private and known as `_PyThreadState_UncheckedGet()`. 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyThreadState_Swap([PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*tstate)[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState_Swap "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Swap the current thread state with the thread state given by the argument _tstate_ , which may be `NULL`. The global interpreter lock must be held and is not released.
+The following functions use thread-local storage, and are not compatible with sub-interpreters:

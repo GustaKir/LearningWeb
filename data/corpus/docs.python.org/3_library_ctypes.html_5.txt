@@ -1,0 +1,68 @@
+Title: Calling Functions with Custom Data Types in ctypes
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: It is recommended to specify `argtypes` for variadic functions in `ctypes` for portability. Additionally, users can customize argument conversion by defining the `_as_parameter_` attribute in their classes, allowing instances to be used as function arguments.
+---
+
+```
+
+Because specifying the attribute does not inhibit portability it is advised to always specify [`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes") for all variadic functions.
+### Calling functions with your own custom data types[¶](https://docs.python.org/3/library/ctypes.html#calling-functions-with-your-own-custom-data-types "Link to this heading")
+You can also customize [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") argument conversion to allow instances of your own classes be used as function arguments. [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") looks for an `_as_parameter_` attribute and uses this as the function argument. The attribute must be an integer, string, bytes, a [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") instance, or an object with an `_as_parameter_` attribute:
+>>>```
+>>> classBottles:
+...   def__init__(self, number):
+...     self._as_parameter_ = number
+...
+>>> bottles = Bottles(42)
+>>> printf(b"%d bottles of beer\n", bottles)
+42 bottles of beer
+19
+>>>
+
+```
+
+If you don’t want to store the instance’s data in the `_as_parameter_` instance variable, you could define a [`property`](https://docs.python.org/3/library/functions.html#property "property") which makes the attribute available on request.
+### Specifying the required argument types (function prototypes)[¶](https://docs.python.org/3/library/ctypes.html#specifying-the-required-argument-types-function-prototypes "Link to this heading")
+It is possible to specify the required argument types of functions exported from DLLs by setting the [`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes") attribute.
+[`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes") must be a sequence of C data types (the `printf()` function is probably not a good example here, because it takes a variable number and different types of parameters depending on the format string, on the other hand this is quite handy to experiment with this feature):
+>>>```
+>>> printf.argtypes = [c_char_p, c_char_p, c_int, c_double]
+>>> printf(b"String '%s', Int %d, Double %f\n", b"Hi", 10, 2.2)
+String 'Hi', Int 10, Double 2.200000
+37
+>>>
+
+```
+
+Specifying a format protects against incompatible argument types (just as a prototype for a C function), and tries to convert the arguments to valid types:
+>>>```
+>>> printf(b"%d%d%d", 1, 2, 3)
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ctypes.ArgumentError: argument 2: TypeError: 'int' object cannot be interpreted as ctypes.c_char_p
+>>> printf(b"%s%d%f\n", b"X", 2, 3)
+X 2 3.000000
+13
+>>>
+
+```
+
+If you have defined your own classes which you pass to function calls, you have to implement a [`from_param()`](https://docs.python.org/3/library/ctypes.html#ctypes._CData.from_param "ctypes._CData.from_param") class method for them to be able to use them in the [`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes") sequence. The [`from_param()`](https://docs.python.org/3/library/ctypes.html#ctypes._CData.from_param "ctypes._CData.from_param") class method receives the Python object passed to the function call, it should do a typecheck or whatever is needed to make sure this object is acceptable, and then return the object itself, its `_as_parameter_` attribute, or whatever you want to pass as the C function argument in this case. Again, the result should be an integer, string, bytes, a [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") instance, or an object with an `_as_parameter_` attribute.
+### Return types[¶](https://docs.python.org/3/library/ctypes.html#return-types "Link to this heading")
+By default functions are assumed to return the C int type. Other return types can be specified by setting the [`restype`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.restype "ctypes._CFuncPtr.restype") attribute of the function object.
+The C prototype of `time()` is `time_t time(time_t *)`. Because `time_t` might be of a different type than the default return type int, you should specify the `restype` attribute:
+>>>```
+>>> libc.time.restype = c_time_t
+
+```
+
+The argument types can be specified using [`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes"):
+>>>```
+>>> libc.time.argtypes = (POINTER(c_time_t),)
+
+```
+
+To call the function with a `NULL` pointer as first argument, use `None`:
+>>>```
+>>> print(libc.time(None))
+1150640792

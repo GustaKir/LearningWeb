@@ -1,0 +1,36 @@
+Title: Creating Tasks in asyncio
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: The `loop.create_task` method schedules the execution of a coroutine, returning a `Task` object. It allows third-party event loops to use their own `Task` subclasses for compatibility. The optional `name` parameter sets the name of the task, while the `context` argument lets users specify a custom context.
+---
+
+loop.create_task(_coro_ , _*_ , _name =None_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_task "Link to this definition")
+    
+Schedule the execution of [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine) _coro_. Return a [`Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") object.
+Third-party event loops can use their own subclass of [`Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") for interoperability. In this case, the result type is a subclass of [`Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task").
+If the _name_ argument is provided and not `None`, it is set as the name of the task using [`Task.set_name()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.set_name "asyncio.Task.set_name").
+An optional keyword-only _context_ argument allows specifying a custom [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") for the _coro_ to run in. The current context copy is created when no _context_ is provided.
+Changed in version 3.8: Added the _name_ parameter.
+Changed in version 3.11: Added the _context_ parameter. 
+
+loop.set_task_factory(_factory_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.set_task_factory "Link to this definition")
+    
+Set a task factory that will be used by [`loop.create_task()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_task "asyncio.loop.create_task").
+If _factory_ is `None` the default task factory will be set. Otherwise, _factory_ must be a _callable_ with the signature matching `(loop, coro, **kwargs)`, where _loop_ is a reference to the active event loop, and _coro_ is a coroutine object. The callable must pass on all _kwargs_ , and return a [`asyncio.Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task")-compatible object. 
+
+loop.get_task_factory()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.get_task_factory "Link to this definition")
+    
+Return a task factory or `None` if the default one is in use.
+### [Opening network connections](https://docs.python.org/3/library/asyncio-eventloop.html#id5)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#opening-network-connections "Link to this heading") 
+
+_async_ loop.create_connection(_protocol_factory_ , _host =None_, _port =None_, _*_ , _ssl =None_, _family =0_, _proto =0_, _flags =0_, _sock =None_, _local_addr =None_, _server_hostname =None_, _ssl_handshake_timeout =None_, _ssl_shutdown_timeout =None_, _happy_eyeballs_delay =None_, _interleave =None_, _all_errors =False_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_connection "Link to this definition")
+    
+Open a streaming transport connection to a given address specified by _host_ and _port_.
+The socket family can be either [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET") or [`AF_INET6`](https://docs.python.org/3/library/socket.html#socket.AF_INET6 "socket.AF_INET6") depending on _host_ (or the _family_ argument, if provided).
+The socket type will be [`SOCK_STREAM`](https://docs.python.org/3/library/socket.html#socket.SOCK_STREAM "socket.SOCK_STREAM").
+_protocol_factory_ must be a callable returning an [asyncio protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-protocol) implementation.
+This method will try to establish the connection in the background. When successful, it returns a `(transport, protocol)` pair.
+The chronological synopsis of the underlying operation is as follows:
+  1. The connection is established and a [transport](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-transport) is created for it.
+  2. _protocol_factory_ is called without arguments and is expected to return a [protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-protocol) instance.
+  3. The protocol instance is coupled with the transport by calling its [`connection_made()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.connection_made "asyncio.BaseProtocol.connection_made") method.
+  4. A `(transport, protocol)` tuple is returned on success.

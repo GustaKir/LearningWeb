@@ -1,0 +1,35 @@
+Title: Overview of Python 2.5 Features
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This document outlines the new features in Python 2.5, scheduled for release in August 2006. Key enhancements include new library modules such as ElementTree for XML processing and SQLite database support. Additionally, conditional expressions were introduced to the language, providing a new syntax for more concise coding.
+---
+
+Author:
+    
+A.M. Kuchling
+This article explains the new features in Python 2.5. The final release of Python 2.5 is scheduled for August 2006; [**PEP 356**](https://peps.python.org/pep-0356/) describes the planned release schedule. Python 2.5 was released on September 19, 2006.
+The changes in Python 2.5 are an interesting mix of language and library improvements. The library enhancements will be more important to Python’s user community, I think, because several widely useful packages were added. New modules include ElementTree for XML processing (`xml.etree`), the SQLite database module (`sqlite`), and the [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") module for calling C functions.
+The language changes are of middling significance. Some pleasant new features were added, but most of them aren’t features that you’ll use every day. Conditional expressions were finally added to the language using a novel syntax; see section [PEP 308: Conditional Expressions](https://docs.python.org/3/whatsnew/2.5.html#pep-308). The new ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement will make writing cleanup code easier (section [PEP 343: The ‘with’ statement](https://docs.python.org/3/whatsnew/2.5.html#pep-343)). Values can now be passed into generators (section [PEP 342: New Generator Features](https://docs.python.org/3/whatsnew/2.5.html#pep-342)). Imports are now visible as either absolute or relative (section [PEP 328: Absolute and Relative Imports](https://docs.python.org/3/whatsnew/2.5.html#pep-328)). Some corner cases of exception handling are handled better (section [PEP 341: Unified try/except/finally](https://docs.python.org/3/whatsnew/2.5.html#pep-341)). All these improvements are worthwhile, but they’re improvements to one specific language feature or another; none of them are broad modifications to Python’s semantics.
+As well as the language and library additions, other improvements and bugfixes were made throughout the source tree. A search through the SVN change logs finds there were 353 patches applied and 458 bugs fixed between Python 2.4 and 2.5. (Both figures are likely to be underestimates.)
+This article doesn’t try to be a complete specification of the new features; instead changes are briefly introduced using helpful examples. For full details, you should always refer to the documentation for Python 2.5 at <https://docs.python.org>. If you want to understand the complete implementation and design rationale, refer to the PEP for a particular new feature.
+Comments, suggestions, and error reports for this document are welcome; please e-mail them to the author or open a bug in the Python bug tracker.
+## PEP 308: Conditional Expressions[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-308-conditional-expressions "Link to this heading")
+For a long time, people have been requesting a way to write conditional expressions, which are expressions that return value A or value B depending on whether a Boolean value is true or false. A conditional expression lets you write a single assignment statement that has the same effect as the following:
+```
+if condition:
+  x = true_value
+else:
+  x = false_value
+
+```
+
+There have been endless tedious discussions of syntax on both python-dev and comp.lang.python. A vote was even held that found the majority of voters wanted conditional expressions in some form, but there was no syntax that was preferred by a clear majority. Candidates included C’s `cond ? true_v : false_v`, `if cond then true_v else false_v`, and 16 other variations.
+Guido van Rossum eventually chose a surprising syntax:
+```
+x = true_value if condition else false_value
+
+```
+
+Evaluation is still lazy as in existing Boolean expressions, so the order of evaluation jumps around a bit. The _condition_ expression in the middle is evaluated first, and the _true_value_ expression is evaluated only if the condition was true. Similarly, the _false_value_ expression is only evaluated when the condition is false.
+This syntax may seem strange and backwards; why does the condition go in the _middle_ of the expression, and not in the front as in C’s `c ? x : y`? The decision was checked by applying the new syntax to the modules in the standard library and seeing how the resulting code read. In many cases where a conditional expression is used, one value seems to be the ‘common case’ and one value is an ‘exceptional case’, used only on rarer occasions when the condition isn’t met. The conditional syntax makes this pattern a bit more obvious:
+```
+contents = ((doc + '\n') if doc else '')

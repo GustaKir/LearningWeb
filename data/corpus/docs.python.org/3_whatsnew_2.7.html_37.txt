@@ -1,0 +1,21 @@
+Title: Python 2.7 Build Process Improvements
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: Python 2.7 introduces enhancements to the build process, including setting the `LDCXXSHARED` variable for C++ linking, adding support for pkg-config, and compatibility with Subversion 1.7.
+---
+
+(Added by Mark Dickinson; [bpo-2937](https://bugs.python.org/issue?@action=redirect&bpo=2937).)
+**configure** also now sets a `LDCXXSHARED` Makefile variable for supporting C++ linking. (Contributed by Arfrever Frehtes Taifersar Arahesis; [bpo-1222585](https://bugs.python.org/issue?@action=redirect&bpo=1222585).)
+  * The build process now creates the necessary files for pkg-config support. (Contributed by Clinton Roy; [bpo-3585](https://bugs.python.org/issue?@action=redirect&bpo=3585).)
+  * The build process now supports Subversion 1.7. (Contributed by Arfrever Frehtes Taifersar Arahesis; [bpo-6094](https://bugs.python.org/issue?@action=redirect&bpo=6094).)
+
+
+### Capsules[¶](https://docs.python.org/3/whatsnew/2.7.html#capsules "Link to this heading")
+Python 3.1 adds a new C datatype, [`PyCapsule`](https://docs.python.org/3/c-api/capsule.html#c.PyCapsule "PyCapsule"), for providing a C API to an extension module. A capsule is essentially the holder of a C `void *` pointer, and is made available as a module attribute; for example, the [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.") module’s API is exposed as `socket.CAPI`, and [`unicodedata`](https://docs.python.org/3/library/unicodedata.html#module-unicodedata "unicodedata: Access the Unicode Database.") exposes `ucnhash_CAPI`. Other extensions can import the module, access its dictionary to get the capsule object, and then get the `void *` pointer, which will usually point to an array of pointers to the module’s various API functions.
+There is an existing data type already used for this, `PyCObject`, but it doesn’t provide type safety. Evil code written in pure Python could cause a segmentation fault by taking a `PyCObject` from module A and somehow substituting it for the `PyCObject` in module B. Capsules know their own name, and getting the pointer requires providing the name:
+```
+void*vtable;
+if(!PyCapsule_IsValid(capsule,"mymodule.CAPI"){
+PyErr_SetString(PyExc_ValueError,"argument type invalid");
+returnNULL;
+}
+vtable=PyCapsule_GetPointer(capsule,"mymodule.CAPI");

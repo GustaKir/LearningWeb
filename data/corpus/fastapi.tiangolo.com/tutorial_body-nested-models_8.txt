@@ -1,0 +1,202 @@
+Title: FastAPI Tutorial: Nested Models in Body
+URL: https://fastapi.tiangolo.com/tutorial/body-nested-models/
+Summary: This document provides an example of using nested models in a FastAPI application. It defines two Pydantic models, 'Image' and 'Item', for structured data input, and demonstrates how to handle HTTP PUT requests to update item information with a specified item ID.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classImage(BaseModel):
+  url: HttpUrl
+  name: str
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: set[str] = set()
+  images: Union[list[Image], None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+```
+fromtypingimport List, Set, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classImage(BaseModel):
+  url: HttpUrl
+  name: str
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: Set[str] = set()
+  images: Union[List[Image], None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+This will expect (convert, validate, document, etc.) a JSON body like:
+```
+{
+"name":"Foo",
+"description":"The pretender",
+"price":42.0,
+"tax":3.2,
+"tags":[
+"rock",
+"metal",
+"bar"
+],
+"images":[
+{
+"url":"http://example.com/baz.jpg",
+"name":"The Foo live"
+},
+{
+"url":"http://example.com/dave.jpg",
+"name":"The Baz"
+}
+]
+}
+
+```
+
+Info
+Notice how the `images` key now has a list of image objects.
+## Deeply nested models[¶](https://fastapi.tiangolo.com/tutorial/body-nested-models/#deeply-nested-models "Permanent link")
+You can define arbitrarily deeply nested models:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_17_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classImage(BaseModel):
+  url: HttpUrl
+  name: str
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+  tags: set[str] = set()
+  images: list[Image] | None = None
+classOffer(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  items: list[Item]
+@app.post("/offers/")
+async defcreate_offer(offer: Offer):
+  return offer
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_18_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_18_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classImage(BaseModel):
+  url: HttpUrl
+  name: str
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: set[str] = set()
+  images: Union[list[Image], None] = None
+classOffer(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  items: list[Item]
+@app.post("/offers/")
+async defcreate_offer(offer: Offer):
+  return offer
+
+```
+
+```
+fromtypingimport List, Set, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classImage(BaseModel):
+  url: HttpUrl
+  name: str
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: Set[str] = set()
+  images: Union[List[Image], None] = None
+classOffer(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  items: List[Item]
+@app.post("/offers/")
+async defcreate_offer(offer: Offer):
+  return offer
+
+```
+
+Info
+Notice how `Offer` has a list of `Item`s, which in turn have an optional list of `Image`s
+## Bodies of pure lists[¶](https://fastapi.tiangolo.com/tutorial/body-nested-models/#bodies-of-pure-lists "Permanent link")
+If the top level value of the JSON body you expect is a JSON `array` (a Python `list`), you can declare the type in the parameter of the function, the same as in Pydantic models:
+```
+images: List[Image]
+
+```
+
+or in Python 3.9 and above:
+```
+images: list[Image]
+
+```
+
+as in:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_19_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classImage(BaseModel):
+  url: HttpUrl
+  name: str
+@app.post("/images/multiple/")
+async defcreate_multiple_images(images: list[Image]):
+  return images
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_20_1)
+```
+fromtypingimport List
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classImage(BaseModel):
+  url: HttpUrl
+  name: str
+@app.post("/images/multiple/")
+async defcreate_multiple_images(images: List[Image]):
+  return images

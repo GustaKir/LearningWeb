@@ -1,0 +1,25 @@
+Title: Initialization Guidelines for Embedding Applications
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This section describes the proper usage of initialization functions in Python's C API. It emphasizes that embedding applications should call the appropriate function instead of directly invoking `Py_Initialize()`, `Py_InitializeEx()`, or `Py_InitializeFromConfig()`. It also notes the complexities related to updating environmental and command line settings based on the version when called after a runtime initialization.
+---
+
+```
+
+In normal usage, an embedding application will call this function _instead_ of calling [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize"), [`Py_InitializeEx()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeEx "Py_InitializeEx") or [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig") directly, and all settings will be applied as described elsewhere in this documentation. If this function is instead called _after_ a preceding runtime initialization API call, then exactly which environmental and command line configuration settings will be updated is version dependent (as it depends on which settings correctly support being modified after they have already been set once when the runtime was first initialized). 
+
+intPy_RunMain(void)[¶](https://docs.python.org/3/c-api/init.html#c.Py_RunMain "Link to this definition")
+    
+Executes the main module in a fully configured CPython runtime.
+Executes the command ([`PyConfig.run_command`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_command "PyConfig.run_command")), the script ([`PyConfig.run_filename`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_filename "PyConfig.run_filename")) or the module ([`PyConfig.run_module`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_module "PyConfig.run_module")) specified on the command line or in the configuration. If none of these values are set, runs the interactive Python prompt (REPL) using the `__main__` module’s global namespace.
+If [`PyConfig.inspect`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.inspect "PyConfig.inspect") is not set (the default), the return value will be `0` if the interpreter exits normally (that is, without raising an exception), or `1` if the interpreter exits due to an exception. If an otherwise unhandled [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit") is raised, the function will immediately exit the process instead of returning `1`.
+If [`PyConfig.inspect`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.inspect "PyConfig.inspect") is set (such as when the [`-i`](https://docs.python.org/3/using/cmdline.html#cmdoption-i) option is used), rather than returning when the interpreter exits, execution will instead resume in an interactive Python prompt (REPL) using the `__main__` module’s global namespace. If the interpreter exited with an exception, it is immediately raised in the REPL session. The function return value is then determined by the way the _REPL session_ terminates: returning `0` if the session terminates without raising an unhandled exception, exiting immediately for an unhandled [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit"), and returning `1` for any other unhandled exception.
+This function always finalizes the Python interpreter regardless of whether it returns a value or immediately exits the process due to an unhandled [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit") exception.
+See [Python Configuration](https://docs.python.org/3/c-api/init_config.html#init-python-config) for an example of a customized Python that always runs in isolated mode using [`Py_RunMain()`](https://docs.python.org/3/c-api/init.html#c.Py_RunMain "Py_RunMain"). 
+
+intPyUnstable_AtExit([PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*interp, void(*func)(void*), void*data)[¶](https://docs.python.org/3/c-api/init.html#c.PyUnstable_AtExit "Link to this definition")
+    
+_This is[ Unstable API](https://docs.python.org/3/c-api/stable.html#unstable-c-api). It may change without warning in minor releases._
+Register an [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions.") callback for the target interpreter _interp_. This is similar to [`Py_AtExit()`](https://docs.python.org/3/c-api/sys.html#c.Py_AtExit "Py_AtExit"), but takes an explicit interpreter and data pointer for the callback.
+The [GIL](https://docs.python.org/3/glossary.html#term-GIL) must be held for _interp_.
+Added in version 3.13.
+## Process-wide parameters[¶](https://docs.python.org/3/c-api/init.html#process-wide-parameters "Link to this heading")

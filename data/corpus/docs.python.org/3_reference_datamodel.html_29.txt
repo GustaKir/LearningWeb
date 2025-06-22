@@ -1,0 +1,30 @@
+Title: __getattribute__ Method in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: The `__getattribute__` method is invoked to implement attribute access for class instances. It is called unconditionally, and if the class defines `__getattr__`, this method will be called only if `__getattribute__` explicitly calls it or raises an `AttributeError`. It is important for the implementation to call the base class method to avoid infinite recursion and to correctly return the attribute value or raise an `AttributeError`.
+---
+
+object.__getattribute__(_self_ , _name_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "Link to this definition")
+    
+Called unconditionally to implement attribute accesses for instances of the class. If the class also defines [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__"), the latter will not be called unless [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") either calls it explicitly or raises an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"). This method should return the (computed) attribute value or raise an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") exception. In order to avoid infinite recursion in this method, its implementation should always call the base class method with the same name to access any attributes it needs, for example, `object.__getattribute__(self, name)`.
+Note
+This method may still be bypassed when looking up special methods as the result of implicit invocation via language syntax or [built-in functions](https://docs.python.org/3/reference/datamodel.html#builtin-functions). See [Special method lookup](https://docs.python.org/3/reference/datamodel.html#special-lookup).
+For certain sensitive attribute accesses, raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `object.__getattr__` with arguments `obj` and `name`. 
+
+object.__setattr__(_self_ , _name_ , _value_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__setattr__ "Link to this definition")
+    
+Called when an attribute assignment is attempted. This is called instead of the normal mechanism (i.e. store the value in the instance dictionary). _name_ is the attribute name, _value_ is the value to be assigned to it.
+If [`__setattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__setattr__ "object.__setattr__") wants to assign to an instance attribute, it should call the base class method with the same name, for example, `object.__setattr__(self, name, value)`.
+For certain sensitive attribute assignments, raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `object.__setattr__` with arguments `obj`, `name`, `value`. 
+
+object.__delattr__(_self_ , _name_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__delattr__ "Link to this definition")
+    
+Like [`__setattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__setattr__ "object.__setattr__") but for attribute deletion instead of assignment. This should only be implemented if `del obj.name` is meaningful for the object.
+For certain sensitive attribute deletions, raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `object.__delattr__` with arguments `obj` and `name`. 
+
+object.__dir__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__dir__ "Link to this definition")
+    
+Called when [`dir()`](https://docs.python.org/3/library/functions.html#dir "dir") is called on the object. An iterable must be returned. [`dir()`](https://docs.python.org/3/library/functions.html#dir "dir") converts the returned iterable to a list and sorts it.
+#### 3.3.2.1. Customizing module attribute access[¶](https://docs.python.org/3/reference/datamodel.html#customizing-module-attribute-access "Link to this heading")
+Special names `__getattr__` and `__dir__` can be also used to customize access to module attributes. The `__getattr__` function at the module level should accept one argument which is the name of an attribute and return the computed value or raise an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"). If an attribute is not found on a module object through the normal lookup, i.e. [`object.__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__"), then `__getattr__` is searched in the module `__dict__` before raising an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"). If found, it is called with the attribute name and the result is returned.
+The `__dir__` function should accept no arguments, and return an iterable of strings that represents the names accessible on module. If present, this function overrides the standard [`dir()`](https://docs.python.org/3/library/functions.html#dir "dir") search on a module.
+For a more fine grained customization of the module behavior (setting attributes, properties, etc.), one can set the `__class__` attribute of a module object to a subclass of [`types.ModuleType`](https://docs.python.org/3/library/types.html#types.ModuleType "types.ModuleType"). For example:

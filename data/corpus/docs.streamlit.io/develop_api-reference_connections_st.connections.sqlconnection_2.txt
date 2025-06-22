@@ -1,0 +1,81 @@
+Title: Streamlit SQLConnection Overview
+URL: https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection
+Summary: Streamlit's SQLConnection requires a minimum of `dialect`, `username`, and `host` for connection. If `url` is provided, it is passed to `sqlalchemy.engine.make_url()`. Additional keyword arguments may be accepted depending on the dialect, such as `private_key` for Snowflake and `location` for BigQuery. The `.query()` method allows for simple, read-only queries with caching support.
+---
+
+If `url` exists as a connection parameter, Streamlit will pass it to `sqlalchemy.engine.make_url()`. Otherwise, Streamlit requires (at a minimum) `dialect`, `username`, and `host`. Streamlit will use `dialect` and `driver` (if defined) to derive `drivername`, then pass the relevant connection parameters to `sqlalchemy.engine.URL.create()`.
+In addition to the default keyword arguments for `sqlalchemy.create_engine()`, your dialect may accept additional keyword arguments. For example, if you use `dialect="snowflake"` with [Snowflake SQLAlchemy](https://github.com/snowflakedb/snowflake-sqlalchemy#key-pair-authentication-support), you can pass a value for `private_key` to use key-pair authentication. If you use `dialect="bigquery"` with [Google BigQuery](https://github.com/googleapis/python-bigquery-sqlalchemy#authentication), you can pass a value for `location`.
+SQLConnection provides the `.query()` convenience method, which can be used to run simple, read-only queries with both caching and simple error handling/retries. More complex database interactions can be performed by using the `.session` property to receive a regular SQLAlchemy Session.
+Important
+[SQLAlchemy](https://pypi.org/project/SQLAlchemy/) must be installed in your environment to use this connection. You must also install your driver, such as `pyodbc` or `psycopg2`.
+Class description[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/sql_connection.py#L54 "View st.SQLConnection source code on GitHub")  
+---  
+st.connections.SQLConnection(connection_name, **kwargs)  
+Methods  
+[connect](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionconnect)() |  Call `.connect()` on the underlying SQLAlchemy Engine, returning a new connection object.  
+[query](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionquery)(sql, *, show_spinner="Running `sql.query(...)`.", ttl=None, index_col=None, chunksize=None, params=None, **kwargs) |  Run a read-only query.  
+[reset](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionreset)() |  Reset this connection so that it gets reinitialized the next time it's used.  
+Attributes  
+[driver ](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectiondriver) |  The name of the driver used by the underlying SQLAlchemy Engine.  
+[engine ](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionengine) |  The underlying SQLAlchemy Engine.  
+[session ](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionsession) |  Return a SQLAlchemy Session.  
+#### Examples
+**Example 1: Configuration with URL**
+You can configure your SQL connection using Streamlit's [Secrets management](https://docs.streamlit.io/develop/concepts/connections/secrets-management). The following example specifies a SQL connection URL.
+`.streamlit/secrets.toml`:
+```
+[connections.sql]
+url = "xxx+xxx://xxx:xxx@xxx:xxx/xxx"
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+conn = st.connection("sql")
+df = conn.query("SELECT * FROM pet_owners")
+st.dataframe(df)
+```
+
+Copy
+**Example 2: Configuration with dialect, host, and username**
+If you do not specify `url`, you must at least specify `dialect`, `host`, and `username` instead. The following example also includes `password`.
+`.streamlit/secrets.toml`:
+```
+[connections.sql]
+dialect = "xxx"
+host = "xxx"
+username = "xxx"
+password = "xxx"
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+conn = st.connection("sql")
+df = conn.query("SELECT * FROM pet_owners")
+st.dataframe(df)
+```
+
+Copy
+**Example 3: Configuration with keyword arguments**
+You can configure your SQL connection with keyword arguments (with or without `secrets.toml`). For example, if you use Microsoft Entra ID with a Microsoft Azure SQL server, you can quickly set up a local connection for development using [interactive authentication](https://learn.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory?view=sql-server-ver16#new-andor-modified-dsn-and-connection-string-keywords).
+This example requires the [Microsoft ODBC Driver for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/microsoft-odbc-driver-for-sql-server?view=sql-server-ver16) for _Windows_ in addition to the `sqlalchemy` and `pyodbc` packages for Python.
+```
+import streamlit as st
+conn = st.connection(
+  "sql",
+  dialect="mssql",
+  driver="pyodbc",
+  host="xxx.database.windows.net",
+  database="xxx",
+  username="xxx",
+  query={
+    "driver": "ODBC Driver 18 for SQL Server",
+    "authentication": "ActiveDirectoryInteractive",
+    "encrypt": "yes",
+  },
+)
+df = conn.query("SELECT * FROM pet_owners")
+st.dataframe(df)

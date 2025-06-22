@@ -1,0 +1,42 @@
+Title: compileall.compile_file Function
+URL: https://docs.python.org/3/library/compileall.html
+Summary: The `compile_file` function compiles a specified file and returns `True` if successful and `False` otherwise. It allows for additional parameters like `_ddir_` for path adjustments, and `_rx_` for excluding files based on a regex match.
+---
+
+compileall.compile_file(_fullname_ , _ddir =None_, _force =False_, _rx =None_, _quiet =0_, _legacy =False_, _optimize =-1_, _invalidation_mode =None_, _*_ , _stripdir =None_, _prependdir =None_, _limit_sl_dest =None_, _hardlink_dupes =False_)[¶](https://docs.python.org/3/library/compileall.html#compileall.compile_file "Link to this definition")
+    
+Compile the file with path _fullname_. Return a true value if the file compiled successfully, and a false value otherwise.
+If _ddir_ is given, it is prepended to the path to the file being compiled for use in compilation time tracebacks, and is also compiled in to the byte-code file, where it will be used in tracebacks and other messages in cases where the source file does not exist at the time the byte-code file is executed.
+If _rx_ is given, its `search` method is passed the full path name to the file being compiled, and if it returns a true value, the file is not compiled and `True` is returned. This can be used to exclude files matching a regular expression, given as a [re.Pattern](https://docs.python.org/3/library/re.html#re-objects) object.
+If _quiet_ is `False` or `0` (the default), the filenames and other information are printed to standard out. Set to `1`, only errors are printed. Set to `2`, all output is suppressed.
+If _legacy_ is true, byte-code files are written to their legacy locations and names, which may overwrite byte-code files created by another version of Python. The default is to write files to their [**PEP 3147**](https://peps.python.org/pep-3147/) locations and names, which allows byte-code files from multiple versions of Python to coexist.
+_optimize_ specifies the optimization level for the compiler. It is passed to the built-in [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile") function. Accepts also a sequence of optimization levels which lead to multiple compilations of one `.py` file in one call.
+_invalidation_mode_ should be a member of the [`py_compile.PycInvalidationMode`](https://docs.python.org/3/library/py_compile.html#py_compile.PycInvalidationMode "py_compile.PycInvalidationMode") enum and controls how the generated pycs are invalidated at runtime.
+The _stripdir_ , _prependdir_ and _limit_sl_dest_ arguments correspond to the `-s`, `-p` and `-e` options described above. They may be specified as `str` or [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike "os.PathLike").
+If _hardlink_dupes_ is true and two `.pyc` files with different optimization level have the same content, use hard links to consolidate duplicate files.
+Added in version 3.2.
+Changed in version 3.5: _quiet_ parameter was changed to a multilevel value.
+Changed in version 3.5: The _legacy_ parameter only writes out `.pyc` files, not `.pyo` files no matter what the value of _optimize_ is.
+Changed in version 3.7: The _invalidation_mode_ parameter was added.
+Changed in version 3.7.2: The _invalidation_mode_ parameter’s default value is updated to `None`.
+Changed in version 3.9: Added _stripdir_ , _prependdir_ , _limit_sl_dest_ and _hardlink_dupes_ arguments. 
+
+compileall.compile_path(_skip_curdir =True_, _maxlevels =0_, _force =False_, _quiet =0_, _legacy =False_, _optimize =-1_, _invalidation_mode =None_)[¶](https://docs.python.org/3/library/compileall.html#compileall.compile_path "Link to this definition")
+    
+Byte-compile all the `.py` files found along `sys.path`. Return a true value if all the files compiled successfully, and a false value otherwise.
+If _skip_curdir_ is true (the default), the current directory is not included in the search. All other parameters are passed to the [`compile_dir()`](https://docs.python.org/3/library/compileall.html#compileall.compile_dir "compileall.compile_dir") function. Note that unlike the other compile functions, `maxlevels` defaults to `0`.
+Changed in version 3.2: Added the _legacy_ and _optimize_ parameter.
+Changed in version 3.5: _quiet_ parameter was changed to a multilevel value.
+Changed in version 3.5: The _legacy_ parameter only writes out `.pyc` files, not `.pyo` files no matter what the value of _optimize_ is.
+Changed in version 3.7: The _invalidation_mode_ parameter was added.
+Changed in version 3.7.2: The _invalidation_mode_ parameter’s default value is updated to `None`.
+To force a recompile of all the `.py` files in the `Lib/` subdirectory and all its subdirectories:
+```
+importcompileall
+compileall.compile_dir('Lib/', force=True)
+# Perform same compilation, excluding files in .svn directories.
+importre
+compileall.compile_dir('Lib/', rx=re.compile(r'[/\\][.]svn'), force=True)
+# pathlib.Path objects can also be used.
+importpathlib
+compileall.compile_dir(pathlib.Path('Lib/'), force=True)

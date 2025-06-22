@@ -1,0 +1,42 @@
+Title: Enhancements in Type Checking with Literal Strings
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: This chunk discusses the usage of `LiteralString` in Python function definitions to enforce type checking, demonstrating acceptable and erroneous uses of query strings in SQL queries. It references PEP 675 for further details and mentions contributions from Jelle Zijlstra and authorship details related to PEP 681 on data class transforms.
+---
+
+```
+defrun_query(sql: LiteralString) -> ...
+  ...
+defcaller(
+  arbitrary_string: str,
+  query_string: LiteralString,
+  table_name: LiteralString,
+) -> None:
+  run_query("SELECT * FROM students")    # ok
+  run_query(query_string)          # ok
+  run_query("SELECT * FROM " + table_name) # ok
+  run_query(arbitrary_string)        # type checker error
+  run_query(                # type checker error
+    f"SELECT * FROM students WHERE name = {arbitrary_string}"
+  )
+
+```
+
+See [**PEP 675**](https://peps.python.org/pep-0675/) for more details.
+(Contributed by Jelle Zijlstra in [bpo-47088](https://bugs.python.org/issue?@action=redirect&bpo=47088). PEP written by Pradeep Kumar Srinivasan and Graham Bleaney.)
+### PEP 681: Data class transforms[¶](https://docs.python.org/3/whatsnew/3.11.html#pep-681-data-class-transforms "Link to this heading")
+[`dataclass_transform`](https://docs.python.org/3/library/typing.html#typing.dataclass_transform "typing.dataclass_transform") may be used to decorate a class, metaclass, or a function that is itself a decorator. The presence of `@dataclass_transform()` tells a static type checker that the decorated object performs runtime “magic” that transforms a class, giving it [`dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass")-like behaviors.
+For example:
+```
+# The create_model decorator is defined by a library.
+@typing.dataclass_transform()
+defcreate_model(cls: Type[T]) -> Type[T]:
+  cls.__init__ = ...
+  cls.__eq__ = ...
+  cls.__ne__ = ...
+  return cls
+# The create_model decorator can now be used to create new model classes:
+@create_model
+classCustomerModel:
+  id: int
+  name: str
+c = CustomerModel(id=327, name="Eric Idle")

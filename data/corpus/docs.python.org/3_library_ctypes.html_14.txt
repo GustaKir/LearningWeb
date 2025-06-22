@@ -1,0 +1,33 @@
+Title: Using find_library() and Loading Shared Libraries with ctypes
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: The `find_library()` function in ctypes searches the system path to locate shared libraries, but lacks a predefined naming scheme, which may lead to failures. It's advised to hardcode library names during development rather than relying on runtime searches. The document also mentions various methods to load shared libraries into a Python process.
+---
+
+```
+
+On Windows, [`find_library()`](https://docs.python.org/3/library/ctypes.html#ctypes.util.find_library "ctypes.util.find_library") searches along the system search path, and returns the full pathname, but since there is no predefined naming scheme a call like `find_library("c")` will fail and return `None`.
+If wrapping a shared library with [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python."), it _may_ be better to determine the shared library name at development time, and hardcode that into the wrapper module instead of using [`find_library()`](https://docs.python.org/3/library/ctypes.html#ctypes.util.find_library "ctypes.util.find_library") to locate the library at runtime.
+### Loading shared libraries[¶](https://docs.python.org/3/library/ctypes.html#loading-shared-libraries "Link to this heading")
+There are several ways to load shared libraries into the Python process. One way is to instantiate one of the following classes: 
+
+_class_ ctypes.CDLL(_name_ , _mode =DEFAULT_MODE_, _handle =None_, _use_errno =False_, _use_last_error =False_, _winmode =None_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.CDLL "Link to this definition")
+    
+Instances of this class represent loaded shared libraries. Functions in these libraries use the standard C calling convention, and are assumed to return int.
+On Windows creating a [`CDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.CDLL "ctypes.CDLL") instance may fail even if the DLL name exists. When a dependent DLL of the loaded DLL is not found, a [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") error is raised with the message _“[WinError 126] The specified module could not be found”._ This error message does not contain the name of the missing DLL because the Windows API does not return this information making this error hard to diagnose. To resolve this error and determine which DLL is not found, you need to find the list of dependent DLLs and determine which one is not found using Windows debugging and tracing tools.
+Changed in version 3.12: The _name_ parameter can now be a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+See also
+[Microsoft DUMPBIN tool](https://docs.microsoft.com/cpp/build/reference/dependents) – A tool to find DLL dependents. 
+
+_class_ ctypes.OleDLL(_name_ , _mode =DEFAULT_MODE_, _handle =None_, _use_errno =False_, _use_last_error =False_, _winmode =None_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.OleDLL "Link to this definition")
+    
+Instances of this class represent loaded shared libraries, functions in these libraries use the `stdcall` calling convention, and are assumed to return the windows specific [`HRESULT`](https://docs.python.org/3/library/ctypes.html#ctypes.HRESULT "ctypes.HRESULT") code. [`HRESULT`](https://docs.python.org/3/library/ctypes.html#ctypes.HRESULT "ctypes.HRESULT") values contain information specifying whether the function call failed or succeeded, together with additional error code. If the return value signals a failure, an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is automatically raised.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows
+Changed in version 3.3: [`WindowsError`](https://docs.python.org/3/library/exceptions.html#WindowsError "WindowsError") used to be raised, which is now an alias of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError").
+Changed in version 3.12: The _name_ parameter can now be a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object). 
+
+_class_ ctypes.WinDLL(_name_ , _mode =DEFAULT_MODE_, _handle =None_, _use_errno =False_, _use_last_error =False_, _winmode =None_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.WinDLL "Link to this definition")
+    
+Instances of this class represent loaded shared libraries, functions in these libraries use the `stdcall` calling convention, and are assumed to return int by default.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows
+Changed in version 3.12: The _name_ parameter can now be a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+The Python [global interpreter lock](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) is released before calling any function exported by these libraries, and reacquired afterwards.

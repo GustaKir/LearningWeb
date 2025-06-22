@@ -1,0 +1,43 @@
+Title: PyMem_RawFree Function
+URL: https://docs.python.org/3/c-api/memory.html
+Summary: The `PyMem_RawFree` function is used to free memory allocated by `PyMem_RawMalloc`, `PyMem_RawRealloc`, or `PyMem_RawCalloc`. It is part of the Stable ABI since Python version 3.13. If the pointer is NULL, no action is taken, but using an invalid pointer leads to undefined behavior.
+---
+
+voidPyMem_RawFree(void*p)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawFree "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Frees the memory block pointed to by _p_ , which must have been returned by a previous call to [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc"), [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc") or [`PyMem_RawCalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawCalloc "PyMem_RawCalloc"). Otherwise, or if `PyMem_RawFree(p)` has been called before, undefined behavior occurs.
+If _p_ is `NULL`, no operation is performed.
+## Memory Interface[¶](https://docs.python.org/3/c-api/memory.html#memory-interface "Link to this heading")
+The following function sets, modeled after the ANSI C standard, but specifying behavior when requesting zero bytes, are available for allocating and releasing memory from the Python heap.
+The [default memory allocator](https://docs.python.org/3/c-api/memory.html#default-memory-allocators) uses the [pymalloc memory allocator](https://docs.python.org/3/c-api/memory.html#pymalloc).
+Warning
+The [GIL](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) must be held when using these functions.
+Changed in version 3.6: The default allocator is now pymalloc instead of system `malloc()`. 
+
+void*PyMem_Malloc(size_tn)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Allocates _n_ bytes and returns a pointer of type void* to the allocated memory, or `NULL` if the request fails.
+Requesting zero bytes returns a distinct non-`NULL` pointer if possible, as if `PyMem_Malloc(1)` had been called instead. The memory will not have been initialized in any way. 
+
+void*PyMem_Calloc(size_tnelem, size_telsize)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_Calloc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Allocates _nelem_ elements each whose size in bytes is _elsize_ and returns a pointer of type void* to the allocated memory, or `NULL` if the request fails. The memory is initialized to zeros.
+Requesting zero elements or elements of size zero bytes returns a distinct non-`NULL` pointer if possible, as if `PyMem_Calloc(1, 1)` had been called instead.
+Added in version 3.5. 
+
+void*PyMem_Realloc(void*p, size_tn)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_Realloc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Resizes the memory block pointed to by _p_ to _n_ bytes. The contents will be unchanged to the minimum of the old and the new sizes.
+If _p_ is `NULL`, the call is equivalent to `PyMem_Malloc(n)`; else if _n_ is equal to zero, the memory block is resized but is not freed, and the returned pointer is non-`NULL`.
+Unless _p_ is `NULL`, it must have been returned by a previous call to [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc"), [`PyMem_Realloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Realloc "PyMem_Realloc") or [`PyMem_Calloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Calloc "PyMem_Calloc").
+If the request fails, [`PyMem_Realloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Realloc "PyMem_Realloc") returns `NULL` and _p_ remains a valid pointer to the previous memory area. 
+
+voidPyMem_Free(void*p)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_Free "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Frees the memory block pointed to by _p_ , which must have been returned by a previous call to [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc"), [`PyMem_Realloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Realloc "PyMem_Realloc") or [`PyMem_Calloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Calloc "PyMem_Calloc"). Otherwise, or if `PyMem_Free(p)` has been called before, undefined behavior occurs.
+If _p_ is `NULL`, no operation is performed.
+The following type-oriented macros are provided for convenience. Note that _TYPE_ refers to any C type. 
+
+PyMem_New(TYPE, n)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_New "Link to this definition")
+    
+Same as [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc"), but allocates `(n * sizeof(TYPE))` bytes of memory. Returns a pointer cast to `TYPE*`. The memory will not have been initialized in any way.

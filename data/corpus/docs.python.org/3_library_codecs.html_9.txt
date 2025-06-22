@@ -1,0 +1,33 @@
+Title: Encoder State Management in Incremental Encoding
+URL: https://docs.python.org/3/library/codecs.html
+Summary: The `getstate()` method returns the current state of the encoder as an integer, with `0` representing the most common state. The `setstate(_state_)` method sets the encoder's state to a given state returned by `getstate()`. This functionality is crucial for managing incremental encoding processes.
+---
+
+getstate()[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder.getstate "Link to this definition")
+    
+Return the current state of the encoder which must be an integer. The implementation should make sure that `0` is the most common state. (States that are more complicated than integers can be converted into an integer by marshaling/pickling the state and encoding the bytes of the resulting string into an integer.) 
+
+setstate(_state_)[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder.setstate "Link to this definition")
+    
+Set the state of the encoder to _state_. _state_ must be an encoder state returned by [`getstate()`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalEncoder.getstate "codecs.IncrementalEncoder.getstate").
+#### IncrementalDecoder Objects[¶](https://docs.python.org/3/library/codecs.html#incrementaldecoder-objects "Link to this heading")
+The [`IncrementalDecoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder "codecs.IncrementalDecoder") class is used for decoding an input in multiple steps. It defines the following methods which every incremental decoder must define in order to be compatible with the Python codec registry. 
+
+_class_ codecs.IncrementalDecoder(_errors ='strict'_)[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder "Link to this definition")
+    
+Constructor for an [`IncrementalDecoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder "codecs.IncrementalDecoder") instance.
+All incremental decoders must provide this constructor interface. They are free to add additional keyword arguments, but only the ones defined here are used by the Python codec registry.
+The [`IncrementalDecoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder "codecs.IncrementalDecoder") may implement different error handling schemes by providing the _errors_ keyword argument. See [Error Handlers](https://docs.python.org/3/library/codecs.html#error-handlers) for possible values.
+The _errors_ argument will be assigned to an attribute of the same name. Assigning to this attribute makes it possible to switch between different error handling strategies during the lifetime of the [`IncrementalDecoder`](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder "codecs.IncrementalDecoder") object. 
+
+decode(_object_ , _final =False_)[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder.decode "Link to this definition")
+    
+Decodes _object_ (taking the current state of the decoder into account) and returns the resulting decoded object. If this is the last call to [`decode()`](https://docs.python.org/3/library/codecs.html#codecs.decode "codecs.decode") _final_ must be true (the default is false). If _final_ is true the decoder must decode the input completely and must flush all buffers. If this isn’t possible (e.g. because of incomplete byte sequences at the end of the input) it must initiate error handling just like in the stateless case (which might raise an exception). 
+
+reset()[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder.reset "Link to this definition")
+    
+Reset the decoder to the initial state. 
+
+getstate()[¶](https://docs.python.org/3/library/codecs.html#codecs.IncrementalDecoder.getstate "Link to this definition")
+    
+Return the current state of the decoder. This must be a tuple with two items, the first must be the buffer containing the still undecoded input. The second must be an integer and can be additional state info. (The implementation should make sure that `0` is the most common additional state info.) If this additional state info is `0` it must be possible to set the decoder to the state which has no input buffered and `0` as the additional state info, so that feeding the previously buffered input to the decoder returns it to the previous state without producing any output. (Additional state info that is more complicated than integers can be converted into an integer by marshaling/pickling the info and encoding the bytes of the resulting string into an integer.)

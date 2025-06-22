@@ -1,0 +1,83 @@
+Title: Advanced Path Operation Configuration in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/
+Summary: This section illustrates how to configure a FastAPI path operation to accept YAML requests. It includes a route to create an item using a Pydantic model, handling YAML validation and conversion, as well as error handling for invalid YAML or validation errors.
+---
+
+```
+fromtypingimport List
+importyaml
+fromfastapiimport FastAPI, HTTPException, Request
+frompydanticimport BaseModel, ValidationError
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  tags: List[str]
+@app.post(
+  "/items/",
+  openapi_extra={
+    "requestBody": {
+      "content": {"application/x-yaml": {"schema": Item.model_json_schema()}},
+      "required": True,
+    },
+  },
+)
+async defcreate_item(request: Request):
+  raw_body = await request.body()
+  try:
+    data = yaml.safe_load(raw_body)
+  except yaml.YAMLError:
+    raise HTTPException(status_code=422, detail="Invalid YAML")
+  try:
+    item = Item.model_validate(data)
+  except ValidationError as e:
+    raise HTTPException(status_code=422, detail=e.errors(include_url=False))
+  return item
+
+```
+
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_12_1)
+```
+fromtypingimport List
+importyaml
+fromfastapiimport FastAPI, HTTPException, Request
+frompydanticimport BaseModel, ValidationError
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  tags: List[str]
+@app.post(
+  "/items/",
+  openapi_extra={
+    "requestBody": {
+      "content": {"application/x-yaml": {"schema": Item.schema()}},
+      "required": True,
+    },
+  },
+)
+async defcreate_item(request: Request):
+  raw_body = await request.body()
+  try:
+    data = yaml.safe_load(raw_body)
+  except yaml.YAMLError:
+    raise HTTPException(status_code=422, detail="Invalid YAML")
+  try:
+    item = Item.parse_obj(data)
+  except ValidationError as e:
+    raise HTTPException(status_code=422, detail=e.errors())
+  return item
+
+```
+
+Info
+In Pydantic version 1 the method to parse and validate an object was `Item.parse_obj()`, in Pydantic version 2, the method is called `Item.model_validate()`.
+Tip
+Here we reuse the same Pydantic model.
+But the same way, we could have validated it in some other way.
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Advanced User Guide  ](https://fastapi.tiangolo.com/advanced/) [ Next  Additional Status Codes  ](https://fastapi.tiangolo.com/advanced/additional-status-codes/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")
+  *[parsed]: converted from some plain format, like bytes, into Python objects

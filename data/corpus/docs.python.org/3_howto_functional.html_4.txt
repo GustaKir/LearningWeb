@@ -1,0 +1,87 @@
+Title: Understanding Iterators and Iterables in Python
+URL: https://docs.python.org/3/howto/functional.html
+Summary: This section explains the `iter()` function, which retrieves an iterator from an arbitrary object, and the concept of iterables. It highlights that many built-in data types, like lists and dictionaries, support iteration. Additionally, it provides a hands-on example demonstrating how to create an iterator and handle iteration using the `next()` function, including managing the `StopIteration` exception.
+---
+
+/functions.html#iter "iter") function takes an arbitrary object and tries to return an iterator that will return the object’s contents or elements, raising [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if the object doesn’t support iteration. Several of Python’s built-in data types support iteration, the most common being lists and dictionaries. An object is called [iterable](https://docs.python.org/3/glossary.html#term-iterable) if you can get an iterator for it.
+You can experiment with the iteration interface manually:
+>>>```
+>>> L = [1, 2, 3]
+>>> it = iter(L)
+>>> it
+<...iterator object at ...>
+>>> it.__next__() # same as next(it)
+1
+>>> next(it)
+2
+>>> next(it)
+3
+>>> next(it)
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+StopIteration
+>>>
+
+```
+
+Python expects iterable objects in several different contexts, the most important being the [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) statement. In the statement `for X in Y`, Y must be an iterator or some object for which [`iter()`](https://docs.python.org/3/library/functions.html#iter "iter") can create an iterator. These two statements are equivalent:
+```
+for i in iter(obj):
+  print(i)
+for i in obj:
+  print(i)
+
+```
+
+Iterators can be materialized as lists or tuples by using the [`list()`](https://docs.python.org/3/library/stdtypes.html#list "list") or [`tuple()`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") constructor functions:
+>>>```
+>>> L = [1, 2, 3]
+>>> iterator = iter(L)
+>>> t = tuple(iterator)
+>>> t
+(1, 2, 3)
+
+```
+
+Sequence unpacking also supports iterators: if you know an iterator will return N elements, you can unpack them into an N-tuple:
+>>>```
+>>> L = [1, 2, 3]
+>>> iterator = iter(L)
+>>> a, b, c = iterator
+>>> a, b, c
+(1, 2, 3)
+
+```
+
+Built-in functions such as [`max()`](https://docs.python.org/3/library/functions.html#max "max") and [`min()`](https://docs.python.org/3/library/functions.html#min "min") can take a single iterator argument and will return the largest or smallest element. The `"in"` and `"not in"` operators also support iterators: `X in iterator` is true if X is found in the stream returned by the iterator. You’ll run into obvious problems if the iterator is infinite; [`max()`](https://docs.python.org/3/library/functions.html#max "max"), [`min()`](https://docs.python.org/3/library/functions.html#min "min") will never return, and if the element X never appears in the stream, the `"in"` and `"not in"` operators won’t return either.
+Note that you can only go forward in an iterator; there’s no way to get the previous element, reset the iterator, or make a copy of it. Iterator objects can optionally provide these additional capabilities, but the iterator protocol only specifies the [`__next__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__next__ "iterator.__next__") method. Functions may therefore consume all of the iterator’s output, and if you need to do something different with the same stream, you’ll have to create a new iterator.
+### Data Types That Support Iterators[¶](https://docs.python.org/3/howto/functional.html#data-types-that-support-iterators "Link to this heading")
+We’ve already seen how lists and tuples support iterators. In fact, any Python sequence type, such as strings, will automatically support creation of an iterator.
+Calling [`iter()`](https://docs.python.org/3/library/functions.html#iter "iter") on a dictionary returns an iterator that will loop over the dictionary’s keys:
+>>>```
+>>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+...    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+>>> for key in m:
+...   print(key, m[key])
+Jan 1
+Feb 2
+Mar 3
+Apr 4
+May 5
+Jun 6
+Jul 7
+Aug 8
+Sep 9
+Oct 10
+Nov 11
+Dec 12
+
+```
+
+Note that starting with Python 3.7, dictionary iteration order is guaranteed to be the same as the insertion order. In earlier versions, the behaviour was unspecified and could vary between implementations.
+Applying [`iter()`](https://docs.python.org/3/library/functions.html#iter "iter") to a dictionary always loops over the keys, but dictionaries have methods that return other iterators. If you want to iterate over values or key/value pairs, you can explicitly call the [`values()`](https://docs.python.org/3/library/stdtypes.html#dict.values "dict.values") or [`items()`](https://docs.python.org/3/library/stdtypes.html#dict.items "dict.items") methods to get an appropriate iterator.
+The [`dict()`](https://docs.python.org/3/library/stdtypes.html#dict "dict") constructor can accept an iterator that returns a finite stream of `(key, value)` tuples:
+>>>```
+>>> L = [('Italy', 'Rome'), ('France', 'Paris'), ('US', 'Washington DC')]
+>>> dict(iter(L))
+{'Italy': 'Rome', 'France': 'Paris', 'US': 'Washington DC'}

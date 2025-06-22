@@ -1,0 +1,24 @@
+Title: Widget Key and State Management in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/architecture/widget-behavior
+Summary: This section explains the implications of changing widget labels and keys in Streamlit. It highlights that if a widget's label is changed, Streamlit treats it as a new widget, which can lead to the loss of stored state. To maintain control over a widget's value and avoid warnings, it's recommended to initialize widget values through `st.session_state` without using a default value.
+---
+
+Step 2 can be tricky. If you have a widget:
+`st.number_input("Alpha",key="A") `
+and you change it on a page rerun to:
+`st.number_input("Beta",key="A") `
+Streamlit will see that as a new widget because of the label change. The key `"A"` will be considered part of the widget labeled `"Alpha"` and will not be attached as-is to the new widget labeled `"Beta"`. Streamlit will destroy `st.session_state.A` and recreate it with the default value.
+If a widget attaches to a pre-existing key when created and is also manually assigned a default value, you will get a warning if there is a disparity. If you want to control a widget's value through `st.session_state`, initialize the widget's value through `st.session_state` and avoid the default value argument to prevent conflict.
+### [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#calling-a-widget-function-when-the-widget-already-exists)Calling a widget function when the widget already exists
+When rerunning a script without changing a widget's parameters:
+  1. Streamlit will connect to the existing frontend and backend parts.
+  2. If the widget has a key that was deleted from `st.session_state`, then Streamlit will recreate the key using the current frontend value. (e.g Deleting a key will not revert the widget to a default value.)
+  3. It will return the current value of the widget.
+
+
+### [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#widget-clean-up-process)Widget clean-up process
+When Streamlit gets to the end of a script run, it will delete the data for any widgets it has in memory that were not rendered on the screen. Most importantly, that means Streamlit will delete all key-value pairs in `st.session_state` associated with a widget not currently on screen.
+## [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#additional-examples)Additional examples
+As promised, let's address how to retain the statefulness of widgets when changing pages or modifying their parameters. There are two ways to do this.
+  1. Use dummy keys to duplicate widget values in `st.session_state` and protect the data from being deleted along with the widget.
+  2. Interrupt the widget clean-up process.

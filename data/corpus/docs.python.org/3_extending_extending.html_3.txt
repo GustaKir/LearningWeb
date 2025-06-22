@@ -1,0 +1,63 @@
+Title: Error Handling in C Extensions
+URL: https://docs.python.org/3/extending/extending.html
+Summary: This section discusses proper error handling in C extensions for Python, emphasizing the use of `PyErr_Clear()` for managing errors without passing them to the interpreter. It also highlights the importance of converting failed `malloc()` calls into exceptions using `PyErr_NoMemory()`, and notes that most object-creating functions already manage this appropriately.
+---
+
+ed explicitly by calling [`PyErr_Clear()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Clear "PyErr_Clear"). The only time C code should call [`PyErr_Clear()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Clear "PyErr_Clear") is if it doesn’t want to pass the error on to the interpreter but wants to handle it completely by itself (possibly by trying something else, or pretending nothing went wrong).
+Every failing `malloc()` call must be turned into an exception — the direct caller of `malloc()` (or `realloc()`) must call [`PyErr_NoMemory()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_NoMemory "PyErr_NoMemory") and return a failure indicator itself. All the object-creating functions (for example, [`PyLong_FromLong()`](https://docs.python.org/3/c-api/long.html#c.PyLong_FromLong "PyLong_FromLong")) already do this, so this note is only relevant to those who call `malloc()` directly.
+Also note that, with the important exception of [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") and friends, functions that return an integer status usually return a positive value or zero for success and `-1` for failure, like Unix system calls.
+Finally, be careful to clean up garbage (by making [`Py_XDECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_XDECREF "Py_XDECREF") or [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF") calls for objects you have already created) when you return an error indicator!
+The choice of which exception to raise is entirely yours. There are predeclared C objects corresponding to all built-in Python exceptions, such as `PyExc_ZeroDivisionError`, which you can use directly. Of course, you should choose exceptions wisely — don’t use `PyExc_TypeError` to mean that a file couldn’t be opened (that should probably be `PyExc_OSError`). If something’s wrong with the argument list, the [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") function usually raises `PyExc_TypeError`. If you have an argument whose value must be in a particular range or must satisfy other conditions, `PyExc_ValueError` is appropriate.
+You can also define a new exception that is unique to your module. For this, you usually declare a static object variable at the beginning of your file:
+```
+staticPyObject*SpamError;
+
+```
+
+and initialize it in your module’s initialization function (`PyInit_spam()`) with an exception object:
+```
+PyMODINIT_FUNC
+PyInit_spam(void)
+{
+PyObject*m;
+m=PyModule_Create(&spammodule);
+if(m==NULL)
+returnNULL;
+SpamError=PyErr_NewException("spam.error",NULL,NULL);
+if(PyModule_AddObjectRef(m,"error",SpamError)<0){
+Py_CLEAR(SpamError);
+Py_DECREF(m);
+returnNULL;
+}
+returnm;
+}
+
+```
+
+Note that the Python name for the exception object is `spam.error`. The [`PyErr_NewException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_NewException "PyErr_NewException") function may create a class with the base class being [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") (unless another class is passed in instead of `NULL`), described in [Built-in Exceptions](https://docs.python.org/3/library/exceptions.html#bltin-exceptions).
+Note also that the `SpamError` variable retains a reference to the newly created exception class; this is intentional! Since the exception could be removed from the module by external code, an owned reference to the class is needed to ensure that it will not be discarded, causing `SpamError` to become a dangling pointer. Should it become a dangling pointer, C code which raises the exception could cause a core dump or other unintended side effects.
+We discuss the use of [`PyMODINIT_FUNC`](https://docs.python.org/3/c-api/intro.html#c.PyMODINIT_FUNC "PyMODINIT_FUNC") as a function return type later in this sample.
+The `spam.error` exception can be raised in your extension module using a call to [`PyErr_SetString()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetString "PyErr_SetString") as shown below:
+```
+staticPyObject*
+spam_system(PyObject*self,PyObject*args)
+{
+constchar*command;
+intsts;
+if(!PyArg_ParseTuple(args,"s",&command))
+returnNULL;
+sts=system(command);
+if(sts<0){
+PyErr_SetString(SpamError,"System command failed");
+returnNULL;
+}
+returnPyLong_FromLong(sts);
+}
+
+```
+
+## 1.3. Back to the Example[¶](https://docs.python.org/3/extending/extending.html#back-to-the-example "Link to this heading")
+Going back to our example function, you should now be able to understand this statement:
+```
+if(!PyArg_ParseTuple(args,"s",&command))
+returnNULL;

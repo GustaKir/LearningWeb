@@ -1,0 +1,67 @@
+Title: Immutable Frozenset and Set Module in Python 2.4
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: The `frozenset()` type is introduced as an immutable and hashable version of `set()`, allowing it to be used as a dictionary key. The `sets` module remains available for subclassing purposes, and there's no plan for its deprecation. The document also mentions PEP 218, which proposed the built-in set object type.
+---
+
+```
+
+The [`frozenset()`](https://docs.python.org/3/library/stdtypes.html#frozenset "frozenset") type is an immutable version of [`set()`](https://docs.python.org/3/library/stdtypes.html#set "set"). Since it is immutable and hashable, it may be used as a dictionary key or as a member of another set.
+The `sets` module remains in the standard library, and may be useful if you wish to subclass the `Set` or `ImmutableSet` classes. There are currently no plans to deprecate the module.
+See also 
+
+[**PEP 218**](https://peps.python.org/pep-0218/) - Adding a Built-In Set Object Type
+    
+Originally proposed by Greg Wilson and ultimately implemented by Raymond Hettinger.
+## PEP 237: Unifying Long Integers and Integers[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-237-unifying-long-integers-and-integers "Link to this heading")
+The lengthy transition process for this PEP, begun in Python 2.2, takes another step forward in Python 2.4. In 2.3, certain integer operations that would behave differently after int/long unification triggered [`FutureWarning`](https://docs.python.org/3/library/exceptions.html#FutureWarning "FutureWarning") warnings and returned values limited to 32 or 64 bits (depending on your platform). In 2.4, these expressions no longer produce a warning and instead produce a different result that’s usually a long integer.
+The problematic expressions are primarily left shifts and lengthy hexadecimal and octal constants. For example, `2 << 32` results in a warning in 2.3, evaluating to 0 on 32-bit platforms. In Python 2.4, this expression now returns the correct answer, 8589934592.
+See also 
+
+[**PEP 237**](https://peps.python.org/pep-0237/) - Unifying Long Integers and Integers
+    
+Original PEP written by Moshe Zadka and GvR. The changes for 2.4 were implemented by Kalle Svensson.
+## PEP 289: Generator Expressions[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-289-generator-expressions "Link to this heading")
+The iterator feature introduced in Python 2.2 and the [`itertools`](https://docs.python.org/3/library/itertools.html#module-itertools "itertools: Functions creating iterators for efficient looping.") module make it easier to write programs that loop through large data sets without having the entire data set in memory at one time. List comprehensions don’t fit into this picture very well because they produce a Python list object containing all of the items. This unavoidably pulls all of the objects into memory, which can be a problem if your data set is very large. When trying to write a functionally styled program, it would be natural to write something like:
+```
+links = [link for link in get_all_links() if not link.followed]
+for link in links:
+  ...
+
+```
+
+instead of
+```
+for link in get_all_links():
+  if link.followed:
+    continue
+  ...
+
+```
+
+The first form is more concise and perhaps more readable, but if you’re dealing with a large number of link objects you’d have to write the second form to avoid having all link objects in memory at the same time.
+Generator expressions work similarly to list comprehensions but don’t materialize the entire list; instead they create a generator that will return elements one by one. The above example could be written as:
+```
+links = (link for link in get_all_links() if not link.followed)
+for link in links:
+  ...
+
+```
+
+Generator expressions always have to be written inside parentheses, as in the above example. The parentheses signalling a function call also count, so if you want to create an iterator that will be immediately passed to a function you could write:
+```
+print sum(obj.count for obj in list_all_objects())
+
+```
+
+Generator expressions differ from list comprehensions in various small ways. Most notably, the loop variable (_obj_ in the above example) is not accessible outside of the generator expression. List comprehensions leave the variable assigned to its last value; future versions of Python will change this, making list comprehensions match generator expressions in this respect.
+See also 
+
+[**PEP 289**](https://peps.python.org/pep-0289/) - Generator Expressions
+    
+Proposed by Raymond Hettinger and implemented by Jiwon Seo with early efforts steered by Hye-Shik Chang.
+## PEP 292: Simpler String Substitutions[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-292-simpler-string-substitutions "Link to this heading")
+Some new classes in the standard library provide an alternative mechanism for substituting variables into strings; this style of substitution may be better for applications where untrained users need to edit templates.
+The usual way of substituting variables by name is the `%` operator:
+>>>```
+>>> '%(page)i: %(title)s' % {'page':2, 'title': 'The Best of Times'}
+'2: The Best of Times'

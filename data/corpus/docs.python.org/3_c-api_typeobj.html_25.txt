@@ -1,0 +1,26 @@
+Title: Using Py_CLEAR for Safe Reference Management
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: The `Py_CLEAR()` macro should be employed for safely clearing references in Python's C API. It ensures that the reference to an object is set to `NULL` before it is released, preventing potential issues with finalizers or weak references that may call back to the object. This helps avoid undefined behavior if the object is no longer valid.
+---
+
+```
+
+The [`Py_CLEAR()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_CLEAR "Py_CLEAR") macro should be used, because clearing references is delicate: the reference to the contained object must not be released (via [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF")) until after the pointer to the contained object is set to `NULL`. This is because releasing the reference may cause the contained object to become trash, triggering a chain of reclamation activity that may include invoking arbitrary Python code (due to finalizers, or weakref callbacks, associated with the contained object). If it’s possible for such code to reference _self_ again, it’s important that the pointer to the contained object be `NULL` at that time, so that _self_ knows the contained object can no longer be used. The [`Py_CLEAR()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_CLEAR "Py_CLEAR") macro performs the operations in a safe order.
+If the [`Py_TPFLAGS_MANAGED_DICT`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_DICT "Py_TPFLAGS_MANAGED_DICT") bit is set in the [`tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags") field, the traverse function must call [`PyObject_ClearManagedDict()`](https://docs.python.org/3/c-api/object.html#c.PyObject_ClearManagedDict "PyObject_ClearManagedDict") like this:
+```
+PyObject_ClearManagedDict((PyObject*)self);
+
+```
+
+Note that [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") is not _always_ called before an instance is deallocated. For example, when reference counting is enough to determine that an object is no longer used, the cyclic garbage collector is not involved and [`tp_dealloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dealloc "PyTypeObject.tp_dealloc") is called directly.
+Because the goal of [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") functions is to break reference cycles, it’s not necessary to clear contained objects like Python strings or Python integers, which can’t participate in reference cycles. On the other hand, it may be convenient to clear all contained Python objects, and write the type’s [`tp_dealloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dealloc "PyTypeObject.tp_dealloc") function to invoke [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear").
+More information about Python’s garbage collection scheme can be found in section [Supporting Cyclic Garbage Collection](https://docs.python.org/3/c-api/gcsupport.html#supporting-cycle-detection).
+**Inheritance:**
+Group: [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC"), [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse"), [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear")
+This field is inherited by subtypes together with [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") and the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit: the flag bit, [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse"), and [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") are all inherited from the base type if they are all zero in the subtype. 
+
+[richcmpfunc](https://docs.python.org/3/c-api/typeobj.html#c.richcmpfunc "richcmpfunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_richcompare[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "Link to this definition")
+    
+An optional pointer to the rich comparison function, whose signature is:
+```
+PyObject*tp_richcompare(PyObject*self,PyObject*other,intop);

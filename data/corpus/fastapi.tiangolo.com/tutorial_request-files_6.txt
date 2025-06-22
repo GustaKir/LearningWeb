@@ -1,0 +1,122 @@
+Title: Handling File Uploads in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/request-files/
+Summary: This section discusses the technical details of handling file uploads in FastAPI, including the use of `async` methods that run file operations in a threadpool. It explains how FastAPI's `UploadFile` class is based on Starlette's, with additional modifications for compatibility with Pydantic. Furthermore, it outlines the differences in data encoding for HTML forms, highlighting the distinctions between `application/x-www-form-urlencoded` and `multipart/form-data` when files are included.
+---
+
+```
+
+`async` Technical Details
+When you use the `async` methods, **FastAPI** runs the file methods in a threadpool and awaits for them.
+Starlette Technical Details
+**FastAPI** 's `UploadFile` inherits directly from **Starlette** 's `UploadFile`, but adds some necessary parts to make it compatible with **Pydantic** and the other parts of FastAPI.
+## What is "Form Data"[¶](https://fastapi.tiangolo.com/tutorial/request-files/#what-is-form-data "Permanent link")
+The way HTML forms (`<form></form>`) sends the data to the server normally uses a "special" encoding for that data, it's different from JSON.
+**FastAPI** will make sure to read that data from the right place instead of JSON.
+Technical Details
+Data from forms is normally encoded using the "media type" `application/x-www-form-urlencoded` when it doesn't include files.
+But when the form includes files, it is encoded as `multipart/form-data`. If you use `File`, **FastAPI** will know it has to get the files from the correct part of the body.
+If you want to read more about these encodings and form fields, head to the [MDN web docs for `POST`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST).
+Warning
+You can declare multiple `File` and `Form` parameters in a _path operation_ , but you can't also declare `Body` fields that you expect to receive as JSON, as the request will have the body encoded using `multipart/form-data` instead of `application/json`.
+This is not a limitation of **FastAPI** , it's part of the HTTP protocol.
+## Optional File Upload[¶](https://fastapi.tiangolo.com/tutorial/request-files/#optional-file-upload "Permanent link")
+You can make a file optional by using standard type annotations and setting a default value of `None`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_7_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[bytes | None, File()] = None):
+  if not file:
+    return {"message": "No file sent"}
+  else:
+    return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: UploadFile | None = None):
+  if not file:
+    return {"message": "No upload file sent"}
+  else:
+    return {"filename": file.filename}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_8_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_8_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_8_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_8_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[Union[bytes, None], File()] = None):
+  if not file:
+    return {"message": "No file sent"}
+  else:
+    return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: Union[UploadFile, None] = None):
+  if not file:
+    return {"message": "No upload file sent"}
+  else:
+    return {"filename": file.filename}
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, File, UploadFile
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[Union[bytes, None], File()] = None):
+  if not file:
+    return {"message": "No file sent"}
+  else:
+    return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: Union[UploadFile, None] = None):
+  if not file:
+    return {"message": "No upload file sent"}
+  else:
+    return {"filename": file.filename}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: bytes | None = File(default=None)):
+  if not file:
+    return {"message": "No file sent"}
+  else:
+    return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: UploadFile | None = None):
+  if not file:
+    return {"message": "No upload file sent"}
+  else:
+    return {"filename": file.filename}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Union[bytes, None] = File(default=None)):
+  if not file:
+    return {"message": "No file sent"}
+  else:
+    return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: Union[UploadFile, None] = None):
+  if not file:
+    return {"message": "No upload file sent"}
+  else:
+    return {"filename": file.filename}

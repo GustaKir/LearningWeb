@@ -1,0 +1,40 @@
+Title: Using Condition Variables in Python's threading Module
+URL: https://docs.python.org/3/library/threading.html
+Summary: This section discusses the importance of using a `while` loop when calling `wait()` on condition variables, as it may return before the condition is met. It introduces `wait_for()` as a way to automate condition checking and manage timeouts effectively.
+---
+
+```
+
+The `while` loop checking for the application’s condition is necessary because [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait") can return after an arbitrary long time, and the condition which prompted the [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") call may no longer hold true. This is inherent to multi-threaded programming. The [`wait_for()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait_for "threading.Condition.wait_for") method can be used to automate the condition checking, and eases the computation of timeouts:
+```
+# Consume an item
+with cv:
+  cv.wait_for(an_item_is_available)
+  get_an_available_item()
+
+```
+
+To choose between [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") and [`notify_all()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "threading.Condition.notify_all"), consider whether one state change can be interesting for only one or several waiting threads. E.g. in a typical producer-consumer situation, adding one item to the buffer only needs to wake up one consumer thread. 
+
+_class_ threading.Condition(_lock =None_)[¶](https://docs.python.org/3/library/threading.html#threading.Condition "Link to this definition")
+    
+This class implements condition variable objects. A condition variable allows one or more threads to wait until they are notified by another thread.
+If the _lock_ argument is given and not `None`, it must be a [`Lock`](https://docs.python.org/3/library/threading.html#threading.Lock "threading.Lock") or [`RLock`](https://docs.python.org/3/library/threading.html#threading.RLock "threading.RLock") object, and it is used as the underlying lock. Otherwise, a new [`RLock`](https://docs.python.org/3/library/threading.html#threading.RLock "threading.RLock") object is created and used as the underlying lock.
+Changed in version 3.3: changed from a factory function to a class. 
+
+acquire(_* args_)[¶](https://docs.python.org/3/library/threading.html#threading.Condition.acquire "Link to this definition")
+    
+Acquire the underlying lock. This method calls the corresponding method on the underlying lock; the return value is whatever that method returns. 
+
+release()[¶](https://docs.python.org/3/library/threading.html#threading.Condition.release "Link to this definition")
+    
+Release the underlying lock. This method calls the corresponding method on the underlying lock; there is no return value. 
+
+wait(_timeout =None_)[¶](https://docs.python.org/3/library/threading.html#threading.Condition.wait "Link to this definition")
+    
+Wait until notified or until a timeout occurs. If the calling thread has not acquired the lock when this method is called, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised.
+This method releases the underlying lock, and then blocks until it is awakened by a [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") or [`notify_all()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "threading.Condition.notify_all") call for the same condition variable in another thread, or until the optional timeout occurs. Once awakened or timed out, it re-acquires the lock and returns.
+When the _timeout_ argument is present and not `None`, it should be a floating-point number specifying a timeout for the operation in seconds (or fractions thereof).
+When the underlying lock is an [`RLock`](https://docs.python.org/3/library/threading.html#threading.RLock "threading.RLock"), it is not released using its [`release()`](https://docs.python.org/3/library/threading.html#threading.Condition.release "threading.Condition.release") method, since this may not actually unlock the lock when it was acquired multiple times recursively. Instead, an internal interface of the [`RLock`](https://docs.python.org/3/library/threading.html#threading.RLock "threading.RLock") class is used, which really unlocks it even when it has been recursively acquired several times. Another internal interface is then used to restore the recursion level when the lock is reacquired.
+The return value is `True` unless a given _timeout_ expired, in which case it is `False`.
+Changed in version 3.2: Previously, the method always returned `None`.

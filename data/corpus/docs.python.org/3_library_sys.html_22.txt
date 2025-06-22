@@ -1,0 +1,33 @@
+Title: Understanding the 'opcode' Event in Python Tracing
+URL: https://docs.python.org/3/library/sys.html
+Summary: This section explains the 'opcode' event in Python's tracing mechanism, detailing how it is triggered when the interpreter prepares to execute a new opcode. It describes the role of the local trace function, the necessity of enabling per-opcode events, and how to set a custom trace function through the frame object.
+---
+
+`'opcode'`
+    
+The interpreter is about to execute a new opcode (see [`dis`](https://docs.python.org/3/library/dis.html#module-dis "dis: Disassembler for Python bytecode.") for opcode details). The local trace function is called; _arg_ is `None`; the return value specifies the new local trace function. Per-opcode events are not emitted by default: they must be explicitly requested by setting [`f_trace_opcodes`](https://docs.python.org/3/reference/datamodel.html#frame.f_trace_opcodes "frame.f_trace_opcodes") to [`True`](https://docs.python.org/3/library/constants.html#True "True") on the [frame](https://docs.python.org/3/reference/datamodel.html#frame-objects).
+Note that as an exception is propagated down the chain of callers, an `'exception'` event is generated at each level.
+For more fine-grained usage, it’s possible to set a trace function by assigning `frame.f_trace = tracefunc` explicitly, rather than relying on it being set indirectly via the return value from an already installed trace function. This is also required for activating the trace function on the current frame, which [`settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace") doesn’t do. Note that in order for this to work, a global tracing function must have been installed with [`settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace") in order to enable the runtime tracing machinery, but it doesn’t need to be the same tracing function (e.g. it could be a low overhead tracing function that simply returns `None` to disable itself immediately on each frame).
+For more information on code and frame objects, refer to [The standard type hierarchy](https://docs.python.org/3/reference/datamodel.html#types).
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `sys.settrace` with no arguments.
+**CPython implementation detail:** The [`settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace") function is intended only for implementing debuggers, profilers, coverage tools and the like. Its behavior is part of the implementation platform, rather than part of the language definition, and thus may not be available in all Python implementations.
+Changed in version 3.7: `'opcode'` event type added; [`f_trace_lines`](https://docs.python.org/3/reference/datamodel.html#frame.f_trace_lines "frame.f_trace_lines") and [`f_trace_opcodes`](https://docs.python.org/3/reference/datamodel.html#frame.f_trace_opcodes "frame.f_trace_opcodes") attributes added to frames 
+
+sys.set_asyncgen_hooks(_[firstiter] [, finalizer]_)[¶](https://docs.python.org/3/library/sys.html#sys.set_asyncgen_hooks "Link to this definition")
+    
+Accepts two optional keyword arguments which are callables that accept an [asynchronous generator iterator](https://docs.python.org/3/glossary.html#term-asynchronous-generator-iterator) as an argument. The _firstiter_ callable will be called when an asynchronous generator is iterated for the first time. The _finalizer_ will be called when an asynchronous generator is about to be garbage collected.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `sys.set_asyncgen_hooks_firstiter` with no arguments.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `sys.set_asyncgen_hooks_finalizer` with no arguments.
+Two auditing events are raised because the underlying API consists of two calls, each of which must raise its own event.
+Added in version 3.6: See [**PEP 525**](https://peps.python.org/pep-0525/) for more details, and for a reference example of a _finalizer_ method see the implementation of `asyncio.Loop.shutdown_asyncgens` in [Lib/asyncio/base_events.py](https://github.com/python/cpython/tree/3.13/Lib/asyncio/base_events.py)
+Note
+This function has been added on a provisional basis (see [**PEP 411**](https://peps.python.org/pep-0411/) for details.) 
+
+sys.set_coroutine_origin_tracking_depth(_depth_)[¶](https://docs.python.org/3/library/sys.html#sys.set_coroutine_origin_tracking_depth "Link to this definition")
+    
+Allows enabling or disabling coroutine origin tracking. When enabled, the `cr_origin` attribute on coroutine objects will contain a tuple of (filename, line number, function name) tuples describing the traceback where the coroutine object was created, with the most recent call first. When disabled, `cr_origin` will be `None`.
+To enable, pass a _depth_ value greater than zero; this sets the number of frames whose information will be captured. To disable, pass set _depth_ to zero.
+This setting is thread-specific.
+Added in version 3.7.
+Note
+This function has been added on a provisional basis (see [**PEP 411**](https://peps.python.org/pep-0411/) for details.) Use it only for debugging purposes.

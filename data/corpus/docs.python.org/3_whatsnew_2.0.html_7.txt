@@ -1,0 +1,28 @@
+Title: New Features Introduced in Python 2.0
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: Python 2.0 introduces the ability to rename imported modules using `import module as name`, along with a new format style '%r' for inserting the `repr()` of an argument, complementing the existing '%s'. Additionally, it now allows classes to override the built-in 'in' operator for custom functionality.
+---
+
+```
+
+Modules can now be renamed on importing them, using the syntax `import module as name` or `from module import name as othername`. The patch was submitted by Thomas Wouters.
+A new format style is available when using the `%` operator; ‘%r’ will insert the [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") of its argument. This was also added from symmetry considerations, this time for symmetry with the existing ‘%s’ format style, which inserts the [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") of its argument. For example, `'%r %s' % ('abc', 'abc')` returns a string containing `'abc' abc`.
+Previously there was no way to implement a class that overrode Python’s built-in [`in`](https://docs.python.org/3/reference/expressions.html#in) operator and implemented a custom version. `obj in seq` returns true if _obj_ is present in the sequence _seq_ ; Python computes this by simply trying every index of the sequence until either _obj_ is found or an [`IndexError`](https://docs.python.org/3/library/exceptions.html#IndexError "IndexError") is encountered. Moshe Zadka contributed a patch which adds a `__contains__()` magic method for providing a custom implementation for `in`. Additionally, new built-in objects written in C can define what `in` means for them via a new slot in the sequence protocol.
+Earlier versions of Python used a recursive algorithm for deleting objects. Deeply nested data structures could cause the interpreter to fill up the C stack and crash; Christian Tismer rewrote the deletion logic to fix this problem. On a related note, comparing recursive objects recursed infinitely and crashed; Jeremy Hylton rewrote the code to no longer crash, producing a useful result instead. For example, after this code:
+```
+a = []
+b = []
+a.append(a)
+b.append(b)
+
+```
+
+The comparison `a==b` returns true, because the two recursive data structures are isomorphic. See the thread “trashcan and PR#7” in the April 2000 archives of the python-dev mailing list for the discussion leading up to this implementation, and some useful relevant links. Note that comparisons can now also raise exceptions. In earlier versions of Python, a comparison operation such as `cmp(a,b)` would always produce an answer, even if a user-defined `__cmp__()` method encountered an error, since the resulting exception would simply be silently swallowed.
+Work has been done on porting Python to 64-bit Windows on the Itanium processor, mostly by Trent Mick of ActiveState. (Confusingly, `sys.platform` is still `'win32'` on Win64 because it seems that for ease of porting, MS Visual C++ treats code as 32 bit on Itanium.) PythonWin also supports Windows CE; see the Python CE page at <https://pythonce.sourceforge.net/> for more information.
+Another new platform is Darwin/MacOS X; initial support for it is in Python 2.0. Dynamic loading works, if you specify “configure –with-dyld –with-suffix=.x”. Consult the README in the Python source distribution for more instructions.
+An attempt has been made to alleviate one of Python’s warts, the often-confusing [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") exception when code refers to a local variable before the variable has been assigned a value. For example, the following code raises an exception on the `print` statement in both 1.5.2 and 2.0; in 1.5.2 a [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") exception is raised, while 2.0 raises a new [`UnboundLocalError`](https://docs.python.org/3/library/exceptions.html#UnboundLocalError "UnboundLocalError") exception. [`UnboundLocalError`](https://docs.python.org/3/library/exceptions.html#UnboundLocalError "UnboundLocalError") is a subclass of [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError"), so any existing code that expects [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") to be raised should still work.
+```
+deff():
+  print "i=",i
+  i = i + 1
+f()

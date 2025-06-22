@@ -1,0 +1,73 @@
+Title: Parameter Objects in the Inspect Module
+URL: https://docs.python.org/3/library/inspect.html
+Summary: This section discusses the `inspect.Parameter` class, which represents a parameter in a callable's signature. It details its immutability, the addition of parameters in version 3.10, and methods to create modified copies. Notably, `Parameter` objects are now picklable and hashable since version 3.5.
+---
+
+```
+
+Its behavior is otherwise identical to that of [`signature()`](https://docs.python.org/3/library/inspect.html#inspect.signature "inspect.signature").
+Added in version 3.5.
+Changed in version 3.10: The _globals_ , _locals_ , and _eval_str_ parameters were added. 
+
+_class_ inspect.Parameter(_name_ , _kind_ , _*_ , _default =Parameter.empty_, _annotation =Parameter.empty_)[¶](https://docs.python.org/3/library/inspect.html#inspect.Parameter "Link to this definition")
+    
+`Parameter` objects are _immutable_. Instead of modifying a `Parameter` object, you can use [`Parameter.replace()`](https://docs.python.org/3/library/inspect.html#inspect.Parameter.replace "inspect.Parameter.replace") or [`copy.replace()`](https://docs.python.org/3/library/copy.html#copy.replace "copy.replace") to create a modified copy.
+Changed in version 3.5: Parameter objects are now picklable and [hashable](https://docs.python.org/3/glossary.html#term-hashable). 
+
+empty[¶](https://docs.python.org/3/library/inspect.html#inspect.Parameter.empty "Link to this definition")
+    
+A special class-level marker to specify absence of default values and annotations. 
+
+name[¶](https://docs.python.org/3/library/inspect.html#inspect.Parameter.name "Link to this definition")
+    
+The name of the parameter as a string. The name must be a valid Python identifier.
+**CPython implementation detail:** CPython generates implicit parameter names of the form `.0` on the code objects used to implement comprehensions and generator expressions.
+Changed in version 3.6: These parameter names are now exposed by this module as names like `implicit0`. 
+
+default[¶](https://docs.python.org/3/library/inspect.html#inspect.Parameter.default "Link to this definition")
+    
+The default value for the parameter. If the parameter has no default value, this attribute is set to [`Parameter.empty`](https://docs.python.org/3/library/inspect.html#inspect.Parameter.empty "inspect.Parameter.empty"). 
+
+annotation[¶](https://docs.python.org/3/library/inspect.html#inspect.Parameter.annotation "Link to this definition")
+    
+The annotation for the parameter. If the parameter has no annotation, this attribute is set to [`Parameter.empty`](https://docs.python.org/3/library/inspect.html#inspect.Parameter.empty "inspect.Parameter.empty"). 
+
+kind[¶](https://docs.python.org/3/library/inspect.html#inspect.Parameter.kind "Link to this definition")
+    
+Describes how argument values are bound to the parameter. The possible values are accessible via [`Parameter`](https://docs.python.org/3/library/inspect.html#inspect.Parameter "inspect.Parameter") (like `Parameter.KEYWORD_ONLY`), and support comparison and ordering, in the following order:
+Name | Meaning  
+---|---  
+_POSITIONAL_ONLY_ | Value must be supplied as a positional argument. Positional only parameters are those which appear before a `/` entry (if present) in a Python function definition.  
+_POSITIONAL_OR_KEYWORD_ | Value may be supplied as either a keyword or positional argument (this is the standard binding behaviour for functions implemented in Python.)  
+_VAR_POSITIONAL_ | A tuple of positional arguments that aren’t bound to any other parameter. This corresponds to a `*args` parameter in a Python function definition.  
+_KEYWORD_ONLY_ | Value must be supplied as a keyword argument. Keyword only parameters are those which appear after a `*` or `*args` entry in a Python function definition.  
+_VAR_KEYWORD_ | A dict of keyword arguments that aren’t bound to any other parameter. This corresponds to a `**kwargs` parameter in a Python function definition.  
+Example: print all keyword-only arguments without default values:
+>>>```
+>>> deffoo(a, b, *, c, d=10):
+...   pass
+>>> sig = signature(foo)
+>>> for param in sig.parameters.values():
+...   if (param.kind == param.KEYWORD_ONLY and
+...             param.default is param.empty):
+...     print('Parameter:', param)
+Parameter: c
+
+```
+
+
+kind.description[¶](https://docs.python.org/3/library/inspect.html#inspect.Parameter.kind.description "Link to this definition")
+    
+Describes an enum value of [`Parameter.kind`](https://docs.python.org/3/library/inspect.html#inspect.Parameter.kind "inspect.Parameter.kind").
+Added in version 3.8.
+Example: print all descriptions of arguments:
+>>>```
+>>> deffoo(a, b, *, c, d=10):
+...   pass
+>>> sig = signature(foo)
+>>> for param in sig.parameters.values():
+...   print(param.kind.description)
+positional or keyword
+positional or keyword
+keyword-only
+keyword-only

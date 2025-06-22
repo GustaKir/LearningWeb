@@ -1,0 +1,95 @@
+Title: Streamlit DataFrame Selection Modes and Row Height Configuration
+URL: https://docs.streamlit.io/develop/api-reference/data/st.dataframe
+Summary: This section describes the 'selection_mode' options for Streamlit's dataframe component, allowing for various selection configurations (single/multi-row/column). It also specifies the 'row_height' parameter to customize row height and notes that enabling column selections disables sorting.
+---
+
+selection_mode ("single-row", "multi-row", "single-column", "multi-column", or Iterable of these) |  The types of selections Streamlit should allow when selections are enabled with `on_select`. This can be one of the following:
+  * "multi-row" (default): Multiple rows can be selected at a time.
+  * "single-row": Only one row can be selected at a time.
+  * "multi-column": Multiple columns can be selected at a time.
+  * "single-column": Only one column can be selected at a time.
+  * An `Iterable` of the above options: The table will allow selection based on the modes specified.
+
+When column selections are enabled, column sorting is disabled.  
+row_height (int or None) |  The height of each row in the dataframe in pixels. If `row_height` is `None` (default), Streamlit will use a default row height, which fits one line of text.  
+Returns  
+(element or dict) | If `on_select` is `"ignore"` (default), this command returns an internal placeholder for the dataframe element that can be used with the `.add_rows()` method. Otherwise, this command returns a dictionary-like object that supports both key and attribute notation. The attributes are described by the `DataframeState` dictionary schema.  
+#### Examples
+**Example 1: Display a dataframe**
+```
+import streamlit as st
+import pandas as pd
+import numpy as np
+df = pd.DataFrame(np.random.randn(50, 20), columns=("col %d" % i for i in range(20)))
+st.dataframe(df) # Same as st.write(df)
+```
+
+Copy
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-dataframe.streamlit.app//?utm_medium=oembed&)
+**Example 2: Use Pandas Styler**
+You can also pass a Pandas Styler object to change the style of the rendered DataFrame:
+```
+import streamlit as st
+import pandas as pd
+import numpy as np
+df = pd.DataFrame(np.random.randn(10, 20), columns=("col %d" % i for i in range(20)))
+st.dataframe(df.style.highlight_max(axis=0))
+```
+
+Copy
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-dataframe1.streamlit.app//?utm_medium=oembed&)
+**Example 3: Use column configuration**
+You can customize a dataframe via `column_config`, `hide_index`, or `column_order`.
+```
+import random
+import pandas as pd
+import streamlit as st
+df = pd.DataFrame(
+  {
+    "name": ["Roadmap", "Extras", "Issues"],
+    "url": ["https://roadmap.streamlit.app", "https://extras.streamlit.app", "https://issues.streamlit.app"],
+    "stars": [random.randint(0, 1000) for _ in range(3)],
+    "views_history": [[random.randint(0, 5000) for _ in range(30)] for _ in range(3)],
+  }
+)
+st.dataframe(
+  df,
+  column_config={
+    "name": "App name",
+    "stars": st.column_config.NumberColumn(
+      "Github Stars",
+      help="Number of stars on GitHub",
+      format="%d ⭐",
+    ),
+    "url": st.column_config.LinkColumn("App URL"),
+    "views_history": st.column_config.LineChartColumn(
+      "Views (past 30 days)", y_min=0, y_max=5000
+    ),
+  },
+  hide_index=True,
+)
+```
+
+Copy
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-dataframe-config.streamlit.app//?utm_medium=oembed&)
+**Example 4: Customize your index**
+You can use column configuration to format your index.
+```
+import streamlit as st
+import pandas as pd
+from datetime import date
+df = pd.DataFrame(
+  {
+    "Date": [date(2024, 1, 1), date(2024, 2, 1), date(2024, 3, 1)],
+    "Total": [13429, 23564, 23452],
+  }
+)
+df.set_index("Date", inplace=True)
+config = {
+  "_index": st.column_config.DateColumn("Month", format="MMM YYYY"),
+  "Total": st.column_config.NumberColumn("Total ($)"),
+}
+st.dataframe(df, column_config=config)

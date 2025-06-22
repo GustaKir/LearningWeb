@@ -1,0 +1,45 @@
+Title: Encoding Unicode with `es#` Format in Python C API
+URL: https://docs.python.org/3/c-api/arg.html
+Summary: The `es#` format variant is used for encoding Unicode into a character buffer, accommodating input data with NUL characters. It requires three arguments: a const char* for the encoding name (or NULL for 'utf-8'), a char** for the output buffer, and a pointer to an integer representing the output buffer's byte count. An exception is raised if the encoding name is not recognized.
+---
+
+`es#` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str")) [const char *encoding, char **buffer, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") *buffer_length]
+    
+This variant on `s#` is used for encoding Unicode into a character buffer. Unlike the `es` format, this variant allows input data which contains NUL characters.
+It requires three arguments. The first is only used as input, and must be a constchar* which points to the name of an encoding as a NUL-terminated string, or `NULL`, in which case `'utf-8'` encoding is used. An exception is raised if the named encoding is not known to Python. The second argument must be a char**; the value of the pointer it references will be set to a buffer with the contents of the argument text. The text will be encoded in the encoding specified by the first argument. The third argument must be a pointer to an integer; the referenced integer will be set to the number of bytes in the output buffer.
+There are two modes of operation:
+If _*buffer_ points a `NULL` pointer, the function will allocate a buffer of the needed size, copy the encoded data into this buffer and set _*buffer_ to reference the newly allocated storage. The caller is responsible for calling [`PyMem_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Free "PyMem_Free") to free the allocated buffer after usage.
+If _*buffer_ points to a non-`NULL` pointer (an already allocated buffer), [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") will use this location as the buffer and interpret the initial value of _*buffer_length_ as the buffer size. It will then copy the encoded data into the buffer and NUL-terminate it. If the buffer is not large enough, a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") will be set.
+In both cases, _*buffer_length_ is set to the length of the encoded data without the trailing NUL byte. 
+
+`et#` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") or [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray")) [const char *encoding, char **buffer, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") *buffer_length]
+    
+Same as `es#` except that byte string objects are passed through without recoding them. Instead, the implementation assumes that the byte string object uses the encoding passed in as parameter.
+Changed in version 3.12: `u`, `u#`, `Z`, and `Z#` are removed because they used a legacy `Py_UNICODE*` representation.
+### Numbers[¶](https://docs.python.org/3/c-api/arg.html#numbers "Link to this heading")
+These formats allow representing Python numbers or single characters as C numbers. Formats that require [`int`](https://docs.python.org/3/library/functions.html#int "int"), [`float`](https://docs.python.org/3/library/functions.html#float "float") or [`complex`](https://docs.python.org/3/library/functions.html#complex "complex") can also use the corresponding special methods [`__index__()`](https://docs.python.org/3/reference/datamodel.html#object.__index__ "object.__index__"), [`__float__()`](https://docs.python.org/3/reference/datamodel.html#object.__float__ "object.__float__") or [`__complex__()`](https://docs.python.org/3/reference/datamodel.html#object.__complex__ "object.__complex__") to convert the Python object to the required type.
+For signed integer formats, [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") is raised if the value is out of range for the C type. For unsigned integer formats, no range checking is done — the most significant bits are silently truncated when the receiving field is too small to receive the value. 
+
+`b` ([`int`](https://docs.python.org/3/library/functions.html#int "int")) [unsigned char]
+    
+Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C unsignedchar. 
+
+`B` ([`int`](https://docs.python.org/3/library/functions.html#int "int")) [unsigned char]
+    
+Convert a Python integer to a tiny integer without overflow checking, stored in a C unsignedchar. 
+
+`h` ([`int`](https://docs.python.org/3/library/functions.html#int "int")) [short int]
+    
+Convert a Python integer to a C shortint. 
+
+`H` ([`int`](https://docs.python.org/3/library/functions.html#int "int")) [unsigned short int]
+    
+Convert a Python integer to a C unsignedshortint, without overflow checking. 
+
+`i` ([`int`](https://docs.python.org/3/library/functions.html#int "int")) [int]
+    
+Convert a Python integer to a plain C int. 
+
+`I` ([`int`](https://docs.python.org/3/library/functions.html#int "int")) [unsigned int]
+    
+Convert a Python integer to a C unsignedint, without overflow checking.

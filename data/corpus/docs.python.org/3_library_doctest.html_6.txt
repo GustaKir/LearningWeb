@@ -1,0 +1,43 @@
+Title: Option Flags in Doctest
+URL: https://docs.python.org/3/library/doctest.html
+Summary: This section discusses various option flags that control doctest's behavior, including their symbolic names used as module constants. It details how these flags can be combined, passed to functions, used in directives, and sent via command line. The first group of options focuses on defining test semantics, detailing how expected output matches actual output.
+---
+
+```
+
+
+
+### Option Flags[¶](https://docs.python.org/3/library/doctest.html#option-flags "Link to this heading")
+A number of option flags control various aspects of doctest’s behavior. Symbolic names for the flags are supplied as module constants, which can be [bitwise ORed](https://docs.python.org/3/reference/expressions.html#bitwise) together and passed to various functions. The names can also be used in [doctest directives](https://docs.python.org/3/library/doctest.html#doctest-directives), and may be passed to the doctest command line interface via the `-o` option.
+The first group of options define test semantics, controlling aspects of how doctest decides whether actual output matches an example’s expected output: 
+
+doctest.DONT_ACCEPT_TRUE_FOR_1[¶](https://docs.python.org/3/library/doctest.html#doctest.DONT_ACCEPT_TRUE_FOR_1 "Link to this definition")
+    
+By default, if an expected output block contains just `1`, an actual output block containing just `1` or just `True` is considered to be a match, and similarly for `0` versus `False`. When [`DONT_ACCEPT_TRUE_FOR_1`](https://docs.python.org/3/library/doctest.html#doctest.DONT_ACCEPT_TRUE_FOR_1 "doctest.DONT_ACCEPT_TRUE_FOR_1") is specified, neither substitution is allowed. The default behavior caters to that Python changed the return type of many functions from integer to boolean; doctests expecting “little integer” output still work in these cases. This option will probably go away, but not for several years. 
+
+doctest.DONT_ACCEPT_BLANKLINE[¶](https://docs.python.org/3/library/doctest.html#doctest.DONT_ACCEPT_BLANKLINE "Link to this definition")
+    
+By default, if an expected output block contains a line containing only the string `<BLANKLINE>`, then that line will match a blank line in the actual output. Because a genuinely blank line delimits the expected output, this is the only way to communicate that a blank line is expected. When [`DONT_ACCEPT_BLANKLINE`](https://docs.python.org/3/library/doctest.html#doctest.DONT_ACCEPT_BLANKLINE "doctest.DONT_ACCEPT_BLANKLINE") is specified, this substitution is not allowed. 
+
+doctest.NORMALIZE_WHITESPACE[¶](https://docs.python.org/3/library/doctest.html#doctest.NORMALIZE_WHITESPACE "Link to this definition")
+    
+When specified, all sequences of whitespace (blanks and newlines) are treated as equal. Any sequence of whitespace within the expected output will match any sequence of whitespace within the actual output. By default, whitespace must match exactly. [`NORMALIZE_WHITESPACE`](https://docs.python.org/3/library/doctest.html#doctest.NORMALIZE_WHITESPACE "doctest.NORMALIZE_WHITESPACE") is especially useful when a line of expected output is very long, and you want to wrap it across multiple lines in your source. 
+
+doctest.ELLIPSIS[¶](https://docs.python.org/3/library/doctest.html#doctest.ELLIPSIS "Link to this definition")
+    
+When specified, an ellipsis marker (`...`) in the expected output can match any substring in the actual output. This includes substrings that span line boundaries, and empty substrings, so it’s best to keep usage of this simple. Complicated uses can lead to the same kinds of “oops, it matched too much!” surprises that `.*` is prone to in regular expressions. 
+
+doctest.IGNORE_EXCEPTION_DETAIL[¶](https://docs.python.org/3/library/doctest.html#doctest.IGNORE_EXCEPTION_DETAIL "Link to this definition")
+    
+When specified, doctests expecting exceptions pass so long as an exception of the expected type is raised, even if the details (message and fully qualified exception name) don’t match.
+For example, an example expecting `ValueError: 42` will pass if the actual exception raised is `ValueError: 3*14`, but will fail if, say, a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") is raised instead. It will also ignore any fully qualified name included before the exception class, which can vary between implementations and versions of Python and the code/libraries in use. Hence, all three of these variations will work with the flag specified:
+>>>```
+>>> raise Exception('message')
+Traceback (most recent call last):
+Exception: message
+>>> raise Exception('message')
+Traceback (most recent call last):
+builtins.Exception: message
+>>> raise Exception('message')
+Traceback (most recent call last):
+__main__.Exception: message

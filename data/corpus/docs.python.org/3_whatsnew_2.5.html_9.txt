@@ -1,0 +1,74 @@
+Title: The contextlib Module in Python 2.5
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: The new contextlib module introduces utility functions and a decorator, contextmanager(), for simplifying the creation of objects used with the 'with' statement. It allows developers to use a generator function that yields one value, executing code before the yield as the __enter__() method.
+---
+
+```
+
+### The contextlib module[¶](https://docs.python.org/3/whatsnew/2.5.html#the-contextlib-module "Link to this heading")
+The new [`contextlib`](https://docs.python.org/3/library/contextlib.html#module-contextlib "contextlib: Utilities for with-statement contexts.") module provides some functions and a decorator that are useful for writing objects for use with the ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement.
+The decorator is called `contextmanager()`, and lets you write a single generator function instead of defining a new class. The generator should yield exactly one value. The code up to the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) will be executed as the [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method, and the value yielded will be the method’s return value that will get bound to the variable in the ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement’s `as` clause, if any. The code after the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) will be executed in the [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method. Any exception raised in the block will be raised by the `yield` statement.
+Our database example from the previous section could be written using this decorator as:
+```
+fromcontextlibimport contextmanager
+@contextmanager
+defdb_transaction (connection):
+  cursor = connection.cursor()
+  try:
+    yield cursor
+  except:
+    connection.rollback()
+    raise
+  else:
+    connection.commit()
+db = DatabaseConnection()
+with db_transaction(db) as cursor:
+  ...
+
+```
+
+The [`contextlib`](https://docs.python.org/3/library/contextlib.html#module-contextlib "contextlib: Utilities for with-statement contexts.") module also has a `nested(mgr1, mgr2, ...)` function that combines a number of context managers so you don’t need to write nested ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statements. In this example, the single ‘`with`’ statement both starts a database transaction and acquires a thread lock:
+```
+lock = threading.Lock()
+with nested (db_transaction(db), lock) as (cursor, locked):
+  ...
+
+```
+
+Finally, the `closing(object)` function returns _object_ so that it can be bound to a variable, and calls `object.close` at the end of the block.
+```
+importurllib,sys
+fromcontextlibimport closing
+with closing(urllib.urlopen('http://www.yahoo.com')) as f:
+  for line in f:
+    sys.stdout.write(line)
+
+```
+
+See also 
+
+[**PEP 343**](https://peps.python.org/pep-0343/) - The “with” statement
+    
+PEP written by Guido van Rossum and Nick Coghlan; implemented by Mike Bland, Guido van Rossum, and Neal Norwitz. The PEP shows the code generated for a ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement, which can be helpful in learning how the statement works.
+The documentation for the [`contextlib`](https://docs.python.org/3/library/contextlib.html#module-contextlib "contextlib: Utilities for with-statement contexts.") module.
+## PEP 352: Exceptions as New-Style Classes[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-352-exceptions-as-new-style-classes "Link to this heading")
+Exception classes can now be new-style classes, not just classic classes, and the built-in [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") class and all the standard built-in exceptions ([`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError"), [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"), etc.) are now new-style classes.
+The inheritance hierarchy for exceptions has been rearranged a bit. In 2.5, the inheritance relationships are:
+```
+BaseException    # New in Python 2.5
+|- KeyboardInterrupt
+|- SystemExit
+|- Exception
+  |- (all other current built-in exceptions)
+
+```
+
+This rearrangement was done because people often want to catch all exceptions that indicate program errors. [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt") and [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit") aren’t errors, though, and usually represent an explicit action such as the user hitting `Control`-`C` or code calling [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit"). A bare `except:` will catch all exceptions, so you commonly need to list [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt") and [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit") in order to re-raise them. The usual pattern is:
+```
+try:
+  ...
+except (KeyboardInterrupt, SystemExit):
+  raise
+except:
+  # Log error...
+  # Continue running program...

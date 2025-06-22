@@ -1,0 +1,58 @@
+Title: SSL Error Exceptions in Python
+URL: https://docs.python.org/3/library/ssl.html
+Summary: This section describes two exceptions related to SSL errors in Python. `ssl.SSLEOFError` is raised when an SSL connection is abruptly terminated, and `ssl.SSLCertVerificationError` occurs when certificate validation fails. Additionally, the `SSLCertVerificationError` includes `verify_code` and `verify_message` attributes for more details on the verification error.
+---
+
+_exception_ ssl.SSLEOFError[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLEOFError "Link to this definition")
+    
+A subclass of [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") raised when the SSL connection has been terminated abruptly. Generally, you shouldn’t try to reuse the underlying transport when this error is encountered.
+Added in version 3.3. 
+
+_exception_ ssl.SSLCertVerificationError[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLCertVerificationError "Link to this definition")
+    
+A subclass of [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") raised when certificate validation has failed.
+Added in version 3.7. 
+
+verify_code[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLCertVerificationError.verify_code "Link to this definition")
+    
+A numeric error number that denotes the verification error. 
+
+verify_message[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLCertVerificationError.verify_message "Link to this definition")
+    
+A human readable string of the verification error. 
+
+_exception_ ssl.CertificateError[¶](https://docs.python.org/3/library/ssl.html#ssl.CertificateError "Link to this definition")
+    
+An alias for [`SSLCertVerificationError`](https://docs.python.org/3/library/ssl.html#ssl.SSLCertVerificationError "ssl.SSLCertVerificationError").
+Changed in version 3.7: The exception is now an alias for [`SSLCertVerificationError`](https://docs.python.org/3/library/ssl.html#ssl.SSLCertVerificationError "ssl.SSLCertVerificationError").
+### Random generation[¶](https://docs.python.org/3/library/ssl.html#random-generation "Link to this heading") 
+
+ssl.RAND_bytes(_num_)[¶](https://docs.python.org/3/library/ssl.html#ssl.RAND_bytes "Link to this definition")
+    
+Return _num_ cryptographically strong pseudo-random bytes. Raises an [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") if the PRNG has not been seeded with enough data or if the operation is not supported by the current RAND method. [`RAND_status()`](https://docs.python.org/3/library/ssl.html#ssl.RAND_status "ssl.RAND_status") can be used to check the status of the PRNG and [`RAND_add()`](https://docs.python.org/3/library/ssl.html#ssl.RAND_add "ssl.RAND_add") can be used to seed the PRNG.
+For almost all applications [`os.urandom()`](https://docs.python.org/3/library/os.html#os.urandom "os.urandom") is preferable.
+Read the Wikipedia article, [Cryptographically secure pseudorandom number generator (CSPRNG)](https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator), to get the requirements of a cryptographically strong generator.
+Added in version 3.3. 
+
+ssl.RAND_status()[¶](https://docs.python.org/3/library/ssl.html#ssl.RAND_status "Link to this definition")
+    
+Return `True` if the SSL pseudo-random number generator has been seeded with ‘enough’ randomness, and `False` otherwise. You can use `ssl.RAND_egd()` and [`ssl.RAND_add()`](https://docs.python.org/3/library/ssl.html#ssl.RAND_add "ssl.RAND_add") to increase the randomness of the pseudo-random number generator. 
+
+ssl.RAND_add(_bytes_ , _entropy_)[¶](https://docs.python.org/3/library/ssl.html#ssl.RAND_add "Link to this definition")
+    
+Mix the given _bytes_ into the SSL pseudo-random number generator. The parameter _entropy_ (a float) is a lower bound on the entropy contained in string (so you can always use `0.0`). See [**RFC 1750**](https://datatracker.ietf.org/doc/html/rfc1750.html) for more information on sources of entropy.
+Changed in version 3.5: Writable [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object) is now accepted.
+### Certificate handling[¶](https://docs.python.org/3/library/ssl.html#certificate-handling "Link to this heading") 
+
+ssl.cert_time_to_seconds(_cert_time_)[¶](https://docs.python.org/3/library/ssl.html#ssl.cert_time_to_seconds "Link to this definition")
+    
+Return the time in seconds since the Epoch, given the `cert_time` string representing the “notBefore” or “notAfter” date from a certificate in `"%b %d %H:%M:%S %Y %Z"` strptime format (C locale).
+Here’s an example:
+>>>```
+>>> importssl
+>>> timestamp = ssl.cert_time_to_seconds("Jan 5 09:34:43 2018 GMT")
+>>> timestamp
+1515144883
+>>> fromdatetimeimport datetime
+>>> print(datetime.utcfromtimestamp(timestamp))
+2018-01-05 09:34:43

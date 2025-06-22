@@ -1,0 +1,123 @@
+Title: Generating Client Code with OpenAPI-TS
+URL: https://fastapi.tiangolo.com/advanced/generate-clients/
+Summary: This section explains how to generate client code using the `openapi-ts` command line application. It highlights the necessity of including the command in the `scripts` section of the `package.json` file and provides an example configuration. Lastly, it describes how to execute the client generation script via npm.
+---
+
+```
+
+#### Generate Client Code[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#generate-client-code "Permanent link")
+To generate the client code you can use the command line application `openapi-ts` that would now be installed.
+Because it is installed in the local project, you probably wouldn't be able to call that command directly, but you would put it on your `package.json` file.
+It could look like this:
+```
+{
+"name":"frontend-app",
+"version":"1.0.0",
+"description":"",
+"main":"index.js",
+"scripts":{
+"generate-client":"openapi-ts --input http://localhost:8000/openapi.json --output ./src/client --client axios"
+},
+"author":"",
+"license":"",
+"devDependencies":{
+"@hey-api/openapi-ts":"^0.27.38",
+"typescript":"^4.6.2"
+}
+}
+
+```
+
+After having that NPM `generate-client` script there, you can run it with:
+```
+
+fast →[](https://fastapi.tiangolo.com/advanced/generate-clients/)npm run generate-clientfrontend-app@1.0.0 generate-client /home/user/code/frontend-app> openapi-ts --input http://localhost:8000/openapi.json --output ./src/client --client axiosrestart ↻[](https://fastapi.tiangolo.com/advanced/generate-clients/)
+
+```
+
+That command will generate code in `./src/client` and will use `axios` (the frontend HTTP library) internally.
+### Try Out the Client Code[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#try-out-the-client-code "Permanent link")
+Now you can import and use the client code, it could look like this, notice that you get autocompletion for the methods:
+![](https://fastapi.tiangolo.com/img/tutorial/generate-clients/image02.png)
+You will also get autocompletion for the payload to send:
+![](https://fastapi.tiangolo.com/img/tutorial/generate-clients/image03.png)
+Tip
+Notice the autocompletion for `name` and `price`, that was defined in the FastAPI application, in the `Item` model.
+You will have inline errors for the data that you send:
+![](https://fastapi.tiangolo.com/img/tutorial/generate-clients/image04.png)
+The response object will also have autocompletion:
+![](https://fastapi.tiangolo.com/img/tutorial/generate-clients/image05.png)
+## FastAPI App with Tags[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#fastapi-app-with-tags "Permanent link")
+In many cases your FastAPI app will be bigger, and you will probably use tags to separate different groups of _path operations_.
+For example, you could have a section for **items** and another section for **users** , and they could be separated by tags:
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/generate-clients/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  price: float
+classResponseMessage(BaseModel):
+  message: str
+classUser(BaseModel):
+  username: str
+  email: str
+@app.post("/items/", response_model=ResponseMessage, tags=["items"])
+async defcreate_item(item: Item):
+  return {"message": "Item received"}
+@app.get("/items/", response_model=list[Item], tags=["items"])
+async defget_items():
+  return [
+    {"name": "Plumbus", "price": 3},
+    {"name": "Portal Gun", "price": 9001},
+  ]
+@app.post("/users/", response_model=ResponseMessage, tags=["users"])
+async defcreate_user(user: User):
+  return {"message": "User received"}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/generate-clients/#__tabbed_4_1)
+```
+fromtypingimport List
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  price: float
+classResponseMessage(BaseModel):
+  message: str
+classUser(BaseModel):
+  username: str
+  email: str
+@app.post("/items/", response_model=ResponseMessage, tags=["items"])
+async defcreate_item(item: Item):
+  return {"message": "Item received"}
+@app.get("/items/", response_model=List[Item], tags=["items"])
+async defget_items():
+  return [
+    {"name": "Plumbus", "price": 3},
+    {"name": "Portal Gun", "price": 9001},
+  ]
+@app.post("/users/", response_model=ResponseMessage, tags=["users"])
+async defcreate_user(user: User):
+  return {"message": "User received"}
+
+```
+
+### Generate a TypeScript Client with Tags[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#generate-a-typescript-client-with-tags "Permanent link")
+If you generate a client for a FastAPI app using tags, it will normally also separate the client code based on the tags.
+This way you will be able to have things ordered and grouped correctly for the client code:
+![](https://fastapi.tiangolo.com/img/tutorial/generate-clients/image06.png)
+In this case you have:
+  * `ItemsService`
+  * `UsersService`
+
+
+### Client Method Names[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#client-method-names "Permanent link")
+Right now the generated method names like `createItemItemsPost` don't look very clean:
+```
+ItemsService.createItemItemsPost({name:"Plumbus",price:5})

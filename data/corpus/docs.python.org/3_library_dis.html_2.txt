@@ -1,0 +1,69 @@
+Title: Dis Module Options and Bytecode Analysis
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section outlines command-line options for the dis module, including -h for help, -C to show caches, and -O to show instruction offsets, added in version 3.13. It also introduces the bytecode analysis API available since version 3.4, which allows access to Python code details through a Bytecode object.
+---
+
+```
+
+The following options are accepted: 
+
+-h, --help[¶](https://docs.python.org/3/library/dis.html#cmdoption-dis-h "Link to this definition")
+    
+Display usage and exit. 
+
+-C, --show-caches[¶](https://docs.python.org/3/library/dis.html#cmdoption-dis-C "Link to this definition")
+    
+Show inline caches.
+Added in version 3.13. 
+
+-O, --show-offsets[¶](https://docs.python.org/3/library/dis.html#cmdoption-dis-O "Link to this definition")
+    
+Show offsets of instructions.
+Added in version 3.13.
+If `infile` is specified, its disassembled code will be written to stdout. Otherwise, disassembly is performed on compiled source code received from stdin.
+## Bytecode analysis[¶](https://docs.python.org/3/library/dis.html#bytecode-analysis "Link to this heading")
+Added in version 3.4.
+The bytecode analysis API allows pieces of Python code to be wrapped in a [`Bytecode`](https://docs.python.org/3/library/dis.html#dis.Bytecode "dis.Bytecode") object that provides easy access to details of the compiled code. 
+
+_class_ dis.Bytecode(_x_ , _*_ , _first_line =None_, _current_offset =None_, _show_caches =False_, _adaptive =False_, _show_offsets =False_)[¶](https://docs.python.org/3/library/dis.html#dis.Bytecode "Link to this definition")
+    
+Analyse the bytecode corresponding to a function, generator, asynchronous generator, coroutine, method, string of source code, or a code object (as returned by [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile")).
+This is a convenience wrapper around many of the functions listed below, most notably [`get_instructions()`](https://docs.python.org/3/library/dis.html#dis.get_instructions "dis.get_instructions"), as iterating over a [`Bytecode`](https://docs.python.org/3/library/dis.html#dis.Bytecode "dis.Bytecode") instance yields the bytecode operations as [`Instruction`](https://docs.python.org/3/library/dis.html#dis.Instruction "dis.Instruction") instances.
+If _first_line_ is not `None`, it indicates the line number that should be reported for the first source line in the disassembled code. Otherwise, the source line information (if any) is taken directly from the disassembled code object.
+If _current_offset_ is not `None`, it refers to an instruction offset in the disassembled code. Setting this means [`dis()`](https://docs.python.org/3/library/dis.html#dis.Bytecode.dis "dis.Bytecode.dis") will display a “current instruction” marker against the specified opcode.
+If _show_caches_ is `True`, [`dis()`](https://docs.python.org/3/library/dis.html#dis.Bytecode.dis "dis.Bytecode.dis") will display inline cache entries used by the interpreter to specialize the bytecode.
+If _adaptive_ is `True`, [`dis()`](https://docs.python.org/3/library/dis.html#dis.Bytecode.dis "dis.Bytecode.dis") will display specialized bytecode that may be different from the original bytecode.
+If _show_offsets_ is `True`, [`dis()`](https://docs.python.org/3/library/dis.html#dis.Bytecode.dis "dis.Bytecode.dis") will include instruction offsets in the output. 
+
+_classmethod_ from_traceback(_tb_ , _*_ , _show_caches =False_)[¶](https://docs.python.org/3/library/dis.html#dis.Bytecode.from_traceback "Link to this definition")
+    
+Construct a [`Bytecode`](https://docs.python.org/3/library/dis.html#dis.Bytecode "dis.Bytecode") instance from the given traceback, setting _current_offset_ to the instruction responsible for the exception. 
+
+codeobj[¶](https://docs.python.org/3/library/dis.html#dis.Bytecode.codeobj "Link to this definition")
+    
+The compiled code object. 
+
+first_line[¶](https://docs.python.org/3/library/dis.html#dis.Bytecode.first_line "Link to this definition")
+    
+The first source line of the code object (if available) 
+
+dis()[¶](https://docs.python.org/3/library/dis.html#dis.Bytecode.dis "Link to this definition")
+    
+Return a formatted view of the bytecode operations (the same as printed by [`dis.dis()`](https://docs.python.org/3/library/dis.html#dis.dis "dis.dis"), but returned as a multi-line string). 
+
+info()[¶](https://docs.python.org/3/library/dis.html#dis.Bytecode.info "Link to this definition")
+    
+Return a formatted multi-line string with detailed information about the code object, like [`code_info()`](https://docs.python.org/3/library/dis.html#dis.code_info "dis.code_info").
+Changed in version 3.7: This can now handle coroutine and asynchronous generator objects.
+Changed in version 3.11: Added the _show_caches_ and _adaptive_ parameters.
+Example:
+>>>```
+>>> bytecode = dis.Bytecode(myfunc)
+>>> for instr in bytecode:
+...   print(instr.opname)
+...
+RESUME
+LOAD_GLOBAL
+LOAD_FAST
+CALL
+RETURN_VALUE

@@ -1,0 +1,68 @@
+Title: New Features in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: This section discusses new warnings related to Python 3 compatibility in Python 2.7, including the deprecation of certain operator functions and the automatic enabling of the `-Qwarn` switch. It also introduces PEP 372, which adds the `OrderedDict` class to the `collections` module, allowing for dictionaries that maintain the order of key insertion.
+---
+
+Other new Python3-mode warnings include:
+  * `operator.isCallable()` and `operator.sequenceIncludes()`, which are not supported in 3.x, now trigger warnings.
+  * The `-3` switch now automatically enables the `-Qwarn` switch that causes warnings about using classic division with integers and long integers.
+
+
+## PEP 372: Adding an Ordered Dictionary to collections[¶](https://docs.python.org/3/whatsnew/2.7.html#pep-372-adding-an-ordered-dictionary-to-collections "Link to this heading")
+Regular Python dictionaries iterate over key/value pairs in arbitrary order. Over the years, a number of authors have written alternative implementations that remember the order that the keys were originally inserted. Based on the experiences from those implementations, 2.7 introduces a new [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") class in the [`collections`](https://docs.python.org/3/library/collections.html#module-collections "collections: Container datatypes") module.
+The [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") API provides the same interface as regular dictionaries but iterates over keys and values in a guaranteed order depending on when a key was first inserted:
+>>>```
+>>> fromcollectionsimport OrderedDict
+>>> d = OrderedDict([('first', 1),
+...          ('second', 2),
+...          ('third', 3)])
+>>> d.items()
+[('first', 1), ('second', 2), ('third', 3)]
+
+```
+
+If a new entry overwrites an existing entry, the original insertion position is left unchanged:
+>>>```
+>>> d['second'] = 4
+>>> d.items()
+[('first', 1), ('second', 4), ('third', 3)]
+
+```
+
+Deleting an entry and reinserting it will move it to the end:
+>>>```
+>>> del d['second']
+>>> d['second'] = 5
+>>> d.items()
+[('first', 1), ('third', 3), ('second', 5)]
+
+```
+
+The [`popitem()`](https://docs.python.org/3/library/collections.html#collections.OrderedDict.popitem "collections.OrderedDict.popitem") method has an optional _last_ argument that defaults to `True`. If _last_ is true, the most recently added key is returned and removed; if it’s false, the oldest key is selected:
+>>>```
+>>> od = OrderedDict([(x,0) for x in range(20)])
+>>> od.popitem()
+(19, 0)
+>>> od.popitem()
+(18, 0)
+>>> od.popitem(last=False)
+(0, 0)
+>>> od.popitem(last=False)
+(1, 0)
+
+```
+
+Comparing two ordered dictionaries checks both the keys and values, and requires that the insertion order was the same:
+>>>```
+>>> od1 = OrderedDict([('first', 1),
+...           ('second', 2),
+...           ('third', 3)])
+>>> od2 = OrderedDict([('third', 3),
+...           ('first', 1),
+...           ('second', 2)])
+>>> od1 == od2
+False
+>>> # Move 'third' key to the end
+>>> del od2['third']; od2['third'] = 3
+>>> od1 == od2
+True

@@ -1,0 +1,76 @@
+Title: Using asyncio Barrier in Python
+URL: https://docs.python.org/3/library/asyncio-sync.html
+Summary: This section describes the behavior of the `asyncio.locks.Barrier` object introduced in Python 3.11. It explains how the `wait()` method allows tasks to synchronize, unblocking them simultaneously when all tasks reach the barrier. If a task is cancelled while waiting, it exits the barrier, influencing its state. The method returns an integer that can be leveraged for task-specific actions, such as printing a message by the first task.
+---
+
+```
+
+Result of this example is:
+```
+<asyncio.locks.Barrier object at 0x... [filling, waiters:2/3]>
+<asyncio.locks.Barrier object at 0x... [draining, waiters:0/3]>
+barrier passed
+<asyncio.locks.Barrier object at 0x... [filling, waiters:0/3]>
+
+```
+
+Added in version 3.11. 
+
+_async_ wait()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.wait "Link to this definition")
+    
+Pass the barrier. When all the tasks party to the barrier have called this function, they are all unblocked simultaneously.
+When a waiting or blocked task in the barrier is cancelled, this task exits the barrier which stays in the same state. If the state of the barrier is “filling”, the number of waiting task decreases by 1.
+The return value is an integer in the range of 0 to `parties-1`, different for each task. This can be used to select a task to do some special housekeeping, e.g.:
+```
+...
+async with barrier as position:
+  if position == 0:
+   # Only one task prints this
+   print('End of *draining phase*')
+
+```
+
+This method may raise a [`BrokenBarrierError`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.BrokenBarrierError "asyncio.BrokenBarrierError") exception if the barrier is broken or reset while a task is waiting. It could raise a [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") if a task is cancelled. 
+
+_async_ reset()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.reset "Link to this definition")
+    
+Return the barrier to the default, empty state. Any tasks waiting on it will receive the [`BrokenBarrierError`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.BrokenBarrierError "asyncio.BrokenBarrierError") exception.
+If a barrier is broken it may be better to just leave it and create a new one. 
+
+_async_ abort()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.abort "Link to this definition")
+    
+Put the barrier into a broken state. This causes any active or future calls to [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.wait "asyncio.Barrier.wait") to fail with the [`BrokenBarrierError`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.BrokenBarrierError "asyncio.BrokenBarrierError"). Use this for example if one of the tasks needs to abort, to avoid infinite waiting tasks. 
+
+parties[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.parties "Link to this definition")
+    
+The number of tasks required to pass the barrier. 
+
+n_waiting[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.n_waiting "Link to this definition")
+    
+The number of tasks currently waiting in the barrier while filling. 
+
+broken[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.broken "Link to this definition")
+    
+A boolean that is `True` if the barrier is in the broken state. 
+
+_exception_ asyncio.BrokenBarrierError[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.BrokenBarrierError "Link to this definition")
+    
+This exception, a subclass of [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError"), is raised when the [`Barrier`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier "asyncio.Barrier") object is reset or broken.
+Changed in version 3.9: Acquiring a lock using `await lock` or `yield from lock` and/or [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement (`with await lock`, `with (yield from lock)`) was removed. Use `async with lock` instead.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Synchronization Primitives](https://docs.python.org/3/library/asyncio-sync.html)
+    * [Lock](https://docs.python.org/3/library/asyncio-sync.html#lock)
+    * [Event](https://docs.python.org/3/library/asyncio-sync.html#event)
+    * [Condition](https://docs.python.org/3/library/asyncio-sync.html#condition)
+    * [Semaphore](https://docs.python.org/3/library/asyncio-sync.html#semaphore)
+    * [BoundedSemaphore](https://docs.python.org/3/library/asyncio-sync.html#boundedsemaphore)
+    * [Barrier](https://docs.python.org/3/library/asyncio-sync.html#barrier)
+
+
+#### Previous topic
+[Streams](https://docs.python.org/3/library/asyncio-stream.html "previous chapter")
+#### Next topic
+[Subprocesses](https://docs.python.org/3/library/asyncio-subprocess.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/asyncio-sync.rst)

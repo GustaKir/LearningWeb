@@ -1,0 +1,48 @@
+Title: Understanding the TYPEDESC Structure in ctypes
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: The TYPEDESC structure in ctypes defines a COM data type, with its `vt` field indicating the valid union field. The structure allows direct member access without creating temporary instances. Additionally, subclasses can define their own `_fields_`, which are appended to base class fields, and constructors for structures and unions accept both positional and keyword arguments.
+---
+
+```
+
+The `TYPEDESC` structure describes a COM data type, the `vt` field specifies which one of the union fields is valid. Since the `u` field is defined as anonymous field, it is now possible to access the members directly off the TYPEDESC instance. `td.lptdesc` and `td.u.lptdesc` are equivalent, but the former is faster since it does not need to create a temporary union instance:
+```
+td = TYPEDESC()
+td.vt = VT_PTR
+td.lptdesc = POINTER(some_type)
+td.u.lptdesc = POINTER(some_type)
+
+```
+
+It is possible to define sub-subclasses of structures, they inherit the fields of the base class. If the subclass definition has a separate [`_fields_`](https://docs.python.org/3/library/ctypes.html#ctypes.Structure._fields_ "ctypes.Structure._fields_") variable, the fields specified in this are appended to the fields of the base class.
+Structure and union constructors accept both positional and keyword arguments. Positional arguments are used to initialize member fields in the same order as they are appear in [`_fields_`](https://docs.python.org/3/library/ctypes.html#ctypes.Structure._fields_ "ctypes.Structure._fields_"). Keyword arguments in the constructor are interpreted as attribute assignments, so they will initialize [`_fields_`](https://docs.python.org/3/library/ctypes.html#ctypes.Structure._fields_ "ctypes.Structure._fields_") with the same name, or create new attributes for names not present in [`_fields_`](https://docs.python.org/3/library/ctypes.html#ctypes.Structure._fields_ "ctypes.Structure._fields_").
+### Arrays and pointers[¶](https://docs.python.org/3/library/ctypes.html#arrays-and-pointers "Link to this heading") 
+
+_class_ ctypes.Array(_* args_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.Array "Link to this definition")
+    
+Abstract base class for arrays.
+The recommended way to create concrete array types is by multiplying any [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") data type with a non-negative integer. Alternatively, you can subclass this type and define [`_length_`](https://docs.python.org/3/library/ctypes.html#ctypes.Array._length_ "ctypes.Array._length_") and [`_type_`](https://docs.python.org/3/library/ctypes.html#ctypes.Array._type_ "ctypes.Array._type_") class variables. Array elements can be read and written using standard subscript and slice accesses; for slice reads, the resulting object is _not_ itself an [`Array`](https://docs.python.org/3/library/ctypes.html#ctypes.Array "ctypes.Array"). 
+
+_length_[¶](https://docs.python.org/3/library/ctypes.html#ctypes.Array._length_ "Link to this definition")
+    
+A positive integer specifying the number of elements in the array. Out-of-range subscripts result in an [`IndexError`](https://docs.python.org/3/library/exceptions.html#IndexError "IndexError"). Will be returned by [`len()`](https://docs.python.org/3/library/functions.html#len "len"). 
+
+_type_[¶](https://docs.python.org/3/library/ctypes.html#ctypes.Array._type_ "Link to this definition")
+    
+Specifies the type of each element in the array.
+Array subclass constructors accept positional arguments, used to initialize the elements in order. 
+
+ctypes.ARRAY(_type_ , _length_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.ARRAY "Link to this definition")
+    
+Create an array. Equivalent to `type * length`, where _type_ is a [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") data type and _length_ an integer.
+This function is [soft deprecated](https://docs.python.org/3/glossary.html#term-soft-deprecated) in favor of multiplication. There are no plans to remove it. 
+
+_class_ ctypes._Pointer[¶](https://docs.python.org/3/library/ctypes.html#ctypes._Pointer "Link to this definition")
+    
+Private, abstract base class for pointers.
+Concrete pointer types are created by calling [`POINTER()`](https://docs.python.org/3/library/ctypes.html#ctypes.POINTER "ctypes.POINTER") with the type that will be pointed to; this is done automatically by [`pointer()`](https://docs.python.org/3/library/ctypes.html#ctypes.pointer "ctypes.pointer").
+If a pointer points to an array, its elements can be read and written using standard subscript and slice accesses. Pointer objects have no size, so [`len()`](https://docs.python.org/3/library/functions.html#len "len") will raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError"). Negative subscripts will read from the memory _before_ the pointer (as in C), and out-of-range subscripts will probably crash with an access violation (if you’re lucky). 
+
+_type_[¶](https://docs.python.org/3/library/ctypes.html#ctypes._Pointer._type_ "Link to this definition")
+    
+Specifies the type pointed to.

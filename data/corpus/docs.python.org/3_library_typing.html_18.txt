@@ -1,0 +1,89 @@
+Title: Using Type Variable Tuples in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section explains the unpacking operator `*` in type variable tuples, demonstrating how it allows for the use of multiple type variables (e.g., `tuple[T, *Ts]`). It emphasizes that type variable tuples must always be unpacked to differentiate them from normal type variables and provides examples of their usage in class definitions and function signatures.
+---
+
+```
+
+Note the use of the unpacking operator `*` in `tuple[T, *Ts]`. Conceptually, you can think of `Ts` as a tuple of type variables `(T1, T2, ...)`. `tuple[T, *Ts]` would then become `tuple[T, *(T1, T2, ...)]`, which is equivalent to `tuple[T, T1, T2, ...]`. (Note that in older versions of Python, you might see this written using [`Unpack`](https://docs.python.org/3/library/typing.html#typing.Unpack "typing.Unpack") instead, as `Unpack[Ts]`.)
+Type variable tuples must _always_ be unpacked. This helps distinguish type variable tuples from normal type variables:
+```
+x: Ts     # Not valid
+x: tuple[Ts]  # Not valid
+x: tuple[*Ts] # The correct way to do it
+
+```
+
+Type variable tuples can be used in the same contexts as normal type variables. For example, in class definitions, arguments, and return types:
+```
+classArray[*Shape]:
+  def__getitem__(self, key: tuple[*Shape]) -> float: ...
+  def__abs__(self) -> "Array[*Shape]": ...
+  defget_shape(self) -> tuple[*Shape]: ...
+
+```
+
+Type variable tuples can be happily combined with normal type variables:
+```
+classArray[DType, *Shape]: # This is fine
+  pass
+classArray2[*Shape, DType]: # This would also be fine
+  pass
+classHeight: ...
+classWidth: ...
+float_array_1d: Array[float, Height] = Array()   # Totally fine
+int_array_2d: Array[int, Height, Width] = Array() # Yup, fine too
+
+```
+
+However, note that at most one type variable tuple may appear in a single list of type arguments or type parameters:
+```
+x: tuple[*Ts, *Ts]      # Not valid
+classArray[*Shape, *Shape]: # Not valid
+  pass
+
+```
+
+Finally, an unpacked type variable tuple can be used as the type annotation of `*args`:
+```
+defcall_soon[*Ts](
+  callback: Callable[[*Ts], None],
+  *args: *Ts
+) -> None:
+  ...
+  callback(*args)
+
+```
+
+In contrast to non-unpacked annotations of `*args` - e.g. `*args: int`, which would specify that _all_ arguments are `int` - `*args: *Ts` enables reference to the types of the _individual_ arguments in `*args`. Here, this allows us to ensure the types of the `*args` passed to `call_soon` match the types of the (positional) arguments of `callback`.
+See [**PEP 646**](https://peps.python.org/pep-0646/) for more details on type variable tuples. 
+
+__name__[¶](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple.__name__ "Link to this definition")
+    
+The name of the type variable tuple. 
+
+__default__[¶](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple.__default__ "Link to this definition")
+    
+The default value of the type variable tuple, or [`typing.NoDefault`](https://docs.python.org/3/library/typing.html#typing.NoDefault "typing.NoDefault") if it has no default.
+Added in version 3.13. 
+
+has_default()[¶](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple.has_default "Link to this definition")
+    
+Return whether or not the type variable tuple has a default value. This is equivalent to checking whether [`__default__`](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple.__default__ "typing.TypeVarTuple.__default__") is not the [`typing.NoDefault`](https://docs.python.org/3/library/typing.html#typing.NoDefault "typing.NoDefault") singleton, except that it does not force evaluation of the [lazily evaluated](https://docs.python.org/3/reference/executionmodel.html#lazy-evaluation) default value.
+Added in version 3.13.
+Added in version 3.11.
+Changed in version 3.12: Type variable tuples can now be declared using the [type parameter](https://docs.python.org/3/reference/compound_stmts.html#type-params) syntax introduced by [**PEP 695**](https://peps.python.org/pep-0695/).
+Changed in version 3.13: Support for default values was added. 
+
+_class_ typing.ParamSpec(_name_ , _*_ , _bound =None_, _covariant =False_, _contravariant =False_, _default =typing.NoDefault_)[¶](https://docs.python.org/3/library/typing.html#typing.ParamSpec "Link to this definition")
+    
+Parameter specification variable. A specialized version of [type variables](https://docs.python.org/3/library/typing.html#typevar).
+In [type parameter lists](https://docs.python.org/3/reference/compound_stmts.html#type-params), parameter specifications can be declared with two asterisks (`**`):
+```
+type IntFunc[**P] = Callable[P, int]
+
+```
+
+For compatibility with Python 3.11 and earlier, `ParamSpec` objects can also be created as follows:
+```
+P = ParamSpec('P')

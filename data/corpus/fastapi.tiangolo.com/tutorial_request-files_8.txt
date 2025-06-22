@@ -1,0 +1,154 @@
+Title: Handling File Uploads in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/request-files/
+Summary: This section provides examples of how to handle file uploads in FastAPI, demonstrating the use of `File` and `UploadFile` in the endpoint definitions. It includes a basic HTML form to upload multiple files and returns the size or names of the uploaded files.
+---
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport List
+fromfastapiimport FastAPI, File, UploadFile
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+@app.post("/files/")
+async defcreate_files(files: List[bytes] = File()):
+  return {"file_sizes": [len(file) for file in files]}
+@app.post("/uploadfiles/")
+async defcreate_upload_files(files: List[UploadFile]):
+  return {"filenames": [file.filename for file in files]}
+@app.get("/")
+async defmain():
+  content = """
+<body>
+<form action="/files/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+  """
+  return HTMLResponse(content=content)
+
+```
+
+You will receive, as declared, a `list` of `bytes` or `UploadFile`s.
+Technical Details
+You could also use `from starlette.responses import HTMLResponse`.
+**FastAPI** provides the same `starlette.responses` as `fastapi.responses` just as a convenience for you, the developer. But most of the available responses come directly from Starlette.
+### Multiple File Uploads with Additional Metadata[¶](https://fastapi.tiangolo.com/tutorial/request-files/#multiple-file-uploads-with-additional-metadata "Permanent link")
+And the same way as before, you can use `File()` to set additional parameters, even for `UploadFile`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_13_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, File, UploadFile
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+@app.post("/files/")
+async defcreate_files(
+  files: Annotated[list[bytes], File(description="Multiple files as bytes")],
+):
+  return {"file_sizes": [len(file) for file in files]}
+@app.post("/uploadfiles/")
+async defcreate_upload_files(
+  files: Annotated[
+    list[UploadFile], File(description="Multiple files as UploadFile")
+  ],
+):
+  return {"filenames": [file.filename for file in files]}
+@app.get("/")
+async defmain():
+  content = """
+<body>
+<form action="/files/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+  """
+  return HTMLResponse(content=content)
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_14_1)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_14_2)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_14_3)
+```
+fromtypingimport List
+fromfastapiimport FastAPI, File, UploadFile
+fromfastapi.responsesimport HTMLResponse
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.post("/files/")
+async defcreate_files(
+  files: Annotated[List[bytes], File(description="Multiple files as bytes")],
+):
+  return {"file_sizes": [len(file) for file in files]}
+@app.post("/uploadfiles/")
+async defcreate_upload_files(
+  files: Annotated[
+    List[UploadFile], File(description="Multiple files as UploadFile")
+  ],
+):
+  return {"filenames": [file.filename for file in files]}
+@app.get("/")
+async defmain():
+  content = """
+<body>
+<form action="/files/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+  """
+  return HTMLResponse(content=content)
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, File, UploadFile
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+@app.post("/files/")
+async defcreate_files(
+  files: list[bytes] = File(description="Multiple files as bytes"),
+):
+  return {"file_sizes": [len(file) for file in files]}
+@app.post("/uploadfiles/")
+async defcreate_upload_files(
+  files: list[UploadFile] = File(description="Multiple files as UploadFile"),
+):
+  return {"filenames": [file.filename for file in files]}
+@app.get("/")
+async defmain():
+  content = """
+<body>
+<form action="/files/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+  """
+  return HTMLResponse(content=content)
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

@@ -1,0 +1,189 @@
+Title: FastAPI Tutorial: Handling Multiple Body Parameters
+URL: https://fastapi.tiangolo.com/tutorial/body-multiple-params/
+Summary: This chunk demonstrates how to handle multiple body parameters in FastAPI by defining two Pydantic models, Item and User. It illustrates a PUT endpoint that updates an item with various parameters, including item details, user information, and additional importance and query parameters. An alternative usage of the `Annotated` type is recommended for better clarity.
+---
+
+```
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+classUser(BaseModel):
+  username: str
+  full_name: str | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Item,
+  user: User,
+  importance: int = Body(gt=0),
+  q: str | None = None,
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+classUser(BaseModel):
+  username: str
+  full_name: Union[str, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Item,
+  user: User,
+  importance: int = Body(gt=0),
+  q: Union[str, None] = None,
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Info
+`Body` also has all the same extra validation and metadata parameters as `Query`,`Path` and others you will see later.
+## Embed a single body parameter[¶](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter "Permanent link")
+Let's say you only have a single `item` body parameter from a Pydantic model `Item`.
+By default, **FastAPI** will then expect its body directly.
+But if you want it to expect a JSON with a key `item` and inside of it the model contents, as it does when you declare extra body parameters, you can use the special `Body` parameter `embed`:
+```
+item: Item = Body(embed=True)
+
+```
+
+as in:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_9_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Annotated[Item, Body(embed=True)]):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_10_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_10_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_10_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_10_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Annotated[Item, Body(embed=True)]):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Annotated[Item, Body(embed=True)]):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item = Body(embed=True)):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item = Body(embed=True)):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+In this case **FastAPI** will expect a body like:
+```
+{
+"item":{
+"name":"Foo",
+"description":"The pretender",
+"price":42.0,
+"tax":3.2
+}
+}
+
+```
+
+instead of:
+```
+{
+"name":"Foo",
+"description":"The pretender",
+"price":42.0,
+"tax":3.2
+}

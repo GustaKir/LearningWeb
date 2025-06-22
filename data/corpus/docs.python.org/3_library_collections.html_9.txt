@@ -1,0 +1,44 @@
+Title: __missing__ Method in defaultdict
+URL: https://docs.python.org/3/library/collections.html
+Summary: The __missing__ method in the defaultdict class handles the case when a requested key is not found. If the default_factory attribute is None, it raises a KeyError. If not, it calls default_factory to retrieve a default value, which is then added to the dictionary and returned. Exceptions from default_factory are also propagated.
+---
+
+__missing__(_key_)[¶](https://docs.python.org/3/library/collections.html#collections.defaultdict.__missing__ "Link to this definition")
+    
+If the [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory") attribute is `None`, this raises a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") exception with the _key_ as argument.
+If [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory") is not `None`, it is called without arguments to provide a default value for the given _key_ , this value is inserted in the dictionary for the _key_ , and returned.
+If calling [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory") raises an exception this exception is propagated unchanged.
+This method is called by the [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") method of the [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") class when the requested key is not found; whatever it returns or raises is then returned or raised by [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__").
+Note that [`__missing__()`](https://docs.python.org/3/library/collections.html#collections.defaultdict.__missing__ "collections.defaultdict.__missing__") is _not_ called for any operations besides [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__"). This means that [`get()`](https://docs.python.org/3/library/stdtypes.html#dict.get "dict.get") will, like normal dictionaries, return `None` as a default rather than using [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory").
+[`defaultdict`](https://docs.python.org/3/library/collections.html#collections.defaultdict "collections.defaultdict") objects support the following instance variable: 
+
+default_factory[¶](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "Link to this definition")
+    
+This attribute is used by the [`__missing__()`](https://docs.python.org/3/library/collections.html#collections.defaultdict.__missing__ "collections.defaultdict.__missing__") method; it is initialized from the first argument to the constructor, if present, or to `None`, if absent.
+Changed in version 3.9: Added merge (`|`) and update (`|=`) operators, specified in [**PEP 584**](https://peps.python.org/pep-0584/).
+### [`defaultdict`](https://docs.python.org/3/library/collections.html#collections.defaultdict "collections.defaultdict") Examples[¶](https://docs.python.org/3/library/collections.html#defaultdict-examples "Link to this heading")
+Using [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") as the [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory"), it is easy to group a sequence of key-value pairs into a dictionary of lists:
+>>>```
+>>> s = [('yellow', 1), ('blue', 2), ('yellow', 3), ('blue', 4), ('red', 1)]
+>>> d = defaultdict(list)
+>>> for k, v in s:
+...   d[k].append(v)
+...
+>>> sorted(d.items())
+[('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
+
+```
+
+When each key is encountered for the first time, it is not already in the mapping; so an entry is automatically created using the [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory") function which returns an empty [`list`](https://docs.python.org/3/library/stdtypes.html#list "list"). The `list.append()` operation then attaches the value to the new list. When keys are encountered again, the look-up proceeds normally (returning the list for that key) and the `list.append()` operation adds another value to the list. This technique is simpler and faster than an equivalent technique using [`dict.setdefault()`](https://docs.python.org/3/library/stdtypes.html#dict.setdefault "dict.setdefault"):
+>>>```
+>>> d = {}
+>>> for k, v in s:
+...   d.setdefault(k, []).append(v)
+...
+>>> sorted(d.items())
+[('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
+
+```
+
+Setting the [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory") to [`int`](https://docs.python.org/3/library/functions.html#int "int") makes the [`defaultdict`](https://docs.python.org/3/library/collections.html#collections.defaultdict "collections.defaultdict") useful for counting (like a bag or multiset in other languages):
+>>>

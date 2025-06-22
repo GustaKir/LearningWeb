@@ -1,0 +1,16 @@
+Title: Mapping Protocol Access in configparser
+URL: https://docs.python.org/3/library/configparser.html
+Summary: This section covers the mapping protocol access added in Python 3.2, allowing custom objects to be used like dictionaries in the `configparser` module. It explains how `parser['section']` returns a proxy to the section data, enabling dynamic access to values directly from the parser without copying them. Changes made through the section proxy mutate the original parser.
+---
+
+```
+
+## Mapping Protocol Access[¶](https://docs.python.org/3/library/configparser.html#mapping-protocol-access "Link to this heading")
+Added in version 3.2.
+Mapping protocol access is a generic name for functionality that enables using custom objects as if they were dictionaries. In case of [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser."), the mapping interface implementation is using the `parser['section']['option']` notation.
+`parser['section']` in particular returns a proxy for the section’s data in the parser. This means that the values are not copied but they are taken from the original parser on demand. What’s even more important is that when values are changed on a section proxy, they are actually mutated in the original parser.
+[`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") objects behave as close to actual dictionaries as possible. The mapping interface is complete and adheres to the [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping "collections.abc.MutableMapping") ABC. However, there are a few differences that should be taken into account:
+  * By default, all keys in sections are accessible in a case-insensitive manner [[1]](https://docs.python.org/3/library/configparser.html#id16). E.g. `for option in parser["section"]` yields only `optionxform`’ed option key names. This means lowercased keys by default. At the same time, for a section that holds the key `'a'`, both expressions return `True`:
+```
+"a" in parser["section"]
+"A" in parser["section"]

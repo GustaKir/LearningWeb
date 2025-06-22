@@ -1,0 +1,67 @@
+Title: Enhancements to String Formatting in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces the `str.format_map()` method, enhancing string formatting capabilities by allowing the use of arbitrary mapping objects, including various dictionary-like structures.
+---
+
+```
+
+(Suggested by Mark Dickinson and implemented by Eric Smith in [bpo-7094](https://bugs.python.org/issue?@action=redirect&bpo=7094).)
+  * There is also a new [`str.format_map()`](https://docs.python.org/3/library/stdtypes.html#str.format_map "str.format_map") method that extends the capabilities of the existing [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") method by accepting arbitrary [mapping](https://docs.python.org/3/glossary.html#term-mapping) objects. This new method makes it possible to use string formatting with any of Python’s many dictionary-like objects such as [`defaultdict`](https://docs.python.org/3/library/collections.html#collections.defaultdict "collections.defaultdict"), [`Shelf`](https://docs.python.org/3/library/shelve.html#shelve.Shelf "shelve.Shelf"), [`ConfigParser`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser "configparser.ConfigParser"), or [`dbm`](https://docs.python.org/3/library/dbm.html#module-dbm "dbm: Interfaces to various Unix "database" formats."). It is also useful with custom [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") subclasses that normalize keys before look-up or that supply a `__missing__()` method for unknown keys:
+>>>```
+>>> importshelve
+>>> d = shelve.open('tmp.shl')
+>>> 'The {project_name} status is {status} as of {date}'.format_map(d)
+'The testing project status is green as of February 15, 2011'
+>>> classLowerCasedDict(dict):
+...   def__getitem__(self, key):
+...     return dict.__getitem__(self, key.lower())
+...
+>>> lcd = LowerCasedDict(part='widgets', quantity=10)
+>>> 'There are {QUANTITY}{Part} in stock'.format_map(lcd)
+'There are 10 widgets in stock'
+>>> classPlaceholderDict(dict):
+...   def__missing__(self, key):
+...     return '<{}>'.format(key)
+...
+>>> 'Hello {name}, welcome to {location}'.format_map(PlaceholderDict())
+'Hello <name>, welcome to <location>'
+
+```
+
+
+
+> (Suggested by Raymond Hettinger and implemented by Eric Smith in [bpo-6081](https://bugs.python.org/issue?@action=redirect&bpo=6081).)
+  * The interpreter can now be started with a quiet option, `-q`, to prevent the copyright and version information from being displayed in the interactive mode. The option can be introspected using the [`sys.flags`](https://docs.python.org/3/library/sys.html#sys.flags "sys.flags") attribute:
+```
+$ python-q
+>>> sys.flags
+sys.flags(debug=0, division_warning=0, inspect=0, interactive=0,
+optimize=0, dont_write_bytecode=0, no_user_site=0, no_site=0,
+ignore_environment=0, verbose=0, bytes_warning=0, quiet=1)
+
+```
+
+(Contributed by Marcin Wojdyr in [bpo-1772833](https://bugs.python.org/issue?@action=redirect&bpo=1772833)).
+  * The [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") function works by calling [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") and detecting whether an exception is raised. This technique allows it to detect methods created dynamically by [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") or [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") which would otherwise be absent from the class dictionary. Formerly, _hasattr_ would catch any exception, possibly masking genuine errors. Now, _hasattr_ has been tightened to only catch [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") and let other exceptions pass through:
+>>>```
+>>> classA:
+...   @property
+...   deff(self):
+...     return 1 // 0
+...
+>>> a = A()
+>>> hasattr(a, 'f')
+Traceback (most recent call last):
+...
+ZeroDivisionError: integer division or modulo by zero
+
+```
+
+(Discovered by Yury Selivanov and fixed by Benjamin Peterson; [bpo-9666](https://bugs.python.org/issue?@action=redirect&bpo=9666).)
+  * The [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") of a float or complex number is now the same as its [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr"). Previously, the [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") form was shorter but that just caused confusion and is no longer needed now that the shortest possible [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") is displayed by default:
+>>>```
+>>> importmath
+>>> repr(math.pi)
+'3.141592653589793'
+>>> str(math.pi)
+'3.141592653589793'

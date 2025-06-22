@@ -1,0 +1,35 @@
+Title: Python C API: Thread-Specific Storage (TSS) Initialization
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This section explains the `Py_tss_t` data structure, which represents the state of a thread key with an internal initialization state, and details the use of the `Py_tss_NEEDS_INIT` macro for initializing TSS variables. It notes that certain features are not available when `Py_LIMITED_API` is defined.
+---
+
+typePy_tss_t[¶](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Link to this definition")
+    
+This data structure represents the state of a thread key, the definition of which may depend on the underlying TLS implementation, and it has an internal field representing the key’s initialization state. There are no public members in this structure.
+When [Py_LIMITED_API](https://docs.python.org/3/c-api/stable.html#stable) is not defined, static allocation of this type by [`Py_tss_NEEDS_INIT`](https://docs.python.org/3/c-api/init.html#c.Py_tss_NEEDS_INIT "Py_tss_NEEDS_INIT") is allowed. 
+
+Py_tss_NEEDS_INIT[¶](https://docs.python.org/3/c-api/init.html#c.Py_tss_NEEDS_INIT "Link to this definition")
+    
+This macro expands to the initializer for [`Py_tss_t`](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t") variables. Note that this macro won’t be defined with [Py_LIMITED_API](https://docs.python.org/3/c-api/stable.html#stable).
+#### Dynamic Allocation[¶](https://docs.python.org/3/c-api/init.html#dynamic-allocation "Link to this heading")
+Dynamic allocation of the [`Py_tss_t`](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t"), required in extension modules built with [Py_LIMITED_API](https://docs.python.org/3/c-api/stable.html#stable), where static allocation of this type is not possible due to its implementation being opaque at build time. 
+
+[Py_tss_t](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t")*PyThread_tss_alloc()[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_alloc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Return a value which is the same state as a value initialized with [`Py_tss_NEEDS_INIT`](https://docs.python.org/3/c-api/init.html#c.Py_tss_NEEDS_INIT "Py_tss_NEEDS_INIT"), or `NULL` in the case of dynamic allocation failure. 
+
+voidPyThread_tss_free([Py_tss_t](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t")*key)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_free "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Free the given _key_ allocated by [`PyThread_tss_alloc()`](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_alloc "PyThread_tss_alloc"), after first calling [`PyThread_tss_delete()`](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_delete "PyThread_tss_delete") to ensure any associated thread locals have been unassigned. This is a no-op if the _key_ argument is `NULL`.
+Note
+A freed key becomes a dangling pointer. You should reset the key to `NULL`.
+#### Methods[¶](https://docs.python.org/3/c-api/init.html#methods "Link to this heading")
+The parameter _key_ of these functions must not be `NULL`. Moreover, the behaviors of [`PyThread_tss_set()`](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_set "PyThread_tss_set") and [`PyThread_tss_get()`](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_get "PyThread_tss_get") are undefined if the given [`Py_tss_t`](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t") has not been initialized by [`PyThread_tss_create()`](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_create "PyThread_tss_create"). 
+
+intPyThread_tss_is_created([Py_tss_t](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t")*key)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_is_created "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Return a non-zero value if the given [`Py_tss_t`](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t") has been initialized by [`PyThread_tss_create()`](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_create "PyThread_tss_create"). 
+
+intPyThread_tss_create([Py_tss_t](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t")*key)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_create "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Return a zero value on successful initialization of a TSS key. The behavior is undefined if the value pointed to by the _key_ argument is not initialized by [`Py_tss_NEEDS_INIT`](https://docs.python.org/3/c-api/init.html#c.Py_tss_NEEDS_INIT "Py_tss_NEEDS_INIT"). This function can be called repeatedly on the same key – calling it on an already initialized key is a no-op and immediately returns success.

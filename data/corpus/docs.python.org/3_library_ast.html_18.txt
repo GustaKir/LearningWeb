@@ -1,0 +1,112 @@
+Title: Python AST Module Examples
+URL: https://docs.python.org/3/library/ast.html
+Summary: This section provides examples of defining 'yield', 'global', and 'nonlocal' statements using the Abstract Syntax Tree (AST) in Python. It demonstrates how to parse and dump these constructs into AST representations.
+---
+
+```
+>>> print(ast.dump(ast.parse('yield x'), indent=4))
+Module(
+  body=[
+    Expr(
+      value=Yield(
+        value=Name(id='x', ctx=Load())))])
+>>> print(ast.dump(ast.parse('yield from x'), indent=4))
+Module(
+  body=[
+    Expr(
+      value=YieldFrom(
+        value=Name(id='x', ctx=Load())))])
+
+```
+
+
+_class_ ast.Global(_names_)[¶](https://docs.python.org/3/library/ast.html#ast.Global "Link to this definition")
+
+
+_class_ ast.Nonlocal(_names_)[¶](https://docs.python.org/3/library/ast.html#ast.Nonlocal "Link to this definition")
+    
+`global` and `nonlocal` statements. `names` is a list of raw strings.
+>>>```
+>>> print(ast.dump(ast.parse('global x,y,z'), indent=4))
+Module(
+  body=[
+    Global(
+      names=[
+        'x',
+        'y',
+        'z'])])
+>>> print(ast.dump(ast.parse('nonlocal x,y,z'), indent=4))
+Module(
+  body=[
+    Nonlocal(
+      names=[
+        'x',
+        'y',
+        'z'])])
+
+```
+
+
+_class_ ast.ClassDef(_name_ , _bases_ , _keywords_ , _body_ , _decorator_list_ , _type_params_)[¶](https://docs.python.org/3/library/ast.html#ast.ClassDef "Link to this definition")
+    
+A class definition.
+  * `name` is a raw string for the class name
+  * `bases` is a list of nodes for explicitly specified base classes.
+  * `keywords` is a list of [`keyword`](https://docs.python.org/3/library/ast.html#ast.keyword "ast.keyword") nodes, principally for ‘metaclass’. Other keywords will be passed to the metaclass, as per [**PEP 3115**](https://peps.python.org/pep-3115/).
+  * `body` is a list of nodes representing the code within the class definition.
+  * `decorator_list` is a list of nodes, as in [`FunctionDef`](https://docs.python.org/3/library/ast.html#ast.FunctionDef "ast.FunctionDef").
+  * `type_params` is a list of [type parameters](https://docs.python.org/3/library/ast.html#ast-type-params).
+
+
+>>>```
+>>> print(ast.dump(ast.parse("""\
+... @decorator1
+... @decorator2
+... class Foo(base1, base2, metaclass=meta):
+...   pass
+... """), indent=4))
+Module(
+  body=[
+    ClassDef(
+      name='Foo',
+      bases=[
+        Name(id='base1', ctx=Load()),
+        Name(id='base2', ctx=Load())],
+      keywords=[
+        keyword(
+          arg='metaclass',
+          value=Name(id='meta', ctx=Load()))],
+      body=[
+        Pass()],
+      decorator_list=[
+        Name(id='decorator1', ctx=Load()),
+        Name(id='decorator2', ctx=Load())])])
+
+```
+
+Changed in version 3.12: Added `type_params`.
+### Async and await[¶](https://docs.python.org/3/library/ast.html#async-and-await "Link to this heading") 
+
+_class_ ast.AsyncFunctionDef(_name_ , _args_ , _body_ , _decorator_list_ , _returns_ , _type_comment_ , _type_params_)[¶](https://docs.python.org/3/library/ast.html#ast.AsyncFunctionDef "Link to this definition")
+    
+An `async def` function definition. Has the same fields as [`FunctionDef`](https://docs.python.org/3/library/ast.html#ast.FunctionDef "ast.FunctionDef").
+Changed in version 3.12: Added `type_params`. 
+
+_class_ ast.Await(_value_)[¶](https://docs.python.org/3/library/ast.html#ast.Await "Link to this definition")
+    
+An `await` expression. `value` is what it waits for. Only valid in the body of an [`AsyncFunctionDef`](https://docs.python.org/3/library/ast.html#ast.AsyncFunctionDef "ast.AsyncFunctionDef").
+>>>```
+>>> print(ast.dump(ast.parse("""\
+... async def f():
+...   await other_func()
+... """), indent=4))
+Module(
+  body=[
+    AsyncFunctionDef(
+      name='f',
+      args=arguments(),
+      body=[
+        Expr(
+          value=Await(
+            value=Call(
+              func=Name(id='other_func', ctx=Load()))))])])

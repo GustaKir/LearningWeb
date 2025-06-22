@@ -1,0 +1,44 @@
+Title: importlib.resources Module Overview
+URL: https://docs.python.org/3/library/importlib.resources.html
+Summary: This document provides an overview of the `importlib.resources` module, detailing the `Anchor` class, which represents an anchor for resources as either a module object or a module name. It also discusses the `files` function that returns a `Traversable` object for resource containers.
+---
+
+_class_ importlib.resources.Anchor[¶](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.Anchor "Link to this definition")
+    
+Represents an anchor for resources, either a [`module object`](https://docs.python.org/3/library/types.html#types.ModuleType "types.ModuleType") or a module name as a string. Defined as `Union[str, ModuleType]`. 
+
+importlib.resources.files(_anchor :[Anchor](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.Anchor "importlib.resources.Anchor")|[None](https://docs.python.org/3/library/constants.html#None "None")=None_)[¶](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.files "Link to this definition")
+    
+Returns a [`Traversable`](https://docs.python.org/3/library/importlib.resources.abc.html#importlib.resources.abc.Traversable "importlib.resources.abc.Traversable") object representing the resource container (think directory) and its resources (think files). A Traversable may contain other containers (think subdirectories).
+_anchor_ is an optional [`Anchor`](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.Anchor "importlib.resources.Anchor"). If the anchor is a package, resources are resolved from that package. If a module, resources are resolved adjacent to that module (in the same package or the package root). If the anchor is omitted, the caller’s module is used.
+Added in version 3.9.
+Changed in version 3.12: _package_ parameter was renamed to _anchor_. _anchor_ can now be a non-package module and if omitted will default to the caller’s module. _package_ is still accepted for compatibility but will raise a [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning"). Consider passing the anchor positionally or using `importlib_resources >= 5.10` for a compatible interface on older Pythons. 
+
+importlib.resources.as_file(_traversable_)[¶](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.as_file "Link to this definition")
+    
+Given a [`Traversable`](https://docs.python.org/3/library/importlib.resources.abc.html#importlib.resources.abc.Traversable "importlib.resources.abc.Traversable") object representing a file or directory, typically from [`importlib.resources.files()`](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.files "importlib.resources.files"), return a context manager for use in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement. The context manager provides a [`pathlib.Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") object.
+Exiting the context manager cleans up any temporary file or directory created when the resource was extracted from e.g. a zip file.
+Use `as_file` when the Traversable methods (`read_text`, etc) are insufficient and an actual file or directory on the file system is required.
+Added in version 3.9.
+Changed in version 3.12: Added support for _traversable_ representing a directory.
+## Functional API[¶](https://docs.python.org/3/library/importlib.resources.html#functional-api "Link to this heading")
+A set of simplified, backwards-compatible helpers is available. These allow common operations in a single function call.
+For all the following functions:
+  * _anchor_ is an [`Anchor`](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.Anchor "importlib.resources.Anchor"), as in [`files()`](https://docs.python.org/3/library/importlib.resources.html#importlib.resources.files "importlib.resources.files"). Unlike in `files`, it may not be omitted.
+  * _path_names_ are components of a resource’s path name, relative to the anchor. For example, to get the text of resource named `info.txt`, use:
+```
+importlib.resources.read_text(my_module, "info.txt")
+
+```
+
+Like [`Traversable.joinpath`](https://docs.python.org/3/library/importlib.resources.abc.html#importlib.resources.abc.Traversable "importlib.resources.abc.Traversable"), The individual components should use forward slashes (`/`) as path separators. For example, the following are equivalent:
+```
+importlib.resources.read_binary(my_module, "pics/painting.png")
+importlib.resources.read_binary(my_module, "pics", "painting.png")
+
+```
+
+For backward compatibility reasons, functions that read text require an explicit _encoding_ argument if multiple _path_names_ are given. For example, to get the text of `info/chapter1.txt`, use:
+```
+importlib.resources.read_text(my_module, "info", "chapter1.txt",
+               encoding='utf-8')

@@ -1,0 +1,32 @@
+Title: Lock Acquisition in Python Threading
+URL: https://docs.python.org/3/library/threading.html
+Summary: The `acquire()` method for locks in the Python threading module allows locking in blocking and non-blocking modes. By default, it blocks until the lock is available. A timeout can be specified to limit the wait duration, but specifying a timeout is not allowed in non-blocking mode. The method returns `True` if successful or `False` if the lock cannot be acquired.
+---
+
+acquire(_blocking =True_, _timeout =-1_)[¶](https://docs.python.org/3/library/threading.html#threading.Lock.acquire "Link to this definition")
+    
+Acquire a lock, blocking or non-blocking.
+When invoked with the _blocking_ argument set to `True` (the default), block until the lock is unlocked, then set it to locked and return `True`.
+When invoked with the _blocking_ argument set to `False`, do not block. If a call with _blocking_ set to `True` would block, return `False` immediately; otherwise, set the lock to locked and return `True`.
+When invoked with the floating-point _timeout_ argument set to a positive value, block for at most the number of seconds specified by _timeout_ and as long as the lock cannot be acquired. A _timeout_ argument of `-1` specifies an unbounded wait. It is forbidden to specify a _timeout_ when _blocking_ is `False`.
+The return value is `True` if the lock is acquired successfully, `False` if not (for example if the _timeout_ expired).
+Changed in version 3.2: The _timeout_ parameter is new.
+Changed in version 3.2: Lock acquisition can now be interrupted by signals on POSIX if the underlying threading implementation supports it. 
+
+release()[¶](https://docs.python.org/3/library/threading.html#threading.Lock.release "Link to this definition")
+    
+Release a lock. This can be called from any thread, not only the thread which has acquired the lock.
+When the lock is locked, reset it to unlocked, and return. If any other threads are blocked waiting for the lock to become unlocked, allow exactly one of them to proceed.
+When invoked on an unlocked lock, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised.
+There is no return value. 
+
+locked()[¶](https://docs.python.org/3/library/threading.html#threading.Lock.locked "Link to this definition")
+    
+Return `True` if the lock is acquired.
+## RLock Objects[¶](https://docs.python.org/3/library/threading.html#rlock-objects "Link to this heading")
+A reentrant lock is a synchronization primitive that may be acquired multiple times by the same thread. Internally, it uses the concepts of “owning thread” and “recursion level” in addition to the locked/unlocked state used by primitive locks. In the locked state, some thread owns the lock; in the unlocked state, no thread owns it.
+Threads call a lock’s [`acquire()`](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "threading.RLock.acquire") method to lock it, and its [`release()`](https://docs.python.org/3/library/threading.html#threading.Lock.release "threading.Lock.release") method to unlock it.
+Note
+Reentrant locks support the [context management protocol](https://docs.python.org/3/library/threading.html#with-locks), so it is recommended to use [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) instead of manually calling [`acquire()`](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "threading.RLock.acquire") and [`release()`](https://docs.python.org/3/library/threading.html#threading.RLock.release "threading.RLock.release") to handle acquiring and releasing the lock for a block of code.
+RLock’s [`acquire()`](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "threading.RLock.acquire")/[`release()`](https://docs.python.org/3/library/threading.html#threading.RLock.release "threading.RLock.release") call pairs may be nested, unlike Lock’s [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Lock.acquire "threading.Lock.acquire")/[`release()`](https://docs.python.org/3/library/threading.html#threading.Lock.release "threading.Lock.release"). Only the final [`release()`](https://docs.python.org/3/library/threading.html#threading.RLock.release "threading.RLock.release") (the [`release()`](https://docs.python.org/3/library/threading.html#threading.Lock.release "threading.Lock.release") of the outermost pair) resets the lock to an unlocked state and allows another thread blocked in [`acquire()`](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "threading.RLock.acquire") to proceed.
+[`acquire()`](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "threading.RLock.acquire")/[`release()`](https://docs.python.org/3/library/threading.html#threading.RLock.release "threading.RLock.release") must be used in pairs: each acquire must have a release in the thread that has acquired the lock. Failing to call release as many times the lock has been acquired can lead to deadlock.

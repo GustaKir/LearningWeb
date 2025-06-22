@@ -1,0 +1,48 @@
+Title: Python 3.10: New Features and Improvements
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: Python 3.10 introduces several enhancements including support for asynchronous context managers in `contextlib.nullcontext()` and the addition of `AsyncContextDecorator`. Additionally, it incorporates extended color functions from ncurses 6.1, enhancing the capabilities of the `curses` module.
+---
+
+ased resources. (Contributed by Joongi Kim and John Belmonte in [bpo-41229](https://bugs.python.org/issue?@action=redirect&bpo=41229).)
+Add asynchronous context manager support to [`contextlib.nullcontext()`](https://docs.python.org/3/library/contextlib.html#contextlib.nullcontext "contextlib.nullcontext"). (Contributed by Tom Gringauz in [bpo-41543](https://bugs.python.org/issue?@action=redirect&bpo=41543).)
+Add [`AsyncContextDecorator`](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncContextDecorator "contextlib.AsyncContextDecorator"), for supporting usage of async context managers as decorators.
+### curses[¶](https://docs.python.org/3/whatsnew/3.10.html#curses "Link to this heading")
+The extended color functions added in ncurses 6.1 will be used transparently by [`curses.color_content()`](https://docs.python.org/3/library/curses.html#curses.color_content "curses.color_content"), [`curses.init_color()`](https://docs.python.org/3/library/curses.html#curses.init_color "curses.init_color"), [`curses.init_pair()`](https://docs.python.org/3/library/curses.html#curses.init_pair "curses.init_pair"), and [`curses.pair_content()`](https://docs.python.org/3/library/curses.html#curses.pair_content "curses.pair_content"). A new function, [`curses.has_extended_color_support()`](https://docs.python.org/3/library/curses.html#curses.has_extended_color_support "curses.has_extended_color_support"), indicates whether extended color support is provided by the underlying ncurses library. (Contributed by Jeffrey Kintscher and Hans Petter Jansson in [bpo-36982](https://bugs.python.org/issue?@action=redirect&bpo=36982).)
+The `BUTTON5_*` constants are now exposed in the [`curses`](https://docs.python.org/3/library/curses.html#module-curses "curses: An interface to the curses library, providing portable terminal handling. \(Unix\)") module if they are provided by the underlying curses library. (Contributed by Zackery Spytz in [bpo-39273](https://bugs.python.org/issue?@action=redirect&bpo=39273).)
+### dataclasses[¶](https://docs.python.org/3/whatsnew/3.10.html#dataclasses "Link to this heading")
+#### __slots__[¶](https://docs.python.org/3/whatsnew/3.10.html#slots "Link to this heading")
+Added `slots` parameter in [`dataclasses.dataclass()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass") decorator. (Contributed by Yurii Karabas in [bpo-42269](https://bugs.python.org/issue?@action=redirect&bpo=42269))
+#### Keyword-only fields[¶](https://docs.python.org/3/whatsnew/3.10.html#keyword-only-fields "Link to this heading")
+dataclasses now supports fields that are keyword-only in the generated __init__ method. There are a number of ways of specifying keyword-only fields.
+You can say that every field is keyword-only:
+```
+fromdataclassesimport dataclass
+@dataclass(kw_only=True)
+classBirthday:
+  name: str
+  birthday: datetime.date
+
+```
+
+Both `name` and `birthday` are keyword-only parameters to the generated __init__ method.
+You can specify keyword-only on a per-field basis:
+```
+fromdataclassesimport dataclass, field
+@dataclass
+classBirthday:
+  name: str
+  birthday: datetime.date = field(kw_only=True)
+
+```
+
+Here only `birthday` is keyword-only. If you set `kw_only` on individual fields, be aware that there are rules about re-ordering fields due to keyword-only fields needing to follow non-keyword-only fields. See the full dataclasses documentation for details.
+You can also specify that all fields following a KW_ONLY marker are keyword-only. This will probably be the most common usage:
+```
+fromdataclassesimport dataclass, KW_ONLY
+@dataclass
+classPoint:
+  x: float
+  y: float
+  _: KW_ONLY
+  z: float = 0.0
+  t: float = 0.0

@@ -1,0 +1,54 @@
+Title: Decimal Module: Context Class and Methods
+URL: https://docs.python.org/3/library/decimal.html
+Summary: This section discusses the compatibility of a clamp value of 1 with IEEE 754 formats. It details the Context class, which includes general-purpose methods and numerous arithmetic methods applicable within a specific context. It also highlights the correlation between Decimal methods and their Context counterparts, excluding specific methods like adjusted() and as_tuple().
+---
+
+```
+
+A _clamp_ value of `1` allows compatibility with the fixed-width decimal interchange formats specified in IEEE 754.
+The [`Context`](https://docs.python.org/3/library/decimal.html#decimal.Context "decimal.Context") class defines several general purpose methods as well as a large number of methods for doing arithmetic directly in a given context. In addition, for each of the [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") methods described above (with the exception of the [`adjusted()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.adjusted "decimal.Decimal.adjusted") and [`as_tuple()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.as_tuple "decimal.Decimal.as_tuple") methods) there is a corresponding [`Context`](https://docs.python.org/3/library/decimal.html#decimal.Context "decimal.Context") method. For example, for a [`Context`](https://docs.python.org/3/library/decimal.html#decimal.Context "decimal.Context") instance `C` and [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") instance `x`, `C.exp(x)` is equivalent to `x.exp(context=C)`. Each [`Context`](https://docs.python.org/3/library/decimal.html#decimal.Context "decimal.Context") method accepts a Python integer (an instance of [`int`](https://docs.python.org/3/library/functions.html#int "int")) anywhere that a Decimal instance is accepted. 
+
+clear_flags()[¶](https://docs.python.org/3/library/decimal.html#decimal.Context.clear_flags "Link to this definition")
+    
+Resets all of the flags to `0`. 
+
+clear_traps()[¶](https://docs.python.org/3/library/decimal.html#decimal.Context.clear_traps "Link to this definition")
+    
+Resets all of the traps to `0`.
+Added in version 3.3. 
+
+copy()[¶](https://docs.python.org/3/library/decimal.html#decimal.Context.copy "Link to this definition")
+    
+Return a duplicate of the context. 
+
+copy_decimal(_num_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Context.copy_decimal "Link to this definition")
+    
+Return a copy of the Decimal instance num. 
+
+create_decimal(_num_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Context.create_decimal "Link to this definition")
+    
+Creates a new Decimal instance from _num_ but using _self_ as context. Unlike the [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") constructor, the context precision, rounding method, flags, and traps are applied to the conversion.
+This is useful because constants are often given to a greater precision than is needed by the application. Another benefit is that rounding immediately eliminates unintended effects from digits beyond the current precision. In the following example, using unrounded inputs means that adding zero to a sum can change the result:
+>>>```
+>>> getcontext().prec = 3
+>>> Decimal('3.4445') + Decimal('1.0023')
+Decimal('4.45')
+>>> Decimal('3.4445') + Decimal(0) + Decimal('1.0023')
+Decimal('4.44')
+
+```
+
+This method implements the to-number operation of the IBM specification. If the argument is a string, no leading or trailing whitespace or underscores are permitted. 
+
+create_decimal_from_float(_f_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Context.create_decimal_from_float "Link to this definition")
+    
+Creates a new Decimal instance from a float _f_ but rounding using _self_ as the context. Unlike the [`Decimal.from_float()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.from_float "decimal.Decimal.from_float") class method, the context precision, rounding method, flags, and traps are applied to the conversion.
+>>>```
+>>> context = Context(prec=5, rounding=ROUND_DOWN)
+>>> context.create_decimal_from_float(math.pi)
+Decimal('3.1415')
+>>> context = Context(prec=5, traps=[Inexact])
+>>> context.create_decimal_from_float(math.pi)
+Traceback (most recent call last):
+...
+decimal.Inexact: None

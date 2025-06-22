@@ -1,0 +1,20 @@
+Title: QueueHandler Methods in Python Logging
+URL: https://docs.python.org/3/library/logging.handlers.html
+Summary: This document chunk describes two methods of the QueueHandler class in Python's logging module: `emit`, which enqueues the prepared LogRecord and handles exceptions using the `handleError()` method, and `prepare`, which prepares a record for queuing.
+---
+
+emit(_record_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler.emit "Link to this definition")
+    
+Enqueues the result of preparing the LogRecord. Should an exception occur (e.g. because a bounded queue has filled up), the [`handleError()`](https://docs.python.org/3/library/logging.html#logging.Handler.handleError "logging.Handler.handleError") method is called to handle the error. This can result in the record silently being dropped (if [`logging.raiseExceptions`](https://docs.python.org/3/library/logging.html#logging.raiseExceptions "logging.raiseExceptions") is `False`) or a message printed to `sys.stderr` (if [`logging.raiseExceptions`](https://docs.python.org/3/library/logging.html#logging.raiseExceptions "logging.raiseExceptions") is `True`). 
+
+prepare(_record_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler.prepare "Link to this definition")
+    
+Prepares a record for queuing. The object returned by this method is enqueued.
+The base implementation formats the record to merge the message, arguments, exception and stack information, if present. It also removes unpickleable items from the record in-place. Specifically, it overwrites the record’s `msg` and `message` attributes with the merged message (obtained by calling the handler’s [`format()`](https://docs.python.org/3/library/functions.html#format "format") method), and sets the `args`, `exc_info` and `exc_text` attributes to `None`.
+You might want to override this method if you want to convert the record to a dict or JSON string, or send a modified copy of the record while leaving the original intact.
+Note
+The base implementation formats the message with arguments, sets the `message` and `msg` attributes to the formatted message and sets the `args` and `exc_text` attributes to `None` to allow pickling and to prevent further attempts at formatting. This means that a handler on the [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") side won’t have the information to do custom formatting, e.g. of exceptions. You may wish to subclass `QueueHandler` and override this method to e.g. avoid setting `exc_text` to `None`. Note that the `message` / `msg` / `args` changes are related to ensuring the record is pickleable, and you might or might not be able to avoid doing that depending on whether your `args` are pickleable. (Note that you may have to consider not only your own code but also code in any libraries that you use.) 
+
+enqueue(_record_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler.enqueue "Link to this definition")
+    
+Enqueues the record on the queue using `put_nowait()`; you may want to override this if you want to use blocking behaviour, or a timeout, or a customized queue implementation.

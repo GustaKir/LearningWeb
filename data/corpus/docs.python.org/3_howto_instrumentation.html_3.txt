@@ -1,0 +1,99 @@
+Title: Static Markers for Python Function Execution
+URL: https://docs.python.org/3/howto/instrumentation.html
+Summary: This section describes two available static markers for instrumentation in CPython 3.6. The `function__entry` marker indicates the start of execution for a pure-Python function, providing the filename, function name, and line number. The `function__return` marker indicates the end of a function's execution.
+---
+
+```
+
+(assuming a [debug build](https://docs.python.org/3/using/configure.html#debug-build) of CPython 3.6)
+## Available static markers[¶](https://docs.python.org/3/howto/instrumentation.html#available-static-markers "Link to this heading") 
+
+function__entry(str filename, str funcname, int lineno)
+    
+This marker indicates that execution of a Python function has begun. It is only triggered for pure-Python (bytecode) functions.
+The filename, function name, and line number are provided back to the tracing script as positional arguments, which must be accessed using `$arg1`, `$arg2`, `$arg3`:
+>   * `$arg1` : `(const char *)` filename, accessible using `user_string($arg1)`
+>   * `$arg2` : `(const char *)` function name, accessible using `user_string($arg2)`
+>   * `$arg3` : `int` line number
+> 
+
+
+function__return(str filename, str funcname, int lineno)
+    
+This marker is the converse of `function__entry()`, and indicates that execution of a Python function has ended (either via `return`, or via an exception). It is only triggered for pure-Python (bytecode) functions.
+The arguments are the same as for `function__entry()` 
+
+line(str filename, str funcname, int lineno)
+    
+This marker indicates a Python line is about to be executed. It is the equivalent of line-by-line tracing with a Python profiler. It is not triggered within C functions.
+The arguments are the same as for `function__entry()`. 
+
+gc__start(int generation)
+    
+Fires when the Python interpreter starts a garbage collection cycle. `arg0` is the generation to scan, like [`gc.collect()`](https://docs.python.org/3/library/gc.html#gc.collect "gc.collect"). 
+
+gc__done(long collected)
+    
+Fires when the Python interpreter finishes a garbage collection cycle. `arg0` is the number of collected objects. 
+
+import__find__load__start(str modulename)
+    
+Fires before [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.") attempts to find and load the module. `arg0` is the module name.
+Added in version 3.7. 
+
+import__find__load__done(str modulename, int found)
+    
+Fires after [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.")’s find_and_load function is called. `arg0` is the module name, `arg1` indicates if module was successfully loaded.
+Added in version 3.7. 
+
+audit(str event, void *tuple)
+    
+Fires when [`sys.audit()`](https://docs.python.org/3/library/sys.html#sys.audit "sys.audit") or [`PySys_Audit()`](https://docs.python.org/3/c-api/sys.html#c.PySys_Audit "PySys_Audit") is called. `arg0` is the event name as C string, `arg1` is a [`PyObject`](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject") pointer to a tuple object.
+Added in version 3.8.
+## SystemTap Tapsets[¶](https://docs.python.org/3/howto/instrumentation.html#systemtap-tapsets "Link to this heading")
+The higher-level way to use the SystemTap integration is to use a “tapset”: SystemTap’s equivalent of a library, which hides some of the lower-level details of the static markers.
+Here is a tapset file, based on a non-shared build of CPython:
+```
+/*
+  Provide a higher-level wrapping around the function__entry and
+  function__return markers:
+ \*/
+probe python.function.entry = process("python").mark("function__entry")
+{
+  filename = user_string($arg1);
+  funcname = user_string($arg2);
+  lineno = $arg3;
+  frameptr = $arg4
+}
+probe python.function.return = process("python").mark("function__return")
+{
+  filename = user_string($arg1);
+  funcname = user_string($arg2);
+  lineno = $arg3;
+  frameptr = $arg4
+}
+
+```
+
+If this file is installed in SystemTap’s tapset directory (e.g. `/usr/share/systemtap/tapset`), then these additional probepoints become available: 
+
+python.function.entry(str filename, str funcname, int lineno, frameptr)
+    
+This probe point indicates that execution of a Python function has begun. It is only triggered for pure-Python (bytecode) functions. 
+
+python.function.return(str filename, str funcname, int lineno, frameptr)
+    
+This probe point is the converse of `python.function.return`, and indicates that execution of a Python function has ended (either via `return`, or via an exception). It is only triggered for pure-Python (bytecode) functions.
+## Examples[¶](https://docs.python.org/3/howto/instrumentation.html#examples "Link to this heading")
+This SystemTap script uses the tapset above to more cleanly implement the example given above of tracing the Python function-call hierarchy, without needing to directly name the static markers:
+```
+probe python.function.entry
+{
+ printf("%s => %s in %s:%d\n",
+     thread_indent(1), funcname, filename, lineno);
+}
+probe python.function.return
+{
+ printf("%s <= %s in %s:%d\n",
+     thread_indent(-1), funcname, filename, lineno);
+}

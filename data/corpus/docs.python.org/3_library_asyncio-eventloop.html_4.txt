@@ -1,0 +1,41 @@
+Title: Default Executor Shutdown in asyncio
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: Introduced in version 3.6, the method 'loop.shutdown_default_executor(_timeout=None)' is designed to schedule the closure of the default executor, ensuring all threads in the ThreadPoolExecutor are joined. After calling this method, using 'loop.run_in_executor()' will raise a RuntimeError. The '_timeout' parameter sets the time limit for the executor to complete its tasks.
+---
+
+```
+
+Added in version 3.6. 
+
+_async_ loop.shutdown_default_executor(_timeout =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.shutdown_default_executor "Link to this definition")
+    
+Schedule the closure of the default executor and wait for it to join all of the threads in the [`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor"). Once this method has been called, using the default executor with [`loop.run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor") will raise a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError").
+The _timeout_ parameter specifies the amount of time (in [`float`](https://docs.python.org/3/library/functions.html#float "float") seconds) the executor will be given to finish joining. With the default, `None`, the executor is allowed an unlimited amount of time.
+If the _timeout_ is reached, a [`RuntimeWarning`](https://docs.python.org/3/library/exceptions.html#RuntimeWarning "RuntimeWarning") is emitted and the default executor is terminated without waiting for its threads to finish joining.
+Note
+Do not call this method when using [`asyncio.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run"), as the latter handles default executor shutdown automatically.
+Added in version 3.9.
+Changed in version 3.12: Added the _timeout_ parameter.
+### [Scheduling callbacks](https://docs.python.org/3/library/asyncio-eventloop.html#id2)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#scheduling-callbacks "Link to this heading") 
+
+loop.call_soon(_callback_ , _* args_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon "Link to this definition")
+    
+Schedule the _callback_ [callback](https://docs.python.org/3/glossary.html#term-callback) to be called with _args_ arguments at the next iteration of the event loop.
+Return an instance of [`asyncio.Handle`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Handle "asyncio.Handle"), which can be used later to cancel the callback.
+Callbacks are called in the order in which they are registered. Each callback will be called exactly once.
+The optional keyword-only _context_ argument specifies a custom [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") for the _callback_ to run in. Callbacks use the current context when no _context_ is provided.
+Unlike [`call_soon_threadsafe()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon_threadsafe "asyncio.loop.call_soon_threadsafe"), this method is not thread-safe. 
+
+loop.call_soon_threadsafe(_callback_ , _* args_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon_threadsafe "Link to this definition")
+    
+A thread-safe variant of [`call_soon()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon "asyncio.loop.call_soon"). When scheduling callbacks from another thread, this function _must_ be used, since [`call_soon()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon "asyncio.loop.call_soon") is not thread-safe.
+This function is safe to be called from a reentrant context or signal handler, however, it is not safe or fruitful to use the returned handle in such contexts.
+Raises [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") if called on a loop that’s been closed. This can happen on a secondary thread when the main application is shutting down.
+See the [concurrency and multithreading](https://docs.python.org/3/library/asyncio-dev.html#asyncio-multithreading) section of the documentation.
+Changed in version 3.7: The _context_ keyword-only parameter was added. See [**PEP 567**](https://peps.python.org/pep-0567/) for more details.
+Note
+Most [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") scheduling functions don’t allow passing keyword arguments. To do that, use [`functools.partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial"):
+```
+# will schedule "print("Hello", flush=True)"
+loop.call_soon(
+  functools.partial(print, "Hello", flush=True))

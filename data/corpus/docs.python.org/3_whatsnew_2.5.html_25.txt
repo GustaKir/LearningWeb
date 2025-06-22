@@ -1,0 +1,85 @@
+Title: Secure SQL Operations with DB-API Parameter Substitution
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This section emphasizes the importance of using parameter substitution in SQL queries to prevent SQL injection attacks. It demonstrates how to properly include Python variables in SQL operations using the DB-API's parameter placeholders, such as `?`, and provides examples of both insecure and secure query execution.
+---
+
+```
+
+Usually your SQL operations will need to use values from Python variables. You shouldn’t assemble your query using Python’s string operations because doing so is insecure; it makes your program vulnerable to an SQL injection attack.
+Instead, use the DB-API’s parameter substitution. Put `?` as a placeholder wherever you want to use a value, and then provide a tuple of values as the second argument to the cursor’s `execute()` method. (Other database modules may use a different placeholder, such as `%s` or `:1`.) For example:
+```
+# Never do this -- insecure!
+symbol = 'IBM'
+c.execute("... where symbol = '%s'" % symbol)
+# Do this instead
+t = (symbol,)
+c.execute('select * from stocks where symbol=?', t)
+# Larger example
+for t in (('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
+     ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
+     ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
+     ):
+  c.execute('insert into stocks values (?,?,?,?,?)', t)
+
+```
+
+To retrieve data after executing a SELECT statement, you can either treat the cursor as an iterator, call the cursor’s `fetchone()` method to retrieve a single matching row, or call `fetchall()` to get a list of the matching rows.
+This example uses the iterator form:
+>>>```
+>>> c = conn.cursor()
+>>> c.execute('select * from stocks order by price')
+>>> for row in c:
+...   print row
+...
+(u'2006-01-05', u'BUY', u'RHAT', 100, 35.140000000000001)
+(u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)
+(u'2006-04-06', u'SELL', u'IBM', 500, 53.0)
+(u'2006-04-05', u'BUY', u'MSOFT', 1000, 72.0)
+>>>
+
+```
+
+For more information about the SQL dialect supported by SQLite, see <https://www.sqlite.org>.
+See also 
+
+<https://www.pysqlite.org>
+    
+The pysqlite web page. 
+
+<https://www.sqlite.org>
+    
+The SQLite web page; the documentation describes the syntax and the available data types for the supported SQL dialect.
+The documentation for the [`sqlite3`](https://docs.python.org/3/library/sqlite3.html#module-sqlite3 "sqlite3: A DB-API 2.0 implementation using SQLite 3.x.") module. 
+
+[**PEP 249**](https://peps.python.org/pep-0249/) - Database API Specification 2.0
+    
+PEP written by Marc-André Lemburg.
+### The wsgiref package[¶](https://docs.python.org/3/whatsnew/2.5.html#the-wsgiref-package "Link to this heading")
+The Web Server Gateway Interface (WSGI) v1.0 defines a standard interface between web servers and Python web applications and is described in [**PEP 333**](https://peps.python.org/pep-0333/). The [`wsgiref`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref "wsgiref: WSGI Utilities and Reference Implementation.") package is a reference implementation of the WSGI specification.
+The package includes a basic HTTP server that will run a WSGI application; this server is useful for debugging but isn’t intended for production use. Setting up a server takes only a few lines of code:
+```
+fromwsgirefimport simple_server
+wsgi_app = ...
+host = ''
+port = 8000
+httpd = simple_server.make_server(host, port, wsgi_app)
+httpd.serve_forever()
+
+```
+
+See also 
+
+<https://web.archive.org/web/20160331090247/http://wsgi.readthedocs.org/en/latest/>
+    
+A central web site for WSGI-related resources. 
+
+[**PEP 333**](https://peps.python.org/pep-0333/) - Python Web Server Gateway Interface v1.0
+    
+PEP written by Phillip J. Eby.
+## Build and C API Changes[¶](https://docs.python.org/3/whatsnew/2.5.html#build-and-c-api-changes "Link to this heading")
+Changes to Python’s build process and to the C API include:
+  * The Python source tree was converted from CVS to Subversion, in a complex migration procedure that was supervised and flawlessly carried out by Martin von Löwis. The procedure was developed as [**PEP 347**](https://peps.python.org/pep-0347/).
+  * Coverity, a company that markets a source code analysis tool called Prevent, provided the results of their examination of the Python source code. The analysis found about 60 bugs that were quickly fixed. Many of the bugs were refcounting problems, often occurring in error-handling code. See <https://scan.coverity.com> for the statistics.
+  * The largest change to the C API came from [**PEP 353**](https://peps.python.org/pep-0353/), which modifies the interpreter to use a [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") type definition instead of int. See the earlier section [PEP 353: Using ssize_t as the index type](https://docs.python.org/3/whatsnew/2.5.html#pep-353) for a discussion of this change.
+  * The design of the bytecode compiler has changed a great deal, no longer generating bytecode by traversing the parse tree. Instead the parse tree is converted to an abstract syntax tree (or AST), and it is the abstract syntax tree that’s traversed to produce the bytecode.
+It’s possible for Python code to obtain AST objects by using the [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile") built-in and specifying `_ast.PyCF_ONLY_AST` as the value of the _flags_ parameter:

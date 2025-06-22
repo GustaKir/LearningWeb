@@ -1,0 +1,126 @@
+Title: Error Handling in FastAPI Dependencies
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/
+Summary: This section highlights the importance of properly handling exceptions in FastAPI dependencies that use `yield`. It emphasizes that failing to raise an `HTTPException` or similar after catching an exception can lead to a lack of logs and visibility of the error, resulting in an HTTP 500 response without useful information. Developers are advised to re-raise the original exception to ensure that the error is logged and handled appropriately.
+---
+
+```
+
+In this case, the client will see an _HTTP 500 Internal Server Error_ response as it should, given that we are not raising an `HTTPException` or similar, but the server will **not have any logs** or any other indication of what was the error. 😱
+### Always `raise` in Dependencies with `yield` and `except`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#always-raise-in-dependencies-with-yield-and-except "Permanent link")
+If you catch an exception in a dependency with `yield`, unless you are raising another `HTTPException` or similar, you should re-raise the original exception.
+You can re-raise the same exception using `raise`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_13_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI, HTTPException
+app = FastAPI()
+classInternalError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except InternalError:
+    print("We don't swallow the internal error here, we raise again 😎")
+    raise
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: Annotated[str, Depends(get_username)]):
+  if item_id == "portal-gun":
+    raise InternalError(
+      f"The portal gun is too dangerous to be owned by {username}"
+    )
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=404, detail="Item not found, there's only a plumbus here"
+    )
+  return item_id
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_14_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_14_2)
+```
+fromfastapiimport Depends, FastAPI, HTTPException
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classInternalError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except InternalError:
+    print("We don't swallow the internal error here, we raise again 😎")
+    raise
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: Annotated[str, Depends(get_username)]):
+  if item_id == "portal-gun":
+    raise InternalError(
+      f"The portal gun is too dangerous to be owned by {username}"
+    )
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=404, detail="Item not found, there's only a plumbus here"
+    )
+  return item_id
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI, HTTPException
+app = FastAPI()
+classInternalError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except InternalError:
+    print("We don't swallow the internal error here, we raise again 😎")
+    raise
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: str = Depends(get_username)):
+  if item_id == "portal-gun":
+    raise InternalError(
+      f"The portal gun is too dangerous to be owned by {username}"
+    )
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=404, detail="Item not found, there's only a plumbus here"
+    )
+  return item_id
+
+```
+
+Now the client will get the same _HTTP 500 Internal Server Error_ response, but the server will have our custom `InternalError` in the logs. 😎
+## Execution of dependencies with `yield`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#execution-of-dependencies-with-yield "Permanent link")
+The sequence of execution is more or less like this diagram. Time flows from top to bottom. And each column is one of the parts interacting or executing code.
+```
+sequenceDiagram
+participant client as Client
+participant handler as Exception handler
+participant dep as Dep with yield
+participant operation as Path Operation
+participant tasks as Background tasks
+  Note over client,operation: Can raise exceptions, including HTTPException
+  client ->> dep: Start request
+  Note over dep: Run code up to yield
+  opt raise Exception
+    dep -->> handler: Raise Exception
+    handler -->> client: HTTP error response
+  end
+  dep ->> operation: Run dependency, e.g. DB session
+  opt raise
+    operation -->> dep: Raise Exception (e.g. HTTPException)
+    opt handle
+      dep -->> dep: Can catch exception, raise a new HTTPException, raise other exception
+    end
+    handler -->> client: HTTP error response
+  end
+  operation ->> client: Return response to client
+  Note over client,operation: Response is already sent, can't change it anymore
+  opt Tasks
+    operation -->> tasks: Send background tasks
+  end
+  opt Raise other exception
+    tasks -->> tasks: Handle exceptions in the background task code
+  end

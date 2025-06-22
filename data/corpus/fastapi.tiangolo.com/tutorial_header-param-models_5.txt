@@ -1,0 +1,147 @@
+Title: Using Header Parameter Models in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/header-param-models/
+Summary: This section demonstrates how to create and use a Pydantic model for defining header parameters in a FastAPI application. It illustrates defining a model named 'CommonHeaders' that enforces specific headers with types and optional fields, and shows an example of using this model in a FastAPI endpoint to read items from the request headers.
+---
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_4_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_4_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_4_3)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_4_4)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_4_5)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Header
+frompydanticimport BaseModel
+app = FastAPI()
+classCommonHeaders(BaseModel):
+  model_config = {"extra": "forbid"}
+  host: str
+  save_data: bool
+  if_modified_since: Union[str, None] = None
+  traceparent: Union[str, None] = None
+  x_tag: list[str] = []
+@app.get("/items/")
+async defread_items(headers: Annotated[CommonHeaders, Header()]):
+  return headers
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI, Header
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classCommonHeaders(BaseModel):
+  model_config = {"extra": "forbid"}
+  host: str
+  save_data: bool
+  if_modified_since: Union[str, None] = None
+  traceparent: Union[str, None] = None
+  x_tag: List[str] = []
+@app.get("/items/")
+async defread_items(headers: Annotated[CommonHeaders, Header()]):
+  return headers
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Header
+frompydanticimport BaseModel
+app = FastAPI()
+classCommonHeaders(BaseModel):
+  model_config = {"extra": "forbid"}
+  host: str
+  save_data: bool
+  if_modified_since: str | None = None
+  traceparent: str | None = None
+  x_tag: list[str] = []
+@app.get("/items/")
+async defread_items(headers: CommonHeaders = Header()):
+  return headers
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Header
+frompydanticimport BaseModel
+app = FastAPI()
+classCommonHeaders(BaseModel):
+  model_config = {"extra": "forbid"}
+  host: str
+  save_data: bool
+  if_modified_since: Union[str, None] = None
+  traceparent: Union[str, None] = None
+  x_tag: list[str] = []
+@app.get("/items/")
+async defread_items(headers: CommonHeaders = Header()):
+  return headers
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI, Header
+frompydanticimport BaseModel
+app = FastAPI()
+classCommonHeaders(BaseModel):
+  model_config = {"extra": "forbid"}
+  host: str
+  save_data: bool
+  if_modified_since: Union[str, None] = None
+  traceparent: Union[str, None] = None
+  x_tag: List[str] = []
+@app.get("/items/")
+async defread_items(headers: CommonHeaders = Header()):
+  return headers
+
+```
+
+If a client tries to send some **extra headers** , they will receive an **error** response.
+For example, if the client tries to send a `tool` header with a value of `plumbus`, they will receive an **error** response telling them that the header parameter `tool` is not allowed:
+```
+{
+"detail":[
+{
+"type":"extra_forbidden",
+"loc":["header","tool"],
+"msg":"Extra inputs are not permitted",
+"input":"plumbus",
+}
+]
+}
+
+```
+
+## Disable Convert Underscores[¶](https://fastapi.tiangolo.com/tutorial/header-param-models/#disable-convert-underscores "Permanent link")
+The same way as with regular header parameters, when you have underscore characters in the parameter names, they are **automatically converted to hyphens**.
+For example, if you have a header parameter `save_data` in the code, the expected HTTP header will be `save-data`, and it will show up like that in the docs.
+If for some reason you need to disable this automatic conversion, you can do it as well for Pydantic models for header parameters.
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_5_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Header
+frompydanticimport BaseModel
+app = FastAPI()
+classCommonHeaders(BaseModel):
+  host: str
+  save_data: bool
+  if_modified_since: str | None = None
+  traceparent: str | None = None
+  x_tag: list[str] = []
+@app.get("/items/")
+async defread_items(
+  headers: Annotated[CommonHeaders, Header(convert_underscores=False)],
+):
+  return headers
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_6_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_6_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_6_3)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_6_4)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/header-param-models/#__tabbed_6_5)

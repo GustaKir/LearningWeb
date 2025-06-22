@@ -1,0 +1,61 @@
+Title: ExitStack Methods: callback and pop_all
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: This section explains two methods of the `ExitStack` class in the `contextlib` module: `callback`, which accepts a callback function and adds it to the callback stack (without suppressing exceptions), and `pop_all`, which transfers the callback stack to a new `ExitStack` instance without invoking the callbacks.
+---
+
+callback(_callback_ , _/_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.callback "Link to this definition")
+    
+Accepts an arbitrary callback function and arguments and adds it to the callback stack.
+Unlike the other methods, callbacks added this way cannot suppress exceptions (as they are never passed the exception details).
+The passed in callback is returned from the function, allowing this method to be used as a function decorator. 
+
+pop_all()[¶](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.pop_all "Link to this definition")
+    
+Transfers the callback stack to a fresh [`ExitStack`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack "contextlib.ExitStack") instance and returns it. No callbacks are invoked by this operation - instead, they will now be invoked when the new stack is closed (either explicitly or implicitly at the end of a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement).
+For example, a group of files can be opened as an “all or nothing” operation as follows:
+```
+with ExitStack() as stack:
+  files = [stack.enter_context(open(fname)) for fname in filenames]
+  # Hold onto the close method, but don't call it yet.
+  close_files = stack.pop_all().close
+  # If opening any file fails, all previously opened files will be
+  # closed automatically. If all files are opened successfully,
+  # they will remain open even after the with statement ends.
+  # close_files() can then be invoked explicitly to close them all.
+
+```
+
+
+close()[¶](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.close "Link to this definition")
+    
+Immediately unwinds the callback stack, invoking callbacks in the reverse order of registration. For any context managers and exit callbacks registered, the arguments passed in will indicate that no exception occurred. 
+
+_class_ contextlib.AsyncExitStack[¶](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncExitStack "Link to this definition")
+    
+An [asynchronous context manager](https://docs.python.org/3/reference/datamodel.html#async-context-managers), similar to [`ExitStack`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack "contextlib.ExitStack"), that supports combining both synchronous and asynchronous context managers, as well as having coroutines for cleanup logic.
+The [`close()`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.close "contextlib.ExitStack.close") method is not implemented; [`aclose()`](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncExitStack.aclose "contextlib.AsyncExitStack.aclose") must be used instead. 
+
+_async_ enter_async_context(_cm_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncExitStack.enter_async_context "Link to this definition")
+    
+Similar to [`ExitStack.enter_context()`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.enter_context "contextlib.ExitStack.enter_context") but expects an asynchronous context manager.
+Changed in version 3.11: Raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") instead of [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") if _cm_ is not an asynchronous context manager. 
+
+push_async_exit(_exit_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncExitStack.push_async_exit "Link to this definition")
+    
+Similar to [`ExitStack.push()`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.push "contextlib.ExitStack.push") but expects either an asynchronous context manager or a coroutine function. 
+
+push_async_callback(_callback_ , _/_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncExitStack.push_async_callback "Link to this definition")
+    
+Similar to [`ExitStack.callback()`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.callback "contextlib.ExitStack.callback") but expects a coroutine function. 
+
+_async_ aclose()[¶](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncExitStack.aclose "Link to this definition")
+    
+Similar to [`ExitStack.close()`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.close "contextlib.ExitStack.close") but properly handles awaitables.
+Continuing the example for [`asynccontextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager "contextlib.asynccontextmanager"):
+```
+async with AsyncExitStack() as stack:
+  connections = [await stack.enter_async_context(get_connection())
+    for i in range(5)]
+  # All opened connections will automatically be released at the end of
+  # the async with statement, even if attempts to open a connection
+  # later in the list raise an exception.

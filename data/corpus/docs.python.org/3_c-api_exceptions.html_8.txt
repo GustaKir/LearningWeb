@@ -1,0 +1,52 @@
+Title: Python C API Exception Handling Functions
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: This section outlines two functions, PyErr_ExceptionMatches and PyErr_GivenExceptionMatches, used for checking exception types in the Python C API. PyErr_ExceptionMatches determines if the current exception matches a specified exception type, while PyErr_GivenExceptionMatches checks if a given exception matches a specified type. Both functions should be used only when an exception has been set to avoid memory access violations.
+---
+
+intPyErr_ExceptionMatches([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_ExceptionMatches "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Equivalent to `PyErr_GivenExceptionMatches(PyErr_Occurred(), exc)`. This should only be called when an exception is actually set; a memory access violation will occur if no exception has been raised. 
+
+intPyErr_GivenExceptionMatches([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*given, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_GivenExceptionMatches "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return true if the _given_ exception matches the exception type in _exc_. If _exc_ is a class object, this also returns true when _given_ is an instance of a subclass. If _exc_ is a tuple, all exception types in the tuple (and recursively in subtuples) are searched for a match. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_GetRaisedException(void)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_GetRaisedException "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+Return the exception currently being raised, clearing the error indicator at the same time. Return `NULL` if the error indicator is not set.
+This function is used by code that needs to catch exceptions, or code that needs to save and restore the error indicator temporarily.
+For example:
+```
+{
+PyObject*exc=PyErr_GetRaisedException();
+/* ... code that might produce other errors ... */
+PyErr_SetRaisedException(exc);
+}
+
+```
+
+See also
+[`PyErr_GetHandledException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_GetHandledException "PyErr_GetHandledException"), to save the exception currently being handled.
+Added in version 3.12. 
+
+voidPyErr_SetRaisedException([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetRaisedException "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+Set _exc_ as the exception currently being raised, clearing the existing exception if one is set.
+Warning
+This call steals a reference to _exc_ , which must be a valid exception.
+Added in version 3.12. 
+
+voidPyErr_Fetch([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**ptype, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**pvalue, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**ptraceback)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Fetch "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Deprecated since version 3.12: Use [`PyErr_GetRaisedException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_GetRaisedException "PyErr_GetRaisedException") instead.
+Retrieve the error indicator into three variables whose addresses are passed. If the error indicator is not set, set all three variables to `NULL`. If it is set, it will be cleared and you own a reference to each object retrieved. The value and traceback object may be `NULL` even when the type object is not.
+Note
+This function is normally only used by legacy code that needs to catch exceptions or save and restore the error indicator temporarily.
+For example:
+```
+{
+PyObject*type,*value,*traceback;
+PyErr_Fetch(&type,&value,&traceback);
+/* ... code that might produce other errors ... */
+PyErr_Restore(type,value,traceback);
+}

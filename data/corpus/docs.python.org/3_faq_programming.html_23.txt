@@ -1,0 +1,71 @@
+Title: Importing Modules with Circular Dependencies in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This document explains the issues that arise when importing modules with circular dependencies in Python. It describes the steps taken by the interpreter during the import process and highlights the failure in accessing global variables if a module imports itself indirectly. It also provides recommendations, including avoiding 'from <module> import ...' statements and encapsulating code within functions.
+---
+
+```
+
+The problem is that the interpreter will perform the following steps:
+  * main imports `foo`
+  * Empty globals for `foo` are created
+  * `foo` is compiled and starts executing
+  * `foo` imports `bar`
+  * Empty globals for `bar` are created
+  * `bar` is compiled and starts executing
+  * `bar` imports `foo` (which is a no-op since there already is a module named `foo`)
+  * The import mechanism tries to read `foo_var` from `foo` globals, to set `bar.foo_var = foo.foo_var`
+
+
+The last step fails, because Python isn’t done with interpreting `foo` yet and the global symbol dictionary for `foo` is still empty.
+The same thing happens when you use `import foo`, and then try to access `foo.foo_var` in global code.
+There are (at least) three possible workarounds for this problem.
+Guido van Rossum recommends avoiding all uses of `from <module> import ...`, and placing all code inside functions. Initializations of global variables and class variables should use constants or built-in functions only. This means everything from an imported module is referenced as `<module>.<name>`.
+Jim Roskind suggests performing steps in the following order in each module:
+  * exports (globals, functions, and classes that don’t need imported base classes)
+  * `import` statements
+  * active code (including globals that are initialized from imported values).
+
+
+Van Rossum doesn’t like this approach much because the imports appear in a strange place, but it does work.
+Matthias Urlichs recommends restructuring your code so that the recursive import is not necessary in the first place.
+These solutions are not mutually exclusive.
+### [__import__(‘x.y.z’) returns <module ‘x’>; how do I get z?](https://docs.python.org/3/faq/programming.html#id75)[¶](https://docs.python.org/3/faq/programming.html#import-x-y-z-returns-module-x-how-do-i-get-z "Link to this heading")
+Consider using the convenience function [`import_module()`](https://docs.python.org/3/library/importlib.html#importlib.import_module "importlib.import_module") from [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.") instead:
+```
+z = importlib.import_module('x.y.z')
+
+```
+
+### [When I edit an imported module and reimport it, the changes don’t show up. Why does this happen?](https://docs.python.org/3/faq/programming.html#id76)[¶](https://docs.python.org/3/faq/programming.html#when-i-edit-an-imported-module-and-reimport-it-the-changes-don-t-show-up-why-does-this-happen "Link to this heading")
+For reasons of efficiency as well as consistency, Python only reads the module file on the first time a module is imported. If it didn’t, in a program consisting of many modules where each one imports the same basic module, the basic module would be parsed and re-parsed many times. To force re-reading of a changed module, do this:
+```
+importimportlib
+importmodname
+importlib.reload(modname)
+
+```
+
+Warning: this technique is not 100% fool-proof. In particular, modules containing statements like
+```
+frommodnameimport some_objects
+
+```
+
+will continue to work with the old version of the imported objects. If the module contains class definitions, existing class instances will _not_ be updated to use the new class definition. This can result in the following paradoxical behaviour:
+>>>```
+>>> importimportlib
+>>> importcls
+>>> c = cls.C()        # Create an instance of C
+>>> importlib.reload(cls)
+<module 'cls' from 'cls.py'>
+>>> isinstance(c, cls.C)    # isinstance is false?!?
+False
+
+```
+
+The nature of the problem is made clear if you print out the “identity” of the class objects:
+>>>```
+>>> hex(id(c.__class__))
+'0x7352a0'
+>>> hex(id(cls.C))
+'0x4198d0'

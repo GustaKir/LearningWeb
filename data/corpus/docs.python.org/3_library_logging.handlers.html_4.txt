@@ -1,0 +1,38 @@
+Title: Using the `namer` Attribute in BaseRotatingHandler
+URL: https://docs.python.org/3/library/logging.handlers.html
+Summary: The `namer` attribute in `BaseRotatingHandler` can be set to a callable, which is used by the `rotation_filename()` method during log rollover. It's important for this function to be efficient and consistent to ensure correct rollover behavior.
+---
+
+namer[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.namer "Link to this definition")
+    
+If this attribute is set to a callable, the [`rotation_filename()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.rotation_filename "logging.handlers.BaseRotatingHandler.rotation_filename") method delegates to this callable. The parameters passed to the callable are those passed to [`rotation_filename()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.rotation_filename "logging.handlers.BaseRotatingHandler.rotation_filename").
+Note
+The namer function is called quite a few times during rollover, so it should be as simple and as fast as possible. It should also return the same output every time for a given input, otherwise the rollover behaviour may not work as expected.
+It’s also worth noting that care should be taken when using a namer to preserve certain attributes in the filename which are used during rotation. For example, [`RotatingFileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.RotatingFileHandler "logging.handlers.RotatingFileHandler") expects to have a set of log files whose names contain successive integers, so that rotation works as expected, and [`TimedRotatingFileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler "logging.handlers.TimedRotatingFileHandler") deletes old log files (based on the `backupCount` parameter passed to the handler’s initializer) by determining the oldest files to delete. For this to happen, the filenames should be sortable using the date/time portion of the filename, and a namer needs to respect this. (If a namer is wanted that doesn’t respect this scheme, it will need to be used in a subclass of [`TimedRotatingFileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler "logging.handlers.TimedRotatingFileHandler") which overrides the [`getFilesToDelete()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler.getFilesToDelete "logging.handlers.TimedRotatingFileHandler.getFilesToDelete") method to fit in with the custom naming scheme.)
+Added in version 3.3. 
+
+rotator[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.rotator "Link to this definition")
+    
+If this attribute is set to a callable, the [`rotate()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.rotate "logging.handlers.BaseRotatingHandler.rotate") method delegates to this callable. The parameters passed to the callable are those passed to [`rotate()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.rotate "logging.handlers.BaseRotatingHandler.rotate").
+Added in version 3.3. 
+
+rotation_filename(_default_name_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.rotation_filename "Link to this definition")
+    
+Modify the filename of a log file when rotating.
+This is provided so that a custom filename can be provided.
+The default implementation calls the ‘namer’ attribute of the handler, if it’s callable, passing the default name to it. If the attribute isn’t callable (the default is `None`), the name is returned unchanged. 
+
+Parameters:
+    
+**default_name** – The default name for the log file.
+Added in version 3.3. 
+
+rotate(_source_ , _dest_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.BaseRotatingHandler.rotate "Link to this definition")
+    
+When rotating, rotate the current log.
+The default implementation calls the ‘rotator’ attribute of the handler, if it’s callable, passing the source and dest arguments to it. If the attribute isn’t callable (the default is `None`), the source is simply renamed to the destination. 
+
+Parameters:
+    
+  * **source** – The source filename. This is normally the base filename, e.g. ‘test.log’.
+  * **dest** – The destination filename. This is normally what the source is rotated to, e.g. ‘test.log.1’.

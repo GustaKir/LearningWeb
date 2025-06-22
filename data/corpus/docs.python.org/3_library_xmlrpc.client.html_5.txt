@@ -1,0 +1,84 @@
+Title: ProtocolError Objects in xmlrpc.client
+URL: https://docs.python.org/3/library/xmlrpc.client.html
+Summary: The `ProtocolError` object in the `xmlrpc.client` module describes errors encountered in the transport layer, such as a 404 error when a server is unreachable. It includes attributes for the URL that triggered the error, the error code, and the error message.
+---
+
+```
+
+## ProtocolError Objects[¶](https://docs.python.org/3/library/xmlrpc.client.html#protocolerror-objects "Link to this heading") 
+
+_class_ xmlrpc.client.ProtocolError[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError "Link to this definition")
+    
+A [`ProtocolError`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError "xmlrpc.client.ProtocolError") object describes a protocol error in the underlying transport layer (such as a 404 ‘not found’ error if the server named by the URI does not exist). It has the following attributes: 
+
+url[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError.url "Link to this definition")
+    
+The URI or URL that triggered the error. 
+
+errcode[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError.errcode "Link to this definition")
+    
+The error code. 
+
+errmsg[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError.errmsg "Link to this definition")
+    
+The error message or diagnostic string. 
+
+headers[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError.headers "Link to this definition")
+    
+A dict containing the headers of the HTTP/HTTPS request that triggered the error.
+In the following example we’re going to intentionally cause a [`ProtocolError`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError "xmlrpc.client.ProtocolError") by providing an invalid URI:
+```
+importxmlrpc.client
+# create a ServerProxy with a URI that doesn't respond to XMLRPC requests
+proxy = xmlrpc.client.ServerProxy("http://google.com/")
+try:
+  proxy.some_method()
+except xmlrpc.client.ProtocolError as err:
+  print("A protocol error occurred")
+  print("URL: %s" % err.url)
+  print("HTTP/HTTPS headers: %s" % err.headers)
+  print("Error code: %d" % err.errcode)
+  print("Error message: %s" % err.errmsg)
+
+```
+
+## MultiCall Objects[¶](https://docs.python.org/3/library/xmlrpc.client.html#multicall-objects "Link to this heading")
+The [`MultiCall`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.MultiCall "xmlrpc.client.MultiCall") object provides a way to encapsulate multiple calls to a remote server into a single request [[1]](https://docs.python.org/3/library/xmlrpc.client.html#id6). 
+
+_class_ xmlrpc.client.MultiCall(_server_)[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.MultiCall "Link to this definition")
+    
+Create an object used to boxcar method calls. _server_ is the eventual target of the call. Calls can be made to the result object, but they will immediately return `None`, and only store the call name and parameters in the [`MultiCall`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.MultiCall "xmlrpc.client.MultiCall") object. Calling the object itself causes all stored calls to be transmitted as a single `system.multicall` request. The result of this call is a [generator](https://docs.python.org/3/glossary.html#term-generator); iterating over this generator yields the individual results.
+A usage example of this class follows. The server code:
+```
+fromxmlrpc.serverimport SimpleXMLRPCServer
+defadd(x, y):
+  return x + y
+defsubtract(x, y):
+  return x - y
+defmultiply(x, y):
+  return x * y
+defdivide(x, y):
+  return x // y
+# A simple server with simple arithmetic functions
+server = SimpleXMLRPCServer(("localhost", 8000))
+print("Listening on port 8000...")
+server.register_multicall_functions()
+server.register_function(add, 'add')
+server.register_function(subtract, 'subtract')
+server.register_function(multiply, 'multiply')
+server.register_function(divide, 'divide')
+server.serve_forever()
+
+```
+
+The client code for the preceding server:
+```
+importxmlrpc.client
+proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
+multicall = xmlrpc.client.MultiCall(proxy)
+multicall.add(7, 3)
+multicall.subtract(7, 3)
+multicall.multiply(7, 3)
+multicall.divide(7, 3)
+result = multicall()
+print("7+3=%d, 7-3=%d, 7*3=%d, 7//3=%d" % tuple(result))

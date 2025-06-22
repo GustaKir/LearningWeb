@@ -1,0 +1,35 @@
+Title: Code Object Flags in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: The `co_flags` attribute of a code object is an integer that encodes several flags relevant to the Python interpreter. Specific bits represent different features, such as accepting arbitrary positional arguments (*arguments), accepting arbitrary keyword arguments (**keywords), and identifying a generator function. Future feature declarations also utilize these flags.
+---
+
+codeobject.co_flags[¶](https://docs.python.org/3/reference/datamodel.html#codeobject.co_flags "Link to this definition")
+| An [`integer`](https://docs.python.org/3/library/functions.html#int "int") encoding a number of flags for the interpreter.  
+The following flag bits are defined for [`co_flags`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_flags "codeobject.co_flags"): bit `0x04` is set if the function uses the `*arguments` syntax to accept an arbitrary number of positional arguments; bit `0x08` is set if the function uses the `**keywords` syntax to accept arbitrary keyword arguments; bit `0x20` is set if the function is a generator. See [Code Objects Bit Flags](https://docs.python.org/3/library/inspect.html#inspect-module-co-flags) for details on the semantics of each flags that might be present.
+Future feature declarations (for example, `from __future__ import division`) also use bits in [`co_flags`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_flags "codeobject.co_flags") to indicate whether a code object was compiled with a particular feature enabled. See [`compiler_flag`](https://docs.python.org/3/library/__future__.html#future__._Feature.compiler_flag "__future__._Feature.compiler_flag").
+Other bits in [`co_flags`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_flags "codeobject.co_flags") are reserved for internal use.
+If a code object represents a function, the first item in [`co_consts`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_consts "codeobject.co_consts") is the documentation string of the function, or `None` if undefined.
+##### 3.2.13.1.2. Methods on code objects[¶](https://docs.python.org/3/reference/datamodel.html#methods-on-code-objects "Link to this heading") 
+
+codeobject.co_positions()[¶](https://docs.python.org/3/reference/datamodel.html#codeobject.co_positions "Link to this definition")
+    
+Returns an iterable over the source code positions of each [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) instruction in the code object.
+The iterator returns [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple")s containing the `(start_line, end_line, start_column, end_column)`. The _i-th_ tuple corresponds to the position of the source code that compiled to the _i-th_ code unit. Column information is 0-indexed utf-8 byte offsets on the given source line.
+This positional information can be missing. A non-exhaustive lists of cases where this may happen:
+  * Running the interpreter with [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) `no_debug_ranges`.
+  * Loading a pyc file compiled while using [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) `no_debug_ranges`.
+  * Position tuples corresponding to artificial instructions.
+  * Line and column numbers that can’t be represented due to implementation specific limitations.
+
+
+When this occurs, some or all of the tuple elements can be [`None`](https://docs.python.org/3/library/constants.html#None "None").
+Added in version 3.11.
+Note
+This feature requires storing column positions in code objects which may result in a small increase of disk usage of compiled Python files or interpreter memory usage. To avoid storing the extra information and/or deactivate printing the extra traceback information, the [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) `no_debug_ranges` command line flag or the [`PYTHONNODEBUGRANGES`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONNODEBUGRANGES) environment variable can be used. 
+
+codeobject.co_lines()[¶](https://docs.python.org/3/reference/datamodel.html#codeobject.co_lines "Link to this definition")
+    
+Returns an iterator that yields information about successive ranges of [bytecode](https://docs.python.org/3/glossary.html#term-bytecode)s. Each item yielded is a `(start, end, lineno)` [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple"):
+  * `start` (an [`int`](https://docs.python.org/3/library/functions.html#int "int")) represents the offset (inclusive) of the start of the [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) range
+  * `end` (an [`int`](https://docs.python.org/3/library/functions.html#int "int")) represents the offset (exclusive) of the end of the [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) range
+  * `lineno` is an [`int`](https://docs.python.org/3/library/functions.html#int "int") representing the line number of the [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) range, or `None` if the bytecodes in the given range have no line number

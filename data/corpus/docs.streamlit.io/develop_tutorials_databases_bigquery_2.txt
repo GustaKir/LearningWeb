@@ -1,0 +1,27 @@
+Title: Managing App Secrets in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/databases/bigquery
+Summary: This section emphasizes the importance of not committing the `secrets.toml` file to GitHub and guides users on how to securely upload their app secrets to Streamlit Community Cloud. Users are instructed to access the app dashboard to edit and input their secrets.
+---
+
+://www.googleapis.com/oauth2/v1/certs" client_x509_cert_url = "xxx" `
+_priority_high_
+#### Important
+Add this file to `.gitignore` and don't commit it to your GitHub repo!
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#copy-your-app-secrets-to-the-cloud)Copy your app secrets to the cloud
+As the `secrets.toml` file above is not committed to GitHub, you need to pass its content to your deployed app (on Streamlit Community Cloud) separately. Go to the [app dashboard](https://share.streamlit.io/) and in the app's dropdown menu, click on **Edit Secrets**. Copy the content of `secrets.toml` into the text area. More information is available at [Secrets management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management).
+![Secrets manager screenshot](https://docs.streamlit.io/images/databases/edit-secrets.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#add-google-cloud-bigquery-to-your-requirements-file)Add google-cloud-bigquery to your requirements file
+Add the [google-cloud-bigquery](https://googleapis.dev/python/bigquery/latest/index.html) package to your `requirements.txt` file, preferably pinning its version (replace `x.x.x` with the version want installed):
+`# requirements.txt google-cloud-bigquery==x.x.x `
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#write-your-streamlit-app)Write your Streamlit app
+Copy the code below to your Streamlit app and run it. Make sure to adapt the query if you don't use the sample table.
+`# streamlit_app.py import streamlit as st from google.oauth2 import service_account from google.cloud import bigquery # Create API client. credentials = service_account.Credentials.from_service_account_info(   st.secrets["gcp_service_account"] ) client = bigquery.Client(credentials=credentials) # Perform query. # Uses st.cache_data to only rerun when the query changes or after 10 min. @st.cache_data(ttl=600) def run_query(query):   query_job = client.query(query)   rows_raw = query_job.result() # Convert to list of dicts. Required for st.cache_data to hash the return value.   rows = [dict(row) for row in rows_raw] return rows rows = run_query("SELECT word FROM `bigquery-public-data.samples.shakespeare` LIMIT 10") # Print results. st.write("Some wise words from Shakespeare:") for row in rows:   st.write("✍️ " + row['word']) `
+See `st.cache_data` above? Without it, Streamlit would run the query every time the app reruns (e.g. on a widget interaction). With `st.cache_data`, it only runs when the query changes or after 10 minutes (that's what `ttl` is for). Watch out: If your database updates more frequently, you should adapt `ttl` or remove caching so viewers always see the latest data. Learn more in [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+Alternatively, you can use pandas to read from BigQuery right into a dataframe! Follow all the above steps, install the [pandas-gbq](https://pandas-gbq.readthedocs.io/en/latest/index.html) library (don't forget to add it to `requirements.txt`!), and call `pandas.read_gbq(query, credentials=credentials)`. More info [in the pandas docs](https://pandas.pydata.org/docs/reference/api/pandas.read_gbq.html).
+If everything worked out (and you used the sample table), your app should look like this:
+![Final app screenshot](https://docs.streamlit.io/images/databases/big-query-10.png)[Previous: AWS S3](https://docs.streamlit.io/develop/tutorials/databases/aws-s3)[Next: Firestore](https://blog.streamlit.io/streamlit-firestore/) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

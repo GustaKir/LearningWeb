@@ -1,0 +1,27 @@
+Title: Python 3 Release Changelog - Updates and Fixes
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This document summarizes several patches and improvements, including better error handling for invalid UTF-8 multi-line strings, enhancements to tracemalloc functionality, resolution of compiler warnings during builds with `--enable-pystats`, correct handling of SyntaxError for exception groups, removal of undefined behavior with NULL checks, and fixes for potential NULL pointer dereference issues.
+---
+
+Patch by Kumar Aditya.
+  * [gh-96611](https://github.com/python/cpython/issues/96611): When loading a file with invalid UTF-8 inside a multi-line string, a correct SyntaxError is emitted.
+  * [gh-96612](https://github.com/python/cpython/issues/96612): Make sure that incomplete frames do not show up in tracemalloc traces.
+  * [gh-90230](https://github.com/python/cpython/issues/90230): Fix compiler warnings and test failures when building with `--enable-pystats`.
+  * [gh-96587](https://github.com/python/cpython/issues/96587): Correctly raise `SyntaxError` on exception groups ([**PEP 654**](https://peps.python.org/pep-0654/)) on python versions prior to 3.11
+  * [gh-96569](https://github.com/python/cpython/issues/96569): Remove two cases of undefined behavior, by adding NULL checks.
+  * [gh-96582](https://github.com/python/cpython/issues/96582): Fix possible `NULL` pointer dereference in `_PyThread_CurrentFrames`. Patch by Kumar Aditya.
+  * [gh-91079](https://github.com/python/cpython/issues/91079): Separate Python recursion checking from C recursion checking which reduces the chance of C stack overflow and allows the recursion limit to be increased safely.
+  * [gh-93911](https://github.com/python/cpython/issues/93911): Fix an issue that could prevent [`LOAD_ATTR`](https://docs.python.org/3/library/dis.html#opcode-LOAD_ATTR) from specializing properly when accessing properties.
+  * [gh-96348](https://github.com/python/cpython/issues/96348): Emit a DeprecationWarning when [`throw()`](https://docs.python.org/3/reference/expressions.html#generator.throw "generator.throw"), [`throw()`](https://docs.python.org/3/reference/datamodel.html#coroutine.throw "coroutine.throw") or [`athrow()`](https://docs.python.org/3/reference/expressions.html#agen.athrow "agen.athrow") are called with more than one argument.
+  * [gh-95196](https://github.com/python/cpython/issues/95196): Disable incorrect pickling of the C implemented classmethod descriptors.
+  * [gh-96364](https://github.com/python/cpython/issues/96364): Fix text signatures of `list.__getitem__` and `dict.__getitem__`.
+  * [gh-96352](https://github.com/python/cpython/issues/96352): Fix [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") missing `name` and `obj` attributes in [`object.__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__"). Patch by Philip Georgi.
+  * [gh-93554](https://github.com/python/cpython/issues/93554): Change the jump opcodes so that all conditional jumps are forward jumps. Backward jumps are converted by the assembler into a conditional forward jump whose target is the fallthrough block (and with a reversed condition), followed by an unconditional backward jump. For example:
+`POP_JUMP_IF_TRUE BACKWARD_TARGET` becomes `POP_JUMP_IF_FALSE NEXT_BLOCK; JUMP BACKWARD_TARGET`.
+All the directed conditional jump opcodes were removed: `POP_JUMP_FORWARD_IF_TRUE`, `POP_JUMP_BACKWARD_IF_TRUE`, `POP_JUMP_FORWARD_IF_FALSE`, `POP_JUMP_BACKWARD_IF_FALSE`, `POP_JUMP_FORWARD_IF_NONE`, `POP_JUMP_BACKWARD_IF_NONE`, `POP_JUMP_FORWARD_IF_NOT_NONE`, `POP_JUMP_BACKWARD_IF_NOT_NONE`.
+The corresponding opcodes without direction are no longer pseudo-instructions, and they implement the forward conditional jumps.
+  * [gh-96268](https://github.com/python/cpython/issues/96268): Loading a file with invalid UTF-8 will now report the broken character at the correct location.
+  * [gh-96237](https://github.com/python/cpython/issues/96237): The internal field `_PyInterpreterFrame.f_func` is renamed to `_PyInterpreterFrame.f_funcobj` and may be any object. The `f_globals` and `f_builtin` fields may hold junk values.
+It is safest to treat the `_PyInterpreterFrame` struct as opaque.
+  * [gh-96187](https://github.com/python/cpython/issues/96187): Fixed a bug that caused `_PyCode_GetExtra` to return garbage for negative indexes. Patch by Pablo Galindo
+  * [gh-96143](https://github.com/python/cpython/issues/96143): Add a new `-X perf` Python command line option as well as [`sys.activate_stack_trampoline()`](https://docs.python.org/3/library/sys.html#sys.activate_stack_trampoline "sys.activate_stack_trampoline") and [`sys.deactivate_stack_trampoline()`](https://docs.python.org/3/library/sys.html#sys.deactivate_stack_trampoline "sys.deactivate_stack_trampoline") function in the [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module that allows to set/unset the interpreter in a way that the Linux `perf` profiler can detect Python calls. The new [`sys.is_stack_trampoline_active()`](https://docs.python.org/3/library/sys.html#sys.is_stack_trampoline_active "sys.is_stack_trampoline_active") function allows to query the state of the perf trampoline. Design by Pablo Galindo. Patch by Pablo Galindo and Christian Heimes with contributions from Gregory P.

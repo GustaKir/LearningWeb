@@ -1,0 +1,44 @@
+Title: PyType_Spec.basicsize Explanation
+URL: https://docs.python.org/3/c-api/type.html
+Summary: The 'basicsize' attribute specifies the memory size for Python instances: a positive value sets the size in bytes, zero indicates inheritance of the superclass size, and a negative value specifies additional memory required beyond the superclass, with Python handling padding for alignment.
+---
+
+intbasicsize[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Spec.basicsize "Link to this definition")
+    
+If positive, specifies the size of the instance in bytes. It is used to set [`PyTypeObject.tp_basicsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_basicsize "PyTypeObject.tp_basicsize").
+If zero, specifies that [`tp_basicsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_basicsize "PyTypeObject.tp_basicsize") should be inherited.
+If negative, the absolute value specifies how much space instances of the class need _in addition_ to the superclass. Use [`PyObject_GetTypeData()`](https://docs.python.org/3/c-api/object.html#c.PyObject_GetTypeData "PyObject_GetTypeData") to get a pointer to subclass-specific memory reserved this way. For negative `basicsize`, Python will insert padding when needed to meet [`tp_basicsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_basicsize "PyTypeObject.tp_basicsize")’s alignment requirements.
+Changed in version 3.12: Previously, this field could not be negative. 
+
+intitemsize[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Spec.itemsize "Link to this definition")
+    
+Size of one element of a variable-size type, in bytes. Used to set [`PyTypeObject.tp_itemsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_itemsize "PyTypeObject.tp_itemsize"). See `tp_itemsize` documentation for caveats.
+If zero, [`tp_itemsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_itemsize "PyTypeObject.tp_itemsize") is inherited. Extending arbitrary variable-sized classes is dangerous, since some types use a fixed offset for variable-sized memory, which can then overlap fixed-sized memory used by a subclass. To help prevent mistakes, inheriting `itemsize` is only possible in the following situations:
+  * The base is not variable-sized (its [`tp_itemsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_itemsize "PyTypeObject.tp_itemsize")).
+  * The requested [`PyType_Spec.basicsize`](https://docs.python.org/3/c-api/type.html#c.PyType_Spec.basicsize "PyType_Spec.basicsize") is positive, suggesting that the memory layout of the base class is known.
+  * The requested [`PyType_Spec.basicsize`](https://docs.python.org/3/c-api/type.html#c.PyType_Spec.basicsize "PyType_Spec.basicsize") is zero, suggesting that the subclass does not access the instance’s memory directly.
+  * With the [`Py_TPFLAGS_ITEMS_AT_END`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_ITEMS_AT_END "Py_TPFLAGS_ITEMS_AT_END") flag.
+
+
+
+unsignedintflags[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Spec.flags "Link to this definition")
+    
+Type flags, used to set [`PyTypeObject.tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags").
+If the `Py_TPFLAGS_HEAPTYPE` flag is not set, [`PyType_FromSpecWithBases()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromSpecWithBases "PyType_FromSpecWithBases") sets it automatically. 
+
+[PyType_Slot](https://docs.python.org/3/c-api/type.html#c.PyType_Slot "PyType_Slot")*slots[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Spec.slots "Link to this definition")
+    
+Array of [`PyType_Slot`](https://docs.python.org/3/c-api/type.html#c.PyType_Slot "PyType_Slot") structures. Terminated by the special slot value `{0, NULL}`.
+Each slot ID should be specified at most once. 
+
+typePyType_Slot[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Slot "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) (including all members)._
+Structure defining optional functionality of a type, containing a slot ID and a value pointer. 
+
+intslot[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Slot.slot "Link to this definition")
+    
+A slot ID.
+Slot IDs are named like the field names of the structures [`PyTypeObject`](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject"), [`PyNumberMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods "PyNumberMethods"), [`PySequenceMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PySequenceMethods "PySequenceMethods"), [`PyMappingMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyMappingMethods "PyMappingMethods") and [`PyAsyncMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods "PyAsyncMethods") with an added `Py_` prefix. For example, use:
+  * `Py_tp_dealloc` to set [`PyTypeObject.tp_dealloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dealloc "PyTypeObject.tp_dealloc")
+  * `Py_nb_add` to set [`PyNumberMethods.nb_add`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods.nb_add "PyNumberMethods.nb_add")
+  * `Py_sq_length` to set [`PySequenceMethods.sq_length`](https://docs.python.org/3/c-api/typeobj.html#c.PySequenceMethods.sq_length "PySequenceMethods.sq_length")

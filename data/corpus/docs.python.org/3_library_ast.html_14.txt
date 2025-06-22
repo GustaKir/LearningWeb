@@ -1,0 +1,154 @@
+Title: Abstract Syntax Tree (AST) in Python
+URL: https://docs.python.org/3/library/ast.html
+Summary: This section demonstrates the use of the 'ast' module by parsing a match statement example in Python. It highlights the structure of the generated AST, including elements such as 'Match', 'MatchSequence', and 'MatchClass', along with their components like patterns and guards.
+---
+
+```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case [x] if x>0:
+...     ...
+...   case tuple():
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchSequence(
+            patterns=[
+              MatchAs(name='x')]),
+          guard=Compare(
+            left=Name(id='x', ctx=Load()),
+            ops=[
+              Gt()],
+            comparators=[
+              Constant(value=0)]),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))]),
+        match_case(
+          pattern=MatchClass(
+            cls=Name(id='tuple', ctx=Load())),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])
+
+```
+
+Added in version 3.10. 
+
+_class_ ast.MatchValue(_value_)[¶](https://docs.python.org/3/library/ast.html#ast.MatchValue "Link to this definition")
+    
+A match literal or value pattern that compares by equality. `value` is an expression node. Permitted value nodes are restricted as described in the match statement documentation. This pattern succeeds if the match subject is equal to the evaluated value.
+>>>```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case "Relevant":
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchValue(
+            value=Constant(value='Relevant')),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])
+
+```
+
+Added in version 3.10. 
+
+_class_ ast.MatchSingleton(_value_)[¶](https://docs.python.org/3/library/ast.html#ast.MatchSingleton "Link to this definition")
+    
+A match literal pattern that compares by identity. `value` is the singleton to be compared against: `None`, `True`, or `False`. This pattern succeeds if the match subject is the given constant.
+>>>```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case None:
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchSingleton(value=None),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])
+
+```
+
+Added in version 3.10. 
+
+_class_ ast.MatchSequence(_patterns_)[¶](https://docs.python.org/3/library/ast.html#ast.MatchSequence "Link to this definition")
+    
+A match sequence pattern. `patterns` contains the patterns to be matched against the subject elements if the subject is a sequence. Matches a variable length sequence if one of the subpatterns is a `MatchStar` node, otherwise matches a fixed length sequence.
+>>>```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case [1, 2]:
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchSequence(
+            patterns=[
+              MatchValue(
+                value=Constant(value=1)),
+              MatchValue(
+                value=Constant(value=2))]),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])
+
+```
+
+Added in version 3.10. 
+
+_class_ ast.MatchStar(_name_)[¶](https://docs.python.org/3/library/ast.html#ast.MatchStar "Link to this definition")
+    
+Matches the rest of the sequence in a variable length match sequence pattern. If `name` is not `None`, a list containing the remaining sequence elements is bound to that name if the overall sequence pattern is successful.
+>>>```
+>>> print(ast.dump(ast.parse("""
+... match x:
+...   case [1, 2, *rest]:
+...     ...
+...   case [*_]:
+...     ...
+... """), indent=4))
+Module(
+  body=[
+    Match(
+      subject=Name(id='x', ctx=Load()),
+      cases=[
+        match_case(
+          pattern=MatchSequence(
+            patterns=[
+              MatchValue(
+                value=Constant(value=1)),
+              MatchValue(
+                value=Constant(value=2)),
+              MatchStar(name='rest')]),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))]),
+        match_case(
+          pattern=MatchSequence(
+            patterns=[
+              MatchStar()]),
+          body=[
+            Expr(
+              value=Constant(value=Ellipsis))])])])

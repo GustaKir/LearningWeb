@@ -1,0 +1,43 @@
+Title: Scheduling Delayed Callbacks in asyncio
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This section explains how to use partial objects for scheduling callbacks in Python's asyncio event loop. It details the `loop.call_later` method, which allows for the scheduling of callback functions to be executed after a specified delay using monotonic clocks.
+---
+
+```
+
+Using partial objects is usually more convenient than using lambdas, as asyncio can render partial objects better in debug and error messages.
+### [Scheduling delayed callbacks](https://docs.python.org/3/library/asyncio-eventloop.html#id3)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#scheduling-delayed-callbacks "Link to this heading")
+Event loop provides mechanisms to schedule callback functions to be called at some point in the future. Event loop uses monotonic clocks to track time. 
+
+loop.call_later(_delay_ , _callback_ , _* args_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_later "Link to this definition")
+    
+Schedule _callback_ to be called after the given _delay_ number of seconds (can be either an int or a float).
+An instance of [`asyncio.TimerHandle`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.TimerHandle "asyncio.TimerHandle") is returned which can be used to cancel the callback.
+_callback_ will be called exactly once. If two callbacks are scheduled for exactly the same time, the order in which they are called is undefined.
+The optional positional _args_ will be passed to the callback when it is called. If you want the callback to be called with keyword arguments use [`functools.partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial").
+An optional keyword-only _context_ argument allows specifying a custom [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") for the _callback_ to run in. The current context is used when no _context_ is provided.
+Changed in version 3.7: The _context_ keyword-only parameter was added. See [**PEP 567**](https://peps.python.org/pep-0567/) for more details.
+Changed in version 3.8: In Python 3.7 and earlier with the default event loop implementation, the _delay_ could not exceed one day. This has been fixed in Python 3.8. 
+
+loop.call_at(_when_ , _callback_ , _* args_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_at "Link to this definition")
+    
+Schedule _callback_ to be called at the given absolute timestamp _when_ (an int or a float), using the same time reference as [`loop.time()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.time "asyncio.loop.time").
+This method’s behavior is the same as [`call_later()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_later "asyncio.loop.call_later").
+An instance of [`asyncio.TimerHandle`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.TimerHandle "asyncio.TimerHandle") is returned which can be used to cancel the callback.
+Changed in version 3.7: The _context_ keyword-only parameter was added. See [**PEP 567**](https://peps.python.org/pep-0567/) for more details.
+Changed in version 3.8: In Python 3.7 and earlier with the default event loop implementation, the difference between _when_ and the current time could not exceed one day. This has been fixed in Python 3.8. 
+
+loop.time()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.time "Link to this definition")
+    
+Return the current time, as a [`float`](https://docs.python.org/3/library/functions.html#float "float") value, according to the event loop’s internal monotonic clock.
+Note
+Changed in version 3.8: In Python 3.7 and earlier timeouts (relative _delay_ or absolute _when_) should not exceed one day. This has been fixed in Python 3.8.
+See also
+The [`asyncio.sleep()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.sleep "asyncio.sleep") function.
+### [Creating Futures and Tasks](https://docs.python.org/3/library/asyncio-eventloop.html#id4)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#creating-futures-and-tasks "Link to this heading") 
+
+loop.create_future()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_future "Link to this definition")
+    
+Create an [`asyncio.Future`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future") object attached to the event loop.
+This is the preferred way to create Futures in asyncio. This lets third-party event loops provide alternative implementations of the Future object (with better performance or instrumentation).
+Added in version 3.5.2.

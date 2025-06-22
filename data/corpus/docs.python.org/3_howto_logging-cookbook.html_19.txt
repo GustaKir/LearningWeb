@@ -1,0 +1,76 @@
+Title: Python Logging Cookbook: Basic Usage
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This chunk demonstrates the basic setup and use of the Python logging module. It explains how to create a logger, set its level to DEBUG, and format log messages. Two different formatting styles are shown, and examples of logging DEBUG and CRITICAL messages are provided.
+---
+
+```
+>>> importlogging
+>>> root = logging.getLogger()
+>>> root.setLevel(logging.DEBUG)
+>>> handler = logging.StreamHandler()
+>>> bf = logging.Formatter('{asctime}{name}{levelname:8s}{message}',
+...             style='{')
+>>> handler.setFormatter(bf)
+>>> root.addHandler(handler)
+>>> logger = logging.getLogger('foo.bar')
+>>> logger.debug('This is a DEBUG message')
+2010-10-28 15:11:55,341 foo.bar DEBUG  This is a DEBUG message
+>>> logger.critical('This is a CRITICAL message')
+2010-10-28 15:12:11,526 foo.bar CRITICAL This is a CRITICAL message
+>>> df = logging.Formatter('$asctime $name ${levelname} $message',
+...             style='$')
+>>> handler.setFormatter(df)
+>>> logger.debug('This is a DEBUG message')
+2010-10-28 15:13:06,924 foo.bar DEBUG This is a DEBUG message
+>>> logger.critical('This is a CRITICAL message')
+2010-10-28 15:13:11,494 foo.bar CRITICAL This is a CRITICAL message
+>>>
+
+```
+
+Note that the formatting of logging messages for final output to logs is completely independent of how an individual logging message is constructed. That can still use %-formatting, as shown here:
+>>>```
+>>> logger.error('This is an%s%s%s', 'other,', 'ERROR,', 'message')
+2010-10-28 15:19:29,833 foo.bar ERROR This is another, ERROR, message
+>>>
+
+```
+
+Logging calls (`logger.debug()`, `logger.info()` etc.) only take positional parameters for the actual logging message itself, with keyword parameters used only for determining options for how to handle the actual logging call (e.g. the `exc_info` keyword parameter to indicate that traceback information should be logged, or the `extra` keyword parameter to indicate additional contextual information to be added to the log). So you cannot directly make logging calls using [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") or [`string.Template`](https://docs.python.org/3/library/string.html#string.Template "string.Template") syntax, because internally the logging package uses %-formatting to merge the format string and the variable arguments. There would be no changing this while preserving backward compatibility, since all logging calls which are out there in existing code will be using %-format strings.
+There is, however, a way that you can use {}- and $- formatting to construct your individual log messages. Recall that for a message you can use an arbitrary object as a message format string, and that the logging package will call `str()` on that object to get the actual format string. Consider the following two classes:
+```
+classBraceMessage:
+  def__init__(self, fmt, /, *args, **kwargs):
+    self.fmt = fmt
+    self.args = args
+    self.kwargs = kwargs
+  def__str__(self):
+    return self.fmt.format(*self.args, **self.kwargs)
+classDollarMessage:
+  def__init__(self, fmt, /, **kwargs):
+    self.fmt = fmt
+    self.kwargs = kwargs
+  def__str__(self):
+    fromstringimport Template
+    return Template(self.fmt).substitute(**self.kwargs)
+
+```
+
+Either of these can be used in place of a format string, to allow {}- or $-formatting to be used to build the actual “message” part which appears in the formatted log output in place of “%(message)s” or “{message}” or “$message”. It’s a little unwieldy to use the class names whenever you want to log something, but it’s quite palatable if you use an alias such as __ (double underscore — not to be confused with _, the single underscore used as a synonym/alias for [`gettext.gettext()`](https://docs.python.org/3/library/gettext.html#gettext.gettext "gettext.gettext") or its brethren).
+The above classes are not included in Python, though they’re easy enough to copy and paste into your own code. They can be used as follows (assuming that they’re declared in a module called `wherever`):
+>>>```
+>>> fromwhereverimport BraceMessage as __
+>>> print(__('Message with {0}{name}', 2, name='placeholders'))
+Message with 2 placeholders
+>>> classPoint: pass
+...
+>>> p = Point()
+>>> p.x = 0.5
+>>> p.y = 0.5
+>>> print(__('Message with coordinates: ({point.x:.2f}, {point.y:.2f})',
+...    point=p))
+Message with coordinates: (0.50, 0.50)
+>>> fromwhereverimport DollarMessage as __
+>>> print(__('Message with $num $what', num=2, what='placeholders'))
+Message with 2 placeholders
+>>>

@@ -1,0 +1,22 @@
+Title: Interrupting the Widget Clean-Up Process in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/architecture/widget-behavior
+Summary: To retain widget information across pages in Streamlit, you can manually save it to `st.session_state` using the format `st.session_state.my_key = st.session_state.my_key`. This prevents the clean-up process from deleting or overwriting the key-value pair when navigating away from the widget.
+---
+
+The first method was shown above in [Save widget values in Session State to preserve them between pages](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#save-widget-values-in-session-state-to-preserve-them-between-pages)
+### [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#interrupting-the-widget-clean-up-process)Interrupting the widget clean-up process
+To retain information for a widget with `key="my_key"`, just add this to the top of every page:
+`st.session_state.my_key = st.session_state.my_key `
+When you manually save data to a key in `st.session_state`, it will become detached from any widget as far as the clean-up process is concerned. If you navigate away from a widget with some key `"my_key"` and save data to `st.session_state.my_key` on the new page, you will interrupt the widget clean-up process and prevent the key-value pair from being deleted or overwritten if another widget with the same key exists.
+### [](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior#retain-statefulness-when-changing-a-widgets-parameters)Retain statefulness when changing a widget's parameters
+Here is a solution to our earlier example of changing a slider's min and max values. This solution interrupts the clean-up process as described above.
+`import streamlit as st # Set default value if "a" not in st.session_state:   st.session_state.a = 5 cols = st.columns(2) minimum = cols[0].number_input("Min", 1, 5, key="min") maximum = cols[1].number_input("Max", 6, 10, 10, key="max") def update_value(): # Helper function to ensure consistency between widget parameters and value   st.session_state.a = min(st.session_state.a, maximum)   st.session_state.a = max(st.session_state.a, minimum) # Validate the slider value before rendering update_value() st.slider("A", minimum, maximum, key="a") `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-guide-widgets-change-parameters-solution.streamlit.app/?utm_medium=oembed)
+The `update_value()` helper function is actually doing two things. On the surface, it's making sure there are no inconsistent changes to the parameters values as described. Importantly, it's also interrupting the widget clean-up process. When the min or max value of the widget changes, Streamlit sees it as a new widget on rerun. Without saving a value to `st.session_state.a`, the value would be thrown out and replaced by the "new" widget's default value.
+[Previous: Fragments](https://docs.streamlit.io/develop/concepts/architecture/fragments)[Next: Multipage apps](https://docs.streamlit.io/develop/concepts/multipage-apps) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

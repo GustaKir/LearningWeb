@@ -1,0 +1,28 @@
+Title: Clock IDs in the Python OS Library
+URL: https://docs.python.org/3/library/os.html
+Summary: This section explains the behavior of different clock IDs in the Python OS library. The `time.CLOCK_REALTIME` uses a settable system-wide real-time clock; changing the system clock requires timer updates. `time.CLOCK_MONOTONIC` employs a non-settable, always increasing clock that remains unaffected by system clock changes. `time.CLOCK_BOOTTIME` behaves like `CLOCK_MONOTONIC` but also accounts for time during system suspensions.
+---
+
+If _clockid_ is [`time.CLOCK_REALTIME`](https://docs.python.org/3/library/time.html#time.CLOCK_REALTIME "time.CLOCK_REALTIME"), a settable system-wide real-time clock is used. If system clock is changed, timer setting need to be updated. To cancel timer when system clock is changed, see [`TFD_TIMER_CANCEL_ON_SET`](https://docs.python.org/3/library/os.html#os.TFD_TIMER_CANCEL_ON_SET "os.TFD_TIMER_CANCEL_ON_SET").
+If _clockid_ is [`time.CLOCK_MONOTONIC`](https://docs.python.org/3/library/time.html#time.CLOCK_MONOTONIC "time.CLOCK_MONOTONIC"), a non-settable monotonically increasing clock is used. Even if the system clock is changed, the timer setting will not be affected.
+If _clockid_ is [`time.CLOCK_BOOTTIME`](https://docs.python.org/3/library/time.html#time.CLOCK_BOOTTIME "time.CLOCK_BOOTTIME"), same as [`time.CLOCK_MONOTONIC`](https://docs.python.org/3/library/time.html#time.CLOCK_MONOTONIC "time.CLOCK_MONOTONIC") except it includes any time that the system is suspended.
+The file descriptor’s behaviour can be modified by specifying a _flags_ value. Any of the following variables may used, combined using bitwise OR (the `|` operator):
+  * [`TFD_NONBLOCK`](https://docs.python.org/3/library/os.html#os.TFD_NONBLOCK "os.TFD_NONBLOCK")
+  * [`TFD_CLOEXEC`](https://docs.python.org/3/library/os.html#os.TFD_CLOEXEC "os.TFD_CLOEXEC")
+
+
+If [`TFD_NONBLOCK`](https://docs.python.org/3/library/os.html#os.TFD_NONBLOCK "os.TFD_NONBLOCK") is not set as a flag, [`read()`](https://docs.python.org/3/library/os.html#os.read "os.read") blocks until the timer expires. If it is set as a flag, [`read()`](https://docs.python.org/3/library/os.html#os.read "os.read") doesn’t block, but If there hasn’t been an expiration since the last call to read, [`read()`](https://docs.python.org/3/library/os.html#os.read "os.read") raises [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") with `errno` is set to [`errno.EAGAIN`](https://docs.python.org/3/library/errno.html#errno.EAGAIN "errno.EAGAIN").
+[`TFD_CLOEXEC`](https://docs.python.org/3/library/os.html#os.TFD_CLOEXEC "os.TFD_CLOEXEC") is always set by Python automatically.
+The file descriptor must be closed with [`os.close()`](https://docs.python.org/3/library/os.html#os.close "os.close") when it is no longer needed, or else the file descriptor will be leaked.
+See also
+The _[timerfd_create(2)](https://manpages.debian.org/timerfd_create\(2\))_ man page.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Linux >= 2.6.27 with glibc >= 2.8
+Added in version 3.13. 
+
+os.timerfd_settime(_fd_ , _/_ , _*_ , _flags =flags_, _initial =0.0_, _interval =0.0_)[¶](https://docs.python.org/3/library/os.html#os.timerfd_settime "Link to this definition")
+    
+Alter a timer file descriptor’s internal timer. This function operates the same interval timer as [`timerfd_settime_ns()`](https://docs.python.org/3/library/os.html#os.timerfd_settime_ns "os.timerfd_settime_ns").
+_fd_ must be a valid timer file descriptor.
+The timer’s behaviour can be modified by specifying a _flags_ value. Any of the following variables may used, combined using bitwise OR (the `|` operator):
+  * [`TFD_TIMER_ABSTIME`](https://docs.python.org/3/library/os.html#os.TFD_TIMER_ABSTIME "os.TFD_TIMER_ABSTIME")
+  * [`TFD_TIMER_CANCEL_ON_SET`](https://docs.python.org/3/library/os.html#os.TFD_TIMER_CANCEL_ON_SET "os.TFD_TIMER_CANCEL_ON_SET")

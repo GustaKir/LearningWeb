@@ -1,0 +1,100 @@
+Title: Using IntFlag in Python Enums
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This chunk explains the behavior and usage of the `IntFlag` Enum in Python, showing examples of combining `IntFlag` members with integers, the effect of the negation operator, and how to iterate over `IntFlag` members. Key points include that members can lose `IntFlag` membership when combined with integers, and the negation operator always returns a positive `IntFlag` member.
+---
+
+```
+>>> Perm.R & Perm.X
+<Perm: 0>
+>>> bool(Perm.R & Perm.X)
+False
+
+```
+
+Because [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") members are also subclasses of [`int`](https://docs.python.org/3/library/functions.html#int "int") they can be combined with them (but may lose [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") membership:
+>>>```
+>>> Perm.X | 4
+<Perm.R|X: 5>
+>>> Perm.X + 8
+9
+
+```
+
+Note
+The negation operator, `~`, always returns an [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") member with a positive value:
+>>>```
+>>> (~Perm.X).value == (Perm.R|Perm.W).value == 6
+True
+
+```
+
+[`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") members can also be iterated over:
+>>>```
+>>> list(RW)
+[<Perm.R: 4>, <Perm.W: 2>]
+
+```
+
+Added in version 3.11.
+### Flag[¶](https://docs.python.org/3/howto/enum.html#flag "Link to this heading")
+The last variation is [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag"). Like [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag"), [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") members can be combined using the bitwise operators (&, |, ^, ~). Unlike [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag"), they cannot be combined with, nor compared against, any other [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") enumeration, nor [`int`](https://docs.python.org/3/library/functions.html#int "int"). While it is possible to specify the values directly it is recommended to use [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") as the value and let [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") select an appropriate value.
+Added in version 3.6.
+Like [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag"), if a combination of [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") members results in no flags being set, the boolean evaluation is [`False`](https://docs.python.org/3/library/constants.html#False "False"):
+>>>```
+>>> fromenumimport Flag, auto
+>>> classColor(Flag):
+...   RED = auto()
+...   BLUE = auto()
+...   GREEN = auto()
+...
+>>> Color.RED & Color.GREEN
+<Color: 0>
+>>> bool(Color.RED & Color.GREEN)
+False
+
+```
+
+Individual flags should have values that are powers of two (1, 2, 4, 8, …), while combinations of flags will not:
+>>>```
+>>> classColor(Flag):
+...   RED = auto()
+...   BLUE = auto()
+...   GREEN = auto()
+...   WHITE = RED | BLUE | GREEN
+...
+>>> Color.WHITE
+<Color.WHITE: 7>
+
+```
+
+Giving a name to the “no flags set” condition does not change its boolean value:
+>>>```
+>>> classColor(Flag):
+...   BLACK = 0
+...   RED = auto()
+...   BLUE = auto()
+...   GREEN = auto()
+...
+>>> Color.BLACK
+<Color.BLACK: 0>
+>>> bool(Color.BLACK)
+False
+
+```
+
+[`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") members can also be iterated over:
+>>>```
+>>> purple = Color.RED | Color.BLUE
+>>> list(purple)
+[<Color.RED: 1>, <Color.BLUE: 2>]
+
+```
+
+Added in version 3.11.
+Note
+For the majority of new code, [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") and [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") are strongly recommended, since [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") and [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") break some semantic promises of an enumeration (by being comparable to integers, and thus by transitivity to other unrelated enumerations). [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") and [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") should be used only in cases where [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") and [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") will not do; for example, when integer constants are replaced with enumerations, or for interoperability with other systems.
+### Others[¶](https://docs.python.org/3/howto/enum.html#others "Link to this heading")
+While [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") is part of the [`enum`](https://docs.python.org/3/library/enum.html#module-enum "enum: Implementation of an enumeration class.") module, it would be very simple to implement independently:
+```
+classIntEnum(int, ReprEnum):  # or Enum instead of ReprEnum
+  pass

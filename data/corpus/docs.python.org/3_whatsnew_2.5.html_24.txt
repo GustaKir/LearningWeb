@@ -1,0 +1,73 @@
+Title: Generating XML Output with ElementTree
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: To generate XML output in Python, use the `ElementTree.write()` method, which can take a string or a file-like object. The default output encoding is ASCII, which may cause issues with Unicode characters, so it's recommended to specify UTF-8 encoding. This section provides a brief overview, and users are advised to consult the official ElementTree documentation for more information.
+---
+
+```
+
+To generate XML output, you should call the `ElementTree.write()` method. Like `parse()`, it can take either a string or a file-like object:
+```
+# Encoding is US-ASCII
+tree.write('output.xml')
+# Encoding is UTF-8
+f = open('output.xml', 'w')
+tree.write(f, encoding='utf-8')
+
+```
+
+(Caution: the default encoding used for output is ASCII. For general XML work, where an element’s name may contain arbitrary Unicode characters, ASCII isn’t a very useful encoding because it will raise an exception if an element’s name contains any characters with values greater than 127. Therefore, it’s best to specify a different encoding such as UTF-8 that can handle any Unicode character.)
+This section is only a partial description of the ElementTree interfaces. Please read the package’s official documentation for more details.
+See also 
+
+<https://web.archive.org/web/20201124024954/http://effbot.org/zone/element-index.htm>
+    
+Official documentation for ElementTree.
+### The hashlib package[¶](https://docs.python.org/3/whatsnew/2.5.html#the-hashlib-package "Link to this heading")
+A new [`hashlib`](https://docs.python.org/3/library/hashlib.html#module-hashlib "hashlib: Secure hash and message digest algorithms.") module, written by Gregory P. Smith, has been added to replace the `md5` and `sha` modules. [`hashlib`](https://docs.python.org/3/library/hashlib.html#module-hashlib "hashlib: Secure hash and message digest algorithms.") adds support for additional secure hashes (SHA-224, SHA-256, SHA-384, and SHA-512). When available, the module uses OpenSSL for fast platform optimized implementations of algorithms.
+The old `md5` and `sha` modules still exist as wrappers around hashlib to preserve backwards compatibility. The new module’s interface is very close to that of the old modules, but not identical. The most significant difference is that the constructor functions for creating new hashing objects are named differently.
+```
+# Old versions
+h = md5.md5()
+h = md5.new()
+# New version
+h = hashlib.md5()
+# Old versions
+h = sha.sha()
+h = sha.new()
+# New version
+h = hashlib.sha1()
+# Hash that weren't previously available
+h = hashlib.sha224()
+h = hashlib.sha256()
+h = hashlib.sha384()
+h = hashlib.sha512()
+# Alternative form
+h = hashlib.new('md5')     # Provide algorithm as a string
+
+```
+
+Once a hash object has been created, its methods are the same as before: `update(string)` hashes the specified string into the current digest state, `digest()` and `hexdigest()` return the digest value as a binary string or a string of hex digits, and [`copy()`](https://docs.python.org/3/library/copy.html#module-copy "copy: Shallow and deep copy operations.") returns a new hashing object with the same digest state.
+See also
+The documentation for the [`hashlib`](https://docs.python.org/3/library/hashlib.html#module-hashlib "hashlib: Secure hash and message digest algorithms.") module.
+### The sqlite3 package[¶](https://docs.python.org/3/whatsnew/2.5.html#the-sqlite3-package "Link to this heading")
+The pysqlite module (<https://www.pysqlite.org>), a wrapper for the SQLite embedded database, has been added to the standard library under the package name [`sqlite3`](https://docs.python.org/3/library/sqlite3.html#module-sqlite3 "sqlite3: A DB-API 2.0 implementation using SQLite 3.x.").
+SQLite is a C library that provides a lightweight disk-based database that doesn’t require a separate server process and allows accessing the database using a nonstandard variant of the SQL query language. Some applications can use SQLite for internal data storage. It’s also possible to prototype an application using SQLite and then port the code to a larger database such as PostgreSQL or Oracle.
+pysqlite was written by Gerhard Häring and provides a SQL interface compliant with the DB-API 2.0 specification described by [**PEP 249**](https://peps.python.org/pep-0249/).
+If you’re compiling the Python source yourself, note that the source tree doesn’t include the SQLite code, only the wrapper module. You’ll need to have the SQLite libraries and headers installed before compiling Python, and the build process will compile the module when the necessary headers are available.
+To use the module, you must first create a `Connection` object that represents the database. Here the data will be stored in the `/tmp/example` file:
+```
+conn = sqlite3.connect('/tmp/example')
+
+```
+
+You can also supply the special name `:memory:` to create a database in RAM.
+Once you have a `Connection`, you can create a `Cursor` object and call its `execute()` method to perform SQL commands:
+```
+c = conn.cursor()
+# Create table
+c.execute('''create table stocks
+(date text, trans text, symbol text,
+ qty real, price real)''')
+# Insert a row of data
+c.execute("""insert into stocks
+     values ('2006-01-05','BUY','RHAT',100,35.14)""")

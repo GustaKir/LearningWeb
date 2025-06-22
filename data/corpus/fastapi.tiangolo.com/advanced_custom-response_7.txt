@@ -1,0 +1,105 @@
+Title: Custom JSON Responses in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/custom-response/
+Summary: This section covers different types of JSON responses in FastAPI, including `JSONResponse` (default), `ORJSONResponse` (requires `orjson`), and `UJSONResponse` (requires `ujson`, with a warning about its handling of edge cases).
+---
+
+```
+
+### `JSONResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#jsonresponse "Permanent link")
+Takes some data and returns an `application/json` encoded response.
+This is the default response used in **FastAPI** , as you read above.
+### `ORJSONResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#orjsonresponse "Permanent link")
+A fast alternative JSON response using [`orjson`](https://github.com/ijl/orjson), as you read above.
+Info
+This requires installing `orjson` for example with `pip install orjson`.
+### `UJSONResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#ujsonresponse "Permanent link")
+An alternative JSON response using [`ujson`](https://github.com/ultrajson/ultrajson).
+Info
+This requires installing `ujson` for example with `pip install ujson`.
+Warning
+`ujson` is less careful than Python's built-in implementation in how it handles some edge-cases.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_7_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport UJSONResponse
+app = FastAPI()
+@app.get("/items/", response_class=UJSONResponse)
+async defread_items():
+  return [{"item_id": "Foo"}]
+
+```
+
+Tip
+It's possible that `ORJSONResponse` might be a faster alternative.
+### `RedirectResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#redirectresponse "Permanent link")
+Returns an HTTP redirect. Uses a 307 status code (Temporary Redirect) by default.
+You can return a `RedirectResponse` directly:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_8_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/typer")
+async defredirect_typer():
+  return RedirectResponse("https://typer.tiangolo.com")
+
+```
+
+Or you can use it in the `response_class` parameter:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_9_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/fastapi", response_class=RedirectResponse)
+async defredirect_fastapi():
+  return "https://fastapi.tiangolo.com"
+
+```
+
+If you do that, then you can return the URL directly from your _path operation_ function.
+In this case, the `status_code` used will be the default one for the `RedirectResponse`, which is `307`.
+You can also use the `status_code` parameter combined with the `response_class` parameter:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_10_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/pydantic", response_class=RedirectResponse, status_code=302)
+async defredirect_pydantic():
+  return "https://docs.pydantic.dev/"
+
+```
+
+### `StreamingResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse "Permanent link")
+Takes an async generator or a normal generator/iterator and streams the response body.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_11_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport StreamingResponse
+app = FastAPI()
+async deffake_video_streamer():
+  for i in range(10):
+    yield b"some fake video bytes"
+@app.get("/")
+async defmain():
+  return StreamingResponse(fake_video_streamer())
+
+```
+
+#### Using `StreamingResponse` with file-like objects[¶](https://fastapi.tiangolo.com/advanced/custom-response/#using-streamingresponse-with-file-like-objects "Permanent link")
+If you have a file-like object (e.g. the object returned by `open()`), you can create a generator function to iterate over that file-like object.
+That way, you don't have to read it all first in memory, and you can pass that generator function to the `StreamingResponse`, and return it.
+This includes many libraries to interact with cloud storage, video processing, and others.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_12_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport StreamingResponse
+some_file_path = "large-video-file.mp4"
+app = FastAPI()
+@app.get("/")
+defmain():
+  defiterfile(): # (1)
+    with open(some_file_path, mode="rb") as file_like: # (2)
+      yield from file_like # (3)
+  return StreamingResponse(iterfile(), media_type="video/mp4")

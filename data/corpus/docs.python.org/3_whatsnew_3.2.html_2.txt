@@ -1,0 +1,79 @@
+Title: Introduction of PEP 384 and PEP 389 in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: PEP 384 defines a stable ABI for Python, while PEP 389 introduces the `argparse` module for improved command line parsing, addressing the limitations of `optparse` by supporting positional arguments, subcommands, and required options.
+---
+
+[**PEP 384**](https://peps.python.org/pep-0384/) - Defining a Stable ABI
+    
+PEP written by Martin von Löwis.
+## PEP 389: Argparse Command Line Parsing Module[¶](https://docs.python.org/3/whatsnew/3.2.html#pep-389-argparse-command-line-parsing-module "Link to this heading")
+A new module for command line parsing, [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library."), was introduced to overcome the limitations of [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") which did not provide support for positional arguments (not just options), subcommands, required options and other common patterns of specifying and validating options.
+This module has already had widespread success in the community as a third-party module. Being more fully featured than its predecessor, the [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") module is now the preferred module for command-line processing. The older module is still being kept available because of the substantial amount of legacy code that depends on it.
+Here’s an annotated example parser showing features like limiting results to a set of choices, specifying a _metavar_ in the help screen, validating that one or more positional arguments is present, and making a required option:
+```
+importargparse
+parser = argparse.ArgumentParser(
+      description = 'Manage servers',     # main description for help
+      epilog = 'Tested on Solaris and Linux') # displayed after help
+parser.add_argument('action',            # argument name
+      choices = ['deploy', 'start', 'stop'], # three allowed values
+      help = 'action on each target')     # help msg
+parser.add_argument('targets',
+      metavar = 'HOSTNAME',          # var name used in help msg
+      nargs = '+',              # require one or more targets
+      help = 'url for target machines')    # help msg explanation
+parser.add_argument('-u', '--user',         # -u or --user option
+      required = True,            # make it a required argument
+      help = 'login as user')
+
+```
+
+Example of calling the parser on a command string:
+>>>```
+>>> cmd = 'deploy sneezy.example.com sleepy.example.com -u skycaptain'
+>>> result = parser.parse_args(cmd.split())
+>>> result.action
+'deploy'
+>>> result.targets
+['sneezy.example.com', 'sleepy.example.com']
+>>> result.user
+'skycaptain'
+
+```
+
+Example of the parser’s automatically generated help:
+>>>```
+>>> parser.parse_args('-h'.split())
+usage: manage_cloud.py [-h] -u USER
+            {deploy,start,stop} HOSTNAME [HOSTNAME ...]
+Manage servers
+positional arguments:
+ {deploy,start,stop}  action on each target
+ HOSTNAME       url for target machines
+optional arguments:
+ -h, --help      show this help message and exit
+ -u USER, --user USER login as user
+Tested on Solaris and Linux
+
+```
+
+An especially nice [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") feature is the ability to define subparsers, each with their own argument patterns and help displays:
+```
+importargparse
+parser = argparse.ArgumentParser(prog='HELM')
+subparsers = parser.add_subparsers()
+parser_l = subparsers.add_parser('launch', help='Launch Control')  # first subgroup
+parser_l.add_argument('-m', '--missiles', action='store_true')
+parser_l.add_argument('-t', '--torpedos', action='store_true')
+parser_m = subparsers.add_parser('move', help='Move Vessel',    # second subgroup
+                 aliases=('steer', 'turn'))     # equivalent names
+parser_m.add_argument('-c', '--course', type=int, required=True)
+parser_m.add_argument('-s', '--speed', type=int, default=0)
+
+```
+
+```
+$ ./helm.py--help# top level help (launch and move)
+$ ./helm.pylaunch--help# help for launch options
+$ ./helm.pylaunch--missiles# set missiles=True and torpedos=False
+$ ./helm.pysteer--course180--speed5# set movement parameters

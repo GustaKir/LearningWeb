@@ -1,0 +1,43 @@
+Title: PyType_GetDict Function
+URL: https://docs.python.org/3/c-api/type.html
+Summary: The `PyType_GetDict` function returns the internal namespace of a type object, accessible only as a read-only proxy, serving specific embedding and language-binding cases. It replaces direct access to `tp_dict` and is designed for situations where indirect access is insufficient.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyType_GetDict([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_GetDict "Link to this definition")
+    
+Return the type object’s internal namespace, which is otherwise only exposed via a read-only proxy ([`cls.__dict__`](https://docs.python.org/3/reference/datamodel.html#type.__dict__ "type.__dict__")). This is a replacement for accessing [`tp_dict`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dict "PyTypeObject.tp_dict") directly. The returned dictionary must be treated as read-only.
+This function is meant for specific embedding and language-binding cases, where direct access to the dict is necessary and indirect access (e.g. via the proxy or [`PyObject_GetAttr()`](https://docs.python.org/3/c-api/object.html#c.PyObject_GetAttr "PyObject_GetAttr")) isn’t adequate.
+Extension modules should continue to use `tp_dict`, directly or indirectly, when setting up their own types.
+Added in version 3.12. 
+
+voidPyType_Modified([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Modified "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Invalidate the internal lookup cache for the type and all of its subtypes. This function must be called after any manual modification of the attributes or base classes of the type. 
+
+intPyType_AddWatcher([PyType_WatchCallback](https://docs.python.org/3/c-api/type.html#c.PyType_WatchCallback "PyType_WatchCallback")callback)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_AddWatcher "Link to this definition")
+    
+Register _callback_ as a type watcher. Return a non-negative integer ID which must be passed to future calls to [`PyType_Watch()`](https://docs.python.org/3/c-api/type.html#c.PyType_Watch "PyType_Watch"). In case of error (e.g. no more watcher IDs available), return `-1` and set an exception.
+In free-threaded builds, [`PyType_AddWatcher()`](https://docs.python.org/3/c-api/type.html#c.PyType_AddWatcher "PyType_AddWatcher") is not thread-safe, so it must be called at start up (before spawning the first thread).
+Added in version 3.12. 
+
+intPyType_ClearWatcher(intwatcher_id)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_ClearWatcher "Link to this definition")
+    
+Clear watcher identified by _watcher_id_ (previously returned from [`PyType_AddWatcher()`](https://docs.python.org/3/c-api/type.html#c.PyType_AddWatcher "PyType_AddWatcher")). Return `0` on success, `-1` on error (e.g. if _watcher_id_ was never registered.)
+An extension should never call `PyType_ClearWatcher` with a _watcher_id_ that was not returned to it by a previous call to [`PyType_AddWatcher()`](https://docs.python.org/3/c-api/type.html#c.PyType_AddWatcher "PyType_AddWatcher").
+Added in version 3.12. 
+
+intPyType_Watch(intwatcher_id, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Watch "Link to this definition")
+    
+Mark _type_ as watched. The callback granted _watcher_id_ by [`PyType_AddWatcher()`](https://docs.python.org/3/c-api/type.html#c.PyType_AddWatcher "PyType_AddWatcher") will be called whenever [`PyType_Modified()`](https://docs.python.org/3/c-api/type.html#c.PyType_Modified "PyType_Modified") reports a change to _type_. (The callback may be called only once for a series of consecutive modifications to _type_ , if `_PyType_Lookup()` is not called on _type_ between the modifications; this is an implementation detail and subject to change.)
+An extension should never call `PyType_Watch` with a _watcher_id_ that was not returned to it by a previous call to [`PyType_AddWatcher()`](https://docs.python.org/3/c-api/type.html#c.PyType_AddWatcher "PyType_AddWatcher").
+Added in version 3.12. 
+
+typedefint(*PyType_WatchCallback)([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_WatchCallback "Link to this definition")
+    
+Type of a type-watcher callback function.
+The callback must not modify _type_ or cause [`PyType_Modified()`](https://docs.python.org/3/c-api/type.html#c.PyType_Modified "PyType_Modified") to be called on _type_ or any type in its MRO; violating this rule could cause infinite recursion.
+Added in version 3.12. 
+
+intPyType_HasFeature([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*o, intfeature)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_HasFeature "Link to this definition")
+    
+Return non-zero if the type object _o_ sets the feature _feature_. Type features are denoted by single bit flags.

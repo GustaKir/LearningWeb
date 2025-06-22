@@ -1,0 +1,43 @@
+Title: Finer Points of Enum in Python
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section warns against calling `super().__new__()` and suggests using the data type directly when creating enum members. It details that `__members__` is a read-only ordered mapping available on the class, and emphasizes the importance of using `__new__()` to create and return enum members while setting their `_value_` appropriately.
+---
+
+```
+
+Warning
+_Do not_ call `super().__new__()`, as the lookup-only `__new__` is the one that is found; instead, use the data type directly.
+### Finer Points[¶](https://docs.python.org/3/howto/enum.html#finer-points "Link to this heading")
+#### Supported `__dunder__` names[¶](https://docs.python.org/3/howto/enum.html#supported-dunder-names "Link to this heading")
+[`__members__`](https://docs.python.org/3/library/enum.html#enum.EnumType.__members__ "enum.EnumType.__members__") is a read-only ordered mapping of `member_name`:`member` items. It is only available on the class.
+[`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__"), if specified, must create and return the enum members; it is also a very good idea to set the member’s [`_value_`](https://docs.python.org/3/library/enum.html#enum.Enum._value_ "enum.Enum._value_") appropriately. Once all the members are created it is no longer used.
+#### Supported `_sunder_` names[¶](https://docs.python.org/3/howto/enum.html#supported-sunder-names "Link to this heading")
+  * [`_name_`](https://docs.python.org/3/library/enum.html#enum.Enum._name_ "enum.Enum._name_") – name of the member
+  * [`_value_`](https://docs.python.org/3/library/enum.html#enum.Enum._value_ "enum.Enum._value_") – value of the member; can be set in `__new__`
+  * [`_missing_()`](https://docs.python.org/3/library/enum.html#enum.Enum._missing_ "enum.Enum._missing_") – a lookup function used when a value is not found; may be overridden
+  * [`_ignore_`](https://docs.python.org/3/library/enum.html#enum.Enum._ignore_ "enum.Enum._ignore_") – a list of names, either as a [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") or a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), that will not be transformed into members, and will be removed from the final class
+  * [`_generate_next_value_()`](https://docs.python.org/3/library/enum.html#enum.Enum._generate_next_value_ "enum.Enum._generate_next_value_") – used to get an appropriate value for an enum member; may be overridden
+  * [`_add_alias_()`](https://docs.python.org/3/library/enum.html#enum.EnumType._add_alias_ "enum.EnumType._add_alias_") – adds a new name as an alias to an existing member.
+  * [`_add_value_alias_()`](https://docs.python.org/3/library/enum.html#enum.EnumType._add_value_alias_ "enum.EnumType._add_value_alias_") – adds a new value as an alias to an existing member. See [MultiValueEnum](https://docs.python.org/3/howto/enum.html#multivalueenum) for an example.
+Note
+For standard [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") classes the next value chosen is the highest value seen incremented by one.
+For [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") classes the next value chosen will be the next highest power-of-two.
+Changed in version 3.13: Prior versions would use the last seen value instead of the highest value.
+
+
+Added in version 3.6: `_missing_`, `_order_`, `_generate_next_value_`
+Added in version 3.7: `_ignore_`
+Added in version 3.13: `_add_alias_`, `_add_value_alias_`
+To help keep Python 2 / Python 3 code in sync an [`_order_`](https://docs.python.org/3/library/enum.html#enum.Enum._order_ "enum.Enum._order_") attribute can be provided. It will be checked against the actual order of the enumeration and raise an error if the two do not match:
+>>>```
+>>> classColor(Enum):
+...   _order_ = 'RED GREEN BLUE'
+...   RED = 1
+...   BLUE = 3
+...   GREEN = 2
+...
+Traceback (most recent call last):
+...
+TypeError: member order does not match _order_:
+ ['RED', 'BLUE', 'GREEN']
+ ['RED', 'GREEN', 'BLUE']

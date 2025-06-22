@@ -1,0 +1,80 @@
+Title: Asyncio Subprocess Module Documentation
+URL: https://docs.python.org/3/library/asyncio-subprocess.html
+Summary: This document provides an overview of the asyncio subprocess module in Python, detailing how to create and interact with subprocesses. It includes sections on subprocess creation, constants related to subprocesses, and interactions with subprocesses alongside threads, along with practical examples.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Subprocesses](https://docs.python.org/3/library/asyncio-subprocess.html)
+    * [Creating Subprocesses](https://docs.python.org/3/library/asyncio-subprocess.html#creating-subprocesses)
+    * [Constants](https://docs.python.org/3/library/asyncio-subprocess.html#constants)
+    * [Interacting with Subprocesses](https://docs.python.org/3/library/asyncio-subprocess.html#interacting-with-subprocesses)
+      * [Subprocess and Threads](https://docs.python.org/3/library/asyncio-subprocess.html#subprocess-and-threads)
+      * [Examples](https://docs.python.org/3/library/asyncio-subprocess.html#examples)
+
+
+#### Previous topic
+[Synchronization Primitives](https://docs.python.org/3/library/asyncio-sync.html "previous chapter")
+#### Next topic
+[Queues](https://docs.python.org/3/library/asyncio-queue.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/asyncio-subprocess.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/library/asyncio-queue.html "Queues") |
+  * [previous](https://docs.python.org/3/library/asyncio-sync.html "Synchronization Primitives") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [The Python Standard Library](https://docs.python.org/3/library/index.html) »
+  * [Networking and Interprocess Communication](https://docs.python.org/3/library/ipc.html) »
+  * [`asyncio` — Asynchronous I/O](https://docs.python.org/3/library/asyncio.html) »
+  * [Subprocesses](https://docs.python.org/3/library/asyncio-subprocess.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Subprocesses[¶](https://docs.python.org/3/library/asyncio-subprocess.html#subprocesses "Link to this heading")
+**Source code:** [Lib/asyncio/subprocess.py](https://github.com/python/cpython/tree/3.13/Lib/asyncio/subprocess.py), [Lib/asyncio/base_subprocess.py](https://github.com/python/cpython/tree/3.13/Lib/asyncio/base_subprocess.py)
+This section describes high-level async/await asyncio APIs to create and manage subprocesses.
+Here’s an example of how asyncio can run a shell command and obtain its result:
+```
+importasyncio
+async defrun(cmd):
+  proc = await asyncio.create_subprocess_shell(
+    cmd,
+    stdout=asyncio.subprocess.PIPE,
+    stderr=asyncio.subprocess.PIPE)
+  stdout, stderr = await proc.communicate()
+  print(f'[{cmd!r} exited with {proc.returncode}]')
+  if stdout:
+    print(f'[stdout]\n{stdout.decode()}')
+  if stderr:
+    print(f'[stderr]\n{stderr.decode()}')
+asyncio.run(run('ls /zzz'))
+
+```
+
+will print:
+```
+['ls /zzz' exited with 1]
+[stderr]
+ls: /zzz: No such file or directory
+
+```
+
+Because all asyncio subprocess functions are asynchronous and asyncio provides many tools to work with such functions, it is easy to execute and monitor multiple subprocesses in parallel. It is indeed trivial to modify the above example to run several commands simultaneously:
+```
+async defmain():
+  await asyncio.gather(
+    run('ls /zzz'),
+    run('sleep 1; echo "hello"'))
+asyncio.run(main())

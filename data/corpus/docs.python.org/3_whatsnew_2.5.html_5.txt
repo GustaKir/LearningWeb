@@ -1,0 +1,66 @@
+Title: Exception Handling in Python 2.5
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This section describes how Python 2.5 executes code blocks with exception handling using try-except structures. It explains the flow of execution through except blocks, the use of an else block for code that runs if no exception occurs, and the guaranteed execution of a final block regardless of any raised exceptions.
+---
+
+```
+
+The code in _block-1_ is executed. If the code raises an exception, the various [`except`](https://docs.python.org/3/reference/compound_stmts.html#except) blocks are tested: if the exception is of class `Exception1`, _handler-1_ is executed; otherwise if it’s of class `Exception2`, _handler-2_ is executed, and so forth. If no exception is raised, the _else-block_ is executed.
+No matter what happened previously, the _final-block_ is executed once the code block is complete and any raised exceptions handled. Even if there’s an error in an exception handler or the _else-block_ and a new exception is raised, the code in the _final-block_ is still run.
+See also 
+
+[**PEP 341**](https://peps.python.org/pep-0341/) - Unifying try-except and try-finally
+    
+PEP written by Georg Brandl; implementation by Thomas Lee.
+## PEP 342: New Generator Features[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-342-new-generator-features "Link to this heading")
+Python 2.5 adds a simple way to pass values _into_ a generator. As introduced in Python 2.3, generators only produce output; once a generator’s code was invoked to create an iterator, there was no way to pass any new information into the function when its execution is resumed. Sometimes the ability to pass in some information would be useful. Hackish solutions to this include making the generator’s code look at a global variable and then changing the global variable’s value, or passing in some mutable object that callers then modify.
+To refresh your memory of basic generators, here’s a simple example:
+```
+defcounter (maximum):
+  i = 0
+  while i < maximum:
+    yield i
+    i += 1
+
+```
+
+When you call `counter(10)`, the result is an iterator that returns the values from 0 up to 9. On encountering the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) statement, the iterator returns the provided value and suspends the function’s execution, preserving the local variables. Execution resumes on the following call to the iterator’s [`next()`](https://docs.python.org/3/library/functions.html#next "next") method, picking up after the `yield` statement.
+In Python 2.3, [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) was a statement; it didn’t return any value. In 2.5, `yield` is now an expression, returning a value that can be assigned to a variable or otherwise operated on:
+```
+val = (yield i)
+
+```
+
+I recommend that you always put parentheses around a [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) expression when you’re doing something with the returned value, as in the above example. The parentheses aren’t always necessary, but it’s easier to always add them instead of having to remember when they’re needed.
+([**PEP 342**](https://peps.python.org/pep-0342/) explains the exact rules, which are that a [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield)-expression must always be parenthesized except when it occurs at the top-level expression on the right-hand side of an assignment. This means you can write `val = yield i` but have to use parentheses when there’s an operation, as in `val = (yield i) + 12`.)
+Values are sent into a generator by calling its `send(value)` method. The generator’s code is then resumed and the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) expression returns the specified _value_. If the regular [`next()`](https://docs.python.org/3/library/functions.html#next "next") method is called, the `yield` returns [`None`](https://docs.python.org/3/library/constants.html#None "None").
+Here’s the previous example, modified to allow changing the value of the internal counter.
+```
+defcounter (maximum):
+  i = 0
+  while i < maximum:
+    val = (yield i)
+    # If value provided, change counter
+    if val is not None:
+      i = val
+    else:
+      i += 1
+
+```
+
+And here’s an example of changing the counter:
+>>>```
+>>> it = counter(10)
+>>> print it.next()
+0
+>>> print it.next()
+1
+>>> print it.send(8)
+8
+>>> print it.next()
+9
+>>> print it.next()
+Traceback (most recent call last):
+ File "t.py", line 15, in ?
+print it.next()
+StopIteration

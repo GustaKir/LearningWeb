@@ -1,0 +1,34 @@
+Title: Deploying Streamlit on Kubernetes
+URL: https://docs.streamlit.io/deploy/tutorials/kubernetes
+Summary: This section outlines the steps to enable Google Cloud's Container Registry API, build and push a Docker image to the registry, and prerequisites needed for creating a Kubernetes deployment, including a running Kubernetes service and a custom domain with TLS certification.
+---
+
+d.google.com/container-registry). Start by enabling the Container Registry API. Sign in to Google Cloud and navigate to your project’s **Container Registry** and click **Enable**.
+We can now build the Docker image from the previous step and push it to our project’s GCR. Be sure to replace `$GCP_PROJECT_ID` in the docker push command with the name of your project:
+`gcloud auth configure-docker docker push gcr.io/$GCP_PROJECT_ID/k8s-streamlit:test `
+## [](https://docs.streamlit.io/deploy/tutorials/kubernetes#create-a-kubernetes-deployment)Create a Kubernetes deployment
+For this step you will need a:
+  * Running Kubernetes service
+  * Custom domain for which you can generate a TLS certificate
+  * DNS service where you can configure your custom domain to point to the application IP
+
+
+As the image was uploaded to the container registry in the previous step, we can run it in Kubernetes using the below configurations.
+### [](https://docs.streamlit.io/deploy/tutorials/kubernetes#install-and-run-kubernetes)Install and run Kubernetes
+Make sure your [Kubernetes client](https://kubernetes.io/docs/tasks/tools/#kubectl), `kubectl`, is installed and running on your machine.
+### [](https://docs.streamlit.io/deploy/tutorials/kubernetes#configure-a-google-oauth-client-and-oauth2-proxy)Configure a Google OAuth Client and oauth2-proxy
+For configuring the Google OAuth Client, please see [Google Auth Provider](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider#google-auth-provider). Configure oauth2-proxy to use the desired [OAuth Provider Configuration](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/oauth_provider) and update the oath2-proxy config in the config map.
+The below configuration contains a ouath2-proxy sidecar container which handles the authentication with Google. You can learn more from the [oauth2-proxy repository](https://github.com/oauth2-proxy/oauth2-proxy).
+### [](https://docs.streamlit.io/deploy/tutorials/kubernetes#create-a-kubernetes-configuration-file)Create a Kubernetes configuration file
+Create a [YAML](https://yaml.org/) [configuration file](https://kubernetes.io/docs/concepts/cluster-administration/manage-deployment/#organizing-resource-configurations) named `k8s-streamlit.yaml`:
+`apiVersion: v1 kind: ConfigMap metadata: name: streamlit-configmap data: oauth2-proxy.cfg: |-   http_address = "0.0.0.0:4180"   upstreams = ["http://127.0.0.1:8501/"]   email_domains = ["*"]   client_id = "<GOOGLE_CLIENT_ID>"   client_secret = "<GOOGLE_CLIENT_SECRET>"   cookie_secret = "<16, 24, or 32 bytes>"   redirect_url = <REDIRECT_URL> --- apiVersion: apps/v1 kind: Deployment metadata: name: streamlit-deployment  labels: app: streamlit spec: replicas: 1 selector: matchLabels: app: streamlit  template: metadata: labels: app: streamlit   spec: containers: - name: oauth2-proxy      image: quay.io/oauth2-proxy/oauth2-proxy:v7.2.0      args: ["--config", "/etc/oauth2-proxy/oauth2-proxy.cfg"] ports: - containerPort: 4180 livenessProbe: httpGet: path: /ping        port: 4180 scheme: HTTP      readinessProbe: httpGet: path: /ping        port: 4180 scheme: HTTP      volumeMounts: - mountPath: "/etc/oauth2-proxy" name: oauth2-config     - name: streamlit      image: gcr.io/GCP_PROJECT_ID/k8s-streamlit:test      imagePullPolicy: Always      ports: - containerPort: 8501 livenessProbe: httpGet: path: /_stcore/health        port: 8501 scheme: HTTP       timeoutSeconds: 1 readinessProbe: httpGet: path: /_stcore/health        port: 8501 scheme: HTTP       timeoutSeconds: 1 resources: limits: cpu: 1 memory: 2Gi       requests: cpu: 100m        memory: 745Mi    volumes: - name: oauth2-config      configMap: name: streamlit-configmap --- apiVersion: v1 kind: Service metadata: name: streamlit-service spec: type: LoadBalancer  selector: app: streamlit  ports: - name: streamlit-port    protocol: TCP    port: 80 targetPort: 4180 `
+_priority_high_
+#### Important
+While the above configurations can be copied verbatim, you will have to configure the `oauth2-proxy` yourself and use the correct `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_ID`, `GCP_PROJECT_ID`, and `REDIRECT_URL`.
+Now create the configuration from the file in Kubernetes with the [`kubectl create`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#create) command:
+`kubctl create -f k8s-streamlit.yaml `
+### [](https://docs.streamlit.io/deploy/tutorials/kubernetes#set-up-tls-support)Set up TLS support
+Since you are using the Google authentication, you will need to set up TLS support. Find out how in [TLS Configuration](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/tls).
+### [](https://docs.streamlit.io/deploy/tutorials/kubernetes#verify-the-deployment)Verify the deployment
+Once the deployment and the service are created, we need to wait a couple of minutes for the public IP address to become available. We can check when that is ready by running:
+`kubectl get service streamlit-service -o jsonpath='{.status.loadBala

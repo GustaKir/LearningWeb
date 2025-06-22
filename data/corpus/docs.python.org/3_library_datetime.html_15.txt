@@ -1,0 +1,54 @@
+Title: Converting ISO 8601 Strings to Datetime Objects
+URL: https://docs.python.org/3/library/datetime.html
+Summary: This section demonstrates the use of the 'fromisoformat' method from the datetime module to convert various ISO 8601 formatted strings into datetime objects. It includes examples of different formats, including dates with and without time, timezone-aware datetimes, and variations in formatting.
+---
+
+```
+>>> fromdatetimeimport datetime
+>>> datetime.fromisoformat('2011-11-04')
+datetime.datetime(2011, 11, 4, 0, 0)
+>>> datetime.fromisoformat('20111104')
+datetime.datetime(2011, 11, 4, 0, 0)
+>>> datetime.fromisoformat('2011-11-04T00:05:23')
+datetime.datetime(2011, 11, 4, 0, 5, 23)
+>>> datetime.fromisoformat('2011-11-04T00:05:23Z')
+datetime.datetime(2011, 11, 4, 0, 5, 23, tzinfo=datetime.timezone.utc)
+>>> datetime.fromisoformat('20111104T000523')
+datetime.datetime(2011, 11, 4, 0, 5, 23)
+>>> datetime.fromisoformat('2011-W01-2T00:05:23.283')
+datetime.datetime(2011, 1, 4, 0, 5, 23, 283000)
+>>> datetime.fromisoformat('2011-11-04 00:05:23.283')
+datetime.datetime(2011, 11, 4, 0, 5, 23, 283000)
+>>> datetime.fromisoformat('2011-11-04 00:05:23.283+00:00')
+datetime.datetime(2011, 11, 4, 0, 5, 23, 283000, tzinfo=datetime.timezone.utc)
+>>> datetime.fromisoformat('2011-11-04T00:05:23+04:00')
+datetime.datetime(2011, 11, 4, 0, 5, 23,
+  tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
+
+```
+
+Added in version 3.7.
+Changed in version 3.11: Previously, this method only supported formats that could be emitted by [`date.isoformat()`](https://docs.python.org/3/library/datetime.html#datetime.date.isoformat "datetime.date.isoformat") or [`datetime.isoformat()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.isoformat "datetime.datetime.isoformat"). 
+
+_classmethod_ datetime.fromisocalendar(_year_ , _week_ , _day_)[¶](https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisocalendar "Link to this definition")
+    
+Return a [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") corresponding to the ISO calendar date specified by year, week and day. The non-date components of the datetime are populated with their normal default values. This is the inverse of the function [`datetime.isocalendar()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.isocalendar "datetime.datetime.isocalendar").
+Added in version 3.8. 
+
+_classmethod_ datetime.strptime(_date_string_ , _format_)[¶](https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime "Link to this definition")
+    
+Return a [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") corresponding to _date_string_ , parsed according to _format_.
+If _format_ does not contain microseconds or time zone information, this is equivalent to:
+```
+datetime(*(time.strptime(date_string, format)[0:6]))
+
+```
+
+[`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised if the date_string and format can’t be parsed by [`time.strptime()`](https://docs.python.org/3/library/time.html#time.strptime "time.strptime") or if it returns a value which isn’t a time tuple. See also [strftime() and strptime() Behavior](https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior) and [`datetime.fromisoformat()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat "datetime.datetime.fromisoformat").
+Changed in version 3.13: If _format_ specifies a day of month without a year a [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") is now emitted. This is to avoid a quadrennial leap year bug in code seeking to parse only a month and day as the default year used in absence of one in the format is not a leap year. Such _format_ values may raise an error as of Python 3.15. The workaround is to always include a year in your _format_. If parsing _date_string_ values that do not have a year, explicitly add a year that is a leap year before parsing:
+>>>```
+>>> fromdatetimeimport datetime
+>>> date_string = "02/29"
+>>> when = datetime.strptime(f"{date_string};1984", "%m/%d;%Y") # Avoids leap year bug.
+>>> when.strftime("%B %d")
+'February 29'

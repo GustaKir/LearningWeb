@@ -1,0 +1,28 @@
+Title: Python 3 Exception Rendering and List Sorting Improvements
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: Recent improvements in Python 3 include the rendering of exception names now showing complete qualified names, enhancing clarity over previous implementations. Additionally, list sorting has transitioned to the merge-ordering strategy from Munro and Wild’s `powersort()`, which is reportedly near-optimal for various data distributions, potentially improving performance in specific cases.
+---
+
+83](https://bugs.python.org/issue?@action=redirect&bpo=45083): When the interpreter renders an exception, its name now has a complete qualname. Previously only the class name was concatenated to the module name, which sometimes resulted in an incorrect full name being displayed.
+(This issue impacted only the C code exception rendering, the [`traceback`](https://docs.python.org/3/library/traceback.html#module-traceback "traceback: Print or retrieve a stack traceback.") module was using qualname already).
+  * [bpo-34561](https://bugs.python.org/issue?@action=redirect&bpo=34561): List sorting now uses the merge-ordering strategy from Munro and Wild’s `powersort()`. Unlike the former strategy, this is provably near-optimal in the entropy of the distribution of run lengths. Most uses of `list.sort()` probably won’t see a significant time difference, but may see significant improvements in cases where the former strategy was exceptionally poor. However, as these are all fast linear-time approximations to a problem that’s inherently at best quadratic-time to solve truly optimally, it’s also possible to contrive cases where the former strategy did better.
+  * [bpo-45056](https://bugs.python.org/issue?@action=redirect&bpo=45056): Compiler now removes trailing unused constants from co_consts.
+  * [bpo-45020](https://bugs.python.org/issue?@action=redirect&bpo=45020): Add a new command line option, “-X frozen_modules=[on|off]” to opt out of (or into) using optional frozen modules. This defaults to “on” (or “off” if it’s running out of the source tree).
+  * [bpo-45012](https://bugs.python.org/issue?@action=redirect&bpo=45012): In [`posix`](https://docs.python.org/3/library/posix.html#module-posix "posix: The most common POSIX system calls \(normally used via module os\). \(Unix\)"), release GIL during `stat()`, `lstat()`, and `fstatat()` syscalls made by [`os.DirEntry.stat()`](https://docs.python.org/3/library/os.html#os.DirEntry.stat "os.DirEntry.stat"). Patch by Stanisław Skonieczny.
+  * [bpo-45018](https://bugs.python.org/issue?@action=redirect&bpo=45018): Fixed pickling of range iterators that iterated for over `2**32` times.
+  * [bpo-45000](https://bugs.python.org/issue?@action=redirect&bpo=45000): A [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") is now raised when trying to delete [`__debug__`](https://docs.python.org/3/library/constants.html#debug__ "__debug__"). Patch by Donghee Na.
+  * [bpo-44963](https://bugs.python.org/issue?@action=redirect&bpo=44963): Implement `send()` and `throw()` methods for `anext_awaitable` objects. Patch by Pablo Galindo.
+  * [bpo-44962](https://bugs.python.org/issue?@action=redirect&bpo=44962): Fix a race in WeakKeyDictionary, WeakValueDictionary and WeakSet when two threads attempt to commit the last pending removal. This fixes asyncio.create_task and fixes a data loss in asyncio.run where shutdown_asyncgens is not run
+  * [bpo-24234](https://bugs.python.org/issue?@action=redirect&bpo=24234): Implement the `__bytes__()` special method on the [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") type, so a bytes object `b` passes an `isinstance(b, typing.SupportsBytes)` check.
+  * [bpo-24234](https://bugs.python.org/issue?@action=redirect&bpo=24234): Implement the `__complex__()` special method on the [`complex`](https://docs.python.org/3/library/functions.html#complex "complex") type, so a complex number `z` passes an `isinstance(z, typing.SupportsComplex)` check.
+  * [bpo-44954](https://bugs.python.org/issue?@action=redirect&bpo=44954): Fixed a corner case bug where the result of `float.fromhex('0x.8p-1074')` was rounded the wrong way.
+  * [bpo-44947](https://bugs.python.org/issue?@action=redirect&bpo=44947): Refine the syntax error for trailing commas in import statements. Patch by Pablo Galindo.
+  * [bpo-44945](https://bugs.python.org/issue?@action=redirect&bpo=44945): Specialize the BINARY_ADD instruction using the PEP 659 machinery. Adds five new instructions:
+    * BINARY_ADD_ADAPTIVE
+    * BINARY_ADD_FLOAT
+    * BINARY_ADD_INT
+    * BINARY_ADD_UNICODE
+    * BINARY_ADD_UNICODE_INPLACE_FAST
+  * [bpo-44929](https://bugs.python.org/issue?@action=redirect&bpo=44929): Fix some edge cases of `enum.Flag` string representation in the REPL. Patch by Pablo Galindo.
+  * [bpo-44914](https://bugs.python.org/issue?@action=redirect&bpo=44914): Class version tags are no longer recycled.
+This means that a version tag serves as a unique identifier for the state of a class.

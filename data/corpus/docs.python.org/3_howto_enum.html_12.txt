@@ -1,0 +1,118 @@
+Title: Enum Cookbook
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section provides recipes for various types of enumerations in Python, beyond the basic `Enum`, `IntEnum`, `StrEnum`, `Flag`, and `IntFlag`. It discusses methods to define simple enumerations, particularly those where the actual value is not important.
+---
+
+```
+
+## Enum Cookbook[¶](https://docs.python.org/3/howto/enum.html#enum-cookbook "Link to this heading")
+While [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum"), [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum"), [`StrEnum`](https://docs.python.org/3/library/enum.html#enum.StrEnum "enum.StrEnum"), [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag"), and [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") are expected to cover the majority of use-cases, they cannot cover them all. Here are recipes for some different types of enumerations that can be used directly, or as examples for creating one’s own.
+### Omitting values[¶](https://docs.python.org/3/howto/enum.html#omitting-values "Link to this heading")
+In many use-cases, one doesn’t care what the actual value of an enumeration is. There are several ways to define this type of simple enumeration:
+  * use instances of [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") for the value
+  * use instances of [`object`](https://docs.python.org/3/library/functions.html#object "object") as the value
+  * use a descriptive string as the value
+  * use a tuple as the value and a custom [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") to replace the tuple with an [`int`](https://docs.python.org/3/library/functions.html#int "int") value
+
+
+Using any of these methods signifies to the user that these values are not important, and also enables one to add, remove, or reorder members without having to renumber the remaining members.
+#### Using [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto")[¶](https://docs.python.org/3/howto/enum.html#using-auto "Link to this heading")
+Using [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") would look like:
+>>>```
+>>> classColor(Enum):
+...   RED = auto()
+...   BLUE = auto()
+...   GREEN = auto()
+...
+>>> Color.GREEN
+<Color.GREEN: 3>
+
+```
+
+#### Using [`object`](https://docs.python.org/3/library/functions.html#object "object")[¶](https://docs.python.org/3/howto/enum.html#using-object "Link to this heading")
+Using [`object`](https://docs.python.org/3/library/functions.html#object "object") would look like:
+>>>```
+>>> classColor(Enum):
+...   RED = object()
+...   GREEN = object()
+...   BLUE = object()
+...
+>>> Color.GREEN
+<Color.GREEN: <object object at 0x...>>
+
+```
+
+This is also a good example of why you might want to write your own [`__repr__()`](https://docs.python.org/3/reference/datamodel.html#object.__repr__ "object.__repr__"):
+>>>```
+>>> classColor(Enum):
+...   RED = object()
+...   GREEN = object()
+...   BLUE = object()
+...   def__repr__(self):
+...     return "<%s.%s>" % (self.__class__.__name__, self._name_)
+...
+>>> Color.GREEN
+<Color.GREEN>
+
+```
+
+#### Using a descriptive string[¶](https://docs.python.org/3/howto/enum.html#using-a-descriptive-string "Link to this heading")
+Using a string as the value would look like:
+>>>```
+>>> classColor(Enum):
+...   RED = 'stop'
+...   GREEN = 'go'
+...   BLUE = 'too fast!'
+...
+>>> Color.GREEN
+<Color.GREEN: 'go'>
+
+```
+
+#### Using a custom [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__")[¶](https://docs.python.org/3/howto/enum.html#using-a-custom-new "Link to this heading")
+Using an auto-numbering [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") would look like:
+>>>```
+>>> classAutoNumber(Enum):
+...   def__new__(cls):
+...     value = len(cls.__members__) + 1
+...     obj = object.__new__(cls)
+...     obj._value_ = value
+...     return obj
+...
+>>> classColor(AutoNumber):
+...   RED = ()
+...   GREEN = ()
+...   BLUE = ()
+...
+>>> Color.GREEN
+<Color.GREEN: 2>
+
+```
+
+To make a more general purpose `AutoNumber`, add `*args` to the signature:
+>>>```
+>>> classAutoNumber(Enum):
+...   def__new__(cls, *args):   # this is the only change from above
+...     value = len(cls.__members__) + 1
+...     obj = object.__new__(cls)
+...     obj._value_ = value
+...     return obj
+...
+
+```
+
+Then when you inherit from `AutoNumber` you can write your own `__init__` to handle any extra arguments:
+>>>```
+>>> classSwatch(AutoNumber):
+...   def__init__(self, pantone='unknown'):
+...     self.pantone = pantone
+...   AUBURN = '3497'
+...   SEA_GREEN = '1246'
+...   BLEACHED_CORAL = () # New color, no Pantone code yet!
+...
+>>> Swatch.SEA_GREEN
+<Swatch.SEA_GREEN: 2>
+>>> Swatch.SEA_GREEN.pantone
+'1246'
+>>> Swatch.BLEACHED_CORAL.pantone
+'unknown'

@@ -1,0 +1,31 @@
+Title: Updating the Screen with Curses in Python
+URL: https://docs.python.org/3/howto/curses.html
+Summary: The `refresh()` function in the curses library displays a specified section of a pad on the screen, while also efficiently updating multiple windows to prevent flicker. It utilizes `noutrefresh()` to record the desired screen state and `doupdate()` to apply these changes to the physical screen.
+---
+
+```
+
+The `refresh()` call displays a section of the pad in the rectangle extending from coordinate (5,5) to coordinate (20,75) on the screen; the upper left corner of the displayed section is coordinate (0,0) on the pad. Beyond that difference, pads are exactly like ordinary windows and support the same methods.
+If you have multiple windows and pads on screen there is a more efficient way to update the screen and prevent annoying screen flicker as each part of the screen gets updated. `refresh()` actually does two things:
+  1. Calls the [`noutrefresh()`](https://docs.python.org/3/library/curses.html#curses.window.noutrefresh "curses.window.noutrefresh") method of each window to update an underlying data structure representing the desired state of the screen.
+  2. Calls the function [`doupdate()`](https://docs.python.org/3/library/curses.html#curses.doupdate "curses.doupdate") function to change the physical screen to match the desired state recorded in the data structure.
+
+
+Instead you can call `noutrefresh()` on a number of windows to update the data structure, and then call `doupdate()` to update the screen.
+## Displaying Text[¶](https://docs.python.org/3/howto/curses.html#displaying-text "Link to this heading")
+From a C programmer’s point of view, curses may sometimes look like a twisty maze of functions, all subtly different. For example, `addstr()` displays a string at the current cursor location in the `stdscr` window, while `mvaddstr()` moves to a given y,x coordinate first before displaying the string. `waddstr()` is just like `addstr()`, but allows specifying a window to use instead of using `stdscr` by default. `mvwaddstr()` allows specifying both a window and a coordinate.
+Fortunately the Python interface hides all these details. `stdscr` is a window object like any other, and methods such as [`addstr()`](https://docs.python.org/3/library/curses.html#curses.window.addstr "curses.window.addstr") accept multiple argument forms. Usually there are four different forms.
+Form | Description  
+---|---  
+_str_ or _ch_ | Display the string _str_ or character _ch_ at the current position  
+_str_ or _ch_ , _attr_ | Display the string _str_ or character _ch_ , using attribute _attr_ at the current position  
+_y_ , _x_ , _str_ or _ch_ | Move to position _y,x_ within the window, and display _str_ or _ch_  
+_y_ , _x_ , _str_ or _ch_ , _attr_ | Move to position _y,x_ within the window, and display _str_ or _ch_ , using attribute _attr_  
+Attributes allow displaying text in highlighted forms such as boldface, underline, reverse code, or in color. They’ll be explained in more detail in the next subsection.
+The [`addstr()`](https://docs.python.org/3/library/curses.html#curses.window.addstr "curses.window.addstr") method takes a Python string or bytestring as the value to be displayed. The contents of bytestrings are sent to the terminal as-is. Strings are encoded to bytes using the value of the window’s [`encoding`](https://docs.python.org/3/library/curses.html#curses.window.encoding "curses.window.encoding") attribute; this defaults to the default system encoding as returned by [`locale.getencoding()`](https://docs.python.org/3/library/locale.html#locale.getencoding "locale.getencoding").
+The [`addch()`](https://docs.python.org/3/library/curses.html#curses.window.addch "curses.window.addch") methods take a character, which can be either a string of length 1, a bytestring of length 1, or an integer.
+Constants are provided for extension characters; these constants are integers greater than 255. For example, [`ACS_PLMINUS`](https://docs.python.org/3/library/curses.html#curses.ACS_PLMINUS "curses.ACS_PLMINUS") is a +/- symbol, and [`ACS_ULCORNER`](https://docs.python.org/3/library/curses.html#curses.ACS_ULCORNER "curses.ACS_ULCORNER") is the upper left corner of a box (handy for drawing borders). You can also use the appropriate Unicode character.
+Windows remember where the cursor was left after the last operation, so if you leave out the _y,x_ coordinates, the string or character will be displayed wherever the last operation left off. You can also move the cursor with the `move(y,x)` method. Because some terminals always display a flashing cursor, you may want to ensure that the cursor is positioned in some location where it won’t be distracting; it can be confusing to have the cursor blinking at some apparently random location.
+If your application doesn’t need a blinking cursor at all, you can call `curs_set(False)` to make it invisible. For compatibility with older curses versions, there’s a `leaveok(bool)` function that’s a synonym for [`curs_set()`](https://docs.python.org/3/library/curses.html#curses.curs_set "curses.curs_set"). When _bool_ is true, the curses library will attempt to suppress the flashing cursor, and you won’t need to worry about leaving it in odd locations.
+### Attributes and Color[¶](https://docs.python.org/3/howto/curses.html#attributes-and-color "Link to this heading")
+Characters can be displ

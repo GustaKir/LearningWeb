@@ -1,0 +1,40 @@
+Title: Limitations on String and Integer Conversions in Python 3.11
+URL: https://docs.python.org/3/library/stdtypes.html
+Summary: This section details the limitations introduced in Python 3.11 regarding slow conversions between integers and strings or bytes. Specifically, it outlines affected APIs such as `int(string)` and `str(integer)`, and clarifies that these limitations do not apply to functions with linear algorithms, like `int(string, base)` for certain bases and other related methods.
+---
+
+```
+
+Added in version 3.11.
+### Affected APIs[¶](https://docs.python.org/3/library/stdtypes.html#affected-apis "Link to this heading")
+The limitation only applies to potentially slow conversions between [`int`](https://docs.python.org/3/library/functions.html#int "int") and [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"):
+  * `int(string)` with default base 10.
+  * `int(string, base)` for all bases that are not a power of 2.
+  * `str(integer)`.
+  * `repr(integer)`.
+  * any other string conversion to base 10, for example `f"{integer}"`, `"{}".format(integer)`, or `b"%d" % integer`.
+
+
+The limitations do not apply to functions with a linear algorithm:
+  * `int(string, base)` with base 2, 4, 8, 16, or 32.
+  * [`int.from_bytes()`](https://docs.python.org/3/library/stdtypes.html#int.from_bytes "int.from_bytes") and [`int.to_bytes()`](https://docs.python.org/3/library/stdtypes.html#int.to_bytes "int.to_bytes").
+  * [`hex()`](https://docs.python.org/3/library/functions.html#hex "hex"), [`oct()`](https://docs.python.org/3/library/functions.html#oct "oct"), [`bin()`](https://docs.python.org/3/library/functions.html#bin "bin").
+  * [Format Specification Mini-Language](https://docs.python.org/3/library/string.html#formatspec) for hex, octal, and binary numbers.
+  * [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") to [`float`](https://docs.python.org/3/library/functions.html#float "float").
+  * [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") to [`decimal.Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal").
+
+
+### Configuring the limit[¶](https://docs.python.org/3/library/stdtypes.html#configuring-the-limit "Link to this heading")
+Before Python starts up you can use an environment variable or an interpreter command line flag to configure the limit:
+  * [`PYTHONINTMAXSTRDIGITS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONINTMAXSTRDIGITS), e.g. `PYTHONINTMAXSTRDIGITS=640 python3` to set the limit to 640 or `PYTHONINTMAXSTRDIGITS=0 python3` to disable the limitation.
+  * [`-X int_max_str_digits`](https://docs.python.org/3/using/cmdline.html#cmdoption-X), e.g. `python3 -X int_max_str_digits=640`
+  * [`sys.flags.int_max_str_digits`](https://docs.python.org/3/library/sys.html#sys.flags.int_max_str_digits "sys.flags.int_max_str_digits") contains the value of [`PYTHONINTMAXSTRDIGITS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONINTMAXSTRDIGITS) or [`-X int_max_str_digits`](https://docs.python.org/3/using/cmdline.html#cmdoption-X). If both the env var and the `-X` option are set, the `-X` option takes precedence. A value of _-1_ indicates that both were unset, thus a value of [`sys.int_info.default_max_str_digits`](https://docs.python.org/3/library/sys.html#sys.int_info.default_max_str_digits "sys.int_info.default_max_str_digits") was used during initialization.
+
+
+From code, you can inspect the current limit and set a new one using these [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") APIs:
+  * [`sys.get_int_max_str_digits()`](https://docs.python.org/3/library/sys.html#sys.get_int_max_str_digits "sys.get_int_max_str_digits") and [`sys.set_int_max_str_digits()`](https://docs.python.org/3/library/sys.html#sys.set_int_max_str_digits "sys.set_int_max_str_digits") are a getter and setter for the interpreter-wide limit. Subinterpreters have their own limit.
+
+
+Information about the default and minimum can be found in [`sys.int_info`](https://docs.python.org/3/library/sys.html#sys.int_info "sys.int_info"):
+  * [`sys.int_info.default_max_str_digits`](https://docs.python.org/3/library/sys.html#sys.int_info "sys.int_info") is the compiled-in default limit.
+  * [`sys.int_info.str_digits_check_threshold`](https://docs.python.org/3/library/sys.html#sys.int_info "sys.int_info") is the lowest accepted value for the limit (other than 0 which disables it).

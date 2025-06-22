@@ -1,0 +1,83 @@
+Title: Using re.split() to Split Strings with Regular Expressions
+URL: https://docs.python.org/3/howto/regex.html
+Summary: The `re.split()` function allows users to split a string by patterns defined through regular expressions, offering more flexibility than the standard `split()` method. It can return a list of the split pieces, including content from capturing parentheses, and allows limiting the number of splits with the `maxsplit` parameter.
+---
+
+s a string apart wherever the RE matches, returning a list of the pieces. It’s similar to the [`split()`](https://docs.python.org/3/library/stdtypes.html#str.split "str.split") method of strings but provides much more generality in the delimiters that you can split by; string `split()` only supports splitting by whitespace or by a fixed string. As you’d expect, there’s a module-level [`re.split()`](https://docs.python.org/3/library/re.html#re.split "re.split") function, too. 
+
+.split(_string_[, _maxsplit=0_])
+    
+Split _string_ by the matches of the regular expression. If capturing parentheses are used in the RE, then their contents will also be returned as part of the resulting list. If _maxsplit_ is nonzero, at most _maxsplit_ splits are performed.
+You can limit the number of splits made, by passing a value for _maxsplit_. When _maxsplit_ is nonzero, at most _maxsplit_ splits will be made, and the remainder of the string is returned as the final element of the list. In the following example, the delimiter is any sequence of non-alphanumeric characters.
+>>>```
+>>> p = re.compile(r'\W+')
+>>> p.split('This is a test, short and sweet, of split().')
+['This', 'is', 'a', 'test', 'short', 'and', 'sweet', 'of', 'split', '']
+>>> p.split('This is a test, short and sweet, of split().', 3)
+['This', 'is', 'a', 'test, short and sweet, of split().']
+
+```
+
+Sometimes you’re not only interested in what the text between delimiters is, but also need to know what the delimiter was. If capturing parentheses are used in the RE, then their values are also returned as part of the list. Compare the following calls:
+>>>```
+>>> p = re.compile(r'\W+')
+>>> p2 = re.compile(r'(\W+)')
+>>> p.split('This... is a test.')
+['This', 'is', 'a', 'test', '']
+>>> p2.split('This... is a test.')
+['This', '... ', 'is', ' ', 'a', ' ', 'test', '.', '']
+
+```
+
+The module-level function [`re.split()`](https://docs.python.org/3/library/re.html#re.split "re.split") adds the RE to be used as the first argument, but is otherwise the same.
+>>>```
+>>> re.split(r'[\W]+', 'Words, words, words.')
+['Words', 'words', 'words', '']
+>>> re.split(r'([\W]+)', 'Words, words, words.')
+['Words', ', ', 'words', ', ', 'words', '.', '']
+>>> re.split(r'[\W]+', 'Words, words, words.', 1)
+['Words', 'words, words.']
+
+```
+
+### Search and Replace[¶](https://docs.python.org/3/howto/regex.html#search-and-replace "Link to this heading")
+Another common task is to find all the matches for a pattern, and replace them with a different string. The [`sub()`](https://docs.python.org/3/library/re.html#re.Pattern.sub "re.Pattern.sub") method takes a replacement value, which can be either a string or a function, and the string to be processed. 
+
+.sub(_replacement_ , _string_[, _count=0_])
+    
+Returns the string obtained by replacing the leftmost non-overlapping occurrences of the RE in _string_ by the replacement _replacement_. If the pattern isn’t found, _string_ is returned unchanged.
+The optional argument _count_ is the maximum number of pattern occurrences to be replaced; _count_ must be a non-negative integer. The default value of 0 means to replace all occurrences.
+Here’s a simple example of using the [`sub()`](https://docs.python.org/3/library/re.html#re.Pattern.sub "re.Pattern.sub") method. It replaces colour names with the word `colour`:
+>>>```
+>>> p = re.compile('(blue|white|red)')
+>>> p.sub('colour', 'blue socks and red shoes')
+'colour socks and colour shoes'
+>>> p.sub('colour', 'blue socks and red shoes', count=1)
+'colour socks and red shoes'
+
+```
+
+The [`subn()`](https://docs.python.org/3/library/re.html#re.Pattern.subn "re.Pattern.subn") method does the same work, but returns a 2-tuple containing the new string value and the number of replacements that were performed:
+>>>```
+>>> p = re.compile('(blue|white|red)')
+>>> p.subn('colour', 'blue socks and red shoes')
+('colour socks and colour shoes', 2)
+>>> p.subn('colour', 'no colours at all')
+('no colours at all', 0)
+
+```
+
+Empty matches are replaced only when they’re not adjacent to a previous empty match.
+>>>```
+>>> p = re.compile('x*')
+>>> p.sub('-', 'abxd')
+'-a-b--d-'
+
+```
+
+If _replacement_ is a string, any backslash escapes in it are processed. That is, `\n` is converted to a single newline character, `\r` is converted to a carriage return, and so forth. Unknown escapes such as `\&` are left alone. Backreferences, such as `\6`, are replaced with the substring matched by the corresponding group in the RE. This lets you incorporate portions of the original text in the resulting replacement string.
+This example matches the word `section` followed by a string enclosed in `{`, `}`, and changes `section` to `subsection`:
+>>>```
+>>> p = re.compile('section{ ( [^}]* ) }', re.VERBOSE)
+>>> p.sub(r'subsection{\1}','section{First} section{second}')
+'subsection{First} subsection{second}'

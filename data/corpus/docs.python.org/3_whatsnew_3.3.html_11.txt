@@ -1,0 +1,39 @@
+Title: Python 3.3 Updates: MutableSequence and Improved Error Messages
+URL: https://docs.python.org/3/whatsnew/3.3.html
+Summary: Python 3.3 introduces several updates including a new `clear()` method for `MutableSequence`, support for raw byte literals as `rb
+---
+
+Consequently, [`MutableSequence`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableSequence "collections.abc.MutableSequence") now also defines a `clear()` method ([bpo-11388](https://bugs.python.org/issue?@action=redirect&bpo=11388)).
+  * Raw bytes literals can now be written `rb"..."` as well as `br"..."`.
+(Contributed by Antoine Pitrou in [bpo-13748](https://bugs.python.org/issue?@action=redirect&bpo=13748).)
+  * [`dict.setdefault()`](https://docs.python.org/3/library/stdtypes.html#dict.setdefault "dict.setdefault") now does only one lookup for the given key, making it atomic when used with built-in types.
+(Contributed by Filip Gruszczyński in [bpo-13521](https://bugs.python.org/issue?@action=redirect&bpo=13521).)
+  * The error messages produced when a function call does not match the function signature have been significantly improved.
+(Contributed by Benjamin Peterson.)
+
+
+## A Finer-Grained Import Lock[¶](https://docs.python.org/3/whatsnew/3.3.html#a-finer-grained-import-lock "Link to this heading")
+Previous versions of CPython have always relied on a global import lock. This led to unexpected annoyances, such as deadlocks when importing a module would trigger code execution in a different thread as a side-effect. Clumsy workarounds were sometimes employed, such as the [`PyImport_ImportModuleNoBlock()`](https://docs.python.org/3/c-api/import.html#c.PyImport_ImportModuleNoBlock "PyImport_ImportModuleNoBlock") C API function.
+In Python 3.3, importing a module takes a per-module lock. This correctly serializes importation of a given module from multiple threads (preventing the exposure of incompletely initialized modules), while eliminating the aforementioned annoyances.
+(Contributed by Antoine Pitrou in [bpo-9260](https://bugs.python.org/issue?@action=redirect&bpo=9260).)
+## Builtin functions and types[¶](https://docs.python.org/3/whatsnew/3.3.html#builtin-functions-and-types "Link to this heading")
+  * [`open()`](https://docs.python.org/3/library/functions.html#open "open") gets a new _opener_ parameter: the underlying file descriptor for the file object is then obtained by calling _opener_ with (_file_ , _flags_). It can be used to use custom flags like [`os.O_CLOEXEC`](https://docs.python.org/3/library/os.html#os.O_CLOEXEC "os.O_CLOEXEC") for example. The `'x'` mode was added: open for exclusive creation, failing if the file already exists.
+  * [`print()`](https://docs.python.org/3/library/functions.html#print "print"): added the _flush_ keyword argument. If the _flush_ keyword argument is true, the stream is forcibly flushed.
+  * [`hash()`](https://docs.python.org/3/library/functions.html#hash "hash"): hash randomization is enabled by default, see [`object.__hash__()`](https://docs.python.org/3/reference/datamodel.html#object.__hash__ "object.__hash__") and [`PYTHONHASHSEED`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHASHSEED).
+  * The [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") type gets a new [`casefold()`](https://docs.python.org/3/library/stdtypes.html#str.casefold "str.casefold") method: return a casefolded copy of the string, casefolded strings may be used for caseless matching. For example, `'ß'.casefold()` returns `'ss'`.
+  * The sequence documentation has been substantially rewritten to better explain the binary/text sequence distinction and to provide specific documentation sections for the individual builtin sequence types ([bpo-4966](https://bugs.python.org/issue?@action=redirect&bpo=4966)).
+
+
+## New Modules[¶](https://docs.python.org/3/whatsnew/3.3.html#new-modules "Link to this heading")
+### faulthandler[¶](https://docs.python.org/3/whatsnew/3.3.html#faulthandler "Link to this heading")
+This new debug module [`faulthandler`](https://docs.python.org/3/library/faulthandler.html#module-faulthandler "faulthandler: Dump the Python traceback.") contains functions to dump Python tracebacks explicitly, on a fault (a crash like a segmentation fault), after a timeout, or on a user signal. Call [`faulthandler.enable()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.enable "faulthandler.enable") to install fault handlers for the `SIGSEGV`, `SIGFPE`, `SIGABRT`, `SIGBUS`, and `SIGILL` signals. You can also enable them at startup by setting the [`PYTHONFAULTHANDLER`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONFAULTHANDLER) environment variable or by using [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) `faulthandler` command line option.
+Example of a segmentation fault on Linux:
+```
+$ python-q-Xfaulthandler
+>>> import ctypes
+>>> ctypes.string_at(0)
+Fatal Python error: Segmentation fault
+Current thread 0x00007fb899f39700:
+ File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
+ File "<stdin>", line 1 in <module>
+Segmentation fault

@@ -1,0 +1,49 @@
+Title: PyLong_AsUnsignedLongLongMask Function
+URL: https://docs.python.org/3/c-api/long.html
+Summary: The `PyLong_AsUnsignedLongLongMask` function converts a Python object to a C unsigned long long representation. If the object is not a `PyLongObject`, it invokes the `__index__()` method for conversion. If the value exceeds the unsigned long long range, it returns the value modulo `ULLONG_MAX + 1`. An error returns `(unsigned long long)-1`.
+---
+
+unsignedlonglongPyLong_AsUnsignedLongLongMask([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*obj)[¶](https://docs.python.org/3/c-api/long.html#c.PyLong_AsUnsignedLongLongMask "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a C unsignedlonglong representation of _obj_. If _obj_ is not an instance of [`PyLongObject`](https://docs.python.org/3/c-api/long.html#c.PyLongObject "PyLongObject"), first call its [`__index__()`](https://docs.python.org/3/reference/datamodel.html#object.__index__ "object.__index__") method (if present) to convert it to a [`PyLongObject`](https://docs.python.org/3/c-api/long.html#c.PyLongObject "PyLongObject").
+If the value of _obj_ is out of range for an unsignedlonglong, return the reduction of that value modulo `ULLONG_MAX + 1`.
+Returns `(unsigned long long)-1` on error. Use [`PyErr_Occurred()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Occurred "PyErr_Occurred") to disambiguate.
+Changed in version 3.8: Use [`__index__()`](https://docs.python.org/3/reference/datamodel.html#object.__index__ "object.__index__") if available.
+Changed in version 3.10: This function will no longer use [`__int__()`](https://docs.python.org/3/reference/datamodel.html#object.__int__ "object.__int__"). 
+
+doublePyLong_AsDouble([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*pylong)[¶](https://docs.python.org/3/c-api/long.html#c.PyLong_AsDouble "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a C double representation of _pylong_. _pylong_ must be an instance of [`PyLongObject`](https://docs.python.org/3/c-api/long.html#c.PyLongObject "PyLongObject").
+Raise [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") if the value of _pylong_ is out of range for a double.
+Returns `-1.0` on error. Use [`PyErr_Occurred()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Occurred "PyErr_Occurred") to disambiguate. 
+
+void*PyLong_AsVoidPtr([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*pylong)[¶](https://docs.python.org/3/c-api/long.html#c.PyLong_AsVoidPtr "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Convert a Python integer _pylong_ to a C void pointer. If _pylong_ cannot be converted, an [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") will be raised. This is only assured to produce a usable void pointer for values created with [`PyLong_FromVoidPtr()`](https://docs.python.org/3/c-api/long.html#c.PyLong_FromVoidPtr "PyLong_FromVoidPtr").
+Returns `NULL` on error. Use [`PyErr_Occurred()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Occurred "PyErr_Occurred") to disambiguate. 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")PyLong_AsNativeBytes([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*pylong, void*buffer, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")n_bytes, intflags)[¶](https://docs.python.org/3/c-api/long.html#c.PyLong_AsNativeBytes "Link to this definition")
+    
+Copy the Python integer value _pylong_ to a native _buffer_ of size _n_bytes_. The _flags_ can be set to `-1` to behave similarly to a C cast, or to values documented below to control the behavior.
+Returns `-1` with an exception raised on error. This may happen if _pylong_ cannot be interpreted as an integer, or if _pylong_ was negative and the `Py_ASNATIVEBYTES_REJECT_NEGATIVE` flag was set.
+Otherwise, returns the number of bytes required to store the value. If this is equal to or less than _n_bytes_ , the entire value was copied. All _n_bytes_ of the buffer are written: large buffers are padded with zeroes.
+If the returned value is greater than than _n_bytes_ , the value was truncated: as many of the lowest bits of the value as could fit are written, and the higher bits are ignored. This matches the typical behavior of a C-style downcast.
+Note
+Overflow is not considered an error. If the returned value is larger than _n_bytes_ , most significant bits were discarded.
+`0` will never be returned.
+Values are always copied as two’s-complement.
+Usage example:
+```
+int32_tvalue;
+Py_ssize_tbytes=PyLong_AsNativeBytes(pylong,&value,sizeof(value),-1);
+if(bytes<0){
+// Failed. A Python exception was set with the reason.
+returnNULL;
+}
+elseif(bytes<=(Py_ssize_t)sizeof(value)){
+// Success!
+}
+else{
+// Overflow occurred, but 'value' contains the truncated
+// lowest bits of pylong.
+}

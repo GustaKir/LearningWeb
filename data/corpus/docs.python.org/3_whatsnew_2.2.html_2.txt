@@ -1,0 +1,36 @@
+Title: Concerns and Reassurances About Python 2.2 Changes
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: Some users express concerns that new features in Python 2.2 complicate the language, potentially undermining its simplicity. However, the author reassures that many advanced features are not necessary for basic programming and that pure Python can now handle tasks that required C before, enhancing the language's capabilities.
+---
+
+Some users have voiced concern about all these changes. Sure, they say, the new features are neat and lend themselves to all sorts of tricks that weren’t possible in previous versions of Python, but they also make the language more complicated. Some people have said that they’ve always recommended Python for its simplicity, and feel that its simplicity is being lost.
+Personally, I think there’s no need to worry. Many of the new features are quite esoteric, and you can write a lot of Python code without ever needed to be aware of them. Writing a simple class is no more difficult than it ever was, so you don’t need to bother learning or teaching them unless they’re actually needed. Some very complicated tasks that were previously only possible from C will now be possible in pure Python, and to my mind that’s all for the better.
+I’m not going to attempt to cover every single corner case and small change that were required to make the new features work. Instead this section will paint only the broad strokes. See section [Related Links](https://docs.python.org/3/whatsnew/2.2.html#sect-rellinks), “Related Links”, for further sources of information about Python 2.2’s new object model.
+### Old and New Classes[¶](https://docs.python.org/3/whatsnew/2.2.html#old-and-new-classes "Link to this heading")
+First, you should know that Python 2.2 really has two kinds of classes: classic or old-style classes, and new-style classes. The old-style class model is exactly the same as the class model in earlier versions of Python. All the new features described in this section apply only to new-style classes. This divergence isn’t intended to last forever; eventually old-style classes will be dropped, possibly in Python 3.0.
+So how do you define a new-style class? You do it by subclassing an existing new-style class. Most of Python’s built-in types, such as integers, lists, dictionaries, and even files, are new-style classes now. A new-style class named [`object`](https://docs.python.org/3/library/functions.html#object "object"), the base class for all built-in types, has also been added so if no built-in type is suitable, you can just subclass [`object`](https://docs.python.org/3/library/functions.html#object "object"):
+```
+classC(object):
+  def__init__ (self):
+    ...
+  ...
+
+```
+
+This means that [`class`](https://docs.python.org/3/reference/compound_stmts.html#class) statements that don’t have any base classes are always classic classes in Python 2.2. (Actually you can also change this by setting a module-level variable named `__metaclass__` — see [**PEP 253**](https://peps.python.org/pep-0253/) for the details — but it’s easier to just subclass [`object`](https://docs.python.org/3/library/functions.html#object "object").)
+The type objects for the built-in types are available as built-ins, named using a clever trick. Python has always had built-in functions named [`int()`](https://docs.python.org/3/library/functions.html#int "int"), [`float()`](https://docs.python.org/3/library/functions.html#float "float"), and [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str"). In 2.2, they aren’t functions any more, but type objects that behave as factories when called.
+>>>```
+>>> int
+<type 'int'>
+>>> int('123')
+123
+
+```
+
+To make the set of types complete, new type objects such as [`dict()`](https://docs.python.org/3/library/stdtypes.html#dict "dict") and `file()` have been added. Here’s a more interesting example, adding a `lock()` method to file objects:
+```
+classLockableFile(file):
+  deflock (self, operation, length=0, start=0, whence=0):
+    importfcntl
+    return fcntl.lockf(self.fileno(), operation,
+              length, start, whence)

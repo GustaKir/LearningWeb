@@ -1,0 +1,52 @@
+Title: Dataframe Row Selections in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections
+Summary: The chunk explains how to display selected rows from a dataframe in Streamlit. It includes steps to insert a header, retrieve selected rows using pandas methods like `.iloc[]`, and display them in a new dataframe. It also suggests reusing existing column configuration and testing the app after making selections.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#display-the-selected-data)Display the selected data
+  1. Insert a header to identify the subset of data you will display.
+`st.header("Selected members") `
+  2. Get the list of selected rows and filter your dataframe.
+`people = event.selection.rows filtered_df = df.iloc[people] `
+Row selections are returned by positional index. You should use pandas methods `.iloc[]` or `.iat[]` to retrieve rows.
+  3. Display the selected rows in a new dataframe.
+`  st.dataframe(     filtered_df,     column_config=column_configuration,     use_container_width=True, ) `
+For consistency, reuse the existing column configuration.
+  4. Optional: Save your file and test it out. Try selecting some rows in your app, and then return to your code.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#combine-activity-data-for-the-selected-rows)Combine activity data for the selected rows
+  1. Create an empty dictionary to store (yearly) activity data.
+`activity_df = {} `
+  2. Iterate through selected rows and save each member's activity in the dictionary indexed by their name.
+`for person in people:   activity_df[df.iloc[person]["name"]] = df.iloc[person]["activity"] `
+  3. Convert the activity dictionary into a `pandas.DataFrame`.
+`activity_df = pd.DataFrame(activity_df) `
+  4. Repeat the previous three steps similarly for daily activity.
+`daily_activity_df = {} for person in people:   daily_activity_df[df.iloc[person]["name"]] = df.iloc[person]["daily_activity"] daily_activity_df = pd.DataFrame(daily_activity_df) `
+  5. Optional: Test out your combined data by displaying it.
+`st.dataframe(activity_df) st.dataframe(daily_activity_df) `
+Save your `app.py` file to see the preview. Delete these two lines before you continue.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#use-charts-to-visualize-the-activity-comparison)Use charts to visualize the activity comparison
+  1. Start a conditional block to check if anyone is currently selected.
+`if len(people) > 0: `
+Since no members are selected when the app loads, this check will prevent empty charts from being displayed.
+  2. Add a header to identify your first chart.
+`  st.header("Daily activity comparison") `
+  3. Show the daily activity comparison in a bar chart.
+`  st.bar_chart(daily_activity_df) `
+  4. Similarly, for yearly activity, add a header and line chart.
+`  st.header("Yearly activity comparison")   st.line_chart(activity_df) `
+  5. Complete the conditional block with a default message to show when no members are selected.
+`else:   st.markdown("No members selected.") `
+
+
+### [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#make-it-pretty)Make it pretty
+You should have a functioning app at this point. Now you can beautify it. In this section, you'll separate the selection UI from the comparison by using `st.tabs`.
+  1. Immediately after the column configuration definition, insert two tabs.
+`select, compare = st.tabs(["Select members", "Compare selected"]) `
+  2. Indent the code following the line in the previous step and group it into the two new tabs.
+`with select: # Add select tab #############################################   st.header("All members")   df = get_profile_dataset()   event = st.dataframe(     df,     column_config=column_configuration,     use_container_width=True,     hide_index=True,     on_select="rerun",     selection_mode="multi-row", )   st.header("Selected members")   people = event.selection.rows   filtered_df = df.iloc[people]   st.dataframe(     filtered_df,     column_config=column_configuration,     use_container_width=True, ) with compare: # Add compare tab ###########################################   activity_df = {} for person in people:     activity_df[df.iloc[person]["name"]] = df.iloc[person]["activity"]   activity_df = pd.DataFrame(activity_df)   daily_activity_df = {} for person in people:     daily_activity_df[df.iloc[person]["name"]] = df.iloc[person]["daily_activity"]   daily_activity_df = pd.DataFrame(daily_activity_df) if len(people) > 0:     st.header("Daily activity comparison")     st.bar_chart(daily_activity_df)     st.header("Yearly activity comparison")     st.line_chart(activity_df) else:     st.markdown("No members selected.") `
+  3. Save your file and try out your completed example.

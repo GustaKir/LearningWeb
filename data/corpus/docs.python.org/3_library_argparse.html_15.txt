@@ -1,0 +1,49 @@
+Title: Using dest in ArgumentParser
+URL: https://docs.python.org/3/library/argparse.html
+Summary: The `dest` keyword argument in `add_argument()` determines the attribute name in the object returned by `parse_args()`. For positional arguments, `dest` is typically the first argument in the `add_argument()` method.
+---
+
+```
+
+### dest[¶](https://docs.python.org/3/library/argparse.html#dest "Link to this heading")
+Most [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") actions add some value as an attribute of the object returned by [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args"). The name of this attribute is determined by the `dest` keyword argument of [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"). For positional argument actions, `dest` is normally supplied as the first argument to [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"):
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('bar')
+>>> parser.parse_args(['XXX'])
+Namespace(bar='XXX')
+
+```
+
+For optional argument actions, the value of `dest` is normally inferred from the option strings. [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") generates the value of `dest` by taking the first long option string and stripping away the initial `--` string. If no long option strings were supplied, `dest` will be derived from the first short option string by stripping the initial `-` character. Any internal `-` characters will be converted to `_` characters to make sure the string is a valid attribute name. The examples below illustrate this behavior:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('-f', '--foo-bar', '--foo')
+>>> parser.add_argument('-x', '-y')
+>>> parser.parse_args('-f 1 -x 2'.split())
+Namespace(foo_bar='1', x='2')
+>>> parser.parse_args('--foo 1 -y 2'.split())
+Namespace(foo_bar='1', x='2')
+
+```
+
+`dest` allows a custom attribute name to be provided:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', dest='bar')
+>>> parser.parse_args('--foo XXX'.split())
+Namespace(bar='XXX')
+
+```
+
+### deprecated[¶](https://docs.python.org/3/library/argparse.html#deprecated "Link to this heading")
+During a project’s lifetime, some arguments may need to be removed from the command line. Before removing them, you should inform your users that the arguments are deprecated and will be removed. The `deprecated` keyword argument of [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"), which defaults to `False`, specifies if the argument is deprecated and will be removed in the future. For arguments, if `deprecated` is `True`, then a warning will be printed to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") when the argument is used:
+>>>```
+>>> importargparse
+>>> parser = argparse.ArgumentParser(prog='snake.py')
+>>> parser.add_argument('--legs', default=0, type=int, deprecated=True)
+>>> parser.parse_args([])
+Namespace(legs=0)
+>>> parser.parse_args(['--legs', '4'])
+snake.py: warning: option '--legs' is deprecated
+Namespace(legs=4)

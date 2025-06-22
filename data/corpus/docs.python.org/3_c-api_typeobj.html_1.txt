@@ -1,0 +1,27 @@
+Title: Type Object Structures in Python
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section discusses the `PyTypeObject` structure, which is crucial for defining new types in the Python object system. It highlights the importance of type objects for the interpreter and extension modules, noting their size due to numerous stored C function pointers that contribute to a type's functionality.
+---
+
+# Type Object Structures[¶](https://docs.python.org/3/c-api/typeobj.html#type-object-structures "Link to this heading")
+Perhaps one of the most important structures of the Python object system is the structure that defines a new type: the [`PyTypeObject`](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject") structure. Type objects can be handled using any of the `PyObject_*` or `PyType_*` functions, but do not offer much that’s interesting to most Python applications. These objects are fundamental to how objects behave, so they are very important to the interpreter itself and to any extension module that implements new types.
+Type objects are fairly large compared to most of the standard types. The reason for the size is that each type object stores a large number of values, mostly C function pointers, each of which implements a small part of the type’s functionality. The fields of the type object are examined in detail in this section. The fields will be described in the order in which they occur in the structure.
+In addition to the following quick reference, the [Examples](https://docs.python.org/3/c-api/typeobj.html#typedef-examples) section provides at-a-glance insight into the meaning and use of [`PyTypeObject`](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").
+## Quick Reference[¶](https://docs.python.org/3/c-api/typeobj.html#quick-reference "Link to this heading")
+### “tp slots”[¶](https://docs.python.org/3/c-api/typeobj.html#tp-slots "Link to this heading")
+PyTypeObject Slot [[1]](https://docs.python.org/3/c-api/typeobj.html#slots) | [Type](https://docs.python.org/3/c-api/typeobj.html#slot-typedefs-table) | special methods/attrs | Info [[2]](https://docs.python.org/3/c-api/typeobj.html#cols)  
+---|---|---|---  
+O | T | D | I  
+<R> [`tp_name`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_name "PyTypeObject.tp_name") | const char * | __name__ | X | X |  |   
+[`tp_basicsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_basicsize "PyTypeObject.tp_basicsize") | [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") |  | X | X |  | X  
+[`tp_itemsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_itemsize "PyTypeObject.tp_itemsize") | [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") |  |  | X |  | X  
+[`tp_dealloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dealloc "PyTypeObject.tp_dealloc") | [`destructor`](https://docs.python.org/3/c-api/typeobj.html#c.destructor "destructor") |  | X | X |  | X  
+[`tp_vectorcall_offset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_vectorcall_offset "PyTypeObject.tp_vectorcall_offset") | [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") |  |  | X |  | X  
+([`tp_getattr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_getattr "PyTypeObject.tp_getattr")) | [`getattrfunc`](https://docs.python.org/3/c-api/typeobj.html#c.getattrfunc "getattrfunc") | __getattribute__, __getattr__ |  |  |  | G  
+([`tp_setattr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_setattr "PyTypeObject.tp_setattr")) | [`setattrfunc`](https://docs.python.org/3/c-api/typeobj.html#c.setattrfunc "setattrfunc") | __setattr__, __delattr__ |  |  |  | G  
+[`tp_as_async`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_async "PyTypeObject.tp_as_async") | [`PyAsyncMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods "PyAsyncMethods") * | [sub-slots](https://docs.python.org/3/c-api/typeobj.html#sub-slots) |  |  |  | %  
+[`tp_repr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_repr "PyTypeObject.tp_repr") | [`reprfunc`](https://docs.python.org/3/c-api/typeobj.html#c.reprfunc "reprfunc") | __repr__ | X | X |  | X  
+[`tp_as_number`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_number "PyTypeObject.tp_as_number") | [`PyNumberMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods "PyNumberMethods") * | [sub-slots](https://docs.python.org/3/c-api/typeobj.html#sub-slots) |  |  |  | %  
+[`tp_as_sequence`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_sequence "PyTypeObject.tp_as_sequence") | [`PySequenceMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PySequenceMethods "PySequenceMethods") * | [sub-slots](https://docs.python.org/3/c-api/typeobj.html#sub-slots) |  |  |  | %  
+[`tp_as_mapping`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_as_mapping "PyTypeObject.tp_as_mapping") | [`PyMappingMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyMappingMethods "PyMappingMethods") * | [sub-slots](https://docs.python.org/3/c-api/typeobj.html#sub-slots) |  |  |  | %  
+[`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash") | [`hashfunc`](https://docs.python.org/3/c-api

@@ -1,0 +1,25 @@
+Title: Python 3 Changelog Highlights
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section discusses recent updates related to interpreter support for multi-phase initialization in extension modules, performance improvements in PyObject_HasAttrString(), and adherence fixes to PEP 683 for list and tuple repetitions.
+---
+
+o get an interpreter with its own GIL, call `Py_NewInterpreterFromConfig()`.
+  * [gh-104108](https://github.com/python/cpython/issues/104108): Multi-phase init extension modules may now indicate whether or not they actually support multiple interpreters. By default such modules are expected to support use in multiple interpreters. In the uncommon case that one does not, it may use the new `Py_mod_multiple_interpreters` module def slot. A value of `0` means the module does not support them. `1` means it does. The default is `1`.
+  * [gh-104142](https://github.com/python/cpython/issues/104142): Fix an issue where [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") or [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") repetition could fail to respect [**PEP 683**](https://peps.python.org/pep-0683/).
+  * [gh-104078](https://github.com/python/cpython/issues/104078): Improve the performance of [`PyObject_HasAttrString()`](https://docs.python.org/3/c-api/object.html#c.PyObject_HasAttrString "PyObject_HasAttrString")
+  * [gh-104066](https://github.com/python/cpython/issues/104066): Improve the performance of [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") for module objects with a missing attribute.
+  * [gh-104028](https://github.com/python/cpython/issues/104028): Reduce object creation while calling callback function from gc. Patch by Donghee Na.
+  * [gh-104018](https://github.com/python/cpython/issues/104018): Disallow the “z” format specifier in %-format of bytes objects.
+  * [gh-102213](https://github.com/python/cpython/issues/102213): Fix performance loss when accessing an object’s attributes with `__getattr__` defined.
+  * [gh-103895](https://github.com/python/cpython/issues/103895): Improve handling of edge cases in showing `Exception.__notes__`. Ensures that the messages always end with a newline and that string/bytes are not exploded over multiple lines. Patch by Carey Metcalfe.
+  * [gh-103907](https://github.com/python/cpython/issues/103907): Don’t modify the refcounts of known immortal objects ([`True`](https://docs.python.org/3/library/constants.html#True "True"), [`False`](https://docs.python.org/3/library/constants.html#False "False"), and [`None`](https://docs.python.org/3/library/constants.html#None "None")) in the main interpreter loop.
+  * [gh-103899](https://github.com/python/cpython/issues/103899): Provide a helpful hint in the [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") message when accidentally calling a [module](https://docs.python.org/3/glossary.html#term-module) object that has a callable attribute of the same name (such as [`dis.dis()`](https://docs.python.org/3/library/dis.html#dis.dis "dis.dis") or [`datetime.datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime")).
+  * [gh-103845](https://github.com/python/cpython/issues/103845): Remove both line and instruction instrumentation before adding new ones for monitoring, to avoid newly added instrumentation being removed immediately.
+  * [gh-103763](https://github.com/python/cpython/issues/103763): Implement [**PEP 695**](https://peps.python.org/pep-0695/), adding syntactic support for generic classes, generic functions, and type aliases.
+A new `type X = ...` syntax is added for type aliases, which resolves at runtime to an instance of the new class `typing.TypeAliasType`. The value is lazily evaluated and is accessible through the `.__value__` attribute. This is implemented as a new AST node `ast.TypeAlias`.
+New syntax (`class X[T]: ...`, `def func[T](): ...`) is added for defining generic functions and classes. This is implemented as a new `type_params` attribute on the AST nodes for classes and functions. This node holds instances of the new AST classes `ast.TypeVar`, `ast.ParamSpec`, and `ast.TypeVarTuple`.
+`typing.TypeVar`, `typing.ParamSpec`, `typing.ParamSpecArgs`, `typing.ParamSpecKwargs`, `typing.TypeVarTuple`, and `typing.Generic` are now implemented in C rather than Python.
+There are new bytecode instructions `LOAD_LOCALS`, `LOAD_CLASSDICT_OR_GLOBAL`, and `LOAD_CLASSDICT_OR_DEREF` to support correct resolution of names in class namespaces.
+Patch by Eric Traut, Larry Hastings, and Jelle Zijlstra.
+  * [gh-103801](https://github.com/python/cpython/issues/103801): Adds three minor linting fixes to the wasm module caught that were caught by ruff.
+  * [gh-103793](https://github.com/python/cpython/issues/103793): Optimized asyncio Task creation by deferring expensive string formatting (task name generation) from Task creation to the first time `get_name` is called.

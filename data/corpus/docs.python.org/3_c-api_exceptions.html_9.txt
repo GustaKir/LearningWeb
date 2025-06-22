@@ -1,0 +1,25 @@
+Title: PyErr_Restore Function
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: The `PyErr_Restore` function sets the error indicator using three provided objects: type, value, and traceback, while clearing any existing exceptions. It has been deprecated since Python 3.12 in favor of `PyErr_SetRaisedException()`, and care must be taken to avoid passing invalid or NULL parameters.
+---
+
+```
+
+
+voidPyErr_Restore([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*traceback)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Restore "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Deprecated since version 3.12: Use [`PyErr_SetRaisedException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetRaisedException "PyErr_SetRaisedException") instead.
+Set the error indicator from the three objects, _type_ , _value_ , and _traceback_ , clearing the existing exception if one is set. If the objects are `NULL`, the error indicator is cleared. Do not pass a `NULL` type and non-`NULL` value or traceback. The exception type should be a class. Do not pass an invalid exception type or value. (Violating these rules will cause subtle problems later.) This call takes away a reference to each object: you must own a reference to each object before the call and after the call you no longer own these references. (If you don’t understand this, don’t use this function. I warned you.)
+Note
+This function is normally only used by legacy code that needs to save and restore the error indicator temporarily. Use [`PyErr_Fetch()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Fetch "PyErr_Fetch") to save the current error indicator. 
+
+voidPyErr_NormalizeException([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**exc, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**val, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**tb)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_NormalizeException "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Deprecated since version 3.12: Use [`PyErr_GetRaisedException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_GetRaisedException "PyErr_GetRaisedException") instead, to avoid any possible de-normalization.
+Under certain circumstances, the values returned by [`PyErr_Fetch()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Fetch "PyErr_Fetch") below can be “unnormalized”, meaning that `*exc` is a class object but `*val` is not an instance of the same class. This function can be used to instantiate the class in that case. If the values are already normalized, nothing happens. The delayed normalization is implemented to improve performance.
+Note
+This function _does not_ implicitly set the [`__traceback__`](https://docs.python.org/3/library/exceptions.html#BaseException.__traceback__ "BaseException.__traceback__") attribute on the exception value. If setting the traceback appropriately is desired, the following additional snippet is needed:
+```
+if(tb!=NULL){
+PyException_SetTraceback(val,tb);
+}

@@ -1,0 +1,76 @@
+Title: Running __main__.py in Python Applications
+URL: https://docs.python.org/3/library/__main__.html
+Summary: This section discusses the handling of `__main__.py` files in Python, particularly their consistency when located in `.zip` files. It highlights the preference for minimal `__main__.py` files without `__name__` checks and references related modules such as `venv`, `runpy`, and `zipapp` for additional context on virtual environments, module execution, and managing Python zip archives.
+---
+
+```
+
+This won’t work for `__main__.py` files in the root directory of a `.zip` file though. Hence, for consistency, a minimal `__main__.py` without a `__name__` check is preferred.
+See also
+See [`venv`](https://docs.python.org/3/library/venv.html#module-venv "venv: Creation of virtual environments.") for an example of a package with a minimal `__main__.py` in the standard library. It doesn’t contain a `if __name__ == '__main__'` block. You can invoke it with `python -m venv [directory]`.
+See [`runpy`](https://docs.python.org/3/library/runpy.html#module-runpy "runpy: Locate and run Python modules without importing them first.") for more details on the [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m) flag to the interpreter executable.
+See [`zipapp`](https://docs.python.org/3/library/zipapp.html#module-zipapp "zipapp: Manage executable Python zip archives") for how to run applications packaged as _.zip_ files. In this case Python looks for a `__main__.py` file in the root directory of the archive.
+## `import __main__`[¶](https://docs.python.org/3/library/__main__.html#import-main "Link to this heading")
+Regardless of which module a Python program was started with, other modules running within that same program can import the top-level environment’s scope ([namespace](https://docs.python.org/3/glossary.html#term-namespace)) by importing the `__main__` module. This doesn’t import a `__main__.py` file but rather whichever module that received the special name `'__main__'`.
+Here is an example module that consumes the `__main__` namespace:
+```
+# namely.py
+import__main__
+defdid_user_define_their_name():
+  return 'my_name' in dir(__main__)
+defprint_user_name():
+  if not did_user_define_their_name():
+    raise ValueError('Define the variable `my_name`!')
+  if '__file__' in dir(__main__):
+    print(__main__.my_name, "found in file", __main__.__file__)
+  else:
+    print(__main__.my_name)
+
+```
+
+Example usage of this module could be as follows:
+```
+# start.py
+importsys
+fromnamelyimport print_user_name
+# my_name = "Dinsdale"
+defmain():
+  try:
+    print_user_name()
+  except ValueError as ve:
+    return str(ve)
+if __name__ == "__main__":
+  sys.exit(main())
+
+```
+
+Now, if we started our program, the result would look like this:
+```
+$ pythonstart.py
+Define the variable `my_name`!
+
+```
+
+The exit code of the program would be 1, indicating an error. Uncommenting the line with `my_name = "Dinsdale"` fixes the program and now it exits with status code 0, indicating success:
+```
+$ pythonstart.py
+Dinsdale found in file /path/to/start.py
+
+```
+
+Note that importing `__main__` doesn’t cause any issues with unintentionally running top-level code meant for script use which is put in the `if __name__ == "__main__"` block of the `start` module. Why does this work?
+Python inserts an empty `__main__` module in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules") at interpreter startup, and populates it by running top-level code. In our example this is the `start` module which runs line by line and imports `namely`. In turn, `namely` imports `__main__` (which is really `start`). That’s an import cycle! Fortunately, since the partially populated `__main__` module is present in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules"), Python passes that to `namely`. See [Special considerations for __main__](https://docs.python.org/3/reference/import.html#import-dunder-main) in the import system’s reference for details on how this works.
+The Python REPL is another example of a “top-level environment”, so anything defined in the REPL becomes part of the `__main__` scope:
+>>>```
+>>> importnamely
+>>> namely.did_user_define_their_name()
+False
+>>> namely.print_user_name()
+Traceback (most recent call last):
+...
+ValueError: Define the variable `my_name`!
+>>> my_name = 'Jabberwocky'
+>>> namely.did_user_define_their_name()
+True
+>>> namely.print_user_name()
+Jabberwocky

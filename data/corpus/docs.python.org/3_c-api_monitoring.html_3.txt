@@ -1,0 +1,52 @@
+Title: Entering a Monitored Scope in Python C API
+URL: https://docs.python.org/3/c-api/monitoring.html
+Summary: The `PyMonitoring_EnterScope` function allows entry into a monitored scope, utilizing an array of event IDs that may trigger events within that scope. It requires a user-allocated `state_array` to track the activation state of each event and a version identifier. This function is essential for monitoring events like `PY_START` in Python's C API.
+---
+
+intPyMonitoring_EnterScope([PyMonitoringState](https://docs.python.org/3/c-api/monitoring.html#c.PyMonitoringState "PyMonitoringState")*state_array, uint64_t*version, constuint8_t*event_types, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")length)[¶](https://docs.python.org/3/c-api/monitoring.html#c.PyMonitoring_EnterScope "Link to this definition")
+    
+Enter a monitored scope. `event_types` is an array of the event IDs for events that may be fired from the scope. For example, the ID of a `PY_START` event is the value `PY_MONITORING_EVENT_PY_START`, which is numerically equal to the base-2 logarithm of `sys.monitoring.events.PY_START`. `state_array` is an array with a monitoring state entry for each event in `event_types`, it is allocated by the user but populated by `PyMonitoring_EnterScope()` with information about the activation state of the event. The size of `event_types` (and hence also of `state_array`) is given in `length`.
+The `version` argument is a pointer to a value which should be allocated by the user together with `state_array` and initialized to 0, and then set only by `PyMonitoring_EnterScope()` itself. It allows this function to determine whether event states have changed since the previous call, and to return quickly if they have not.
+The scopes referred to here are lexical scopes: a function, class or method. `PyMonitoring_EnterScope()` should be called whenever the lexical scope is entered. Scopes can be reentered, reusing the same _state_array_ and _version_ , in situations like when emulating a recursive Python function. When a code-like’s execution is paused, such as when emulating a generator, the scope needs to be exited and re-entered.
+The macros for _event_types_ are:
+Macro | Event  
+---|--- 
+
+PY_MONITORING_EVENT_BRANCH[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_BRANCH "Link to this definition")
+| [`BRANCH`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-BRANCH) 
+
+PY_MONITORING_EVENT_CALL[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_CALL "Link to this definition")
+| [`CALL`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-CALL) 
+
+PY_MONITORING_EVENT_C_RAISE[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_C_RAISE "Link to this definition")
+| [`C_RAISE`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-C_RAISE) 
+
+PY_MONITORING_EVENT_C_RETURN[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_C_RETURN "Link to this definition")
+| [`C_RETURN`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-C_RETURN) 
+
+PY_MONITORING_EVENT_EXCEPTION_HANDLED[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_EXCEPTION_HANDLED "Link to this definition")
+| [`EXCEPTION_HANDLED`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-EXCEPTION_HANDLED) 
+
+PY_MONITORING_EVENT_INSTRUCTION[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_INSTRUCTION "Link to this definition")
+| [`INSTRUCTION`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-INSTRUCTION) 
+
+PY_MONITORING_EVENT_JUMP[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_JUMP "Link to this definition")
+| [`JUMP`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-JUMP) 
+
+PY_MONITORING_EVENT_LINE[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_LINE "Link to this definition")
+| [`LINE`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-LINE) 
+
+PY_MONITORING_EVENT_PY_RESUME[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_PY_RESUME "Link to this definition")
+| [`PY_RESUME`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_RESUME) 
+
+PY_MONITORING_EVENT_PY_RETURN[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_PY_RETURN "Link to this definition")
+| [`PY_RETURN`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_RETURN) 
+
+PY_MONITORING_EVENT_PY_START[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_PY_START "Link to this definition")
+| [`PY_START`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_START) 
+
+PY_MONITORING_EVENT_PY_THROW[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_PY_THROW "Link to this definition")
+| [`PY_THROW`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_THROW) 
+
+PY_MONITORING_EVENT_PY_UNWIND[¶](https://docs.python.org/3/c-api/monitoring.html#c.PY_MONITORING_EVENT_PY_UNWIND "Link to this definition")
+| [`PY_UNWIND`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_UNWIND)

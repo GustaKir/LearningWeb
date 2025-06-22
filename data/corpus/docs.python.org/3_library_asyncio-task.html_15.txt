@@ -1,0 +1,82 @@
+Title: Task Management in asyncio: Name and Cancel Methods
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: This section details methods for managing asyncio tasks. `get_name()` retrieves the task's name, which is auto-generated if not explicitly set. `set_name(_value_)` allows the user to assign a custom name to the task. The `cancel(_msg=None_)` method requests the cancellation of the task and returns `True` if successful, or `False` if the task is already done or canceled. All methods were added in version 3.8.
+---
+
+get_name()[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.get_name "Link to this definition")
+    
+Return the name of the Task.
+If no name has been explicitly assigned to the Task, the default asyncio Task implementation generates a default name during instantiation.
+Added in version 3.8. 
+
+set_name(_value_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.set_name "Link to this definition")
+    
+Set the name of the Task.
+The _value_ argument can be any object, which is then converted to a string.
+In the default Task implementation, the name will be visible in the [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") output of a task object.
+Added in version 3.8. 
+
+cancel(_msg =None_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "Link to this definition")
+    
+Request the Task to be cancelled.
+If the Task is already _done_ or _cancelled_ , return `False`, otherwise, return `True`.
+The method arranges for a [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") exception to be thrown into the wrapped coroutine on the next cycle of the event loop.
+The coroutine then has a chance to clean up or even deny the request by suppressing the exception with a [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) … … `except CancelledError` … [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) block. Therefore, unlike [`Future.cancel()`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future.cancel "asyncio.Future.cancel"), [`Task.cancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel") does not guarantee that the Task will be cancelled, although suppressing cancellation completely is not common and is actively discouraged. Should the coroutine nevertheless decide to suppress the cancellation, it needs to call [`Task.uncancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel") in addition to catching the exception.
+Changed in version 3.9: Added the _msg_ parameter.
+Changed in version 3.11: The `msg` parameter is propagated from cancelled task to its awaiter.
+The following example illustrates how coroutines can intercept the cancellation request:
+```
+async defcancel_me():
+  print('cancel_me(): before sleep')
+  try:
+    # Wait for 1 hour
+    await asyncio.sleep(3600)
+  except asyncio.CancelledError:
+    print('cancel_me(): cancel sleep')
+    raise
+  finally:
+    print('cancel_me(): after sleep')
+async defmain():
+  # Create a "cancel_me" Task
+  task = asyncio.create_task(cancel_me())
+  # Wait for 1 second
+  await asyncio.sleep(1)
+  task.cancel()
+  try:
+    await task
+  except asyncio.CancelledError:
+    print("main(): cancel_me is cancelled now")
+asyncio.run(main())
+# Expected output:
+#
+#   cancel_me(): before sleep
+#   cancel_me(): cancel sleep
+#   cancel_me(): after sleep
+#   main(): cancel_me is cancelled now
+
+```
+
+
+cancelled()[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancelled "Link to this definition")
+    
+Return `True` if the Task is _cancelled_.
+The Task is _cancelled_ when the cancellation was requested with [`cancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel") and the wrapped coroutine propagated the [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") exception thrown into it. 
+
+uncancel()[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "Link to this definition")
+    
+Decrement the count of cancellation requests to this Task.
+Returns the remaining number of cancellation requests.
+Note that once execution of a cancelled task completed, further calls to [`uncancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel") are ineffective.
+Added in version 3.11.
+This method is used by asyncio’s internals and isn’t expected to be used by end-user code. In particular, if a Task gets successfully uncancelled, this allows for elements of structured concurrency like [Task Groups](https://docs.python.org/3/library/asyncio-task.html#taskgroups) and [`asyncio.timeout()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout "asyncio.timeout") to continue running, isolating cancellation to the respective structured block. For example:
+```
+async defmake_request_with_timeout():
+  try:
+    async with asyncio.timeout(1):
+      # Structured block affected by the timeout:
+      await make_request()
+      await make_another_request()
+  except TimeoutError:
+    log("There was a timeout")
+  # Outer code not affected by the timeout:
+  await unrelated_code()

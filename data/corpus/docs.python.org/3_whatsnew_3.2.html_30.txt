@@ -1,0 +1,87 @@
+Title: Enhanced Configuration Parser in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces a new API for configuration parsers that builds on the classical API, allowing custom subclasses to function without changes. Users can now customize INI file structures, including alternative delimiters and comment prefixes, and have support for pluggable interpolation with `ExtendedInterpolation`.
+---
+
+```
+
+The new API is implemented on top of the classical API, so custom parser subclasses should be able to use it without modifications.
+The INI file structure accepted by config parsers can now be customized. Users can specify alternative option/value delimiters and comment prefixes, change the name of the _DEFAULT_ section or switch the interpolation syntax.
+There is support for pluggable interpolation including an additional interpolation handler [`ExtendedInterpolation`](https://docs.python.org/3/library/configparser.html#configparser.ExtendedInterpolation "configparser.ExtendedInterpolation"):
+>>>```
+>>> parser = ConfigParser(interpolation=ExtendedInterpolation())
+>>> parser.read_dict({'buildout': {'directory': '/home/ambv/zope9'},
+...          'custom': {'prefix': '/usr/local'}})
+>>> parser.read_string("""
+... [buildout]
+... parts =
+...  zope9
+...  instance
+... find-links =
+...  ${buildout:directory}/downloads/dist
+...
+... [zope9]
+... recipe = plone.recipe.zope9install
+... location = /opt/zope
+...
+... [instance]
+... recipe = plone.recipe.zope9instance
+... zope9-location = ${zope9:location}
+... zope-conf = ${custom:prefix}/etc/zope.conf
+... """)
+>>> parser['buildout']['find-links']
+'\n/home/ambv/zope9/downloads/dist'
+>>> parser['instance']['zope-conf']
+'/usr/local/etc/zope.conf'
+>>> instance = parser['instance']
+>>> instance['zope-conf']
+'/usr/local/etc/zope.conf'
+>>> instance['zope9-location']
+'/opt/zope'
+
+```
+
+A number of smaller features were also introduced, like support for specifying encoding in read operations, specifying fallback values for get-functions, or reading directly from dictionaries and strings.
+(All changes contributed by Łukasz Langa.)
+### urllib.parse[¶](https://docs.python.org/3/whatsnew/3.2.html#urllib-parse "Link to this heading")
+A number of usability improvements were made for the [`urllib.parse`](https://docs.python.org/3/library/urllib.parse.html#module-urllib.parse "urllib.parse: Parse URLs into or assemble them from components.") module.
+The [`urlparse()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlparse "urllib.parse.urlparse") function now supports [IPv6](https://en.wikipedia.org/wiki/IPv6) addresses as described in [**RFC 2732**](https://datatracker.ietf.org/doc/html/rfc2732.html):
+>>>```
+>>> importurllib.parse
+>>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
+ParseResult(scheme='http',
+      netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',
+      path='/foo/',
+      params='',
+      query='',
+      fragment='')
+
+```
+
+The [`urldefrag()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urldefrag "urllib.parse.urldefrag") function now returns a [named tuple](https://docs.python.org/3/glossary.html#term-named-tuple):
+>>>```
+>>> r = urllib.parse.urldefrag('http://python.org/about/#target')
+>>> r
+DefragResult(url='http://python.org/about/', fragment='target')
+>>> r[0]
+'http://python.org/about/'
+>>> r.fragment
+'target'
+
+```
+
+And, the [`urlencode()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlencode "urllib.parse.urlencode") function is now much more flexible, accepting either a string or bytes type for the _query_ argument. If it is a string, then the _safe_ , _encoding_ , and _error_ parameters are sent to [`quote_plus()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.quote_plus "urllib.parse.quote_plus") for encoding:
+>>>```
+>>> urllib.parse.urlencode([
+...    ('type', 'telenovela'),
+...    ('name', '¿Dónde Está Elisa?')],
+...    encoding='latin-1')
+'type=telenovela&name=%BFD%F3nde+Est%E1+Elisa%3F'
+
+```
+
+As detailed in [Parsing ASCII Encoded Bytes](https://docs.python.org/3/library/urllib.parse.html#parsing-ascii-encoded-bytes), all the [`urllib.parse`](https://docs.python.org/3/library/urllib.parse.html#module-urllib.parse "urllib.parse: Parse URLs into or assemble them from components.") functions now accept ASCII-encoded byte strings as input, so long as they are not mixed with regular strings. If ASCII-encoded byte strings are given as parameters, the return types will also be an ASCII-encoded byte strings:
+>>>```
+>>> urllib.parse.urlparse(b'http://www.python.org:80/about/')
+ParseResultBytes(scheme=b'http', netloc=b'www.python.org:80',
+         path=b'/about/', params=b'', query=b'', fragment=b'')

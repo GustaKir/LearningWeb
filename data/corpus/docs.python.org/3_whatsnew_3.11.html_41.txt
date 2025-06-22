@@ -1,0 +1,49 @@
+Title: Changes to PyFrameObject in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: In Python 3.11, several members of the PyFrameObject structure have been removed from the public C API to optimize performance. While some fields have been deleted, others have updated access methods. Developers should now use PyFrame_GetBack() for f_back and PyFrame_GetBuiltins() for f_builtins.
+---
+
+* The [`PyFrameObject`](https://docs.python.org/3/c-api/frame.html#c.PyFrameObject "PyFrameObject") structure members have been removed from the public C API.
+While the documentation notes that the [`PyFrameObject`](https://docs.python.org/3/c-api/frame.html#c.PyFrameObject "PyFrameObject") fields are subject to change at any time, they have been stable for a long time and were used in several popular extensions.
+In Python 3.11, the frame struct was reorganized to allow performance optimizations. Some fields were removed entirely, as they were details of the old implementation.
+[`PyFrameObject`](https://docs.python.org/3/c-api/frame.html#c.PyFrameObject "PyFrameObject") fields:
+    * `f_back`: use [`PyFrame_GetBack()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetBack "PyFrame_GetBack").
+    * `f_blockstack`: removed.
+    * `f_builtins`: use [`PyFrame_GetBuiltins()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetBuiltins "PyFrame_GetBuiltins").
+    * `f_code`: use [`PyFrame_GetCode()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetCode "PyFrame_GetCode").
+    * `f_gen`: use [`PyFrame_GetGenerator()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetGenerator "PyFrame_GetGenerator").
+    * `f_globals`: use [`PyFrame_GetGlobals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetGlobals "PyFrame_GetGlobals").
+    * `f_iblock`: removed.
+    * `f_lasti`: use [`PyFrame_GetLasti()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLasti "PyFrame_GetLasti"). Code using `f_lasti` with `PyCode_Addr2Line()` should use [`PyFrame_GetLineNumber()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLineNumber "PyFrame_GetLineNumber") instead; it may be faster.
+    * `f_lineno`: use [`PyFrame_GetLineNumber()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLineNumber "PyFrame_GetLineNumber")
+    * `f_locals`: use [`PyFrame_GetLocals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLocals "PyFrame_GetLocals").
+    * `f_stackdepth`: removed.
+    * `f_state`: no public API (renamed to `f_frame.f_state`).
+    * `f_trace`: no public API.
+    * `f_trace_lines`: use `PyObject_GetAttrString((PyObject*)frame, "f_trace_lines")`.
+    * `f_trace_opcodes`: use `PyObject_GetAttrString((PyObject*)frame, "f_trace_opcodes")`.
+    * `f_localsplus`: no public API (renamed to `f_frame.localsplus`).
+    * `f_valuestack`: removed.
+The Python frame object is now created lazily. A side effect is that the [`f_back`](https://docs.python.org/3/reference/datamodel.html#frame.f_back "frame.f_back") member must not be accessed directly, since its value is now also computed lazily. The [`PyFrame_GetBack()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetBack "PyFrame_GetBack") function must be called instead.
+Debuggers that accessed the [`f_locals`](https://docs.python.org/3/reference/datamodel.html#frame.f_locals "frame.f_locals") directly _must_ call [`PyFrame_GetLocals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLocals "PyFrame_GetLocals") instead. They no longer need to call `PyFrame_FastToLocalsWithError()` or `PyFrame_LocalsToFast()`, in fact they should not call those functions. The necessary updating of the frame is now managed by the virtual machine.
+Code defining `PyFrame_GetCode()` on Python 3.8 and older:
+```
+#if PY_VERSION_HEX < 0x030900B1
+static inline PyCodeObject* PyFrame_GetCode(PyFrameObject *frame)
+{
+  Py_INCREF(frame->f_code);
+  return frame->f_code;
+}
+#endif
+
+```
+
+Code defining `PyFrame_GetBack()` on Python 3.8 and older:
+```
+#if PY_VERSION_HEX < 0x030900B1
+static inline PyFrameObject* PyFrame_GetBack(PyFrameObject *frame)
+{
+  Py_XINCREF(frame->f_back);
+  return frame->f_back;
+}
+#endif

@@ -1,0 +1,80 @@
+Title: Differ Objects in difflib
+URL: https://docs.python.org/3/library/difflib.html
+Summary: This section discusses the `Differ` class in the difflib module, noting that the deltas it generates are not guaranteed to be minimal. It explains how minimal diffs can sometimes yield unexpected results due to their tendency to sync up interactions.
+---
+
+```
+
+See also
+  * The [`get_close_matches()`](https://docs.python.org/3/library/difflib.html#difflib.get_close_matches "difflib.get_close_matches") function in this module which shows how simple code building on [`SequenceMatcher`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher "difflib.SequenceMatcher") can be used to do useful work.
+  * [Simple version control recipe](https://code.activestate.com/recipes/576729-simple-version-control/) for a small application built with [`SequenceMatcher`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher "difflib.SequenceMatcher").
+
+
+## Differ Objects[¶](https://docs.python.org/3/library/difflib.html#differ-objects "Link to this heading")
+Note that [`Differ`](https://docs.python.org/3/library/difflib.html#difflib.Differ "difflib.Differ")-generated deltas make no claim to be **minimal** diffs. To the contrary, minimal diffs are often counter-intuitive, because they synch up anywhere possible, sometimes accidental matches 100 pages apart. Restricting synch points to contiguous matches preserves some notion of locality, at the occasional cost of producing a longer diff.
+The [`Differ`](https://docs.python.org/3/library/difflib.html#difflib.Differ "difflib.Differ") class has this constructor: 
+
+_class_ difflib.Differ(_linejunk =None_, _charjunk =None_)
+    
+Optional keyword parameters _linejunk_ and _charjunk_ are for filter functions (or `None`):
+_linejunk_ : A function that accepts a single string argument, and returns true if the string is junk. The default is `None`, meaning that no line is considered junk.
+_charjunk_ : A function that accepts a single character argument (a string of length 1), and returns true if the character is junk. The default is `None`, meaning that no character is considered junk.
+These junk-filtering functions speed up matching to find differences and do not cause any differing lines or characters to be ignored. Read the description of the [`find_longest_match()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.find_longest_match "difflib.SequenceMatcher.find_longest_match") method’s _isjunk_ parameter for an explanation.
+[`Differ`](https://docs.python.org/3/library/difflib.html#difflib.Differ "difflib.Differ") objects are used (deltas generated) via a single method: 
+
+compare(_a_ , _b_)[¶](https://docs.python.org/3/library/difflib.html#difflib.Differ.compare "Link to this definition")
+    
+Compare two sequences of lines, and generate the delta (a sequence of lines).
+Each sequence must contain individual single-line strings ending with newlines. Such sequences can be obtained from the [`readlines()`](https://docs.python.org/3/library/io.html#io.IOBase.readlines "io.IOBase.readlines") method of file-like objects. The delta generated also consists of newline-terminated strings, ready to be printed as-is via the [`writelines()`](https://docs.python.org/3/library/io.html#io.IOBase.writelines "io.IOBase.writelines") method of a file-like object.
+## Differ Example[¶](https://docs.python.org/3/library/difflib.html#differ-example "Link to this heading")
+This example compares two texts. First we set up the texts, sequences of individual single-line strings ending with newlines (such sequences can also be obtained from the [`readlines()`](https://docs.python.org/3/library/io.html#io.IOBase.readlines "io.IOBase.readlines") method of file-like objects):
+>>>```
+>>> text1 = ''' 1. Beautiful is better than ugly.
+...  2. Explicit is better than implicit.
+...  3. Simple is better than complex.
+...  4. Complex is better than complicated.
+... '''.splitlines(keepends=True)
+>>> len(text1)
+4
+>>> text1[0][-1]
+'\n'
+>>> text2 = ''' 1. Beautiful is better than ugly.
+...  3.  Simple is better than complex.
+...  4. Complicated is better than complex.
+...  5. Flat is better than nested.
+... '''.splitlines(keepends=True)
+
+```
+
+Next we instantiate a Differ object:
+>>>```
+>>> d = Differ()
+
+```
+
+Note that when instantiating a [`Differ`](https://docs.python.org/3/library/difflib.html#difflib.Differ "difflib.Differ") object we may pass functions to filter out line and character “junk.” See the [`Differ()`](https://docs.python.org/3/library/difflib.html#difflib.Differ "difflib.Differ") constructor for details.
+Finally, we compare the two:
+>>>```
+>>> result = list(d.compare(text1, text2))
+
+```
+
+`result` is a list of strings, so let’s pretty-print it:
+>>>```
+>>> frompprintimport pprint
+>>> pprint(result)
+['  1. Beautiful is better than ugly.\n',
+ '-  2. Explicit is better than implicit.\n',
+ '-  3. Simple is better than complex.\n',
+ '+  3.  Simple is better than complex.\n',
+ '?   ++\n',
+ '-  4. Complex is better than complicated.\n',
+ '?      ^           ---- ^\n',
+ '+  4. Complicated is better than complex.\n',
+ '?      ++++ ^           ^\n',
+ '+  5. Flat is better than nested.\n']
+
+```
+
+As a single multi-line string it looks like this:
+>>>

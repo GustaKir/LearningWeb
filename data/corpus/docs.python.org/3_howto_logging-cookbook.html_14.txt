@@ -1,0 +1,62 @@
+Title: Logging Requests in a Contextual Web Application
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: The document shows how to manage and inspect request logs from two web applications (app1 and app2) that processed 51 and 49 requests, respectively. The log files contain detailed information about the processing threads, including timestamps and request types (POST/GET). The example also includes commands for counting lines in log files and displaying the first few entries from each log.
+---
+
+```
+~/logging-contextual-webapp$pythonmain.py
+app1processed51requests
+app2processed49requests
+~/logging-contextual-webapp$wc-l*.log
+153app1.log
+147app2.log
+300app.log
+600total
+~/logging-contextual-webapp$head-3app1.log
+Thread-3(process_request)app1__main__jim192.168.3.21POSTRequestprocessingstarted
+Thread-3(process_request)app1webapplibjim192.168.3.21POSTHellofromwebapplib!
+Thread-5(process_request)app1__main__jim192.168.3.21POSTRequestprocessingstarted
+~/logging-contextual-webapp$head-3app2.log
+Thread-1(process_request)app2__main__sheila192.168.2.21GETRequestprocessingstarted
+Thread-1(process_request)app2webapplibsheila192.168.2.21GETHellofromwebapplib!
+Thread-2(process_request)app2__main__jim192.168.2.20GETRequestprocessingstarted
+~/logging-contextual-webapp$headapp.log
+Thread-1(process_request)app2__main__sheila192.168.2.21GETRequestprocessingstarted
+Thread-1(process_request)app2webapplibsheila192.168.2.21GETHellofromwebapplib!
+Thread-2(process_request)app2__main__jim192.168.2.20GETRequestprocessingstarted
+Thread-3(process_request)app1__main__jim192.168.3.21POSTRequestprocessingstarted
+Thread-2(process_request)app2webapplibjim192.168.2.20GETHellofromwebapplib!
+Thread-3(process_request)app1webapplibjim192.168.3.21POSTHellofromwebapplib!
+Thread-4(process_request)app2__main__fred192.168.2.22GETRequestprocessingstarted
+Thread-5(process_request)app1__main__jim192.168.3.21POSTRequestprocessingstarted
+Thread-4(process_request)app2webapplibfred192.168.2.22GETHellofromwebapplib!
+Thread-6(process_request)app1__main__jim192.168.3.21POSTRequestprocessingstarted
+~/logging-contextual-webapp$grepapp1app1.log|wc-l
+153
+~/logging-contextual-webapp$grepapp2app2.log|wc-l
+147
+~/logging-contextual-webapp$grepapp1app.log|wc-l
+153
+~/logging-contextual-webapp$grepapp2app.log|wc-l
+147
+
+```
+
+## Imparting contextual information in handlers[¶](https://docs.python.org/3/howto/logging-cookbook.html#imparting-contextual-information-in-handlers "Link to this heading")
+Each [`Handler`](https://docs.python.org/3/library/logging.html#logging.Handler "logging.Handler") has its own chain of filters. If you want to add contextual information to a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") without leaking it to other handlers, you can use a filter that returns a new [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") instead of modifying it in-place, as shown in the following script:
+```
+importcopy
+importlogging
+deffilter(record: logging.LogRecord):
+  record = copy.copy(record)
+  record.user = 'jim'
+  return record
+if __name__ == '__main__':
+  logger = logging.getLogger()
+  logger.setLevel(logging.INFO)
+  handler = logging.StreamHandler()
+  formatter = logging.Formatter('%(message)s from %(user)-8s')
+  handler.setFormatter(formatter)
+  handler.addFilter(filter)
+  logger.addHandler(handler)
+  logger.info('A log message')

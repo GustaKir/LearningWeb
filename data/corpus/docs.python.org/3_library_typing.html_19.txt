@@ -1,0 +1,46 @@
+Title: Parameter Specification Variables in Python
+URL: https://docs.python.org/3/library/typing.html
+Summary: Parameter specification variables facilitate type checking for callable parameters in functions, particularly useful for higher order functions and decorators. They can be utilized with `Concatenate`, as the first argument of `Callable`, or in user-defined Generics. An example is provided demonstrating how to use a decorator, `add_logging`, to log function calls while maintaining type safety.
+---
+
+```
+
+Parameter specification variables exist primarily for the benefit of static type checkers. They are used to forward the parameter types of one callable to another callable – a pattern commonly found in higher order functions and decorators. They are only valid when used in `Concatenate`, or as the first argument to `Callable`, or as parameters for user-defined Generics. See [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic") for more information on generic types.
+For example, to add basic logging to a function, one can create a decorator `add_logging` to log function calls. The parameter specification variable tells the type checker that the callable passed into the decorator and the new callable returned by it have inter-dependent type parameters:
+```
+fromcollections.abcimport Callable
+importlogging
+defadd_logging[T, **P](f: Callable[P, T]) -> Callable[P, T]:
+'''A type-safe decorator to add logging to a function.'''
+  definner(*args: P.args, **kwargs: P.kwargs) -> T:
+    logging.info(f'{f.__name__} was called')
+    return f(*args, **kwargs)
+  return inner
+@add_logging
+defadd_two(x: float, y: float) -> float:
+'''Add two numbers together.'''
+  return x + y
+
+```
+
+Without `ParamSpec`, the simplest way to annotate this previously was to use a [`TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") with upper bound `Callable[..., Any]`. However this causes two problems:
+  1. The type checker can’t type check the `inner` function because `*args` and `**kwargs` have to be typed [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any").
+  2. [`cast()`](https://docs.python.org/3/library/typing.html#typing.cast "typing.cast") may be required in the body of the `add_logging` decorator when returning the `inner` function, or the static type checker must be told to ignore the `return inner`.
+
+
+
+args[¶](https://docs.python.org/3/library/typing.html#typing.ParamSpec.args "Link to this definition")
+
+
+kwargs[¶](https://docs.python.org/3/library/typing.html#typing.ParamSpec.kwargs "Link to this definition")
+    
+Since `ParamSpec` captures both positional and keyword parameters, `P.args` and `P.kwargs` can be used to split a `ParamSpec` into its components. `P.args` represents the tuple of positional parameters in a given call and should only be used to annotate `*args`. `P.kwargs` represents the mapping of keyword parameters to their values in a given call, and should be only be used to annotate `**kwargs`. Both attributes require the annotated parameter to be in scope. At runtime, `P.args` and `P.kwargs` are instances respectively of [`ParamSpecArgs`](https://docs.python.org/3/library/typing.html#typing.ParamSpecArgs "typing.ParamSpecArgs") and [`ParamSpecKwargs`](https://docs.python.org/3/library/typing.html#typing.ParamSpecKwargs "typing.ParamSpecKwargs"). 
+
+__name__[¶](https://docs.python.org/3/library/typing.html#typing.ParamSpec.__name__ "Link to this definition")
+    
+The name of the parameter specification. 
+
+__default__[¶](https://docs.python.org/3/library/typing.html#typing.ParamSpec.__default__ "Link to this definition")
+    
+The default value of the parameter specification, or [`typing.NoDefault`](https://docs.python.org/3/library/typing.html#typing.NoDefault "typing.NoDefault") if it has no default.
+Added in version 3.13.

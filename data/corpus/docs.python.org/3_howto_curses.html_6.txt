@@ -1,0 +1,35 @@
+Title: Color Customization and User Input in Curses
+URL: https://docs.python.org/3/howto/curses.html
+Summary: This section discusses the ability of advanced terminals to change color definitions using RGB values, highlighting limitations in the Linux console. It mentions the `can_change_color()` function to check terminal capabilities and introduces basic input mechanisms provided by Python's `curses` module.
+---
+
+```
+
+Very fancy terminals can change the definitions of the actual colors to a given RGB value. This lets you change color 1, which is usually red, to purple or blue or any other color you like. Unfortunately, the Linux console doesn’t support this, so I’m unable to try it out, and can’t provide any examples. You can check if your terminal can do this by calling [`can_change_color()`](https://docs.python.org/3/library/curses.html#curses.can_change_color "curses.can_change_color"), which returns `True` if the capability is there. If you’re lucky enough to have such a talented terminal, consult your system’s man pages for more information.
+## User Input[¶](https://docs.python.org/3/howto/curses.html#user-input "Link to this heading")
+The C curses library offers only very simple input mechanisms. Python’s [`curses`](https://docs.python.org/3/library/curses.html#module-curses "curses: An interface to the curses library, providing portable terminal handling. \(Unix\)") module adds a basic text-input widget. (Other libraries such as [Urwid](https://pypi.org/project/Urwid/) have more extensive collections of widgets.)
+There are two methods for getting input from a window:
+  * [`getch()`](https://docs.python.org/3/library/curses.html#curses.window.getch "curses.window.getch") refreshes the screen and then waits for the user to hit a key, displaying the key if [`echo()`](https://docs.python.org/3/library/curses.html#curses.echo "curses.echo") has been called earlier. You can optionally specify a coordinate to which the cursor should be moved before pausing.
+  * [`getkey()`](https://docs.python.org/3/library/curses.html#curses.window.getkey "curses.window.getkey") does the same thing but converts the integer to a string. Individual characters are returned as 1-character strings, and special keys such as function keys return longer strings containing a key name such as `KEY_UP` or `^G`.
+
+
+It’s possible to not wait for the user using the [`nodelay()`](https://docs.python.org/3/library/curses.html#curses.window.nodelay "curses.window.nodelay") window method. After `nodelay(True)`, `getch()` and `getkey()` for the window become non-blocking. To signal that no input is ready, `getch()` returns `curses.ERR` (a value of -1) and `getkey()` raises an exception. There’s also a [`halfdelay()`](https://docs.python.org/3/library/curses.html#curses.halfdelay "curses.halfdelay") function, which can be used to (in effect) set a timer on each `getch()`; if no input becomes available within a specified delay (measured in tenths of a second), curses raises an exception.
+The `getch()` method returns an integer; if it’s between 0 and 255, it represents the ASCII code of the key pressed. Values greater than 255 are special keys such as Page Up, Home, or the cursor keys. You can compare the value returned to constants such as [`curses.KEY_PPAGE`](https://docs.python.org/3/library/curses.html#curses.KEY_PPAGE "curses.KEY_PPAGE"), [`curses.KEY_HOME`](https://docs.python.org/3/library/curses.html#curses.KEY_HOME "curses.KEY_HOME"), or [`curses.KEY_LEFT`](https://docs.python.org/3/library/curses.html#curses.KEY_LEFT "curses.KEY_LEFT"). The main loop of your program may look something like this:
+```
+while True:
+  c = stdscr.getch()
+  if c == ord('p'):
+    PrintDocument()
+  elif c == ord('q'):
+    break # Exit the while loop
+  elif c == curses.KEY_HOME:
+    x = y = 0
+
+```
+
+The [`curses.ascii`](https://docs.python.org/3/library/curses.ascii.html#module-curses.ascii "curses.ascii: Constants and set-membership functions for ASCII characters.") module supplies ASCII class membership functions that take either integer or 1-character string arguments; these may be useful in writing more readable tests for such loops. It also supplies conversion functions that take either integer or 1-character-string arguments and return the same type. For example, [`curses.ascii.ctrl()`](https://docs.python.org/3/library/curses.ascii.html#curses.ascii.ctrl "curses.ascii.ctrl") returns the control character corresponding to its argument.
+There’s also a method to retrieve an entire string, [`getstr()`](https://docs.python.org/3/library/curses.html#curses.window.getstr "curses.window.getstr"). It isn’t used very often, because its functionality is quite limited; the only editing keys available are the backspace key and the Enter key, which terminates the string. It can optionally be limited to a fixed number of characters.
+```
+curses.echo()      # Enable echoing of characters
+# Get a 15-character string, with the cursor on the top line
+s = stdscr.getstr(0,0, 15)

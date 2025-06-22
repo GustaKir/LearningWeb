@@ -1,0 +1,49 @@
+Title: ctypes — Foreign Function Interface for Python
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: This section provides navigation links and options for accessing different parts of the Python documentation related to the ctypes library, which serves as a Foreign Function Interface to call functions in shared libraries and manipulate C data types.
+---
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/library/cmdlinelibs.html "Command Line Interface Libraries") |
+  * [previous](https://docs.python.org/3/library/errno.html "errno — Standard errno system symbols") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [The Python Standard Library](https://docs.python.org/3/library/index.html) »
+  * [Generic Operating System Services](https://docs.python.org/3/library/allos.html) »
+  * [`ctypes` — A foreign function library for Python](https://docs.python.org/3/library/ctypes.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# `ctypes` — A foreign function library for Python[¶](https://docs.python.org/3/library/ctypes.html#module-ctypes "Link to this heading")
+**Source code:** [Lib/ctypes](https://github.com/python/cpython/tree/3.13/Lib/ctypes)
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") is a foreign function library for Python. It provides C compatible data types, and allows calling functions in DLLs or shared libraries. It can be used to wrap these libraries in pure Python.
+## ctypes tutorial[¶](https://docs.python.org/3/library/ctypes.html#ctypes-tutorial "Link to this heading")
+Note: The code samples in this tutorial use [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") to make sure that they actually work. Since some code samples behave differently under Linux, Windows, or macOS, they contain doctest directives in comments.
+Note: Some code samples reference the ctypes [`c_int`](https://docs.python.org/3/library/ctypes.html#ctypes.c_int "ctypes.c_int") type. On platforms where `sizeof(long) == sizeof(int)` it is an alias to [`c_long`](https://docs.python.org/3/library/ctypes.html#ctypes.c_long "ctypes.c_long"). So, you should not be confused if [`c_long`](https://docs.python.org/3/library/ctypes.html#ctypes.c_long "ctypes.c_long") is printed if you would expect [`c_int`](https://docs.python.org/3/library/ctypes.html#ctypes.c_int "ctypes.c_int") — they are actually the same type.
+### Loading dynamic link libraries[¶](https://docs.python.org/3/library/ctypes.html#loading-dynamic-link-libraries "Link to this heading")
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") exports the _cdll_ , and on Windows _windll_ and _oledll_ objects, for loading dynamic link libraries.
+You load libraries by accessing them as attributes of these objects. _cdll_ loads libraries which export functions using the standard `cdecl` calling convention, while _windll_ libraries call functions using the `stdcall` calling convention. _oledll_ also uses the `stdcall` calling convention, and assumes the functions return a Windows `HRESULT` error code. The error code is used to automatically raise an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") exception when the function call fails.
+Changed in version 3.3: Windows errors used to raise [`WindowsError`](https://docs.python.org/3/library/exceptions.html#WindowsError "WindowsError"), which is now an alias of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError").
+Here are some examples for Windows. Note that `msvcrt` is the MS standard C library containing most standard C functions, and uses the `cdecl` calling convention:
+>>>```
+>>> fromctypesimport *
+>>> print(windll.kernel32)
+<WinDLL 'kernel32', handle ... at ...>
+>>> print(cdll.msvcrt)
+<CDLL 'msvcrt', handle ... at ...>
+>>> libc = cdll.msvcrt
+>>>
+
+```
+
+Windows appends the usual `.dll` file suffix automatically.
+Note
+Accessing the standard C library through `cdll.msvcrt` will use an outdated version of the library that may be incompatible with the one being used by Python. Where possible, use native Python functionality, or else import and use the `msvcrt` module.
+On Linux, it is required to specify the filename _including_ the extension to load a library, so attribute access can not be used to load libraries. Either the [`LoadLibrary()`](https://docs.python.org/3/library/ctypes.html#ctypes.LibraryLoader.LoadLibrary "ctypes.LibraryLoader.LoadLibrary") method of the dll loaders should be used, or you should load the library by creating an instance of CDLL by calling the constructor:
+>>>

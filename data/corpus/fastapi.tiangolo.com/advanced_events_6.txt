@@ -1,0 +1,47 @@
+Title: Alternative Events in FastAPI (Deprecated)
+URL: https://fastapi.tiangolo.com/advanced/events/
+Summary: This section discusses the deprecated method for handling application startup and shutdown in FastAPI using event handlers. It cautions that when using the `lifespan` parameter, traditional `startup` and `shutdown` events will not be called, and encourages developers to use the `lifespan` approach.
+---
+
+```
+
+## Alternative Events (deprecated)[¶](https://fastapi.tiangolo.com/advanced/events/#alternative-events-deprecated "Permanent link")
+Warning
+The recommended way to handle the _startup_ and _shutdown_ is using the `lifespan` parameter of the `FastAPI` app as described above. If you provide a `lifespan` parameter, `startup` and `shutdown` event handlers will no longer be called. It's all `lifespan` or all events, not both.
+You can probably skip this part.
+There's an alternative way to define this logic to be executed during _startup_ and during _shutdown_.
+You can define event handlers (functions) that need to be executed before the application starts up, or when the application is shutting down.
+These functions can be declared with `async def` or normal `def`.
+### `startup` event[¶](https://fastapi.tiangolo.com/advanced/events/#startup-event "Permanent link")
+To add a function that should be run before the application starts, declare it with the event `"startup"`:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/events/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+items = {}
+@app.on_event("startup")
+async defstartup_event():
+  items["foo"] = {"name": "Fighters"}
+  items["bar"] = {"name": "Tenders"}
+@app.get("/items/{item_id}")
+async defread_items(item_id: str):
+  return items[item_id]
+
+```
+
+In this case, the `startup` event handler function will initialize the items "database" (just a `dict`) with some values.
+You can add more than one event handler function.
+And your application won't start receiving requests until all the `startup` event handlers have completed.
+### `shutdown` event[¶](https://fastapi.tiangolo.com/advanced/events/#shutdown-event "Permanent link")
+To add a function that should be run when the application is shutting down, declare it with the event `"shutdown"`:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/events/#__tabbed_6_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.on_event("shutdown")
+defshutdown_event():
+  with open("log.txt", mode="a") as log:
+    log.write("Application shutdown")
+@app.get("/items/")
+async defread_items():
+  return [{"name": "Foo"}]

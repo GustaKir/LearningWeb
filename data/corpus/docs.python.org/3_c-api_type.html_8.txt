@@ -1,0 +1,37 @@
+Title: Restrictions on Setting Offset Fields in PyType_Slot
+URL: https://docs.python.org/3/c-api/type.html
+Summary: Certain offset fields, including tp_weaklistoffset, tp_dictoffset, and tp_vectorcall_offset, cannot be set using PyType_Slot. Alternatives such as Py_TPFLAGS_MANAGED_WEAKREF, Py_TPFLAGS_MANAGED_DICT, and __vectorcalloffset__ in PyMemberDef should be used instead.
+---
+
+The following “offset” fields cannot be set using [`PyType_Slot`](https://docs.python.org/3/c-api/type.html#c.PyType_Slot "PyType_Slot"):
+  * [`tp_weaklistoffset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklistoffset "PyTypeObject.tp_weaklistoffset") (use [`Py_TPFLAGS_MANAGED_WEAKREF`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_WEAKREF "Py_TPFLAGS_MANAGED_WEAKREF") instead if possible)
+  * [`tp_dictoffset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dictoffset "PyTypeObject.tp_dictoffset") (use [`Py_TPFLAGS_MANAGED_DICT`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_DICT "Py_TPFLAGS_MANAGED_DICT") instead if possible)
+  * [`tp_vectorcall_offset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_vectorcall_offset "PyTypeObject.tp_vectorcall_offset") (use `"__vectorcalloffset__"` in [PyMemberDef](https://docs.python.org/3/c-api/structures.html#pymemberdef-offsets))
+
+
+If it is not possible to switch to a `MANAGED` flag (for example, for vectorcall or to support Python older than 3.12), specify the offset in [`Py_tp_members`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_members "PyTypeObject.tp_members"). See [PyMemberDef documentation](https://docs.python.org/3/c-api/structures.html#pymemberdef-offsets) for details.
+The following fields cannot be set at all when creating a heap type:
+  * [`tp_vectorcall`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_vectorcall "PyTypeObject.tp_vectorcall") (use [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") and/or [`tp_init`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_init "PyTypeObject.tp_init"))
+  * Internal fields: [`tp_dict`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dict "PyTypeObject.tp_dict"), [`tp_mro`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_mro "PyTypeObject.tp_mro"), [`tp_cache`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_cache "PyTypeObject.tp_cache"), [`tp_subclasses`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_subclasses "PyTypeObject.tp_subclasses"), and [`tp_weaklist`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklist "PyTypeObject.tp_weaklist").
+
+
+Setting `Py_tp_bases` or `Py_tp_base` may be problematic on some platforms. To avoid issues, use the _bases_ argument of [`PyType_FromSpecWithBases()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromSpecWithBases "PyType_FromSpecWithBases") instead.
+Changed in version 3.9: Slots in [`PyBufferProcs`](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs "PyBufferProcs") may be set in the unlimited API.
+Changed in version 3.11: [`bf_getbuffer`](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs.bf_getbuffer "PyBufferProcs.bf_getbuffer") and [`bf_releasebuffer`](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs.bf_releasebuffer "PyBufferProcs.bf_releasebuffer") are now available under the [limited API](https://docs.python.org/3/c-api/stable.html#limited-c-api). 
+
+void*pfunc[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Slot.pfunc "Link to this definition")
+    
+The desired value of the slot. In most cases, this is a pointer to a function.
+Slots other than `Py_tp_doc` may not be `NULL`.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Type Objects](https://docs.python.org/3/c-api/type.html)
+    * [Creating Heap-Allocated Types](https://docs.python.org/3/c-api/type.html#creating-heap-allocated-types)
+
+
+#### Previous topic
+[Concrete Objects Layer](https://docs.python.org/3/c-api/concrete.html "previous chapter")
+#### Next topic
+[The `None` Object](https://docs.python.org/3/c-api/none.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/c-api/type.rst)

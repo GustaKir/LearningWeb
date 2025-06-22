@@ -1,0 +1,28 @@
+Title: Understanding Descriptors in Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This technical tutorial explores the mechanics of descriptors in Python, defining what they are and outlining the descriptor protocol. It provides examples, including object-relational mappings, and emphasizes the deeper understanding of Python that comes from learning about descriptors.
+---
+
+```
+
+## [Technical Tutorial](https://docs.python.org/3/howto/descriptor.html#id12)[¶](https://docs.python.org/3/howto/descriptor.html#technical-tutorial "Link to this heading")
+What follows is a more technical tutorial for the mechanics and details of how descriptors work.
+### [Abstract](https://docs.python.org/3/howto/descriptor.html#id13)[¶](https://docs.python.org/3/howto/descriptor.html#abstract "Link to this heading")
+Defines descriptors, summarizes the protocol, and shows how descriptors are called. Provides an example showing how object relational mappings work.
+Learning about descriptors not only provides access to a larger toolset, it creates a deeper understanding of how Python works.
+### [Definition and introduction](https://docs.python.org/3/howto/descriptor.html#id14)[¶](https://docs.python.org/3/howto/descriptor.html#definition-and-introduction "Link to this heading")
+In general, a descriptor is an attribute value that has one of the methods in the descriptor protocol. Those methods are [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__"), [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__"), and [`__delete__()`](https://docs.python.org/3/reference/datamodel.html#object.__delete__ "object.__delete__"). If any of those methods are defined for an attribute, it is said to be a [descriptor](https://docs.python.org/3/glossary.html#term-descriptor).
+The default behavior for attribute access is to get, set, or delete the attribute from an object’s dictionary. For instance, `a.x` has a lookup chain starting with `a.__dict__['x']`, then `type(a).__dict__['x']`, and continuing through the method resolution order of `type(a)`. If the looked-up value is an object defining one of the descriptor methods, then Python may override the default behavior and invoke the descriptor method instead. Where this occurs in the precedence chain depends on which descriptor methods were defined.
+Descriptors are a powerful, general purpose protocol. They are the mechanism behind properties, methods, static methods, class methods, and [`super()`](https://docs.python.org/3/library/functions.html#super "super"). They are used throughout Python itself. Descriptors simplify the underlying C code and offer a flexible set of new tools for everyday Python programs.
+### [Descriptor protocol](https://docs.python.org/3/howto/descriptor.html#id15)[¶](https://docs.python.org/3/howto/descriptor.html#descriptor-protocol "Link to this heading")
+`descr.__get__(self, obj, type=None)`
+`descr.__set__(self, obj, value)`
+`descr.__delete__(self, obj)`
+That is all there is to it. Define any of these methods and an object is considered a descriptor and can override default behavior upon being looked up as an attribute.
+If an object defines [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__") or [`__delete__()`](https://docs.python.org/3/reference/datamodel.html#object.__delete__ "object.__delete__"), it is considered a data descriptor. Descriptors that only define [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") are called non-data descriptors (they are often used for methods but other uses are possible).
+Data and non-data descriptors differ in how overrides are calculated with respect to entries in an instance’s dictionary. If an instance’s dictionary has an entry with the same name as a data descriptor, the data descriptor takes precedence. If an instance’s dictionary has an entry with the same name as a non-data descriptor, the dictionary entry takes precedence.
+To make a read-only data descriptor, define both [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") and [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__") with the [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__") raising an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") when called. Defining the [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__") method with an exception raising placeholder is enough to make it a data descriptor.
+### [Overview of descriptor invocation](https://docs.python.org/3/howto/descriptor.html#id16)[¶](https://docs.python.org/3/howto/descriptor.html#overview-of-descriptor-invocation "Link to this heading")
+A descriptor can be called directly with `desc.__get__(obj)` or `desc.__get__(None, cls)`.
+But it is more common for a descriptor to be invoked automatically from attribute access.
+The expression `obj.x` looks up the attribute `x` in the chain of namespaces for `obj`. If the search finds a descriptor outside of the instance [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__"), its [`__get__()`](ht

@@ -1,0 +1,75 @@
+Title: Explicit Conversions in f-Strings
+URL: https://docs.python.org/3/library/stdtypes.html
+Summary: This section explains how to use the explicit conversion operator `!` in f-strings, detailing the valid formats: `!a` for `ascii()`, `!r` for `repr()`, and `!s` for `str()`. It provides examples using the `Fraction` class and demonstrates how to include both the expression and its value in debugging using the equals sign (`=`).
+---
+
+```
+
+To use an explicit conversion, use the `!` (exclamation mark) operator, followed by any of the valid formats, which are:
+Conversion | Meaning  
+---|---  
+`!a` | [`ascii()`](https://docs.python.org/3/library/functions.html#ascii "ascii")  
+`!r` | [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr")  
+`!s` | [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str")  
+For example:
+>>>```
+>>> fromfractionsimport Fraction
+>>> f'{Fraction(1,3)!s}'
+'1/3'
+>>> f'{Fraction(1,3)!r}'
+'Fraction(1, 3)'
+>>> question = '¿Dónde está el Presidente?'
+>>> print(f'{question!a}')
+'\xbfD\xf3nde est\xe1 el Presidente?'
+
+```
+
+While debugging it may be helpful to see both the expression and its value, by using the equals sign (`=`) after the expression. This preserves spaces within the brackets, and can be used with a converter. By default, the debugging operator uses the [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") (`!r`) conversion. For example:
+>>>```
+>>> fromfractionsimport Fraction
+>>> calculation = Fraction(1, 3)
+>>> f'{calculation=}'
+'calculation=Fraction(1, 3)'
+>>> f'{calculation= }'
+'calculation = Fraction(1, 3)'
+>>> f'{calculation= !s}'
+'calculation = 1/3'
+
+```
+
+Once the output has been evaluated, it can be formatted using a [format specifier](https://docs.python.org/3/library/string.html#formatstrings) following a colon (`':'`). After the expression has been evaluated, and possibly converted to a string, the `__format__()` method of the result is called with the format specifier, or the empty string if no format specifier is given. The formatted result is then used as the final value for the replacement field. For example:
+>>>```
+>>> fromfractionsimport Fraction
+>>> f'{Fraction(1,7):.6f}'
+'0.142857'
+>>> f'{Fraction(1,7):_^+10}'
+'___+1/7___'
+
+```
+
+### `printf`-style String Formatting[¶](https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting "Link to this heading")
+Note
+The formatting operations described here exhibit a variety of quirks that lead to a number of common errors (such as failing to display tuples and dictionaries correctly). Using the newer [formatted string literals](https://docs.python.org/3/reference/lexical_analysis.html#f-strings), the [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") interface, or [template strings](https://docs.python.org/3/library/string.html#template-strings) may help avoid these errors. Each of these alternatives provides their own trade-offs and benefits of simplicity, flexibility, and/or extensibility.
+String objects have one unique built-in operation: the `%` operator (modulo). This is also known as the string _formatting_ or _interpolation_ operator. Given `format % values` (where _format_ is a string), `%` conversion specifications in _format_ are replaced with zero or more elements of _values_. The effect is similar to using the `sprintf()` function in the C language. For example:
+>>>```
+>>> print('%s has %d quote types.' % ('Python', 2))
+Python has 2 quote types.
+
+```
+
+If _format_ requires a single argument, _values_ may be a single non-tuple object. [[5]](https://docs.python.org/3/library/stdtypes.html#id16) Otherwise, _values_ must be a tuple with exactly the number of items specified by the format string, or a single mapping object (for example, a dictionary).
+A conversion specifier contains two or more characters and has the following components, which must occur in this order:
+  1. The `'%'` character, which marks the start of the specifier.
+  2. Mapping key (optional), consisting of a parenthesised sequence of characters (for example, `(somename)`).
+  3. Conversion flags (optional), which affect the result of some conversion types.
+  4. Minimum field width (optional). If specified as an `'*'` (asterisk), the actual width is read from the next element of the tuple in _values_ , and the object to convert comes after the minimum field width and optional precision.
+  5. Precision (optional), given as a `'.'` (dot) followed by the precision. If specified as `'*'` (an asterisk), the actual precision is read from the next element of the tuple in _values_ , and the value to convert comes after the precision.
+  6. Length modifier (optional).
+  7. Conversion type.
+
+
+When the right argument is a dictionary (or other mapping type), then the formats in the string _must_ include a parenthesised mapping key into that dictionary inserted immediately after the `'%'` character. The mapping key selects the value to be formatted from the mapping. For example:
+>>>```
+>>> print('%(language)s has %(number)03d quote types.' %
+...    {'language': "Python", "number": 2})
+Python has 002 quote types.

@@ -1,0 +1,44 @@
+Title: Deployment Strategies for Simple Applications with Docker
+URL: https://fastapi.tiangolo.com/deployment/docker/
+Summary: This section discusses deployment scenarios for simple applications using Docker, including considerations for a single server setup and the use of Docker Compose. It emphasizes the flexibility of choosing a process manager and worker processes while evaluating individual use cases rather than adhering to rigid rules.
+---
+
+```
+
+Here are some examples of when that could make sense:
+#### A Simple App[¶](https://fastapi.tiangolo.com/deployment/docker/#a-simple-app "Permanent link")
+You could want a process manager in the container if your application is **simple enough** that can run it on a **single server** , not a cluster.
+#### Docker Compose[¶](https://fastapi.tiangolo.com/deployment/docker/#docker-compose "Permanent link")
+You could be deploying to a **single server** (not a cluster) with **Docker Compose** , so you wouldn't have an easy way to manage replication of containers (with Docker Compose) while preserving the shared network and **load balancing**.
+Then you could want to have **a single container** with a **process manager** starting **several worker processes** inside.
+The main point is, **none** of these are **rules written in stone** that you have to blindly follow. You can use these ideas to **evaluate your own use case** and decide what is the best approach for your system, checking out how to manage the concepts of:
+  * Security - HTTPS
+  * Running on startup
+  * Restarts
+  * Replication (the number of processes running)
+  * Memory
+  * Previous steps before starting
+
+
+## Memory[¶](https://fastapi.tiangolo.com/deployment/docker/#memory "Permanent link")
+If you run **a single process per container** you will have a more or less well-defined, stable, and limited amount of memory consumed by each of those containers (more than one if they are replicated).
+And then you can set those same memory limits and requirements in your configurations for your container management system (for example in **Kubernetes**). That way it will be able to **replicate the containers** in the **available machines** taking into account the amount of memory needed by them, and the amount available in the machines in the cluster.
+If your application is **simple** , this will probably **not be a problem** , and you might not need to specify hard memory limits. But if you are **using a lot of memory** (for example with **machine learning** models), you should check how much memory you are consuming and adjust the **number of containers** that runs in **each machine** (and maybe add more machines to your cluster).
+If you run **multiple processes per container** you will have to make sure that the number of processes started doesn't **consume more memory** than what is available.
+## Previous Steps Before Starting and Containers[¶](https://fastapi.tiangolo.com/deployment/docker/#previous-steps-before-starting-and-containers "Permanent link")
+If you are using containers (e.g. Docker, Kubernetes), then there are two main approaches you can use.
+### Multiple Containers[¶](https://fastapi.tiangolo.com/deployment/docker/#multiple-containers "Permanent link")
+If you have **multiple containers** , probably each one running a **single process** (for example, in a **Kubernetes** cluster), then you would probably want to have a **separate container** doing the work of the **previous steps** in a single container, running a single process, **before** running the replicated worker containers.
+Info
+If you are using Kubernetes, this would probably be an [Init Container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/).
+If in your use case there's no problem in running those previous steps **multiple times in parallel** (for example if you are not running database migrations, but just checking if the database is ready yet), then you could also just put them in each container right before starting the main process.
+### Single Container[¶](https://fastapi.tiangolo.com/deployment/docker/#single-container "Permanent link")
+If you have a simple setup, with a **single container** that then starts multiple **worker processes** (or also just one process), then you could run those previous steps in the same container, right before starting the process with the app.
+### Base Docker Image[¶](https://fastapi.tiangolo.com/deployment/docker/#base-docker-image "Permanent link")
+There used to be an official FastAPI Docker image: [tiangolo/uvicorn-gunicorn-fastapi](https://github.com/tiangolo/uvicorn-gunicorn-fastapi-docker). But it is now deprecated. ⛔️
+You should probably **not** use this base Docker image (or any other similar one).
+If you are using **Kubernetes** (or others) and you are already setting **replication** at the cluster level, with multiple **containers**. In those cases, you are better off **building an image from scratch** as described above: [Build a Docker Image for FastAPI](https://fastapi.tiangolo.com/deployment/docker/#build-a-docker-image-for-fastapi).
+And if you need to have multiple workers, you can simply use the `--workers` command line option.
+Technical Details
+The Docker image was created when Uvicorn didn't support managing and restarting dead workers, so it was needed to use Gunicorn with Uvicorn, which added quite some complexity, just to have Gunicorn manage and restart the Uvicorn worker processes.
+But now that Uvicorn

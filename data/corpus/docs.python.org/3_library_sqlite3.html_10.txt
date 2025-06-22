@@ -1,0 +1,92 @@
+Title: Parameters for Creating SQL Functions in SQLite3
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: This section outlines the parameters needed to define an SQL function in SQLite3. It includes 'name' for the function's name, 'narg' for the number of arguments (with '-1' indicating variable arguments), 'func' for the callback function invoked during execution, and 'deterministic' to mark the function as deterministic for optimization purposes. Notably, a change in version 3.8 added support for the 'deterministic' parameter.
+---
+
+Parameters:
+    
+  * **name** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – The name of the SQL function.
+  * **narg** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The number of arguments the SQL function can accept. If `-1`, it may take any number of arguments.
+  * **func** ([callback](https://docs.python.org/3/glossary.html#term-callback) | None) – A [callable](https://docs.python.org/3/glossary.html#term-callable) that is called when the SQL function is invoked. The callable must return [a type natively supported by SQLite](https://docs.python.org/3/library/sqlite3.html#sqlite3-types). Set to `None` to remove an existing SQL function.
+  * **deterministic** ([_bool_](https://docs.python.org/3/library/functions.html#bool "bool")) – If `True`, the created SQL function is marked as [deterministic](https://sqlite.org/deterministic.html), which allows SQLite to perform additional optimizations.
+
+
+Changed in version 3.8: Added the _deterministic_ parameter.
+Example:
+>>>```
+>>> importhashlib
+>>> defmd5sum(t):
+...   return hashlib.md5(t).hexdigest()
+>>> con = sqlite3.connect(":memory:")
+>>> con.create_function("md5", 1, md5sum)
+>>> for row in con.execute("SELECT md5(?)", (b"foo",)):
+...   print(row)
+('acbd18db4cc2f85cedef654fccc4a4d8',)
+>>> con.close()
+
+```
+
+Changed in version 3.13: Passing _name_ , _narg_ , and _func_ as keyword arguments is deprecated. These parameters will become positional-only in Python 3.15. 
+
+create_aggregate(_name_ , _n_arg_ , _aggregate_class_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.create_aggregate "Link to this definition")
+    
+Create or remove a user-defined SQL aggregate function. 
+
+Parameters:
+    
+  * **name** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – The name of the SQL aggregate function.
+  * **n_arg** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The number of arguments the SQL aggregate function can accept. If `-1`, it may take any number of arguments.
+  * **aggregate_class** ([class](https://docs.python.org/3/glossary.html#term-class) | None) – 
+A class must implement the following methods:
+    * `step()`: Add a row to the aggregate.
+    * `finalize()`: Return the final result of the aggregate as [a type natively supported by SQLite](https://docs.python.org/3/library/sqlite3.html#sqlite3-types).
+The number of arguments that the `step()` method must accept is controlled by _n_arg_.
+Set to `None` to remove an existing SQL aggregate function.
+
+
+Example:
+```
+classMySum:
+  def__init__(self):
+    self.count = 0
+  defstep(self, value):
+    self.count += value
+  deffinalize(self):
+    return self.count
+con = sqlite3.connect(":memory:")
+con.create_aggregate("mysum", 1, MySum)
+cur = con.execute("CREATE TABLE test(i)")
+cur.execute("INSERT INTO test(i) VALUES(1)")
+cur.execute("INSERT INTO test(i) VALUES(2)")
+cur.execute("SELECT mysum(i) FROM test")
+print(cur.fetchone()[0])
+con.close()
+
+```
+
+Changed in version 3.13: Passing _name_ , _n_arg_ , and _aggregate_class_ as keyword arguments is deprecated. These parameters will become positional-only in Python 3.15. 
+
+create_window_function(_name_ , _num_params_ , _aggregate_class_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.create_window_function "Link to this definition")
+    
+Create or remove a user-defined aggregate window function. 
+
+Parameters:
+    
+  * **name** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – The name of the SQL aggregate window function to create or remove.
+  * **num_params** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The number of arguments the SQL aggregate window function can accept. If `-1`, it may take any number of arguments.
+  * **aggregate_class** ([class](https://docs.python.org/3/glossary.html#term-class) | None) – 
+A class that must implement the following methods:
+    * `step()`: Add a row to the current window.
+    * `value()`: Return the current value of the aggregate.
+    * `inverse()`: Remove a row from the current window.
+    * `finalize()`: Return the final result of the aggregate as [a type natively supported by SQLite](https://docs.python.org/3/library/sqlite3.html#sqlite3-types).
+The number of arguments that the `step()` and `value()` methods must accept is controlled by _num_params_.
+Set to `None` to remove an existing SQL aggregate window function.
+
+
+
+Raises:
+    
+[**NotSupportedError**](https://docs.python.org/3/library/sqlite3.html#sqlite3.NotSupportedError "sqlite3.NotSupportedError") – If used with a version of SQLite older than 3.25.0, which does not support aggregate window functions.
+Added in version 3.11.
+Example:

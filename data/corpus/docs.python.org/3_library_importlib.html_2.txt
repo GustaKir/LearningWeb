@@ -1,0 +1,35 @@
+Title: importlib.import_module
+URL: https://docs.python.org/3/library/importlib.html
+Summary: The `importlib.import_module` function allows for importing a module by specifying its name either in absolute or relative terms. The `_name_` argument is used to define the module to import, while the optional `_package` argument is needed for relative imports to establish the context. This function is a wrapper around `importlib.__import__`, maintaining the same semantics.
+---
+
+importlib.import_module(_name_ , _package =None_)[¶](https://docs.python.org/3/library/importlib.html#importlib.import_module "Link to this definition")
+    
+Import a module. The _name_ argument specifies what module to import in absolute or relative terms (e.g. either `pkg.mod` or `..mod`). If the name is specified in relative terms, then the _package_ argument must be set to the name of the package which is to act as the anchor for resolving the package name (e.g. `import_module('..mod', 'pkg.subpkg')` will import `pkg.mod`).
+The [`import_module()`](https://docs.python.org/3/library/importlib.html#importlib.import_module "importlib.import_module") function acts as a simplifying wrapper around [`importlib.__import__()`](https://docs.python.org/3/library/importlib.html#importlib.__import__ "importlib.__import__"). This means all semantics of the function are derived from [`importlib.__import__()`](https://docs.python.org/3/library/importlib.html#importlib.__import__ "importlib.__import__"). The most important difference between these two functions is that [`import_module()`](https://docs.python.org/3/library/importlib.html#importlib.import_module "importlib.import_module") returns the specified package or module (e.g. `pkg.mod`), while [`__import__()`](https://docs.python.org/3/library/functions.html#import__ "__import__") returns the top-level package or module (e.g. `pkg`).
+If you are dynamically importing a module that was created since the interpreter began execution (e.g., created a Python source file), you may need to call [`invalidate_caches()`](https://docs.python.org/3/library/importlib.html#importlib.invalidate_caches "importlib.invalidate_caches") in order for the new module to be noticed by the import system.
+Changed in version 3.3: Parent packages are automatically imported. 
+
+importlib.invalidate_caches()[¶](https://docs.python.org/3/library/importlib.html#importlib.invalidate_caches "Link to this definition")
+    
+Invalidate the internal caches of finders stored at [`sys.meta_path`](https://docs.python.org/3/library/sys.html#sys.meta_path "sys.meta_path"). If a finder implements `invalidate_caches()` then it will be called to perform the invalidation. This function should be called if any modules are created/installed while your program is running to guarantee all finders will notice the new module’s existence.
+Added in version 3.3.
+Changed in version 3.10: Namespace packages created/installed in a different [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") location after the same namespace was already imported are noticed. 
+
+importlib.reload(_module_)[¶](https://docs.python.org/3/library/importlib.html#importlib.reload "Link to this definition")
+    
+Reload a previously imported _module_. The argument must be a module object, so it must have been successfully imported before. This is useful if you have edited the module source file using an external editor and want to try out the new version without leaving the Python interpreter. The return value is the module object (which can be different if re-importing causes a different object to be placed in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules")).
+When [`reload()`](https://docs.python.org/3/library/importlib.html#importlib.reload "importlib.reload") is executed:
+  * Python module’s code is recompiled and the module-level code re-executed, defining a new set of objects which are bound to names in the module’s dictionary by reusing the [loader](https://docs.python.org/3/glossary.html#term-loader) which originally loaded the module. The `init` function of extension modules is not called a second time.
+  * As with all other objects in Python the old objects are only reclaimed after their reference counts drop to zero.
+  * The names in the module namespace are updated to point to any new or changed objects.
+  * Other references to the old objects (such as names external to the module) are not rebound to refer to the new objects and must be updated in each namespace where they occur if that is desired.
+
+
+There are a number of other caveats:
+When a module is reloaded, its dictionary (containing the module’s global variables) is retained. Redefinitions of names will override the old definitions, so this is generally not a problem. If the new version of a module does not define a name that was defined by the old version, the old definition remains. This feature can be used to the module’s advantage if it maintains a global table or cache of objects — with a [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) statement it can test for the table’s presence and skip its initialization if desired:
+```
+try:
+  cache
+except NameError:
+  cache = {}

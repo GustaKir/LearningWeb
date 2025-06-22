@@ -1,0 +1,115 @@
+Title: WebSocket Exception Handling in FastAPI
+URL: https://fastapi.tiangolo.com/reference/exceptions/
+Summary: This code snippet demonstrates a FastAPI WebSocket endpoint that uses a session cookie. If the session is not provided, it raises a WebSocketException for policy violations. The endpoint continuously receives and sends messages related to the session cookie and item ID.
+---
+
+```
+fromtypingimport Annotated
+fromfastapiimport (
+  Cookie,
+  FastAPI,
+  WebSocket,
+  WebSocketException,
+  status,
+)
+app = FastAPI()
+@app.websocket("/items/{item_id}/ws")
+async defwebsocket_endpoint(
+  *,
+  websocket: WebSocket,
+  session: Annotated[str | None, Cookie()] = None,
+  item_id: str,
+):
+  if session is None:
+    raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+  await websocket.accept()
+  while True:
+    data = await websocket.receive_text()
+    await websocket.send_text(f"Session cookie is: {session}")
+    await websocket.send_text(f"Message text was: {data}, for item ID: {item_id}")
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`code` |  A closing code from the [valid codes defined in the specification](https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1). **TYPE:** `int`  
+`reason` |  The reason to close the WebSocket connection. It is UTF-8-encoded data. The interpretation of the reason is up to the application, it is not specified by the WebSocket specification. It could contain text that could be human-readable or interpretable by the client code, etc. **TYPE:** `Union[str, None]` **DEFAULT:** `None`  
+Source code in `fastapi/exceptions.py`
+```
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+```
+| ```
+def__init__(
+  self,
+  code: Annotated[
+    int,
+    Doc(
+"""
+      A closing code from the
+      [valid codes defined in the specification](https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1).
+      """
+    ),
+  ],
+  reason: Annotated[
+    Union[str, None],
+    Doc(
+"""
+      The reason to close the WebSocket connection.
+      It is UTF-8-encoded data. The interpretation of the reason is up to the
+      application, it is not specified by the WebSocket specification.
+      It could contain text that could be human-readable or interpretable
+      by the client code, etc.
+      """
+    ),
+  ] = None,
+) -> None:
+  super().__init__(code=code, reason=reason)
+
+```
+  
+---|---  
+###  code `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/exceptions/#fastapi.WebSocketException.code "Permanent link")
+```
+code = code
+
+```
+
+###  reason `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/exceptions/#fastapi.WebSocketException.reason "Permanent link")
+```
+reason = reason or ''
+
+```
+
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  UploadFile class  ](https://fastapi.tiangolo.com/reference/uploadfile/) [ Next  Dependencies - Depends() and Security()  ](https://fastapi.tiangolo.com/reference/dependencies/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

@@ -1,0 +1,64 @@
+Title: wsgiref.handlers.read_environ Function
+URL: https://docs.python.org/3/library/wsgiref.html
+Summary: The `read_environ` function converts CGI variables from `os.environ` into a WSGI-compliant dictionary of 'bytes in unicode' strings, ensuring compatibility across different platforms. It is utilized by the `CGIHandler` and `IISCGIHandler` classes to provide a consistent interface for handling environment variables.
+---
+
+wsgiref.handlers.read_environ()[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.read_environ "Link to this definition")
+    
+Transcode CGI variables from `os.environ` to [**PEP 3333**](https://peps.python.org/pep-3333/) “bytes in unicode” strings, returning a new dictionary. This function is used by [`CGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.CGIHandler "wsgiref.handlers.CGIHandler") and [`IISCGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.IISCGIHandler "wsgiref.handlers.IISCGIHandler") in place of directly using `os.environ`, which is not necessarily WSGI-compliant on all platforms and web servers using Python 3 – specifically, ones where the OS’s actual environment is Unicode (i.e. Windows), or ones where the environment is bytes, but the system encoding used by Python to decode it is anything other than ISO-8859-1 (e.g. Unix systems using UTF-8).
+If you are implementing a CGI-based handler of your own, you probably want to use this routine instead of just copying values out of `os.environ` directly.
+Added in version 3.2.
+## [`wsgiref.types`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.types "wsgiref.types: WSGI types for static type checking") – WSGI types for static type checking[¶](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.types "Link to this heading")
+This module provides various types for static type checking as described in [**PEP 3333**](https://peps.python.org/pep-3333/).
+Added in version 3.11. 
+
+_class_ wsgiref.types.StartResponse[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.StartResponse "Link to this definition")
+    
+A [`typing.Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol") describing [**start_response()**](https://peps.python.org/pep-3333/#the-start-response-callable) callables ([**PEP 3333**](https://peps.python.org/pep-3333/)). 
+
+wsgiref.types.WSGIEnvironment[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.WSGIEnvironment "Link to this definition")
+    
+A type alias describing a WSGI environment dictionary. 
+
+wsgiref.types.WSGIApplication[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.WSGIApplication "Link to this definition")
+    
+A type alias describing a WSGI application callable. 
+
+_class_ wsgiref.types.InputStream[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.InputStream "Link to this definition")
+    
+A [`typing.Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol") describing a [**WSGI Input Stream**](https://peps.python.org/pep-3333/#input-and-error-streams). 
+
+_class_ wsgiref.types.ErrorStream[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.ErrorStream "Link to this definition")
+    
+A [`typing.Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol") describing a [**WSGI Error Stream**](https://peps.python.org/pep-3333/#input-and-error-streams). 
+
+_class_ wsgiref.types.FileWrapper[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.FileWrapper "Link to this definition")
+    
+A [`typing.Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol") describing a [**file wrapper**](https://peps.python.org/pep-3333/#optional-platform-specific-file-handling). See [`wsgiref.util.FileWrapper`](https://docs.python.org/3/library/wsgiref.html#wsgiref.util.FileWrapper "wsgiref.util.FileWrapper") for a concrete implementation of this protocol.
+## Examples[¶](https://docs.python.org/3/library/wsgiref.html#examples "Link to this heading")
+This is a working “Hello World” WSGI application, where the _start_response_ callable should follow the [`StartResponse`](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.StartResponse "wsgiref.types.StartResponse") protocol:
+```
+"""
+Every WSGI application must have an application object - a callable
+object that accepts two arguments. For that purpose, we're going to
+use a function (note that you're not limited to a function, you can
+use a class for example). The first argument passed to the function
+is a dictionary containing CGI-style environment variables and the
+second variable is the callable object.
+"""
+fromwsgiref.simple_serverimport make_server
+
+defhello_world_app(environ, start_response):
+  status = "200 OK" # HTTP Status
+  headers = [("Content-type", "text/plain; charset=utf-8")] # HTTP Headers
+  start_response(status, headers)
+  # The returned object is going to be printed
+  return [b"Hello World"]
+with make_server("", 8000, hello_world_app) as httpd:
+  print("Serving on port 8000...")
+  # Serve until process is killed
+  httpd.serve_forever()
+
+```
+
+Example of a WSGI application serving the current directory, accept optional directory and port number (default: 8000) on the command line:

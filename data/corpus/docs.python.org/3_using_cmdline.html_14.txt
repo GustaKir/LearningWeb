@@ -1,0 +1,41 @@
+Title: Setting Locale Categories in Python
+URL: https://docs.python.org/3/using/cmdline.html
+Summary: This section explains that when a locale category is successfully set, it updates the `LC_CTYPE` environment variable in the current process. This change is visible to the Python interpreter, other locale-aware components, and subprocesses, and it affects operations that query the environment. Additionally, configuring locales enables the `surrogateescape` error handler for `sys.stdin`.
+---
+
+If setting one of these locale categories succeeds, then the `LC_CTYPE` environment variable will also be set accordingly in the current process environment before the Python runtime is initialized. This ensures that in addition to being seen by both the interpreter itself and other locale-aware components running in the same process (such as the GNU `readline` library), the updated setting is also seen in subprocesses (regardless of whether or not those processes are running a Python interpreter), as well as in operations that query the environment rather than the current C locale (such as Python’s own [`locale.getdefaultlocale()`](https://docs.python.org/3/library/locale.html#locale.getdefaultlocale "locale.getdefaultlocale")).
+Configuring one of these locales (either explicitly or via the above implicit locale coercion) automatically enables the `surrogateescape` [error handler](https://docs.python.org/3/library/codecs.html#error-handlers) for [`sys.stdin`](https://docs.python.org/3/library/sys.html#sys.stdin "sys.stdin") and [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") ([`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") continues to use `backslashreplace` as it does in any other locale). This stream handling behavior can be overridden using [`PYTHONIOENCODING`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONIOENCODING) as usual.
+For debugging purposes, setting `PYTHONCOERCECLOCALE=warn` will cause Python to emit warning messages on `stderr` if either the locale coercion activates, or else if a locale that _would_ have triggered coercion is still active when the Python runtime is initialized.
+Also note that even when locale coercion is disabled, or when it fails to find a suitable target locale, [`PYTHONUTF8`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUTF8) will still activate by default in legacy ASCII-based locales. Both features must be disabled in order to force the interpreter to use `ASCII` instead of `UTF-8` for system interfaces.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+Added in version 3.7: See [**PEP 538**](https://peps.python.org/pep-0538/) for more details. 
+
+PYTHONDEVMODE[¶](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONDEVMODE "Link to this definition")
+    
+If this environment variable is set to a non-empty string, enable [Python Development Mode](https://docs.python.org/3/library/devmode.html#devmode), introducing additional runtime checks that are too expensive to be enabled by default. This is equivalent to setting the [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) `dev` option.
+Added in version 3.7. 
+
+PYTHONUTF8[¶](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUTF8 "Link to this definition")
+    
+If set to `1`, enable the [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode).
+If set to `0`, disable the [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode).
+Setting any other non-empty string causes an error during interpreter initialisation.
+Added in version 3.7. 
+
+PYTHONWARNDEFAULTENCODING[¶](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNDEFAULTENCODING "Link to this definition")
+    
+If this environment variable is set to a non-empty string, issue a [`EncodingWarning`](https://docs.python.org/3/library/exceptions.html#EncodingWarning "EncodingWarning") when the locale-specific default encoding is used.
+See [Opt-in EncodingWarning](https://docs.python.org/3/library/io.html#io-encoding-warning) for details.
+Added in version 3.10. 
+
+PYTHONNODEBUGRANGES[¶](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONNODEBUGRANGES "Link to this definition")
+    
+If this variable is set, it disables the inclusion of the tables mapping extra location information (end line, start column offset and end column offset) to every instruction in code objects. This is useful when smaller code objects and pyc files are desired as well as suppressing the extra visual location indicators when the interpreter displays tracebacks.
+Added in version 3.11. 
+
+PYTHONPERFSUPPORT[¶](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPERFSUPPORT "Link to this definition")
+    
+If this variable is set to a nonzero value, it enables support for the Linux `perf` profiler so Python calls can be detected by it.
+If set to `0`, disable Linux `perf` profiler support.
+See also the [`-X perf`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) command-line option and [Python support for the Linux perf profiler](https://docs.python.org/3/howto/perf_profiling.html#perf-profiling).
+Added in version 3.12.

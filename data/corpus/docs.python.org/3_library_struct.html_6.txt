@@ -1,0 +1,70 @@
+Title: See Also and Applications of the struct Module
+URL: https://docs.python.org/3/library/struct.html
+Summary: This section highlights related modules such as array, json, and pickle, which deal with packed binary storage, JSON encoding/decoding, and Python object serialization, respectively. It also discusses the primary applications of the struct module, focusing on data interchange between Python and C code.
+---
+
+```
+
+See also 
+
+Module [`array`](https://docs.python.org/3/library/array.html#module-array "array: Space efficient arrays of uniformly typed numeric values.")
+    
+Packed binary storage of homogeneous data. 
+
+Module [`json`](https://docs.python.org/3/library/json.html#module-json "json: Encode and decode the JSON format.")
+    
+JSON encoder and decoder. 
+
+Module [`pickle`](https://docs.python.org/3/library/pickle.html#module-pickle "pickle: Convert Python objects to streams of bytes and back.")
+    
+Python object serialization.
+## Applications[¶](https://docs.python.org/3/library/struct.html#applications "Link to this heading")
+Two main applications for the [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") module exist, data interchange between Python and C code within an application or another application compiled using the same compiler ([native formats](https://docs.python.org/3/library/struct.html#struct-native-formats)), and data interchange between applications using agreed upon data layout ([standard formats](https://docs.python.org/3/library/struct.html#struct-standard-formats)). Generally speaking, the format strings constructed for these two domains are distinct.
+### Native Formats[¶](https://docs.python.org/3/library/struct.html#native-formats "Link to this heading")
+When constructing format strings which mimic native layouts, the compiler and machine architecture determine byte ordering and padding. In such cases, the `@` format character should be used to specify native byte ordering and data sizes. Internal pad bytes are normally inserted automatically. It is possible that a zero-repeat format code will be needed at the end of a format string to round up to the correct byte boundary for proper alignment of consecutive chunks of data.
+Consider these two simple examples (on a 64-bit, little-endian machine):
+>>>```
+>>> calcsize('@lhl')
+24
+>>> calcsize('@llh')
+18
+
+```
+
+Data is not padded to an 8-byte boundary at the end of the second format string without the use of extra padding. A zero-repeat format code solves that problem:
+>>>```
+>>> calcsize('@llh0l')
+24
+
+```
+
+The `'x'` format code can be used to specify the repeat, but for native formats it is better to use a zero-repeat format like `'0l'`.
+By default, native byte ordering and alignment is used, but it is better to be explicit and use the `'@'` prefix character.
+### Standard Formats[¶](https://docs.python.org/3/library/struct.html#standard-formats "Link to this heading")
+When exchanging data beyond your process such as networking or storage, be precise. Specify the exact byte order, size, and alignment. Do not assume they match the native order of a particular machine. For example, network byte order is big-endian, while many popular CPUs are little-endian. By defining this explicitly, the user need not care about the specifics of the platform their code is running on. The first character should typically be `<` or `>` (or `!`). Padding is the responsibility of the programmer. The zero-repeat format character won’t work. Instead, the user must explicitly add `'x'` pad bytes where needed. Revisiting the examples from the previous section, we have:
+>>>```
+>>> calcsize('<qh6xq')
+24
+>>> pack('<qh6xq', 1, 2, 3) == pack('@lhl', 1, 2, 3)
+True
+>>> calcsize('@llh')
+18
+>>> pack('@llh', 1, 2, 3) == pack('<qqh', 1, 2, 3)
+True
+>>> calcsize('<qqh6x')
+24
+>>> calcsize('@llh0l')
+24
+>>> pack('@llh0l', 1, 2, 3) == pack('<qqh6x', 1, 2, 3)
+True
+
+```
+
+The above results (executed on a 64-bit machine) aren’t guaranteed to match when executed on different machines. For example, the examples below were executed on a 32-bit machine:
+>>>```
+>>> calcsize('<qqh6x')
+24
+>>> calcsize('@llh0l')
+12
+>>> pack('@llh0l', 1, 2, 3) == pack('<qqh6x', 1, 2, 3)
+False

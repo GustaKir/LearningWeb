@@ -1,0 +1,46 @@
+Title: Py_TPFLAGS_HAVE_GC in Python C API
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: The Py_TPFLAGS_HAVE_GC flag indicates that an object supports garbage collection. When set, instances should be created with PyObject_GC_New and destroyed using PyObject_GC_Del. It also means that the GC-related fields tp_traverse and tp_clear are included in the type object.
+---
+
+Py_TPFLAGS_HAVE_GC[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Link to this definition")
+    
+This bit is set when the object supports garbage collection. If this bit is set, instances must be created using [`PyObject_GC_New`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_New "PyObject_GC_New") and destroyed using [`PyObject_GC_Del()`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_Del "PyObject_GC_Del"). More information in section [Supporting Cyclic Garbage Collection](https://docs.python.org/3/c-api/gcsupport.html#supporting-cycle-detection). This bit also implies that the GC-related fields [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") and [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") are present in the type object.
+**Inheritance:**
+Group: [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC"), [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse"), [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear")
+The [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit is inherited together with the [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") and [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") fields, i.e. if the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag bit is clear in the subtype and the [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") and [`tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear") fields in the subtype exist and have `NULL` values. 
+
+Py_TPFLAGS_DEFAULT[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_DEFAULT "Link to this definition")
+    
+This is a bitmask of all the bits that pertain to the existence of certain fields in the type object and its extension structures. Currently, it includes the following bits: `Py_TPFLAGS_HAVE_STACKLESS_EXTENSION`.
+**Inheritance:**
+??? 
+
+Py_TPFLAGS_METHOD_DESCRIPTOR[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_METHOD_DESCRIPTOR "Link to this definition")
+    
+This bit indicates that objects behave like unbound methods.
+If this flag is set for `type(meth)`, then:
+  * `meth.__get__(obj, cls)(*args, **kwds)` (with `obj` not None) must be equivalent to `meth(obj, *args, **kwds)`.
+  * `meth.__get__(None, cls)(*args, **kwds)` must be equivalent to `meth(*args, **kwds)`.
+
+
+This flag enables an optimization for typical method calls like `obj.meth()`: it avoids creating a temporary “bound method” object for `obj.meth`.
+Added in version 3.8.
+**Inheritance:**
+This flag is never inherited by types without the [`Py_TPFLAGS_IMMUTABLETYPE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_IMMUTABLETYPE "Py_TPFLAGS_IMMUTABLETYPE") flag set. For extension types, it is inherited whenever [`tp_descr_get`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_descr_get "PyTypeObject.tp_descr_get") is inherited. 
+
+Py_TPFLAGS_MANAGED_DICT[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_DICT "Link to this definition")
+    
+This bit indicates that instances of the class have a ~object.__dict__ attribute, and that the space for the dictionary is managed by the VM.
+If this flag is set, [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") should also be set.
+The type traverse function must call [`PyObject_VisitManagedDict()`](https://docs.python.org/3/c-api/object.html#c.PyObject_VisitManagedDict "PyObject_VisitManagedDict") and its clear function must call [`PyObject_ClearManagedDict()`](https://docs.python.org/3/c-api/object.html#c.PyObject_ClearManagedDict "PyObject_ClearManagedDict").
+Added in version 3.12.
+**Inheritance:**
+This flag is inherited unless the [`tp_dictoffset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dictoffset "PyTypeObject.tp_dictoffset") field is set in a superclass. 
+
+Py_TPFLAGS_MANAGED_WEAKREF[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_WEAKREF "Link to this definition")
+    
+This bit indicates that instances of the class should be weakly referenceable.
+Added in version 3.12.
+**Inheritance:**
+This flag is inherited unless the [`tp_weaklistoffset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklistoffset "PyTypeObject.tp_weaklistoffset") field is set in a superclass.

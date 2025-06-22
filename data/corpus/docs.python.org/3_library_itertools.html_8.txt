@@ -1,0 +1,118 @@
+Title: Efficient Use of Itertools in Python
+URL: https://docs.python.org/3/library/itertools.html
+Summary: This section discusses the efficiency of the itertools library, highlighting its high performance through processing elements one at a time, maintaining a small code volume with functional programming styles, and optimizing speed by using vectorized components instead of for-loops and generators.
+---
+
+```
+
+Many of the recipes offer the same high performance as the underlying toolset. Superior memory performance is kept by processing elements one at a time rather than bringing the whole iterable into memory all at once. Code volume is kept small by linking the tools together in a [functional style](https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf). High speed is retained by preferring “vectorized” building blocks over the use of for-loops and [generators](https://docs.python.org/3/glossary.html#term-generator) which incur interpreter overhead.
+```
+fromcollectionsimport Counter, deque
+fromcontextlibimport suppress
+fromfunctoolsimport reduce
+frommathimport comb, prod, sumprod, isqrt
+fromoperatorimport itemgetter, getitem, mul, neg
+deftake(n, iterable):
+  "Return first n items of the iterable as a list."
+  return list(islice(iterable, n))
+defprepend(value, iterable):
+  "Prepend a single value in front of an iterable."
+  # prepend(1, [2, 3, 4]) → 1 2 3 4
+  return chain([value], iterable)
+deftabulate(function, start=0):
+  "Return function(0), function(1), ..."
+  return map(function, count(start))
+defrepeatfunc(function, times=None, *args):
+  "Repeat calls to a function with specified arguments."
+  if times is None:
+    return starmap(function, repeat(args))
+  return starmap(function, repeat(args, times))
+defflatten(list_of_lists):
+  "Flatten one level of nesting."
+  return chain.from_iterable(list_of_lists)
+defncycles(iterable, n):
+  "Returns the sequence elements n times."
+  return chain.from_iterable(repeat(tuple(iterable), n))
+defloops(n):
+  "Loop n times. Like range(n) but without creating integers."
+  # for _ in loops(100): ...
+  return repeat(None, n)
+deftail(n, iterable):
+  "Return an iterator over the last n items."
+  # tail(3, 'ABCDEFG') → E F G
+  return iter(deque(iterable, maxlen=n))
+defconsume(iterator, n=None):
+  "Advance the iterator n-steps ahead. If n is None, consume entirely."
+  # Use functions that consume iterators at C speed.
+  if n is None:
+    deque(iterator, maxlen=0)
+  else:
+    next(islice(iterator, n, n), None)
+defnth(iterable, n, default=None):
+  "Returns the nth item or a default value."
+  return next(islice(iterable, n, None), default)
+defquantify(iterable, predicate=bool):
+  "Given a predicate that returns True or False, count the True results."
+  return sum(map(predicate, iterable))
+deffirst_true(iterable, default=False, predicate=None):
+  "Returns the first true value or the *default* if there is no true value."
+  # first_true([a,b,c], x) → a or b or c or x
+  # first_true([a,b], x, f) → a if f(a) else b if f(b) else x
+  return next(filter(predicate, iterable), default)
+defall_equal(iterable, key=None):
+  "Returns True if all the elements are equal to each other."
+  # all_equal('4٤௪౪໔', key=int) → True
+  return len(take(2, groupby(iterable, key))) <= 1
+defunique_justseen(iterable, key=None):
+  "Yield unique elements, preserving order. Remember only the element just seen."
+  # unique_justseen('AAAABBBCCDAABBB') → A B C D A B
+  # unique_justseen('ABBcCAD', str.casefold) → A B c A D
+  if key is None:
+    return map(itemgetter(0), groupby(iterable))
+  return map(next, map(itemgetter(1), groupby(iterable, key)))
+defunique_everseen(iterable, key=None):
+  "Yield unique elements, preserving order. Remember all elements ever seen."
+  # unique_everseen('AAAABBBCCDAABBB') → A B C D
+  # unique_everseen('ABBcCAD', str.casefold) → A B c D
+  seen = set()
+  if key is None:
+    for element in filterfalse(seen.__contains__, iterable):
+      seen.add(element)
+      yield element
+  else:
+    for element in iterable:
+      k = key(element)
+      if k not in seen:
+        seen.add(k)
+        yield element
+defunique(iterable, key=None, reverse=False):
+  "Yield unique elements in sorted order. Supports unhashable inputs."
+  # unique([[1, 2], [3, 4], [1, 2]]) → [1, 2] [3, 4]
+  sequenced = sorted(iterable, key=key, reverse=reverse)
+  return unique_justseen(sequenced, key=key)
+defsliding_window(iterable, n):
+  "Collect data into overlapping fixed-length chunks or blocks."
+  # sliding_window('ABCDEFG', 4) → ABCD BCDE CDEF DEFG
+  iterator = iter(iterable)
+  window = deque(islice(iterator, n - 1), maxlen=n)
+  for x in iterator:
+    window.append(x)
+    yield tuple(window)
+defgrouper(iterable, n, *, incomplete='fill', fillvalue=None):
+  "Collect data into non-overlapping fixed-length chunks or blocks."
+  # grouper('ABCDEFG', 3, fillvalue='x') → ABC DEF Gxx
+  # grouper('ABCDEFG', 3, incomplete='strict') → ABC DEF ValueError
+  # grouper('ABCDEFG', 3, incomplete='ignore') → ABC DEF
+  iterators = [iter(iterable)] * n
+  match incomplete:
+    case 'fill':
+      return zip_longest(*iterators, fillvalue=fillvalue)
+    case 'strict':
+      return zip(*iterators, strict=True)
+    case 'ignore':
+      return zip(*iterators)
+    case_:
+      raise ValueError('Expected fill, strict, or ignore')
+defroundrobin(*iterables):
+  "Visit input iterables in a cycle until each is exhausted."
+  # roundrobin('ABC', 'D',

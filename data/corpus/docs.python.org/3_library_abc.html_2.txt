@@ -1,0 +1,57 @@
+Title: Abstract Base Class: MyIterable
+URL: https://docs.python.org/3/library/abc.html
+Summary: The `MyIterable` abstract base class defines the `__iter__()` method as an abstract method, allowing subclasses to implement it while providing a base implementation. It also includes the `get_iterator()` method, which does not need to be overridden in non-abstract subclasses. The `__subclasshook__()` method determines that any class with an `__iter__()` method in its `__dict__` is considered a `MyIterable`.
+---
+
+```
+
+The ABC `MyIterable` defines the standard iterable method, [`__iter__()`](https://docs.python.org/3/reference/datamodel.html#object.__iter__ "object.__iter__"), as an abstract method. The implementation given here can still be called from subclasses. The `get_iterator()` method is also part of the `MyIterable` abstract base class, but it does not have to be overridden in non-abstract derived classes.
+The [`__subclasshook__()`](https://docs.python.org/3/library/abc.html#abc.ABCMeta.__subclasshook__ "abc.ABCMeta.__subclasshook__") class method defined here says that any class that has an [`__iter__()`](https://docs.python.org/3/reference/datamodel.html#object.__iter__ "object.__iter__") method in its [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") (or in that of one of its base classes, accessed via the [`__mro__`](https://docs.python.org/3/reference/datamodel.html#type.__mro__ "type.__mro__") list) is considered a `MyIterable` too.
+Finally, the last line makes `Foo` a virtual subclass of `MyIterable`, even though it does not define an [`__iter__()`](https://docs.python.org/3/reference/datamodel.html#object.__iter__ "object.__iter__") method (it uses the old-style iterable protocol, defined in terms of [`__len__()`](https://docs.python.org/3/reference/datamodel.html#object.__len__ "object.__len__") and [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__")). Note that this will not make `get_iterator` available as a method of `Foo`, so it is provided separately.
+The `abc` module also provides the following decorator: 
+
+@abc.abstractmethod[¶](https://docs.python.org/3/library/abc.html#abc.abstractmethod "Link to this definition")
+    
+A decorator indicating abstract methods.
+Using this decorator requires that the class’s metaclass is [`ABCMeta`](https://docs.python.org/3/library/abc.html#abc.ABCMeta "abc.ABCMeta") or is derived from it. A class that has a metaclass derived from `ABCMeta` cannot be instantiated unless all of its abstract methods and properties are overridden. The abstract methods can be called using any of the normal ‘super’ call mechanisms. `abstractmethod()` may be used to declare abstract methods for properties and descriptors.
+Dynamically adding abstract methods to a class, or attempting to modify the abstraction status of a method or class once it is created, are only supported using the [`update_abstractmethods()`](https://docs.python.org/3/library/abc.html#abc.update_abstractmethods "abc.update_abstractmethods") function. The `abstractmethod()` only affects subclasses derived using regular inheritance; “virtual subclasses” registered with the ABC’s [`register()`](https://docs.python.org/3/library/abc.html#abc.ABCMeta.register "abc.ABCMeta.register") method are not affected.
+When `abstractmethod()` is applied in combination with other method descriptors, it should be applied as the innermost decorator, as shown in the following usage examples:
+```
+classC(ABC):
+  @abstractmethod
+  defmy_abstract_method(self, arg1):
+    ...
+  @classmethod
+  @abstractmethod
+  defmy_abstract_classmethod(cls, arg2):
+    ...
+  @staticmethod
+  @abstractmethod
+  defmy_abstract_staticmethod(arg3):
+    ...
+  @property
+  @abstractmethod
+  defmy_abstract_property(self):
+    ...
+  @my_abstract_property.setter
+  @abstractmethod
+  defmy_abstract_property(self, val):
+    ...
+  @abstractmethod
+  def_get_x(self):
+    ...
+  @abstractmethod
+  def_set_x(self, val):
+    ...
+  x = property(_get_x, _set_x)
+
+```
+
+In order to correctly interoperate with the abstract base class machinery, the descriptor must identify itself as abstract using `__isabstractmethod__`. In general, this attribute should be `True` if any of the methods used to compose the descriptor are abstract. For example, Python’s built-in [`property`](https://docs.python.org/3/library/functions.html#property "property") does the equivalent of:
+```
+classDescriptor:
+  ...
+  @property
+  def__isabstractmethod__(self):
+    return any(getattr(f, '__isabstractmethod__', False) for
+          f in (self._fget, self._fset, self._fdel))

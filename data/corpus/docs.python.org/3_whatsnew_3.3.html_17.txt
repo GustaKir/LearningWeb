@@ -1,0 +1,17 @@
+Title: Email Package Enhancements in Python 3.3
+URL: https://docs.python.org/3/whatsnew/3.3.html
+Summary: The email package in Python 3.3 introduces a policy framework that allows for controlling the behavior of email parsing and generation. The primary policy, Compat32, ensures backward compatibility with version 3.2. Users can specify a policy when parsing email messages.
+---
+
+### email[¶](https://docs.python.org/3/whatsnew/3.3.html#email "Link to this heading")
+#### Policy Framework[¶](https://docs.python.org/3/whatsnew/3.3.html#policy-framework "Link to this heading")
+The email package now has a [`policy`](https://docs.python.org/3/library/email.policy.html#module-email.policy "email.policy: Controlling the parsing and generating of messages") framework. A [`Policy`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy "email.policy.Policy") is an object with several methods and properties that control how the email package behaves. The primary policy for Python 3.3 is the [`Compat32`](https://docs.python.org/3/library/email.policy.html#email.policy.Compat32 "email.policy.Compat32") policy, which provides backward compatibility with the email package in Python 3.2. A `policy` can be specified when an email message is parsed by a [`parser`](https://docs.python.org/3/library/email.parser.html#module-email.parser "email.parser: Parse flat text email messages to produce a message object structure."), or when a [`Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message") object is created, or when an email is serialized using a [`generator`](https://docs.python.org/3/library/email.generator.html#module-email.generator "email.generator: Generate flat text email messages from a message structure."). Unless overridden, a policy passed to a `parser` is inherited by all the `Message` object and sub-objects created by the `parser`. By default a `generator` will use the policy of the `Message` object it is serializing. The default policy is [`compat32`](https://docs.python.org/3/library/email.policy.html#email.policy.compat32 "email.policy.compat32").
+The minimum set of controls implemented by all `policy` objects are:
+max_line_length | The maximum length, excluding the linesep character(s), individual lines may have when a `Message` is serialized. Defaults to 78.  
+---|---  
+linesep | The character used to separate individual lines when a `Message` is serialized. Defaults to `\n`.  
+cte_type | `7bit` or `8bit`. `8bit` applies only to a `Bytes` `generator`, and means that non-ASCII may be used where allowed by the protocol (or where it exists in the original input).  
+raise_on_defect | Causes a `parser` to raise error when defects are encountered instead of adding them to the `Message` object’s `defects` list.  
+A new policy instance, with new settings, is created using the [`clone()`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy.clone "email.policy.Policy.clone") method of policy objects. `clone` takes any of the above controls as keyword arguments. Any control not specified in the call retains its default value. Thus you can create a policy that uses `\r\n` linesep characters like this:
+```
+mypolicy = compat32.clone(linesep='\r\n')

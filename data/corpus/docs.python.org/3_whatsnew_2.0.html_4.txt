@@ -1,0 +1,90 @@
+Title: List Comprehensions in Python
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: This section explains list comprehensions in Python, highlighting their structure and benefits over traditional filtering methods. It demonstrates how to create a new list of strings containing a specific substring using both the `filter` function with a `lambda` expression and a more concise list comprehension format.
+---
+
+```
+# Given the list L, make a list of all strings
+# containing the substring S.
+sublist = filter( lambda s, substring=S:
+           string.find(s, substring) != -1,
+         L)
+
+```
+
+Because of Python’s scoping rules, a default argument is used so that the anonymous function created by the [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda) expression knows what substring is being searched for. List comprehensions make this cleaner:
+```
+sublist = [ s for s in L if string.find(s, S) != -1 ]
+
+```
+
+List comprehensions have the form:
+```
+[ expression for expr in sequence1
+       for expr2 in sequence2 ...
+       for exprN in sequenceN
+       if condition ]
+
+```
+
+The `for`…`in` clauses contain the sequences to be iterated over. The sequences do not have to be the same length, because they are _not_ iterated over in parallel, but from left to right; this is explained more clearly in the following paragraphs. The elements of the generated list will be the successive values of _expression_. The final `if` clause is optional; if present, _expression_ is only evaluated and added to the result if _condition_ is true.
+To make the semantics very clear, a list comprehension is equivalent to the following Python code:
+```
+for expr1 in sequence1:
+  for expr2 in sequence2:
+  ...
+    for exprN in sequenceN:
+       if (condition):
+         # Append the value of
+         # the expression to the
+         # resulting list.
+
+```
+
+This means that when there are multiple `for`…`in` clauses, the resulting list will be equal to the product of the lengths of all the sequences. If you have two lists of length 3, the output list is 9 elements long:
+```
+seq1 = 'abc'
+seq2 = (1,2,3)
+>>> [ (x,y) for x in seq1 for y in seq2]
+[('a', 1), ('a', 2), ('a', 3), ('b', 1), ('b', 2), ('b', 3), ('c', 1),
+('c', 2), ('c', 3)]
+
+```
+
+To avoid introducing an ambiguity into Python’s grammar, if _expression_ is creating a tuple, it must be surrounded with parentheses. The first list comprehension below is a syntax error, while the second one is correct:
+```
+# Syntax error
+[ x,y for x in seq1 for y in seq2]
+# Correct
+[ (x,y) for x in seq1 for y in seq2]
+
+```
+
+The idea of list comprehensions originally comes from the functional programming language Haskell (<https://www.haskell.org>). Greg Ewing argued most effectively for adding them to Python and wrote the initial list comprehension patch, which was then discussed for a seemingly endless time on the python-dev mailing list and kept up-to-date by Skip Montanaro.
+## Augmented Assignment[¶](https://docs.python.org/3/whatsnew/2.0.html#augmented-assignment "Link to this heading")
+Augmented assignment operators, another long-requested feature, have been added to Python 2.0. Augmented assignment operators include `+=`, `-=`, `*=`, and so forth. For example, the statement `a += 2` increments the value of the variable `a` by 2, equivalent to the slightly lengthier `a = a + 2`.
+The full list of supported assignment operators is `+=`, `-=`, `*=`, `/=`, `%=`, `**=`, `&=`, `|=`, `^=`, `>>=`, and `<<=`. Python classes can override the augmented assignment operators by defining methods named `__iadd__()`, `__isub__()`, etc. For example, the following `Number` class stores a number and supports using += to create a new instance with an incremented value.
+```
+classNumber:
+  def__init__(self, value):
+    self.value = value
+  def__iadd__(self, increment):
+    return Number( self.value + increment)
+n = Number(5)
+n += 3
+print n.value
+
+```
+
+The `__iadd__()` special method is called with the value of the increment, and should return a new instance with an appropriately modified value; this return value is bound as the new value of the variable on the left-hand side.
+Augmented assignment operators were first introduced in the C programming language, and most C-derived languages, such as **awk** , C++, Java, Perl, and PHP also support them. The augmented assignment patch was implemented by Thomas Wouters.
+## String Methods[¶](https://docs.python.org/3/whatsnew/2.0.html#string-methods "Link to this heading")
+Until now string-manipulation functionality was in the [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") module, which was usually a front-end for the `strop` module written in C. The addition of Unicode posed a difficulty for the `strop` module, because the functions would all need to be rewritten in order to accept either 8-bit or Unicode strings. For functions such as `string.replace()`, which takes 3 string arguments, that means eight possible permutations, and correspondingly complicated code.
+Instead, Python 2.0 pushes the problem onto the string type, making string manipulation functionality available through methods on both 8-bit strings and Unicode strings.
+>>>```
+>>> 'andrew'.capitalize()
+'Andrew'
+>>> 'hostname'.replace('os', 'linux')
+'hlinuxtname'
+>>> 'moshe'.find('sh')
+2

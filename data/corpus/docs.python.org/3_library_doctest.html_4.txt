@@ -1,0 +1,72 @@
+Title: Handling Backslashes and Whitespace in Doctests
+URL: https://docs.python.org/3/library/doctest.html
+Summary: This section discusses the handling of backslashes in doctests, specifically how to include them in string literals without them being interpreted as escape characters. It also covers the treatment of leading whitespace in examples, explaining that it doesn't affect the starting column and that excess whitespace is stripped from the expected output.
+---
+
+```
+
+Otherwise, the backslash will be interpreted as part of the string. For example, the `\n` above would be interpreted as a newline character. Alternatively, you can double each backslash in the doctest version (and not use a raw string):
+>>>```
+>>> deff(x):
+... '''Backslashes in a raw docstring: m\\n'''
+...
+>>> print(f.__doc__)
+Backslashes in a raw docstring: m\n
+
+```
+
+  * The starting column doesn’t matter:
+>>>```
+>>> assert "Easy!"
+   >>> import math
+     >>> math.floor(1.9)
+     1
+
+```
+
+and as many leading whitespace characters are stripped from the expected output as appeared in the initial `'>>> '` line that started the example.
+
+
+### What’s the Execution Context?[¶](https://docs.python.org/3/library/doctest.html#what-s-the-execution-context "Link to this heading")
+By default, each time [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") finds a docstring to test, it uses a _shallow copy_ of `M`’s globals, so that running tests doesn’t change the module’s real globals, and so that one test in `M` can’t leave behind crumbs that accidentally allow another test to work. This means examples can freely use any names defined at top-level in `M`, and names defined earlier in the docstring being run. Examples cannot see names defined in other docstrings.
+You can force use of your own dict as the execution context by passing `globs=your_dict` to [`testmod()`](https://docs.python.org/3/library/doctest.html#doctest.testmod "doctest.testmod") or [`testfile()`](https://docs.python.org/3/library/doctest.html#doctest.testfile "doctest.testfile") instead.
+### What About Exceptions?[¶](https://docs.python.org/3/library/doctest.html#what-about-exceptions "Link to this heading")
+No problem, provided that the traceback is the only output produced by the example: just paste in the traceback. [[1]](https://docs.python.org/3/library/doctest.html#id2) Since tracebacks contain details that are likely to change rapidly (for example, exact file paths and line numbers), this is one case where doctest works hard to be flexible in what it accepts.
+Simple example:
+>>>```
+>>> [1, 2, 3].remove(42)
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ValueError: list.remove(x): x not in list
+
+```
+
+That doctest succeeds if [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised, with the `list.remove(x): x not in list` detail as shown.
+The expected output for an exception must start with a traceback header, which may be either of the following two lines, indented the same as the first line of the example:
+```
+Traceback (most recent call last):
+Traceback (innermost last):
+
+```
+
+The traceback header is followed by an optional traceback stack, whose contents are ignored by doctest. The traceback stack is typically omitted, or copied verbatim from an interactive session.
+The traceback stack is followed by the most interesting part: the line(s) containing the exception type and detail. This is usually the last line of a traceback, but can extend across multiple lines if the exception has a multi-line detail:
+>>>```
+>>> raise ValueError('multi\n  line\ndetail')
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ValueError: multi
+  line
+detail
+
+```
+
+The last three lines (starting with [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError")) are compared against the exception’s type and detail, and the rest are ignored.
+Best practice is to omit the traceback stack, unless it adds significant documentation value to the example. So the last example is probably better as:
+>>>```
+>>> raise ValueError('multi\n  line\ndetail')
+Traceback (most recent call last):
+...
+ValueError: multi
+  line
+detail

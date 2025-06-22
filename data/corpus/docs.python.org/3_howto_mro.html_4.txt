@@ -1,0 +1,88 @@
+Title: Understanding Method Resolution Order in Python 2.3
+URL: https://docs.python.org/3/howto/mro.html
+Summary: This document discusses Python 2.3's improvements in enforcing class hierarchy integrity, including error detection for duplicate base classes. It highlights important lessons about Method Resolution Order (MRO), emphasizing that MRO affects attribute resolution as well as methods, and introduces the issue of monotonicity in MRO for different class types.
+---
+
+```
+
+Python 2.3 forces the programmer to write good hierarchies (or, at least, less error-prone ones).
+On a related note, let me point out that the Python 2.3 algorithm is smart enough to recognize obvious mistakes, as the duplication of classes in the list of parents:
+>>>```
+>>> classA(object): pass
+>>> classC(A,A): pass # error
+Traceback (most recent call last):
+ File "<stdin>", line 1, in ?
+TypeError: duplicate base class A
+
+```
+
+Python 2.2 (both for classic classes and new style classes) in this situation, would not raise any exception.
+Finally, I would like to point out two lessons we have learned from this example:
+  1. despite the name, the MRO determines the resolution order of attributes, not only of methods;
+  2. the default food for Pythonistas is spam ! (but you already knew that ;-)
+
+
+Having discussed the issue of local precedence ordering, let me now consider the issue of monotonicity. My goal is to show that neither the MRO for classic classes nor that for Python 2.2 new style classes is monotonic.
+To prove that the MRO for classic classes is non-monotonic is rather trivial, it is enough to look at the diamond diagram:
+> ```
+  C
+ / \
+ /  \
+A   B
+ \  /
+ \ /
+  D
+
+```
+
+One easily discerns the inconsistency:
+```
+L[B,P21] = B C    # B precedes C : B's methods win
+L[D,P21] = D A C B C # B follows C : C's methods win!
+
+```
+
+On the other hand, there are no problems with the Python 2.2 and 2.3 MROs, they give both:
+```
+L[D] = D A B C
+
+```
+
+Guido points out in his essay [[3]](https://docs.python.org/3/howto/mro.html#id6) that the classic MRO is not so bad in practice, since one can typically avoids diamonds for classic classes. But all new style classes inherit from `object`, therefore diamonds are unavoidable and inconsistencies shows up in every multiple inheritance graph.
+The MRO of Python 2.2 makes breaking monotonicity difficult, but not impossible. The following example, originally provided by Samuele Pedroni, shows that the MRO of Python 2.2 is non-monotonic:
+>>>```
+>>> classA(object): pass
+>>> classB(object): pass
+>>> classC(object): pass
+>>> classD(object): pass
+>>> classE(object): pass
+>>> classK1(A,B,C): pass
+>>> classK2(D,B,E): pass
+>>> classK3(D,A):  pass
+>>> classZ(K1,K2,K3): pass
+
+```
+
+Here are the linearizations according to the C3 MRO (the reader should verify these linearizations as an exercise and draw the inheritance diagram ;-)
+```
+L[A] = A O
+L[B] = B O
+L[C] = C O
+L[D] = D O
+L[E] = E O
+L[K1]= K1 A B C O
+L[K2]= K2 D B E O
+L[K3]= K3 D A O
+L[Z] = Z K1 K2 K3 D A B C E O
+
+```
+
+Python 2.2 gives exactly the same linearizations for A, B, C, D, E, K1, K2 and K3, but a different linearization for Z:
+```
+L[Z,P22] = Z K1 K3 A K2 D B C E O
+
+```
+
+It is clear that this linearization is _wrong_ , since A comes before D whereas in the linearization of K3 A comes _after_ D. In other words, in K3 methods derived by D override methods derived by A, but in Z, which still is a subclass of K3, methods derived by A override methods derived by D! This is a violation of monotonicity. Moreover, the Python 2.2 linearization of Z is also inconsistent with local precedence ordering, since the local precedence list of the class Z is [K1, K2, K3] (K2 precedes K3), whereas in the linearization of Z K2 _follows_ K3. These problems explain why the 2.2 rule has been dismissed in favor of the C3 rule.
+## The end[¶](https://docs.python.org/3/howto/mro.html#the-end "Link to this heading")
+This section is for the impatient reader, who skipped all the previous sections and jumped immediately to the end. This section is for the lazy programmer too, who didn’t want to exercise her/his brain. Finally, it is for the programmer with some hubris, otherwise s/he would not be reading a paper on the C3 method resolution order in multiple inheritance hierarchies ;-) These three virtues taken all together (and _not_ separately) deserve a prize: the prize is a short Python 2.2 script that allows you to compute the 2.3 MRO without risk to your brain. Simply change the last line to play with the various examples I have discussed in this paper.:

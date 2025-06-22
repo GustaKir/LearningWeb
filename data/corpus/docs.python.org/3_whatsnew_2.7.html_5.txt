@@ -1,0 +1,34 @@
+Title: Overview of OrderedDict in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: The `OrderedDict` class maintains the order of keys using a doubly linked list, allowing for efficient key insertion and deletion. Compared to regular dictionaries, comparisons ignore order. It is now used by the `ConfigParser` module, enabling configuration files to maintain their original order upon modification.
+---
+
+```
+
+Comparing an [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") with a regular dictionary ignores the insertion order and just compares the keys and values.
+How does the [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") work? It maintains a doubly linked list of keys, appending new keys to the list as they’re inserted. A secondary dictionary maps keys to their corresponding list node, so deletion doesn’t have to traverse the entire linked list and therefore remains _O_(1).
+The standard library now supports use of ordered dictionaries in several modules.
+  * The [`ConfigParser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") module uses them by default, meaning that configuration files can now be read, modified, and then written back in their original order.
+  * The [`_asdict()`](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._asdict "collections.somenamedtuple._asdict") method for [`collections.namedtuple()`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple") now returns an ordered dictionary with the values appearing in the same order as the underlying tuple indices.
+  * The [`json`](https://docs.python.org/3/library/json.html#module-json "json: Encode and decode the JSON format.") module’s [`JSONDecoder`](https://docs.python.org/3/library/json.html#json.JSONDecoder "json.JSONDecoder") class constructor was extended with an _object_pairs_hook_ parameter to allow `OrderedDict` instances to be built by the decoder. Support was also added for third-party tools like [PyYAML](https://pyyaml.org/).
+
+
+See also 
+
+[**PEP 372**](https://peps.python.org/pep-0372/) - Adding an ordered dictionary to collections
+    
+PEP written by Armin Ronacher and Raymond Hettinger; implemented by Raymond Hettinger.
+## PEP 378: Format Specifier for Thousands Separator[¶](https://docs.python.org/3/whatsnew/2.7.html#pep-378-format-specifier-for-thousands-separator "Link to this heading")
+To make program output more readable, it can be useful to add separators to large numbers, rendering them as 18,446,744,073,709,551,616 instead of 18446744073709551616.
+The fully general solution for doing this is the [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.") module, which can use different separators (“,” in North America, “.” in Europe) and different grouping sizes, but [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.") is complicated to use and unsuitable for multi-threaded applications where different threads are producing output for different locales.
+Therefore, a simple comma-grouping mechanism has been added to the mini-language used by the [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") method. When formatting a floating-point number, simply include a comma between the width and the precision:
+>>>```
+>>> '{:20,.2f}'.format(18446744073709551616.0)
+'18,446,744,073,709,551,616.00'
+
+```
+
+When formatting an integer, include the comma after the width:
+>>>```
+>>> '{:20,d}'.format(18446744073709551616)
+'18,446,744,073,709,551,616'

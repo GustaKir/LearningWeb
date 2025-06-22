@@ -1,0 +1,45 @@
+Title: SequenceMatcher in difflib
+URL: https://docs.python.org/3/library/difflib.html
+Summary: The SequenceMatcher class in the difflib module compares sequences of characters, with options to customize blank and tab handling, and to disable the junk heuristic. Key attributes pertain to junk elements, popular elements, and their positions, which are reset when the sequences are updated.
+---
+
+```
+
+if you’re comparing lines as sequences of characters, and don’t want to synch up on blanks or hard tabs.
+The optional arguments _a_ and _b_ are sequences to be compared; both default to empty strings. The elements of both sequences must be [hashable](https://docs.python.org/3/glossary.html#term-hashable).
+The optional argument _autojunk_ can be used to disable the automatic junk heuristic.
+Changed in version 3.2: Added the _autojunk_ parameter.
+SequenceMatcher objects get three data attributes: _bjunk_ is the set of elements of _b_ for which _isjunk_ is `True`; _bpopular_ is the set of non-junk elements considered popular by the heuristic (if it is not disabled); _b2j_ is a dict mapping the remaining elements of _b_ to a list of positions where they occur. All three are reset whenever _b_ is reset with [`set_seqs()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.set_seqs "difflib.SequenceMatcher.set_seqs") or [`set_seq2()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.set_seq2 "difflib.SequenceMatcher.set_seq2").
+Added in version 3.2: The _bjunk_ and _bpopular_ attributes.
+[`SequenceMatcher`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher "difflib.SequenceMatcher") objects have the following methods: 
+
+set_seqs(_a_ , _b_)[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.set_seqs "Link to this definition")
+    
+Set the two sequences to be compared.
+[`SequenceMatcher`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher "difflib.SequenceMatcher") computes and caches detailed information about the second sequence, so if you want to compare one sequence against many sequences, use [`set_seq2()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.set_seq2 "difflib.SequenceMatcher.set_seq2") to set the commonly used sequence once and call [`set_seq1()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.set_seq1 "difflib.SequenceMatcher.set_seq1") repeatedly, once for each of the other sequences. 
+
+set_seq1(_a_)[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.set_seq1 "Link to this definition")
+    
+Set the first sequence to be compared. The second sequence to be compared is not changed. 
+
+set_seq2(_b_)[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.set_seq2 "Link to this definition")
+    
+Set the second sequence to be compared. The first sequence to be compared is not changed. 
+
+find_longest_match(_alo =0_, _ahi =None_, _blo =0_, _bhi =None_)[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.find_longest_match "Link to this definition")
+    
+Find longest matching block in `a[alo:ahi]` and `b[blo:bhi]`.
+If _isjunk_ was omitted or `None`, [`find_longest_match()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.find_longest_match "difflib.SequenceMatcher.find_longest_match") returns `(i, j, k)` such that `a[i:i+k]` is equal to `b[j:j+k]`, where `alo <= i <= i+k <= ahi` and `blo <= j <= j+k <= bhi`. For all `(i', j', k')` meeting those conditions, the additional conditions `k >= k'`, `i <= i'`, and if `i == i'`, `j <= j'` are also met. In other words, of all maximal matching blocks, return one that starts earliest in _a_ , and of all those maximal matching blocks that start earliest in _a_ , return the one that starts earliest in _b_.
+>>>```
+>>> s = SequenceMatcher(None, " abcd", "abcd abcd")
+>>> s.find_longest_match(0, 5, 0, 9)
+Match(a=0, b=4, size=5)
+
+```
+
+If _isjunk_ was provided, first the longest matching block is determined as above, but with the additional restriction that no junk element appears in the block. Then that block is extended as far as possible by matching (only) junk elements on both sides. So the resulting block never matches on junk except as identical junk happens to be adjacent to an interesting match.
+Here’s the same example as before, but considering blanks to be junk. That prevents `' abcd'` from matching the `' abcd'` at the tail end of the second sequence directly. Instead only the `'abcd'` can match, and matches the leftmost `'abcd'` in the second sequence:
+>>>```
+>>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
+>>> s.find_longest_match(0, 5, 0, 9)
+Match(a=1, b=0, size=4)

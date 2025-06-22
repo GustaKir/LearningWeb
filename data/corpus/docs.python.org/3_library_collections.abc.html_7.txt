@@ -1,0 +1,43 @@
+Title: AsyncGenerator and Buffer Abstract Base Classes
+URL: https://docs.python.org/3/library/collections.abc.html
+Summary: This documentation chunk describes the Abstract Base Classes (ABCs) for asynchronous generators and buffer protocol implementations in Python. The AsyncGenerator class provides a protocol from PEP 525 and PEP 492 for asynchronous generator classes, while the Buffer class is for classes implementing the __buffer__() method. Both features were added in Python version 3.6.
+---
+
+_class_ collections.abc.AsyncGenerator[¶](https://docs.python.org/3/library/collections.abc.html#collections.abc.AsyncGenerator "Link to this definition")
+    
+ABC for [asynchronous generator](https://docs.python.org/3/glossary.html#term-asynchronous-generator) classes that implement the protocol defined in [**PEP 525**](https://peps.python.org/pep-0525/) and [**PEP 492**](https://peps.python.org/pep-0492/).
+See [Annotating generators and coroutines](https://docs.python.org/3/library/typing.html#annotating-generators-and-coroutines) for details on using `AsyncGenerator` in type annotations.
+Added in version 3.6. 
+
+_class_ collections.abc.Buffer[¶](https://docs.python.org/3/library/collections.abc.html#collections.abc.Buffer "Link to this definition")
+    
+ABC for classes that provide the [`__buffer__()`](https://docs.python.org/3/reference/datamodel.html#object.__buffer__ "object.__buffer__") method, implementing the [buffer protocol](https://docs.python.org/3/c-api/buffer.html#bufferobjects). See [**PEP 688**](https://peps.python.org/pep-0688/).
+Added in version 3.12.
+## Examples and Recipes[¶](https://docs.python.org/3/library/collections.abc.html#examples-and-recipes "Link to this heading")
+ABCs allow us to ask classes or instances if they provide particular functionality, for example:
+```
+size = None
+if isinstance(myvar, collections.abc.Sized):
+  size = len(myvar)
+
+```
+
+Several of the ABCs are also useful as mixins that make it easier to develop classes supporting container APIs. For example, to write a class supporting the full [`Set`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Set "collections.abc.Set") API, it is only necessary to supply the three underlying abstract methods: [`__contains__()`](https://docs.python.org/3/reference/datamodel.html#object.__contains__ "object.__contains__"), [`__iter__()`](https://docs.python.org/3/library/stdtypes.html#container.__iter__ "container.__iter__"), and [`__len__()`](https://docs.python.org/3/reference/datamodel.html#object.__len__ "object.__len__"). The ABC supplies the remaining methods such as `__and__()` and [`isdisjoint()`](https://docs.python.org/3/library/stdtypes.html#frozenset.isdisjoint "frozenset.isdisjoint"):
+```
+classListBasedSet(collections.abc.Set):
+''' Alternate set implementation favoring space over speed
+    and not requiring the set elements to be hashable. '''
+  def__init__(self, iterable):
+    self.elements = lst = []
+    for value in iterable:
+      if value not in lst:
+        lst.append(value)
+  def__iter__(self):
+    return iter(self.elements)
+  def__contains__(self, value):
+    return value in self.elements
+  def__len__(self):
+    return len(self.elements)
+s1 = ListBasedSet('abcdef')
+s2 = ListBasedSet('defghi')
+overlap = s1 & s2      # The __and__() method is supported automatically

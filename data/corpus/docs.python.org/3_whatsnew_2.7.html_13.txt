@@ -1,0 +1,18 @@
+Title: Optimizations in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: Python 2.7 introduces several performance enhancements, including a new opcode for improved setup of 'with' statements and optimized garbage collection that reduces the time complexity when numerous objects are allocated without deallocating them.
+---
+
+```
+
+### Optimizations[¶](https://docs.python.org/3/whatsnew/2.7.html#optimizations "Link to this heading")
+Several performance enhancements have been added:
+  * A new opcode was added to perform the initial setup for [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statements, looking up the [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") and [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") methods. (Contributed by Benjamin Peterson.)
+  * The garbage collector now performs better for one common usage pattern: when many objects are being allocated without deallocating any of them. This would previously take quadratic time for garbage collection, but now the number of full garbage collections is reduced as the number of objects on the heap grows. The new logic only performs a full garbage collection pass when the middle generation has been collected 10 times and when the number of survivor objects from the middle generation exceeds 10% of the number of objects in the oldest generation. (Suggested by Martin von Löwis and implemented by Antoine Pitrou; [bpo-4074](https://bugs.python.org/issue?@action=redirect&bpo=4074).)
+  * The garbage collector tries to avoid tracking simple containers which can’t be part of a cycle. In Python 2.7, this is now true for tuples and dicts containing atomic types (such as ints, strings, etc.). Transitively, a dict containing tuples of atomic types won’t be tracked either. This helps reduce the cost of each garbage collection by decreasing the number of objects to be considered and traversed by the collector. (Contributed by Antoine Pitrou; [bpo-4688](https://bugs.python.org/issue?@action=redirect&bpo=4688).)
+  * Long integers are now stored internally either in base `2**15` or in base `2**30`, the base being determined at build time. Previously, they were always stored in base `2**15`. Using base `2**30` gives significant performance improvements on 64-bit machines, but benchmark results on 32-bit machines have been mixed. Therefore, the default is to use base `2**30` on 64-bit machines and base `2**15` on 32-bit machines; on Unix, there’s a new configure option `--enable-big-digits` that can be used to override this default.
+Apart from the performance improvements this change should be invisible to end users, with one exception: for testing and debugging purposes there’s a new structseq `sys.long_info` that provides information about the internal format, giving the number of bits per digit and the size in bytes of the C type used to store each digit:
+>>>```
+>>> importsys
+>>> sys.long_info
+sys.long_info(bits_per_digit=30, sizeof_digit=4)

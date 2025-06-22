@@ -1,0 +1,29 @@
+Title: Tool Identifiers in sys.monitoring
+URL: https://docs.python.org/3/library/sys.monitoring.html
+Summary: Tool identifiers are integers (0-5) used to uniquely identify monitoring tools, preventing interference among them. Each tool must select an identifier before registering or activating events, as they currently operate independently.
+---
+
+## Tool identifiers[¶](https://docs.python.org/3/library/sys.monitoring.html#tool-identifiers "Link to this heading")
+A tool identifier is an integer and the associated name. Tool identifiers are used to discourage tools from interfering with each other and to allow multiple tools to operate at the same time. Currently tools are completely independent and cannot be used to monitor each other. This restriction may be lifted in the future.
+Before registering or activating events, a tool should choose an identifier. Identifiers are integers in the range 0 to 5 inclusive.
+### Registering and using tools[¶](https://docs.python.org/3/library/sys.monitoring.html#registering-and-using-tools "Link to this heading") 
+
+sys.monitoring.use_tool_id(_tool_id :[int](https://docs.python.org/3/library/functions.html#int "int")_, _name :[str](https://docs.python.org/3/library/stdtypes.html#str "str")_, _/_) → [None](https://docs.python.org/3/library/constants.html#None "None")[¶](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.use_tool_id "Link to this definition")
+    
+Must be called before _tool_id_ can be used. _tool_id_ must be in the range 0 to 5 inclusive. Raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if _tool_id_ is in use. 
+
+sys.monitoring.free_tool_id(_tool_id :[int](https://docs.python.org/3/library/functions.html#int "int")_, _/_) → [None](https://docs.python.org/3/library/constants.html#None "None")[¶](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.free_tool_id "Link to this definition")
+    
+Should be called once a tool no longer requires _tool_id_.
+Note
+[`free_tool_id()`](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.free_tool_id "sys.monitoring.free_tool_id") will not disable global or local events associated with _tool_id_ , nor will it unregister any callback functions. This function is only intended to be used to notify the VM that the particular _tool_id_ is no longer in use. 
+
+sys.monitoring.get_tool(_tool_id :[int](https://docs.python.org/3/library/functions.html#int "int")_, _/_) → [str](https://docs.python.org/3/library/stdtypes.html#str "str")|[None](https://docs.python.org/3/library/constants.html#None "None")[¶](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.get_tool "Link to this definition")
+    
+Returns the name of the tool if _tool_id_ is in use, otherwise it returns `None`. _tool_id_ must be in the range 0 to 5 inclusive.
+All IDs are treated the same by the VM with regard to events, but the following IDs are pre-defined to make co-operation of tools easier:
+```
+sys.monitoring.DEBUGGER_ID = 0
+sys.monitoring.COVERAGE_ID = 1
+sys.monitoring.PROFILER_ID = 2
+sys.monitoring.OPTIMIZER_ID = 5

@@ -1,0 +1,59 @@
+Title: New Method in io.BytesIO: getbuffer()
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces the `getbuffer()` method in `io.BytesIO`, allowing for an editable view of the data without copying. This enhancement supports random access and slice notation, facilitating in-place editing.
+---
+
+```
+
+(Patch submitted by Daniel Urban; [bpo-5867](https://bugs.python.org/issue?@action=redirect&bpo=5867).)
+### io[¶](https://docs.python.org/3/whatsnew/3.2.html#io "Link to this heading")
+The [`io.BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO "io.BytesIO") has a new method, [`getbuffer()`](https://docs.python.org/3/library/io.html#io.BytesIO.getbuffer "io.BytesIO.getbuffer"), which provides functionality similar to [`memoryview()`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview"). It creates an editable view of the data without making a copy. The buffer’s random access and support for slice notation are well-suited to in-place editing:
+>>>```
+>>> REC_LEN, LOC_START, LOC_LEN = 34, 7, 11
+>>> defchange_location(buffer, record_number, location):
+...   start = record_number * REC_LEN + LOC_START
+...   buffer[start: start+LOC_LEN] = location
+>>> importio
+>>> byte_stream = io.BytesIO(
+...   b'G3805 storeroom Main chassis  '
+...   b'X7899 shipping  Reserve cog   '
+...   b'L6988 receiving Primary sprocket'
+... )
+>>> buffer = byte_stream.getbuffer()
+>>> change_location(buffer, 1, b'warehouse ')
+>>> change_location(buffer, 0, b'showroom  ')
+>>> print(byte_stream.getvalue())
+b'G3805 showroom  Main chassis  '
+b'X7899 warehouse Reserve cog   '
+b'L6988 receiving Primary sprocket'
+
+```
+
+(Contributed by Antoine Pitrou in [bpo-5506](https://bugs.python.org/issue?@action=redirect&bpo=5506).)
+### reprlib[¶](https://docs.python.org/3/whatsnew/3.2.html#reprlib "Link to this heading")
+When writing a [`__repr__()`](https://docs.python.org/3/reference/datamodel.html#object.__repr__ "object.__repr__") method for a custom container, it is easy to forget to handle the case where a member refers back to the container itself. Python’s builtin objects such as [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") and [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") handle self-reference by displaying “…” in the recursive part of the representation string.
+To help write such [`__repr__()`](https://docs.python.org/3/reference/datamodel.html#object.__repr__ "object.__repr__") methods, the [`reprlib`](https://docs.python.org/3/library/reprlib.html#module-reprlib "reprlib: Alternate repr\(\) implementation with size limits.") module has a new decorator, [`recursive_repr()`](https://docs.python.org/3/library/reprlib.html#reprlib.recursive_repr "reprlib.recursive_repr"), for detecting recursive calls to `__repr__()` and substituting a placeholder string instead:
+>>>```
+>>> classMyList(list):
+...   @recursive_repr()
+...   def__repr__(self):
+...     return '<' + '|'.join(map(repr, self)) + '>'
+...
+>>> m = MyList('abc')
+>>> m.append(m)
+>>> m.append('x')
+>>> print(m)
+<'a'|'b'|'c'|...|'x'>
+
+```
+
+(Contributed by Raymond Hettinger in [bpo-9826](https://bugs.python.org/issue?@action=redirect&bpo=9826) and [bpo-9840](https://bugs.python.org/issue?@action=redirect&bpo=9840).)
+### logging[¶](https://docs.python.org/3/whatsnew/3.2.html#logging "Link to this heading")
+In addition to dictionary-based configuration described above, the [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") package has many other improvements.
+The logging documentation has been augmented by a [basic tutorial](https://docs.python.org/3/howto/logging.html#logging-basic-tutorial), an [advanced tutorial](https://docs.python.org/3/howto/logging.html#logging-advanced-tutorial), and a [cookbook](https://docs.python.org/3/howto/logging-cookbook.html#logging-cookbook) of logging recipes. These documents are the fastest way to learn about logging.
+The [`logging.basicConfig()`](https://docs.python.org/3/library/logging.html#logging.basicConfig "logging.basicConfig") set-up function gained a _style_ argument to support three different types of string formatting. It defaults to “%” for traditional %-formatting, can be set to “{” for the new [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") style, or can be set to “$” for the shell-style formatting provided by [`string.Template`](https://docs.python.org/3/library/string.html#string.Template "string.Template"). The following three configurations are equivalent:
+>>>```
+>>> fromloggingimport basicConfig
+>>> basicConfig(style='%', format="%(name)s -> %(levelname)s: %(message)s")
+>>> basicConfig(style='{', format="{name} -> {levelname}{message}")
+>>> basicConfig(style='$', format="$name -> $levelname: $message")

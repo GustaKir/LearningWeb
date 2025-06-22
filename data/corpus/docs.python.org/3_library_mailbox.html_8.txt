@@ -1,0 +1,62 @@
+Title: Using MaildirMessage and Mailbox Methods
+URL: https://docs.python.org/3/library/mailbox.html
+Summary: This section discusses the efficiency of using the `set_info()` method with a `MaildirMessage` object, highlighting that changes made through the mailbox method won't reflect in the object's `get_info()` method. Additionally, it mentions specific `Mailbox` methods implemented by `Maildir` that require special attention.
+---
+
+```
+
+but faster, because it does not open the message file.
+If you do have a [`MaildirMessage`](https://docs.python.org/3/library/mailbox.html#mailbox.MaildirMessage "mailbox.MaildirMessage") object, use its [`set_info()`](https://docs.python.org/3/library/mailbox.html#mailbox.MaildirMessage.set_info "mailbox.MaildirMessage.set_info") method instead, because changes made with this mailbox method will not be visible to the message object’s method, [`get_info()`](https://docs.python.org/3/library/mailbox.html#mailbox.MaildirMessage.get_info "mailbox.MaildirMessage.get_info").
+Added in version 3.13.
+Some [`Mailbox`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "mailbox.Mailbox") methods implemented by `Maildir` deserve special remarks: 
+
+add(_message_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.add "Link to this definition")
+
+
+__setitem__(_key_ , _message_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.__setitem__ "Link to this definition")
+
+
+update(_arg_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.update "Link to this definition")
+    
+Warning
+These methods generate unique file names based upon the current process ID. When using multiple threads, undetected name clashes may occur and cause corruption of the mailbox unless threads are coordinated to avoid using these methods to manipulate the same mailbox simultaneously. 
+
+flush()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.flush "Link to this definition")
+    
+All changes to Maildir mailboxes are immediately applied, so this method does nothing. 
+
+lock()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.lock "Link to this definition")
+
+
+unlock()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.unlock "Link to this definition")
+    
+Maildir mailboxes do not support (or require) locking, so these methods do nothing. 
+
+close()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.close "Link to this definition")
+    
+`Maildir` instances do not keep any open files and the underlying mailboxes do not support locking, so this method does nothing. 
+
+get_file(_key_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir.get_file "Link to this definition")
+    
+Depending upon the host platform, it may not be possible to modify or remove the underlying message while the returned file remains open.
+See also 
+
+[maildir man page from Courier](https://www.courier-mta.org/maildir.html)
+    
+A specification of the format. Describes a common extension for supporting folders. 
+
+[Using maildir format](https://cr.yp.to/proto/maildir.html)
+    
+Notes on Maildir by its inventor. Includes an updated name-creation scheme and details on “info” semantics.
+### `mbox` objects[¶](https://docs.python.org/3/library/mailbox.html#mbox-objects "Link to this heading") 
+
+_class_ mailbox.mbox(_path_ , _factory =None_, _create =True_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.mbox "Link to this definition")
+    
+A subclass of [`Mailbox`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "mailbox.Mailbox") for mailboxes in mbox format. Parameter _factory_ is a callable object that accepts a file-like message representation (which behaves as if opened in binary mode) and returns a custom representation. If _factory_ is `None`, [`mboxMessage`](https://docs.python.org/3/library/mailbox.html#mailbox.mboxMessage "mailbox.mboxMessage") is used as the default message representation. If _create_ is `True`, the mailbox is created if it does not exist.
+The mbox format is the classic format for storing mail on Unix systems. All messages in an mbox mailbox are stored in a single file with the beginning of each message indicated by a line whose first five characters are “From “.
+Several variations of the mbox format exist to address perceived shortcomings in the original. In the interest of compatibility, `mbox` implements the original format, which is sometimes referred to as _mboxo_. This means that the _Content-Length_ header, if present, is ignored and that any occurrences of “From “ at the beginning of a line in a message body are transformed to “>From “ when storing the message, although occurrences of “>From “ are not transformed to “From “ when reading the message.
+Some [`Mailbox`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "mailbox.Mailbox") methods implemented by `mbox` deserve special remarks: 
+
+get_bytes(_key_ , _from_ =False_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.mbox.get_bytes "Link to this definition")
+    
+Note: This method has an extra parameter (_from__) compared with other classes. The first line of an mbox file entry is the Unix “From “ line. If _from__ is False, the first line of the file is dropped.

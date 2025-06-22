@@ -1,0 +1,44 @@
+Title: Customization of Python Launcher on Windows
+URL: https://docs.python.org/3/using/windows.html
+Summary: This section explains how to customize the Python launcher on Windows using INI files. It describes the two .ini files searched by the launcher, their locations, and the precedence of customization settings. The `.ini` file in the user’s application data directory takes priority over the one next to the executable, allowing users to override global settings.
+---
+
+```
+
+Then Python will be started with the `-v` option
+### 4.8.4. Customization[¶](https://docs.python.org/3/using/windows.html#customization "Link to this heading")
+#### 4.8.4.1. Customization via INI files[¶](https://docs.python.org/3/using/windows.html#customization-via-ini-files "Link to this heading")
+Two .ini files will be searched by the launcher - `py.ini` in the current user’s application data directory (`%LOCALAPPDATA%` or `$env:LocalAppData`) and `py.ini` in the same directory as the launcher. The same .ini files are used for both the ‘console’ version of the launcher (i.e. py.exe) and for the ‘windows’ version (i.e. pyw.exe).
+Customization specified in the “application directory” will have precedence over the one next to the executable, so a user, who may not have write access to the .ini file next to the launcher, can override commands in that global .ini file.
+#### 4.8.4.2. Customizing default Python versions[¶](https://docs.python.org/3/using/windows.html#customizing-default-python-versions "Link to this heading")
+In some cases, a version qualifier can be included in a command to dictate which version of Python will be used by the command. A version qualifier starts with a major version number and can optionally be followed by a period (‘.’) and a minor version specifier. Furthermore it is possible to specify if a 32 or 64 bit implementation shall be requested by adding “-32” or “-64”.
+For example, a shebang line of `#!python` has no version qualifier, while `#!python3` has a version qualifier which specifies only a major version.
+If no version qualifiers are found in a command, the environment variable `PY_PYTHON` can be set to specify the default version qualifier. If it is not set, the default is “3”. The variable can specify any value that may be passed on the command line, such as “3”, “3.7”, “3.7-32” or “3.7-64”. (Note that the “-64” option is only available with the launcher included with Python 3.7 or newer.)
+If no minor version qualifiers are found, the environment variable `PY_PYTHON{major}` (where `{major}` is the current major version qualifier as determined above) can be set to specify the full version. If no such option is found, the launcher will enumerate the installed Python versions and use the latest minor release found for the major version, which is likely, although not guaranteed, to be the most recently installed version in that family.
+On 64-bit Windows with both 32-bit and 64-bit implementations of the same (major.minor) Python version installed, the 64-bit version will always be preferred. This will be true for both 32-bit and 64-bit implementations of the launcher - a 32-bit launcher will prefer to execute a 64-bit Python installation of the specified version if available. This is so the behavior of the launcher can be predicted knowing only what versions are installed on the PC and without regard to the order in which they were installed (i.e., without knowing whether a 32 or 64-bit version of Python and corresponding launcher was installed last). As noted above, an optional “-32” or “-64” suffix can be used on a version specifier to change this behaviour.
+Examples:
+  * If no relevant options are set, the commands `python` and `python2` will use the latest Python 2.x version installed and the command `python3` will use the latest Python 3.x installed.
+  * The command `python3.7` will not consult any options at all as the versions are fully specified.
+  * If `PY_PYTHON=3`, the commands `python` and `python3` will both use the latest installed Python 3 version.
+  * If `PY_PYTHON=3.7-32`, the command `python` will use the 32-bit implementation of 3.7 whereas the command `python3` will use the latest installed Python (PY_PYTHON was not considered at all as a major version was specified.)
+  * If `PY_PYTHON=3` and `PY_PYTHON3=3.7`, the commands `python` and `python3` will both use specifically 3.7
+
+
+In addition to environment variables, the same settings can be configured in the .INI file used by the launcher. The section in the INI file is called `[defaults]` and the key name will be the same as the environment variables without the leading `PY_` prefix (and note that the key names in the INI file are case insensitive.) The contents of an environment variable will override things specified in the INI file.
+For example:
+  * Setting `PY_PYTHON=3.7` is equivalent to the INI file containing:
+
+
+```
+[defaults]
+python=3.7
+
+```
+
+  * Setting `PY_PYTHON=3` and `PY_PYTHON3=3.7` is equivalent to the INI file containing:
+
+
+```
+[defaults]
+python=3
+python3=3.7

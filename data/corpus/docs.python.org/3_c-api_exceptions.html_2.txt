@@ -1,0 +1,37 @@
+Title: PyErr_WriteUnraisable Function
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: The `PyErr_WriteUnraisable` function warns when an exception cannot be raised, typically occurring in the context of a destructor method. It calls `sys.unraisablehook()` with the current exception and the provided object, printing a message to `sys.stderr` if applicable.
+---
+
+voidPyErr_WriteUnraisable([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*obj)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_WriteUnraisable "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Call [`sys.unraisablehook()`](https://docs.python.org/3/library/sys.html#sys.unraisablehook "sys.unraisablehook") using the current exception and _obj_ argument.
+This utility function prints a warning message to `sys.stderr` when an exception has been set but it is impossible for the interpreter to actually raise the exception. It is used, for example, when an exception occurs in an [`__del__()`](https://docs.python.org/3/reference/datamodel.html#object.__del__ "object.__del__") method.
+The function is called with a single argument _obj_ that identifies the context in which the unraisable exception occurred. If possible, the repr of _obj_ will be printed in the warning message. If _obj_ is `NULL`, only the traceback is printed.
+An exception must be set when calling this function.
+Changed in version 3.4: Print a traceback. Print only traceback if _obj_ is `NULL`.
+Changed in version 3.8: Use [`sys.unraisablehook()`](https://docs.python.org/3/library/sys.html#sys.unraisablehook "sys.unraisablehook"). 
+
+voidPyErr_FormatUnraisable(constchar*format, ...)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_FormatUnraisable "Link to this definition")
+    
+Similar to [`PyErr_WriteUnraisable()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_WriteUnraisable "PyErr_WriteUnraisable"), but the _format_ and subsequent parameters help format the warning message; they have the same meaning and values as in [`PyUnicode_FromFormat()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FromFormat "PyUnicode_FromFormat"). `PyErr_WriteUnraisable(obj)` is roughly equivalent to `PyErr_FormatUnraisable("Exception ignored in: %R", obj)`. If _format_ is `NULL`, only the traceback is printed.
+Added in version 3.13. 
+
+voidPyErr_DisplayException([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_DisplayException "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+Print the standard traceback display of `exc` to `sys.stderr`, including chained exceptions and notes.
+Added in version 3.12.
+## Raising exceptions[¶](https://docs.python.org/3/c-api/exceptions.html#raising-exceptions "Link to this heading")
+These functions help you set the current thread’s error indicator. For convenience, some of these functions will always return a `NULL` pointer for use in a `return` statement. 
+
+voidPyErr_SetString([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type, constchar*message)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetString "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is the most common way to set the error indicator. The first argument specifies the exception type; it is normally one of the standard exceptions, e.g. `PyExc_RuntimeError`. You need not create a new [strong reference](https://docs.python.org/3/glossary.html#term-strong-reference) to it (e.g. with [`Py_INCREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_INCREF "Py_INCREF")). The second argument is an error message; it is decoded from `'utf-8'`. 
+
+voidPyErr_SetObject([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetObject "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This function is similar to [`PyErr_SetString()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetString "PyErr_SetString") but lets you specify an arbitrary Python object for the “value” of the exception. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_Format([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exception, constchar*format, ...)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Format "Link to this definition")
+    _Return value: Always NULL.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This function sets the error indicator and returns `NULL`. _exception_ should be a Python exception class. The _format_ and subsequent parameters help format the error message; they have the same meaning and values as in [`PyUnicode_FromFormat()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FromFormat "PyUnicode_FromFormat"). _format_ is an ASCII-encoded string.

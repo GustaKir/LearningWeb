@@ -1,0 +1,111 @@
+Title: Working with Lists and Arrays in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section explains the differences between Python lists and arrays from the `array` module, noting that Python lists can hold mixed types while arrays are fixed type. It also mentions alternative array-like structures from libraries such as NumPy, and describes how to simulate Lisp-style linked lists using tuples or mutable lists.
+---
+
+```
+
+Lists are equivalent to C or Pascal arrays in their time complexity; the primary difference is that a Python list can contain objects of many different types.
+The `array` module also provides methods for creating arrays of fixed types with compact representations, but they are slower to index than lists. Also note that [NumPy](https://numpy.org/) and other third party packages define array-like structures with various characteristics as well.
+To get Lisp-style linked lists, you can emulate _cons cells_ using tuples:
+```
+lisp_list = ("like", ("this", ("example", None) ) )
+
+```
+
+If mutability is desired, you could use lists instead of tuples. Here the analogue of a Lisp _car_ is `lisp_list[0]` and the analogue of _cdr_ is `lisp_list[1]`. Only do this if you’re sure you really need to, because it’s usually a lot slower than using Python lists.
+### [How do I create a multidimensional list?](https://docs.python.org/3/faq/programming.html#id49)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-create-a-multidimensional-list "Link to this heading")
+You probably tried to make a multidimensional array like this:
+>>>```
+>>> A = [[None] * 2] * 3
+
+```
+
+This looks correct if you print it:
+>>>```
+>>> A
+[[None, None], [None, None], [None, None]]
+
+```
+
+But when you assign a value, it shows up in multiple places:
+>>>```
+>>> A[0][0] = 5
+>>> A
+[[5, None], [5, None], [5, None]]
+
+```
+
+The reason is that replicating a list with `*` doesn’t create copies, it only creates references to the existing objects. The `*3` creates a list containing 3 references to the same list of length two. Changes to one row will show in all rows, which is almost certainly not what you want.
+The suggested approach is to create a list of the desired length first and then fill in each element with a newly created list:
+```
+A = [None] * 3
+for i in range(3):
+  A[i] = [None] * 2
+
+```
+
+This generates a list containing 3 different lists of length two. You can also use a list comprehension:
+```
+w, h = 2, 3
+A = [[None] * w for i in range(h)]
+
+```
+
+Or, you can use an extension that provides a matrix datatype; [NumPy](https://numpy.org/) is the best known.
+### [How do I apply a method or function to a sequence of objects?](https://docs.python.org/3/faq/programming.html#id50)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-apply-a-method-or-function-to-a-sequence-of-objects "Link to this heading")
+To call a method or function and accumulate the return values is a list, a [list comprehension](https://docs.python.org/3/glossary.html#term-list-comprehension) is an elegant solution:
+```
+result = [obj.method() for obj in mylist]
+result = [function(obj) for obj in mylist]
+
+```
+
+To just run the method or function without saving the return values, a plain [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) loop will suffice:
+```
+for obj in mylist:
+  obj.method()
+for obj in mylist:
+  function(obj)
+
+```
+
+### [Why does a_tuple[i] += [‘item’] raise an exception when the addition works?](https://docs.python.org/3/faq/programming.html#id51)[¶](https://docs.python.org/3/faq/programming.html#why-does-a-tuple-i-item-raise-an-exception-when-the-addition-works "Link to this heading")
+This is because of a combination of the fact that augmented assignment operators are _assignment_ operators, and the difference between mutable and immutable objects in Python.
+This discussion applies in general when augmented assignment operators are applied to elements of a tuple that point to mutable objects, but we’ll use a `list` and `+=` as our exemplar.
+If you wrote:
+>>>```
+>>> a_tuple = (1, 2)
+>>> a_tuple[0] += 1
+Traceback (most recent call last):
+...
+TypeError: 'tuple' object does not support item assignment
+
+```
+
+The reason for the exception should be immediately clear: `1` is added to the object `a_tuple[0]` points to (`1`), producing the result object, `2`, but when we attempt to assign the result of the computation, `2`, to element `0` of the tuple, we get an error because we can’t change what an element of a tuple points to.
+Under the covers, what this augmented assignment statement is doing is approximately this:
+>>>```
+>>> result = a_tuple[0] + 1
+>>> a_tuple[0] = result
+Traceback (most recent call last):
+...
+TypeError: 'tuple' object does not support item assignment
+
+```
+
+It is the assignment part of the operation that produces the error, since a tuple is immutable.
+When you write something like:
+>>>```
+>>> a_tuple = (['foo'], 'bar')
+>>> a_tuple[0] += ['item']
+Traceback (most recent call last):
+...
+TypeError: 'tuple' object does not support item assignment
+
+```
+
+The exception is a bit more surprising, and even more surprising is the fact that even though there was an error, the append worked:
+>>>```
+>>> a_tuple[0]
+['foo', 'item']

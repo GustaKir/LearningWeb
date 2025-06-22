@@ -1,0 +1,54 @@
+Title: Python 3.7 Release Notes
+URL: https://docs.python.org/3/whatsnew/3.7.html
+Summary: Python 3.7 introduces significant improvements in the standard library, including enhanced features and performance in the asyncio module and nanosecond resolution in the time module. Notable CPython implementation changes focus on text encoding with PEPs addressing legacy locale coercion and enforced UTF-8 runtime mode, as well as improvements for deterministic .pycs and a new Python Development Mode.
+---
+
+Significant improvements in the standard library:
+  * The [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") module has received new features, significant [usability and performance improvements](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-asyncio).
+  * The [`time`](https://docs.python.org/3/library/time.html#module-time "time: Time access and conversions.") module gained support for [functions with nanosecond resolution](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep564).
+
+
+CPython implementation improvements:
+  * Avoiding the use of ASCII as a default text encoding:
+    * [PEP 538](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep538), legacy C locale coercion
+    * [PEP 540](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep540), forced UTF-8 runtime mode
+  * [PEP 552](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep552), deterministic .pycs
+  * [New Python Development Mode](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-devmode)
+  * [PEP 565](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep565), improved [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") handling
+
+
+C API improvements:
+  * [PEP 539](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep539), new C API for thread-local storage
+
+
+Documentation improvements:
+  * [PEP 545](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep545), Python documentation translations
+  * New documentation translations: [Japanese](https://docs.python.org/ja/), [French](https://docs.python.org/fr/), and [Korean](https://docs.python.org/ko/).
+
+
+This release features notable performance improvements in many areas. The [Optimizations](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-perf) section lists them in detail.
+For a list of changes that may affect compatibility with previous Python releases please refer to the [Porting to Python 3.7](https://docs.python.org/3/whatsnew/3.7.html#porting-to-python-37) section.
+## New Features[¶](https://docs.python.org/3/whatsnew/3.7.html#new-features "Link to this heading")
+### PEP 563: Postponed Evaluation of Annotations[¶](https://docs.python.org/3/whatsnew/3.7.html#pep-563-postponed-evaluation-of-annotations "Link to this heading")
+The advent of type hints in Python uncovered two glaring usability issues with the functionality of annotations added in [**PEP 3107**](https://peps.python.org/pep-3107/) and refined further in [**PEP 526**](https://peps.python.org/pep-0526/):
+  * annotations could only use names which were already available in the current scope, in other words they didn’t support forward references of any kind; and
+  * annotating source code had adverse effects on startup time of Python programs.
+
+
+Both of these issues are fixed by postponing the evaluation of annotations. Instead of compiling code which executes expressions in annotations at their definition time, the compiler stores the annotation in a string form equivalent to the AST of the expression in question. If needed, annotations can be resolved at runtime using [`typing.get_type_hints()`](https://docs.python.org/3/library/typing.html#typing.get_type_hints "typing.get_type_hints"). In the common case where this is not required, the annotations are cheaper to store (since short strings are interned by the interpreter) and make startup time faster.
+Usability-wise, annotations now support forward references, making the following syntax valid:
+```
+classC:
+  @classmethod
+  deffrom_string(cls, source: str) -> C:
+    ...
+  defvalidate_b(self, obj: B) -> bool:
+    ...
+classB:
+  ...
+
+```
+
+Since this change breaks compatibility, the new behavior needs to be enabled on a per-module basis in Python 3.7 using a [`__future__`](https://docs.python.org/3/library/__future__.html#module-__future__ "__future__: Future statement definitions") import:
+```
+from__future__import annotations

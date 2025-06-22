@@ -1,0 +1,38 @@
+Title: Enhancements to configparser in Python 3.5
+URL: https://docs.python.org/3/whatsnew/3.5.html
+Summary: `configparser` now allows for customizable value conversion through a dictionary of converters specified in the `ConfigParser` constructor or defined as methods in subclasses. Converters are inherited by section proxies. An example illustrates how to create a custom list converter.
+---
+
+nfigparser[¶](https://docs.python.org/3/whatsnew/3.5.html#configparser "Link to this heading")
+[`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") now provides a way to customize the conversion of values by specifying a dictionary of converters in the [`ConfigParser`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser "configparser.ConfigParser") constructor, or by defining them as methods in `ConfigParser` subclasses. Converters defined in a parser instance are inherited by its section proxies.
+Example:
+>>>```
+>>> importconfigparser
+>>> conv = {}
+>>> conv['list'] = lambda v: [e.strip() for e in v.split() if e.strip()]
+>>> cfg = configparser.ConfigParser(converters=conv)
+>>> cfg.read_string("""
+... [s]
+... list = a b c d e f g
+... """)
+>>> cfg.get('s', 'list')
+'a b c d e f g'
+>>> cfg.getlist('s', 'list')
+['a', 'b', 'c', 'd', 'e', 'f', 'g']
+>>> section = cfg['s']
+>>> section.getlist('list')
+['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+```
+
+(Contributed by Łukasz Langa in [bpo-18159](https://bugs.python.org/issue?@action=redirect&bpo=18159).)
+### contextlib[¶](https://docs.python.org/3/whatsnew/3.5.html#contextlib "Link to this heading")
+The new [`redirect_stderr()`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stderr "contextlib.redirect_stderr") [context manager](https://docs.python.org/3/glossary.html#term-context-manager) (similar to [`redirect_stdout()`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout "contextlib.redirect_stdout")) makes it easier for utility scripts to handle inflexible APIs that write their output to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") and don’t provide any options to redirect it:
+>>>```
+>>> importcontextlib,io,logging
+>>> f = io.StringIO()
+>>> with contextlib.redirect_stderr(f):
+...   logging.warning('warning')
+...
+>>> f.getvalue()
+'WARNING:root:warning\n'

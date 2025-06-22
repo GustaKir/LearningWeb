@@ -1,0 +1,71 @@
+Title: ProcessPoolExecutor Example
+URL: https://docs.python.org/3/library/concurrent.futures.html
+Summary: This section provides an example of using the `ProcessPoolExecutor` from the `concurrent.futures` library to determine if a list of large numbers are prime. It defines a `is_prime` function to check primality, then employs the executor to map this function over the list of numbers and prints the results.
+---
+
+# ProcessPoolExecutor Example[¶](https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor-example "Link to this heading")
+```
+importconcurrent.futures
+importmath
+PRIMES = [
+  112272535095293,
+  112582705942171,
+  112272535095293,
+  115280095190773,
+  115797848077099,
+  1099726899285419]
+defis_prime(n):
+  if n < 2:
+    return False
+  if n == 2:
+    return True
+  if n % 2 == 0:
+    return False
+  sqrt_n = int(math.floor(math.sqrt(n)))
+  for i in range(3, sqrt_n + 1, 2):
+    if n % i == 0:
+      return False
+  return True
+defmain():
+  with concurrent.futures.ProcessPoolExecutor() as executor:
+    for number, prime in zip(PRIMES, executor.map(is_prime, PRIMES)):
+      print('%d is prime: %s' % (number, prime))
+if __name__ == '__main__':
+  main()
+
+```
+
+## Future Objects[¶](https://docs.python.org/3/library/concurrent.futures.html#future-objects "Link to this heading")
+The [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") class encapsulates the asynchronous execution of a callable. [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") instances are created by [`Executor.submit()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.submit "concurrent.futures.Executor.submit"). 
+
+_class_ concurrent.futures.Future[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "Link to this definition")
+    
+Encapsulates the asynchronous execution of a callable. [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") instances are created by [`Executor.submit()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.submit "concurrent.futures.Executor.submit") and should not be created directly except for testing. 
+
+cancel()[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.cancel "Link to this definition")
+    
+Attempt to cancel the call. If the call is currently being executed or finished running and cannot be cancelled then the method will return `False`, otherwise the call will be cancelled and the method will return `True`. 
+
+cancelled()[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.cancelled "Link to this definition")
+    
+Return `True` if the call was successfully cancelled. 
+
+running()[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.running "Link to this definition")
+    
+Return `True` if the call is currently being executed and cannot be cancelled. 
+
+done()[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.done "Link to this definition")
+    
+Return `True` if the call was successfully cancelled or finished running. 
+
+result(_timeout =None_)[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.result "Link to this definition")
+    
+Return the value returned by the call. If the call hasn’t yet completed then this method will wait up to _timeout_ seconds. If the call hasn’t completed in _timeout_ seconds, then a [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError") will be raised. _timeout_ can be an int or float. If _timeout_ is not specified or `None`, there is no limit to the wait time.
+If the future is cancelled before completing then [`CancelledError`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.CancelledError "concurrent.futures.CancelledError") will be raised.
+If the call raised an exception, this method will raise the same exception. 
+
+exception(_timeout =None_)[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future.exception "Link to this definition")
+    
+Return the exception raised by the call. If the call hasn’t yet completed then this method will wait up to _timeout_ seconds. If the call hasn’t completed in _timeout_ seconds, then a [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError") will be raised. _timeout_ can be an int or float. If _timeout_ is not specified or `None`, there is no limit to the wait time.
+If the future is cancelled before completing then [`CancelledError`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.CancelledError "concurrent.futures.CancelledError") will be raised.
+If the call completed without raising, `None` is returned.

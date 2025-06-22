@@ -1,0 +1,105 @@
+Title: Using Pydantic's `update` Parameter for Model Updates
+URL: https://fastapi.tiangolo.com/tutorial/body-updates/
+Summary: This section explains how to update existing Pydantic models using the `.model_copy()` method with an `update` parameter. It notes that the `.copy()` method was deprecated in Pydantic v2 and suggests using `.model_copy()` for compatibility, while providing examples in Python.
+---
+
+```
+
+### Using Pydantic's `update` parameter[¶](https://fastapi.tiangolo.com/tutorial/body-updates/#using-pydantics-update-parameter "Permanent link")
+Now, you can create a copy of the existing model using `.model_copy()`, and pass the `update` parameter with a `dict` containing the data to update.
+Info
+In Pydantic v1 the method was called `.copy()`, it was deprecated (but still supported) in Pydantic v2, and renamed to `.model_copy()`.
+The examples here use `.copy()` for compatibility with Pydantic v1, but you should use `.model_copy()` instead if you can use Pydantic v2.
+Like `stored_item_model.model_copy(update=update_data)`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str | None = None
+  description: str | None = None
+  price: float | None = None
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_6_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-updates/#__tabbed_6_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: Union[str, None] = None
+  description: Union[str, None] = None
+  price: Union[float, None] = None
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI
+fromfastapi.encodersimport jsonable_encoder
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: Union[str, None] = None
+  description: Union[str, None] = None
+  price: Union[float, None] = None
+  tax: float = 10.5
+  tags: List[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item)
+async defread_item(item_id: str):
+  return items[item_id]
+@app.patch("/items/{item_id}", response_model=Item)
+async defupdate_item(item_id: str, item: Item):
+  stored_item_data = items[item_id]
+  stored_item_model = Item(**stored_item_data)
+  update_data = item.dict(exclude_unset=True)
+  updated_item = stored_item_model.copy(update=update_data)
+  items[item_id] = jsonable_encoder(updated_item)
+  return updated_item

@@ -1,0 +1,35 @@
+Title: doctest.set_unittest_reportflags Function
+URL: https://docs.python.org/3/library/doctest.html
+Summary: The `doctest.set_unittest_reportflags` function sets the reporting flags for doctests using a bitwise OR of option flags. This global setting influences all future doctests run by the `unittest` module, specifically affecting the `runTest()` method of `DocTestCase`. Only reporting flags can be used.
+---
+
+doctest.set_unittest_reportflags(_flags_)[¶](https://docs.python.org/3/library/doctest.html#doctest.set_unittest_reportflags "Link to this definition")
+    
+Set the [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") reporting flags to use.
+Argument _flags_ takes the [bitwise OR](https://docs.python.org/3/reference/expressions.html#bitwise) of option flags. See section [Option Flags](https://docs.python.org/3/library/doctest.html#doctest-options). Only “reporting flags” can be used.
+This is a module-global setting, and affects all future doctests run by module [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python."): the `runTest()` method of `DocTestCase` looks at the option flags specified for the test case when the `DocTestCase` instance was constructed. If no reporting flags were specified (which is the typical and expected case), `doctest`’s [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") reporting flags are [bitwise ORed](https://docs.python.org/3/reference/expressions.html#bitwise) into the option flags, and the option flags so augmented are passed to the [`DocTestRunner`](https://docs.python.org/3/library/doctest.html#doctest.DocTestRunner "doctest.DocTestRunner") instance created to run the doctest. If any reporting flags were specified when the `DocTestCase` instance was constructed, `doctest`’s [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") reporting flags are ignored.
+The value of the [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") reporting flags in effect before the function was called is returned by the function.
+## Advanced API[¶](https://docs.python.org/3/library/doctest.html#advanced-api "Link to this heading")
+The basic API is a simple wrapper that’s intended to make doctest easy to use. It is fairly flexible, and should meet most users’ needs; however, if you require more fine-grained control over testing, or wish to extend doctest’s capabilities, then you should use the advanced API.
+The advanced API revolves around two container classes, which are used to store the interactive examples extracted from doctest cases:
+  * [`Example`](https://docs.python.org/3/library/doctest.html#doctest.Example "doctest.Example"): A single Python [statement](https://docs.python.org/3/glossary.html#term-statement), paired with its expected output.
+  * [`DocTest`](https://docs.python.org/3/library/doctest.html#doctest.DocTest "doctest.DocTest"): A collection of [`Example`](https://docs.python.org/3/library/doctest.html#doctest.Example "doctest.Example")s, typically extracted from a single docstring or text file.
+
+
+Additional processing classes are defined to find, parse, and run, and check doctest examples:
+  * [`DocTestFinder`](https://docs.python.org/3/library/doctest.html#doctest.DocTestFinder "doctest.DocTestFinder"): Finds all docstrings in a given module, and uses a [`DocTestParser`](https://docs.python.org/3/library/doctest.html#doctest.DocTestParser "doctest.DocTestParser") to create a [`DocTest`](https://docs.python.org/3/library/doctest.html#doctest.DocTest "doctest.DocTest") from every docstring that contains interactive examples.
+  * [`DocTestParser`](https://docs.python.org/3/library/doctest.html#doctest.DocTestParser "doctest.DocTestParser"): Creates a [`DocTest`](https://docs.python.org/3/library/doctest.html#doctest.DocTest "doctest.DocTest") object from a string (such as an object’s docstring).
+  * [`DocTestRunner`](https://docs.python.org/3/library/doctest.html#doctest.DocTestRunner "doctest.DocTestRunner"): Executes the examples in a [`DocTest`](https://docs.python.org/3/library/doctest.html#doctest.DocTest "doctest.DocTest"), and uses an [`OutputChecker`](https://docs.python.org/3/library/doctest.html#doctest.OutputChecker "doctest.OutputChecker") to verify their output.
+  * [`OutputChecker`](https://docs.python.org/3/library/doctest.html#doctest.OutputChecker "doctest.OutputChecker"): Compares the actual output from a doctest example with the expected output, and decides whether they match.
+
+
+The relationships among these processing classes are summarized in the following diagram:
+```
+              list of:
++------+          +---------+
+|module| --DocTestFinder-> | DocTest | --DocTestRunner-> results
++------+  |    ^   +---------+   |    ^  (printed)
+      |    |   | Example |   |    |
+      v    |   |  ...  |   v    |
+      DocTestParser  | Example |  OutputChecker
+              +---------+

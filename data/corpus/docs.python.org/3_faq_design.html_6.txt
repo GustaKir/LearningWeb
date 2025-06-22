@@ -1,0 +1,45 @@
+Title: Switch or Case Statement in Python
+URL: https://docs.python.org/3/faq/design.html
+Summary: Python does not have a traditional switch or case statement. However, since Python 3.10, the `match ... case` statement allows matching of literal values. For older versions, one can use `if... elif... else` or create a dictionary mapping values to functions for handling numerous cases.
+---
+
+```
+
+For this specific case, you could also use `value = dict.setdefault(key, getvalue(key))`, but only if the `getvalue()` call is cheap enough because it is evaluated in all cases.
+## [Why isn’t there a switch or case statement in Python?](https://docs.python.org/3/faq/design.html#id12)[¶](https://docs.python.org/3/faq/design.html#why-isn-t-there-a-switch-or-case-statement-in-python "Link to this heading")
+In general, structured switch statements execute one block of code when an expression has a particular value or set of values. Since Python 3.10 one can easily match literal values, or constants within a namespace, with a `match ... case` statement. An older alternative is a sequence of `if... elif... elif... else`.
+For cases where you need to choose from a very large number of possibilities, you can create a dictionary mapping case values to functions to call. For example:
+```
+functions = {'a': function_1,
+       'b': function_2,
+       'c': self.method_1}
+func = functions[value]
+func()
+
+```
+
+For calling methods on objects, you can simplify yet further by using the [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") built-in to retrieve methods with a particular name:
+```
+classMyVisitor:
+  defvisit_a(self):
+    ...
+  defdispatch(self, value):
+    method_name = 'visit_' + str(value)
+    method = getattr(self, method_name)
+    method()
+
+```
+
+It’s suggested that you use a prefix for the method names, such as `visit_` in this example. Without such a prefix, if values are coming from an untrusted source, an attacker would be able to call any method on your object.
+Imitating switch with fallthrough, as with C’s switch-case-default, is possible, much harder, and less needed.
+## [Can’t you emulate threads in the interpreter instead of relying on an OS-specific thread implementation?](https://docs.python.org/3/faq/design.html#id13)[¶](https://docs.python.org/3/faq/design.html#can-t-you-emulate-threads-in-the-interpreter-instead-of-relying-on-an-os-specific-thread-implementation "Link to this heading")
+Answer 1: Unfortunately, the interpreter pushes at least one C stack frame for each Python stack frame. Also, extensions can call back into Python at almost random moments. Therefore, a complete threads implementation requires thread support for C.
+Answer 2: Fortunately, there is [Stackless Python](https://github.com/stackless-dev/stackless/wiki), which has a completely redesigned interpreter loop that avoids the C stack.
+## [Why can’t lambda expressions contain statements?](https://docs.python.org/3/faq/design.html#id14)[¶](https://docs.python.org/3/faq/design.html#why-can-t-lambda-expressions-contain-statements "Link to this heading")
+Python lambda expressions cannot contain statements because Python’s syntactic framework can’t handle statements nested inside expressions. However, in Python, this is not a serious problem. Unlike lambda forms in other languages, where they add functionality, Python lambdas are only a shorthand notation if you’re too lazy to define a function.
+Functions are already first class objects in Python, and can be declared in a local scope. Therefore the only advantage of using a lambda instead of a locally defined function is that you don’t need to invent a name for the function – but that’s just a local variable to which the function object (which is exactly the same type of object that a lambda expression yields) is assigned!
+## [Can Python be compiled to machine code, C or some other language?](https://docs.python.org/3/faq/design.html#id15)[¶](https://docs.python.org/3/faq/design.html#can-python-be-compiled-to-machine-code-c-or-some-other-language "Link to this heading")
+[Cython](https://cython.org/) compiles a modified version of Python with optional annotations into C extensions. [Nuitka](https://nuitka.net/) is an up-and-coming compiler of Python into C++ code, aiming to support the full Python language.
+## [How does Python manage memory?](https://docs.python.org/3/faq/design.html#id16)[¶](https://docs.python.org/3/faq/design.html#how-does-python-manage-memory "Link to this heading")
+The details of Python memory management depend on the implementation. The standard implementation of Python, [CPython](https://docs.python.org/3/glossary.html#term-CPython), uses reference counting to detect inaccessible objects, and another mechanism to collect reference cycles, periodically executing a cycle detection algorithm which looks for inaccessible cycles and deletes the objects involved. The [`gc`](https://docs.python.org/3/library/gc.html#module-gc "gc: Interface to the cycle-detecting garbage collector.") module provides functions to perform a garbage collection, obtain debugging statistics, and tune the collector’s parameters.
+Other implementations (such as [Jython](https://www.jython.org) or [PyPy](https://pypy.org)), however, can rely on a different mechanism such as a full-blown garbage collector. This difference can cause some subtle porting problems if

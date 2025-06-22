@@ -1,0 +1,102 @@
+Title: Simple OAuth2 Implementation with FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/
+Summary: This document provides a guide on implementing a simple OAuth2 security scheme in FastAPI. It includes setting up an example user database, defining a user model, and creating functions for password hashing and user retrieval. The document introduces the use of OAuth2PasswordBearer for secure token handling.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI, HTTPException, status
+fromfastapi.securityimport OAuth2PasswordBearer, OAuth2PasswordRequestForm
+frompydanticimport BaseModel
+fake_users_db = {
+  "johndoe": {
+    "username": "johndoe",
+    "full_name": "John Doe",
+    "email": "johndoe@example.com",
+    "hashed_password": "fakehashedsecret",
+    "disabled": False,
+  },
+  "alice": {
+    "username": "alice",
+    "full_name": "Alice Wonderson",
+    "email": "alice@example.com",
+    "hashed_password": "fakehashedsecret2",
+    "disabled": True,
+  },
+}
+app = FastAPI()
+deffake_hash_password(password: str):
+  return "fakehashed" + password
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+classUser(BaseModel):
+  username: str
+  email: Union[str, None] = None
+  full_name: Union[str, None] = None
+  disabled: Union[bool, None] = None
+classUserInDB(User):
+  hashed_password: str
+defget_user(db, username: str):
+  if username in db:
+    user_dict = db[username]
+    return UserInDB(**user_dict)
+deffake_decode_token(token):
+  # This doesn't provide any security at all
+  # Check the next version
+  user = get_user(fake_users_db, token)
+  return user
+async defget_current_user(token: str = Depends(oauth2_scheme)):
+  user = fake_decode_token(token)
+  if not user:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid authentication credentials",
+      headers={"WWW-Authenticate": "Bearer"},
+    )
+  return user
+async defget_current_active_user(current_user: User = Depends(get_current_user)):
+  if current_user.disabled:
+    raise HTTPException(status_code=400, detail="Inactive user")
+  return current_user
+@app.post("/token")
+async deflogin(form_data: OAuth2PasswordRequestForm = Depends()):
+  user_dict = fake_users_db.get(form_data.username)
+  if not user_dict:
+    raise HTTPException(status_code=400, detail="Incorrect username or password")
+  user = UserInDB(**user_dict)
+  hashed_password = fake_hash_password(form_data.password)
+  if not hashed_password == user.hashed_password:
+    raise HTTPException(status_code=400, detail="Incorrect username or password")
+  return {"access_token": user.username, "token_type": "bearer"}
+@app.get("/users/me")
+async defread_users_me(current_user: User = Depends(get_current_active_user)):
+  return current_user
+
+```
+
+`OAuth2PasswordRequestForm` is a class dependency that declares a form body with:
+  * The `username`.
+  * The `password`.
+  * An optional `scope` field as a big string, composed of strings separated by spaces.
+  * An optional `grant_type`.
+
+
+Tip
+The OAuth2 spec actually _requires_ a field `grant_type` with a fixed value of `password`, but `OAuth2PasswordRequestForm` doesn't enforce it.
+If you need to enforce it, use `OAuth2PasswordRequestFormStrict` instead of `OAuth2PasswordRequestForm`.
+  * An optional `client_id` (we don't need it for our example).
+  * An optional `client_secret` (we don't need it for our example).
+
+
+Info
+The `OAuth2PasswordRequestForm` is not a special class for **FastAPI** as is `OAuth2PasswordBearer`.
+`OAuth2PasswordBearer` makes **FastAPI** know that it is a security scheme. So it is added that way to OpenAPI.
+But `OAuth2PasswordRequestForm` is just a class dependency that you could have written yourself, or you could have declared `Form` parameters directly.
+But as it's a common use case, it is provided by **FastAPI** directly, just to make it easier.
+### Use the form data[¶](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#use-the-form-data "Permanent link")
+Tip
+The instance of the dependency class `OAuth2PasswordRequestForm` won't have an attribute `scope` with the long string separated by spaces, instead, it will have a `scopes` attribute with the actual list of strings for each scope sent.
+We are not using `scopes` in this example, but the functionality is there if you need it.
+Now, get the user data from the (fake) database, using the `username` from the form field.
+If there is no such user, we return an error saying "Incorrect username or password".
+For the error, we use the exception `HTTPException`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#__tabbed_3_1)

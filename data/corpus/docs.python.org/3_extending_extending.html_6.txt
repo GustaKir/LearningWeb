@@ -1,0 +1,56 @@
+Title: Extending Python with C: Rebuilding and Calling Functions
+URL: https://docs.python.org/3/extending/extending.html
+Summary: This section explains how to rebuild the Python interpreter after making changes to modules, either by running 'make' in the top-level directory or the 'Modules/' subdirectory. It details the necessity of updating the 'Makefile' whenever the 'Setup' file is modified and introduces the concept of calling Python functions from C, particularly in the context of callback functions.
+---
+
+```
+
+and rebuild the interpreter by running **make** in the toplevel directory. You can also run **make** in the `Modules/` subdirectory, but then you must first rebuild `Makefile` there by running ‘**make** Makefile’. (This is necessary each time you change the `Setup` file.)
+If your module requires additional libraries to link with, these can be listed on the line in the configuration file as well, for instance:
+```
+spamspammodule.o-lX11
+
+```
+
+## 1.6. Calling Python Functions from C[¶](https://docs.python.org/3/extending/extending.html#calling-python-functions-from-c "Link to this heading")
+So far we have concentrated on making C functions callable from Python. The reverse is also useful: calling Python functions from C. This is especially the case for libraries that support so-called “callback” functions. If a C interface makes use of callbacks, the equivalent Python often needs to provide a callback mechanism to the Python programmer; the implementation will require calling the Python callback functions from a C callback. Other uses are also imaginable.
+Fortunately, the Python interpreter is easily called recursively, and there is a standard interface to call a Python function. (I won’t dwell on how to call the Python parser with a particular string as input — if you’re interested, have a look at the implementation of the [`-c`](https://docs.python.org/3/using/cmdline.html#cmdoption-c) command line option in `Modules/main.c` from the Python source code.)
+Calling a Python function is easy. First, the Python program must somehow pass you the Python function object. You should provide a function (or some other interface) to do this. When this function is called, save a pointer to the Python function object (be careful to [`Py_INCREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_INCREF "Py_INCREF") it!) in a global variable — or wherever you see fit. For example, the following function might be part of a module definition:
+```
+staticPyObject*my_callback=NULL;
+staticPyObject*
+my_set_callback(PyObject*dummy,PyObject*args)
+{
+PyObject*result=NULL;
+PyObject*temp;
+if(PyArg_ParseTuple(args,"O:set_callback",&temp)){
+if(!PyCallable_Check(temp)){
+PyErr_SetString(PyExc_TypeError,"parameter must be callable");
+returnNULL;
+}
+Py_XINCREF(temp);/* Add a reference to new callback */
+Py_XDECREF(my_callback);/* Dispose of previous callback */
+my_callback=temp;/* Remember new callback */
+/* Boilerplate to return "None" */
+Py_INCREF(Py_None);
+result=Py_None;
+}
+returnresult;
+}
+
+```
+
+This function must be registered with the interpreter using the [`METH_VARARGS`](https://docs.python.org/3/c-api/structures.html#c.METH_VARARGS "METH_VARARGS") flag; this is described in section [The Module’s Method Table and Initialization Function](https://docs.python.org/3/extending/extending.html#methodtable). The [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") function and its arguments are documented in section [Extracting Parameters in Extension Functions](https://docs.python.org/3/extending/extending.html#parsetuple).
+The macros [`Py_XINCREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_XINCREF "Py_XINCREF") and [`Py_XDECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_XDECREF "Py_XDECREF") increment/decrement the reference count of an object and are safe in the presence of `NULL` pointers (but note that _temp_ will not be `NULL` in this context). More info on them in section [Reference Counts](https://docs.python.org/3/extending/extending.html#refcounts).
+Later, when it is time to call the function, you call the C function [`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject"). This function has two arguments, both pointers to arbitrary Python objects: the Python function, and the argument list. The argument list must always be a tuple object, whose length is the number of arguments. To call the Python function with no arguments, pass in `NULL`, or an empty tuple; to call it with one argument, pass a singleton tuple. [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") returns a tuple when its format string consists of zero or more format codes between parentheses. For example:
+```
+intarg;
+PyObject*arglist;
+PyObject*result;
+...
+arg=123;
+...
+/* Time to call the callback */
+arglist=Py_BuildValue("(i)",arg);
+result=PyObject_CallObject(my_callback,arglist);
+Py_DECREF(arglist);

@@ -1,0 +1,39 @@
+Title: Configuring Supabase Credentials in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/databases/supabase
+Summary: Instructions on creating the `secrets.toml` file to store `SUPABASE_URL` and `SUPABASE_KEY`, with emphasis on including this file in `.gitignore` to prevent it from being committed. Additionally, guidance is provided on how to copy app secrets to the cloud via the app dashboard in Streamlit Community Cloud.
+---
+
+ory. Create this file if it doesn't exist yet and add the `SUPABASE_URL` and `SUPABASE_KEY` here:
+`# .streamlit/secrets.toml [connections.supabase] SUPABASE_URL = "xxxx" SUPABASE_KEY = "xxxx" `
+Replace `xxxx` above with your Project URL and API key from [Step 1](https://docs.streamlit.io/develop/tutorials/databases/supabase#sign-in-to-supabase-and-create-a-project).
+_priority_high_
+#### Important
+Add this file to `.gitignore` and don't commit it to your GitHub repo!
+## [](https://docs.streamlit.io/develop/tutorials/databases/supabase#copy-your-app-secrets-to-the-cloud)Copy your app secrets to the cloud
+As the `secrets.toml` file above is not committed to GitHub, you need to pass its content to your deployed app (on Streamlit Community Cloud) separately. Go to the [app dashboard](https://share.streamlit.io/) and in the app's dropdown menu, click on **Edit Secrets**. Copy the content of `secrets.toml` into the text area. More information is available at [Secrets management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management).
+![Secrets manager screenshot](https://docs.streamlit.io/images/databases/edit-secrets.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/supabase#add-st-supabase-connection-to-your-requirements-file)Add st-supabase-connection to your requirements file
+Add the [`st-supabase-connection`](https://pypi.org/project/st-supabase-connection/) community-built connection library to your `requirements.txt` file, preferably pinning its version (replace `x.x.x` with the version you want installed):
+`# requirements.txt st-supabase-connection==x.x.x `
+_star_
+#### Tip
+We've used the `st-supabase-connection` library here in combination with `st.connection` to benefit from the ease of setting up the data connection, managing your credentials, and Streamlit's caching capabilities that native and community-built connections provide.
+You can however still directly use the [Supabase Python Client Library](https://pypi.org/project/supabase/) library if you prefer, but you'll need to write more code to set up the connection and cache the results. See [Using the Supabase Python Client Library](https://docs.streamlit.io/develop/tutorials/databases/supabase#using-the-supabase-python-client-library) below for an example.
+## [](https://docs.streamlit.io/develop/tutorials/databases/supabase#write-your-streamlit-app)Write your Streamlit app
+Copy the code below to your Streamlit app and run it.
+`# streamlit_app.py import streamlit as st from st_supabase_connection import SupabaseConnection # Initialize connection. conn = st.connection("supabase",type=SupabaseConnection) # Perform query. rows = conn.query("*", table="mytable", ttl="10m").execute() # Print results. for row in rows.data:   st.write(f"{row['name']} has a :{row['pet']}:") `
+See `st.connection` above? This handles secrets retrieval, setup, query caching and retries. By default, `query()` results are cached without expiring. In this case, we set `ttl="10m"` to ensure the query result is cached for no longer than 10 minutes. You can also set `ttl=0` to disable caching. Learn more in [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+If everything worked out (and you used the example table we created above), your app should look like this:
+![Finished app screenshot](https://docs.streamlit.io/images/databases/supabase-10.png)
+As Supabase uses PostgresSQL under the hood, you can also connect to Supabase by using the connection string Supabase provides under Settings > Databases. From there, you can refer to the [PostgresSQL tutorial](https://docs.streamlit.io/develop/tutorials/databases/postgresql) to connect to your database.
+## [](https://docs.streamlit.io/develop/tutorials/databases/supabase#using-the-supabase-python-client-library)Using the Supabase Python Client Library
+If you prefer to use the [Supabase Python Client Library](https://pypi.org/project/supabase/) directly, you can do so by following the steps below.
+  1. Add your Supabase Project URL and API key to your local app secrets:
+Your local Streamlit app will read secrets from a file `.streamlit/secrets.toml` in your app's root directory. Create this file if it doesn't exist yet and add the SUPABASE_URL and SUPABASE_KEY here:
+`# .streamlit/secrets.toml SUPABASE_URL = "xxxx" SUPABASE_KEY = "xxxx" `
+  2. Add `supabase` to your requirements file:
+Add the [`supabase`](https://github.com/supabase-community/supabase-py) Python Client Library to your `requirements.txt` file, preferably pinning its version (replace `x.x.x` with the version you want installed):
+`# requirements.txt supabase==x.x.x `
+  3. Write your Streamlit app:
+Copy the code below to your Streamlit app and run it.
+`# streamlit_app.py import streamlit as st from supabase import create_client, Client # Initialize connection. # Uses st.cache_resource to only run once.

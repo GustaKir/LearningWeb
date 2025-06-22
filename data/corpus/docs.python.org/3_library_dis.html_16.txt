@@ -1,0 +1,49 @@
+Title: Python Opcode Documentation Overview
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section discusses the implementation of formatted string literals (f-strings) and specific opcodes in Python such as MATCH_CLASS and RESUME. MATCH_CLASS was introduced in Python 3.10 and is used for matching classes based on attributes, while RESUME, a no-op opcode, is used for internal checks. The document highlights changes made to these opcodes in subsequent Python versions.
+---
+
+```
+
+Used for implementing formatted string literals (f-strings).
+Added in version 3.13. 
+
+MATCH_CLASS(_count_)[¶](https://docs.python.org/3/library/dis.html#opcode-MATCH_CLASS "Link to this definition")
+    
+`STACK[-1]` is a tuple of keyword attribute names, `STACK[-2]` is the class being matched against, and `STACK[-3]` is the match subject. _count_ is the number of positional sub-patterns.
+Pop `STACK[-1]`, `STACK[-2]`, and `STACK[-3]`. If `STACK[-3]` is an instance of `STACK[-2]` and has the positional and keyword attributes required by _count_ and `STACK[-1]`, push a tuple of extracted attributes. Otherwise, push `None`.
+Added in version 3.10.
+Changed in version 3.11: Previously, this instruction also pushed a boolean value indicating success (`True`) or failure (`False`). 
+
+RESUME(_context_)[¶](https://docs.python.org/3/library/dis.html#opcode-RESUME "Link to this definition")
+    
+A no-op. Performs internal tracing, debugging and optimization checks.
+The `context` oparand consists of two parts. The lowest two bits indicate where the `RESUME` occurs:
+  * `0` The start of a function, which is neither a generator, coroutine nor an async generator
+  * `1` After a `yield` expression
+  * `2` After a `yield from` expression
+  * `3` After an `await` expression
+
+
+The next bit is `1` if the RESUME is at except-depth `1`, and `0` otherwise.
+Added in version 3.11.
+Changed in version 3.13: The oparg value changed to include information about except-depth 
+
+RETURN_GENERATOR[¶](https://docs.python.org/3/library/dis.html#opcode-RETURN_GENERATOR "Link to this definition")
+    
+Create a generator, coroutine, or async generator from the current frame. Used as first opcode of in code object for the above mentioned callables. Clear the current frame and return the newly created generator.
+Added in version 3.11. 
+
+SEND(_delta_)[¶](https://docs.python.org/3/library/dis.html#opcode-SEND "Link to this definition")
+    
+Equivalent to `STACK[-1] = STACK[-2].send(STACK[-1])`. Used in `yield from` and `await` statements.
+If the call raises [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"), pop the top value from the stack, push the exception’s `value` attribute, and increment the bytecode counter by _delta_.
+Added in version 3.11. 
+
+HAVE_ARGUMENT[¶](https://docs.python.org/3/library/dis.html#opcode-HAVE_ARGUMENT "Link to this definition")
+    
+This is not really an opcode. It identifies the dividing line between opcodes in the range [0,255] which don’t use their argument and those that do (`< HAVE_ARGUMENT` and `>= HAVE_ARGUMENT`, respectively).
+If your application uses pseudo instructions or specialized instructions, use the [`hasarg`](https://docs.python.org/3/library/dis.html#dis.hasarg "dis.hasarg") collection instead.
+Changed in version 3.6: Now every instruction has an argument, but opcodes `< HAVE_ARGUMENT` ignore it. Before, only opcodes `>= HAVE_ARGUMENT` had an argument.
+Changed in version 3.12: Pseudo instructions were added to the [`dis`](https://docs.python.org/3/library/dis.html#module-dis "dis: Disassembler for Python bytecode.") module, and for them it is not true that comparison with `HAVE_ARGUMENT` indicates whether they use their arg.
+Deprecated since version 3.13: Use [`hasarg`](https://docs.python.org/3/library/dis.html#dis.hasarg "dis.hasarg") instead.

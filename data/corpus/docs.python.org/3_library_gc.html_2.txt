@@ -1,0 +1,47 @@
+Title: gc.get_referents Function in Python
+URL: https://docs.python.org/3/library/gc.html
+Summary: The gc.get_referents function returns a list of objects that are directly referred to by the specified arguments. It utilizes C-level tp_traverse methods for determining references, which are only applied to objects that support garbage collection. Not all directly reachable objects are guaranteed to be included in the results. An auditing event is raised with the function call.
+---
+
+gc.get_referents(_* objs_)[¶](https://docs.python.org/3/library/gc.html#gc.get_referents "Link to this definition")
+    
+Return a list of objects directly referred to by any of the arguments. The referents returned are those objects visited by the arguments’ C-level [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") methods (if any), and may not be all objects actually directly reachable. [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") methods are supported only by objects that support garbage collection, and are only required to visit objects that may be involved in a cycle. So, for example, if an integer is directly reachable from an argument, that integer object may or may not appear in the result list.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `gc.get_referents` with argument `objs`. 
+
+gc.is_tracked(_obj_)[¶](https://docs.python.org/3/library/gc.html#gc.is_tracked "Link to this definition")
+    
+Returns `True` if the object is currently tracked by the garbage collector, `False` otherwise. As a general rule, instances of atomic types aren’t tracked and instances of non-atomic types (containers, user-defined objects…) are. However, some type-specific optimizations can be present in order to suppress the garbage collector footprint of simple instances (e.g. dicts containing only atomic keys and values):
+>>>```
+>>> gc.is_tracked(0)
+False
+>>> gc.is_tracked("a")
+False
+>>> gc.is_tracked([])
+True
+>>> gc.is_tracked({})
+False
+>>> gc.is_tracked({"a": 1})
+False
+>>> gc.is_tracked({"a": []})
+True
+
+```
+
+Added in version 3.1. 
+
+gc.is_finalized(_obj_)[¶](https://docs.python.org/3/library/gc.html#gc.is_finalized "Link to this definition")
+    
+Returns `True` if the given object has been finalized by the garbage collector, `False` otherwise.
+>>>```
+>>> x = None
+>>> classLazarus:
+...   def__del__(self):
+...     global x
+...     x = self
+...
+>>> lazarus = Lazarus()
+>>> gc.is_finalized(lazarus)
+False
+>>> del lazarus
+>>> gc.is_finalized(x)
+True

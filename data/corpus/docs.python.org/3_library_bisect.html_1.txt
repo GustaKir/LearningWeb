@@ -1,0 +1,43 @@
+Title: Bisect Module Functions
+URL: https://docs.python.org/3/library/bisect.html
+Summary: Overview of key functions in the bisect module, including `bisect()`, which provides an insertion point to the right of existing entries, and `insort_left()`, which inserts an element into a sorted list while maintaining order. Notably, the `key` parameter was added in version 3.10.
+---
+
+bisect.bisect(_a_ , _x_ , _lo =0_, _hi =len(a)_, _*_ , _key =None_)[¶](https://docs.python.org/3/library/bisect.html#bisect.bisect "Link to this definition")
+    
+Similar to [`bisect_left()`](https://docs.python.org/3/library/bisect.html#bisect.bisect_left "bisect.bisect_left"), but returns an insertion point which comes after (to the right of) any existing entries of _x_ in _a_.
+The returned insertion point _ip_ partitions the array _a_ into two slices such that `all(elem <= x for elem in a[lo : ip])` is true for the left slice and `all(elem > x for elem in a[ip : hi])` is true for the right slice.
+Changed in version 3.10: Added the _key_ parameter. 
+
+bisect.insort_left(_a_ , _x_ , _lo =0_, _hi =len(a)_, _*_ , _key =None_)[¶](https://docs.python.org/3/library/bisect.html#bisect.insort_left "Link to this definition")
+    
+Insert _x_ in _a_ in sorted order.
+This function first runs [`bisect_left()`](https://docs.python.org/3/library/bisect.html#bisect.bisect_left "bisect.bisect_left") to locate an insertion point. Next, it runs the `insert()` method on _a_ to insert _x_ at the appropriate position to maintain sort order.
+To support inserting records in a table, the _key_ function (if any) is applied to _x_ for the search step but not for the insertion step.
+Keep in mind that the _O_(log _n_) search is dominated by the slow _O_(_n_) insertion step.
+Changed in version 3.10: Added the _key_ parameter. 
+
+bisect.insort_right(_a_ , _x_ , _lo =0_, _hi =len(a)_, _*_ , _key =None_)[¶](https://docs.python.org/3/library/bisect.html#bisect.insort_right "Link to this definition")
+
+
+bisect.insort(_a_ , _x_ , _lo =0_, _hi =len(a)_, _*_ , _key =None_)[¶](https://docs.python.org/3/library/bisect.html#bisect.insort "Link to this definition")
+    
+Similar to [`insort_left()`](https://docs.python.org/3/library/bisect.html#bisect.insort_left "bisect.insort_left"), but inserting _x_ in _a_ after any existing entries of _x_.
+This function first runs [`bisect_right()`](https://docs.python.org/3/library/bisect.html#bisect.bisect_right "bisect.bisect_right") to locate an insertion point. Next, it runs the `insert()` method on _a_ to insert _x_ at the appropriate position to maintain sort order.
+To support inserting records in a table, the _key_ function (if any) is applied to _x_ for the search step but not for the insertion step.
+Keep in mind that the _O_(log _n_) search is dominated by the slow _O_(_n_) insertion step.
+Changed in version 3.10: Added the _key_ parameter.
+## Performance Notes[¶](https://docs.python.org/3/library/bisect.html#performance-notes "Link to this heading")
+When writing time sensitive code using _bisect()_ and _insort()_ , keep these thoughts in mind:
+  * Bisection is effective for searching ranges of values. For locating specific values, dictionaries are more performant.
+  * The _insort()_ functions are _O_(_n_) because the logarithmic search step is dominated by the linear time insertion step.
+  * The search functions are stateless and discard key function results after they are used. Consequently, if the search functions are used in a loop, the key function may be called again and again on the same array elements. If the key function isn’t fast, consider wrapping it with [`functools.cache()`](https://docs.python.org/3/library/functools.html#functools.cache "functools.cache") to avoid duplicate computations. Alternatively, consider searching an array of precomputed keys to locate the insertion point (as shown in the examples section below).
+
+
+See also
+  * [Sorted Collections](https://grantjenks.com/docs/sortedcollections/) is a high performance module that uses _bisect_ to managed sorted collections of data.
+  * The [SortedCollection recipe](https://code.activestate.com/recipes/577197-sortedcollection/) uses bisect to build a full-featured collection class with straight-forward search methods and support for a key-function. The keys are precomputed to save unnecessary calls to the key function during searches.
+
+
+## Searching Sorted Lists[¶](https://docs.python.org/3/library/bisect.html#searching-sorted-lists "Link to this heading")
+The above [bisect functions](https://docs.python.org/3/library/bisect.html#bisect-functions) are useful for finding insertion points but can be tricky or awkward to use for common searching tasks. The following five functions show how to transform them into the standard lookups for sorted lists:

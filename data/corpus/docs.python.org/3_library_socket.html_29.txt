@@ -1,0 +1,123 @@
+Title: Example of TCP/IP Protocol Programs
+URL: https://docs.python.org/3/library/socket.html
+Summary: This section provides four minimal example programs demonstrating the use of TCP/IP protocol, including a server that echoes received data and a corresponding client. It outlines the necessary steps for setting up a server and the actions needed by a client.
+---
+
+## Example[¶](https://docs.python.org/3/library/socket.html#example "Link to this heading")
+Here are four minimal example programs using the TCP/IP protocol: a server that echoes all data that it receives back (servicing only one client), and a client using it. Note that a server must perform the sequence [`socket()`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket"), [`bind()`](https://docs.python.org/3/library/socket.html#socket.socket.bind "socket.socket.bind"), [`listen()`](https://docs.python.org/3/library/socket.html#socket.socket.listen "socket.socket.listen"), [`accept()`](https://docs.python.org/3/library/socket.html#socket.socket.accept "socket.socket.accept") (possibly repeating the [`accept()`](https://docs.python.org/3/library/socket.html#socket.socket.accept "socket.socket.accept") to service more than one client), while a client only needs the sequence [`socket()`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket"), [`connect()`](https://docs.python.org/3/library/socket.html#socket.socket.connect "socket.socket.connect"). Also note that the server does not [`sendall()`](https://docs.python.org/3/library/socket.html#socket.socket.sendall "socket.socket.sendall")/[`recv()`](https://docs.python.org/3/library/socket.html#socket.socket.recv "socket.socket.recv") on the socket it is listening on but on the new socket returned by [`accept()`](https://docs.python.org/3/library/socket.html#socket.socket.accept "socket.socket.accept").
+The first two examples support IPv4 only.
+```
+# Echo server program
+importsocket
+HOST = ''         # Symbolic name meaning all available interfaces
+PORT = 50007       # Arbitrary non-privileged port
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+  s.bind((HOST, PORT))
+  s.listen(1)
+  conn, addr = s.accept()
+  with conn:
+    print('Connected by', addr)
+    while True:
+      data = conn.recv(1024)
+      if not data: break
+      conn.sendall(data)
+
+```
+
+```
+# Echo client program
+importsocket
+HOST = 'daring.cwi.nl'  # The remote host
+PORT = 50007       # The same port as used by the server
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+  s.connect((HOST, PORT))
+  s.sendall(b'Hello, world')
+  data = s.recv(1024)
+print('Received', repr(data))
+
+```
+
+The next two examples are identical to the above two, but support both IPv4 and IPv6. The server side will listen to the first address family available (it should listen to both instead). On most of IPv6-ready systems, IPv6 will take precedence and the server may not accept IPv4 traffic. The client side will try to connect to all the addresses returned as a result of the name resolution, and sends traffic to the first one connected successfully.
+```
+# Echo server program
+importsocket
+importsys
+HOST = None        # Symbolic name meaning all available interfaces
+PORT = 50007       # Arbitrary non-privileged port
+s = None
+for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC,
+               socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+  af, socktype, proto, canonname, sa = res
+  try:
+    s = socket.socket(af, socktype, proto)
+  except OSError as msg:
+    s = None
+    continue
+  try:
+    s.bind(sa)
+    s.listen(1)
+  except OSError as msg:
+    s.close()
+    s = None
+    continue
+  break
+if s is None:
+  print('could not open socket')
+  sys.exit(1)
+conn, addr = s.accept()
+with conn:
+  print('Connected by', addr)
+  while True:
+    data = conn.recv(1024)
+    if not data: break
+    conn.send(data)
+
+```
+
+```
+# Echo client program
+importsocket
+importsys
+HOST = 'daring.cwi.nl'  # The remote host
+PORT = 50007       # The same port as used by the server
+s = None
+for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM):
+  af, socktype, proto, canonname, sa = res
+  try:
+    s = socket.socket(af, socktype, proto)
+  except OSError as msg:
+    s = None
+    continue
+  try:
+    s.connect(sa)
+  except OSError as msg:
+    s.close()
+    s = None
+    continue
+  break
+if s is None:
+  print('could not open socket')
+  sys.exit(1)
+with s:
+  s.sendall(b'Hello, world')
+  data = s.recv(1024)
+print('Received', repr(data))
+
+```
+
+The next example shows how to write a very simple network sniffer with raw sockets on Windows. The example requires administrator privileges to modify the interface:
+```
+importsocket
+# the public network interface
+HOST = socket.gethostbyname(socket.gethostname())
+# create a raw socket and bind it to the public interface
+s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
+s.bind((HOST, 0))
+# Include IP headers
+s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+# receive all packets
+s.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
+# receive a packet
+print(s.recvfrom(65565))
+# disabled promiscuous mode
+s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)

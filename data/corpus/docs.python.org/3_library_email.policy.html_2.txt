@@ -1,0 +1,52 @@
+Title: Overview of Email Policy in Python
+URL: https://docs.python.org/3/library/email.policy.html
+Summary: This document explains the common features of policy objects in Python's email package, focusing on the abstract base class, `Policy`, and concrete classes like `EmailPolicy` and `Compat32`. It highlights the hook methods that allow for customized behavior and notes that `Policy` instances are immutable but can be cloned.
+---
+
+ss](https://docs.python.org/3/glossary.html#term-abstract-base-class) that defines the features that are common to all policy objects, including [`compat32`](https://docs.python.org/3/library/email.policy.html#email.policy.compat32 "email.policy.compat32"). This includes certain hook methods that are called internally by the email package, which a custom policy could override to obtain different behavior. The second part describes the concrete classes [`EmailPolicy`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy "email.policy.EmailPolicy") and [`Compat32`](https://docs.python.org/3/library/email.policy.html#email.policy.Compat32 "email.policy.Compat32"), which implement the hooks that provide the standard behavior and the backward compatible behavior and features, respectively.
+[`Policy`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy "email.policy.Policy") instances are immutable, but they can be cloned, accepting the same keyword arguments as the class constructor and returning a new [`Policy`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy "email.policy.Policy") instance that is a copy of the original but with the specified attributes values changed.
+As an example, the following code could be used to read an email message from a file on disk and pass it to the system `sendmail` program on a Unix system:
+>>>```
+>>> fromemailimport message_from_binary_file
+>>> fromemail.generatorimport BytesGenerator
+>>> fromemailimport policy
+>>> fromsubprocessimport Popen, PIPE
+>>> with open('mymsg.txt', 'rb') as f:
+...   msg = message_from_binary_file(f, policy=policy.default)
+...
+>>> p = Popen(['sendmail', msg['To'].addresses[0]], stdin=PIPE)
+>>> g = BytesGenerator(p.stdin, policy=msg.policy.clone(linesep='\r\n'))
+>>> g.flatten(msg)
+>>> p.stdin.close()
+>>> rc = p.wait()
+
+```
+
+Here we are telling [`BytesGenerator`](https://docs.python.org/3/library/email.generator.html#email.generator.BytesGenerator "email.generator.BytesGenerator") to use the RFC correct line separator characters when creating the binary string to feed into `sendmail's` `stdin`, where the default policy would use `\n` line separators.
+Some email package methods accept a _policy_ keyword argument, allowing the policy to be overridden for that method. For example, the following code uses the [`as_bytes()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.as_bytes "email.message.Message.as_bytes") method of the _msg_ object from the previous example and writes the message to a file using the native line separators for the platform on which it is running:
+>>>```
+>>> importos
+>>> with open('converted.txt', 'wb') as f:
+...   f.write(msg.as_bytes(policy=msg.policy.clone(linesep=os.linesep)))
+17
+
+```
+
+Policy objects can also be combined using the addition operator, producing a policy object whose settings are a combination of the non-default values of the summed objects:
+>>>```
+>>> compat_SMTP = policy.compat32.clone(linesep='\r\n')
+>>> compat_strict = policy.compat32.clone(raise_on_defect=True)
+>>> compat_strict_SMTP = compat_SMTP + compat_strict
+
+```
+
+This operation is not commutative; that is, the order in which the objects are added matters. To illustrate:
+>>>```
+>>> policy100 = policy.compat32.clone(max_line_length=100)
+>>> policy80 = policy.compat32.clone(max_line_length=80)
+>>> apolicy = policy100 + policy80
+>>> apolicy.max_line_length
+80
+>>> apolicy = policy80 + policy100
+>>> apolicy.max_line_length
+100

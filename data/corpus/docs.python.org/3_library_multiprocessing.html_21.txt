@@ -1,0 +1,27 @@
+Title: Lock Acquisition in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The `acquire` method of `RLock` in the multiprocessing library allows for blocking or non-blocking acquisition of a lock. When blocking is enabled, it waits until the lock is free, incrementing the recursion level upon successful acquisition. When non-blocking, it returns immediately if the lock is already held.
+---
+
+acquire(_block =True_, _timeout =None_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.RLock.acquire "Link to this definition")
+    
+Acquire a lock, blocking or non-blocking.
+When invoked with the _block_ argument set to `True`, block until the lock is in an unlocked state (not owned by any process or thread) unless the lock is already owned by the current process or thread. The current process or thread then takes ownership of the lock (if it does not already have ownership) and the recursion level inside the lock increments by one, resulting in a return value of `True`. Note that there are several differences in this first argument’s behavior compared to the implementation of [`threading.RLock.acquire()`](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "threading.RLock.acquire"), starting with the name of the argument itself.
+When invoked with the _block_ argument set to `False`, do not block. If the lock has already been acquired (and thus is owned) by another process or thread, the current process or thread does not take ownership and the recursion level within the lock is not changed, resulting in a return value of `False`. If the lock is in an unlocked state, the current process or thread takes ownership and the recursion level is incremented, resulting in a return value of `True`.
+Use and behaviors of the _timeout_ argument are the same as in [`Lock.acquire()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Lock.acquire "multiprocessing.Lock.acquire"). Note that some of these behaviors of _timeout_ differ from the implemented behaviors in [`threading.RLock.acquire()`](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "threading.RLock.acquire"). 
+
+release()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.RLock.release "Link to this definition")
+    
+Release a lock, decrementing the recursion level. If after the decrement the recursion level is zero, reset the lock to unlocked (not owned by any process or thread) and if any other processes or threads are blocked waiting for the lock to become unlocked, allow exactly one of them to proceed. If after the decrement the recursion level is still nonzero, the lock remains locked and owned by the calling process or thread.
+Only call this method when the calling process or thread owns the lock. An [`AssertionError`](https://docs.python.org/3/library/exceptions.html#AssertionError "AssertionError") is raised if this method is called by a process or thread other than the owner or if the lock is in an unlocked (unowned) state. Note that the type of exception raised in this situation differs from the implemented behavior in [`threading.RLock.release()`](https://docs.python.org/3/library/threading.html#threading.RLock.release "threading.RLock.release"). 
+
+_class_ multiprocessing.Semaphore([_value_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Semaphore "Link to this definition")
+    
+A semaphore object: a close analog of [`threading.Semaphore`](https://docs.python.org/3/library/threading.html#threading.Semaphore "threading.Semaphore").
+A solitary difference from its close analog exists: its `acquire` method’s first argument is named _block_ , as is consistent with [`Lock.acquire()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Lock.acquire "multiprocessing.Lock.acquire").
+Note
+On macOS, `sem_timedwait` is unsupported, so calling `acquire()` with a timeout will emulate that function’s behavior using a sleeping loop.
+Note
+Some of this package’s functionality requires a functioning shared semaphore implementation on the host operating system. Without one, the `multiprocessing.synchronize` module will be disabled, and attempts to import it will result in an [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError"). See [bpo-3770](https://bugs.python.org/issue?@action=redirect&bpo=3770) for additional information.
+### Shared [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") Objects[¶](https://docs.python.org/3/library/multiprocessing.html#shared-ctypes-objects "Link to this heading")
+It is possible to create shared objects using shared memory which can be inherited by child processes.

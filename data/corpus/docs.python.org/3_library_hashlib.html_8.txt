@@ -1,0 +1,95 @@
+Title: Using BLAKE2 for Hashing in Python
+URL: https://docs.python.org/3/library/hashlib.html
+Summary: This chunk demonstrates how to use the BLAKE2b hashing function from the hashlib library in Python. It shows how to create a hash from a sequence of bytes and obtain the hexadecimal representation of the hash. Additionally, it explains how to set a specific digest size for BLAKE2b, allowing output to match different hash sizes, with an example replacing SHA-1 with a 20-byte digest while highlighting that different digest sizes produce completely different outputs.
+---
+
+```
+>>> fromhashlibimport blake2b
+>>> items = [b'Hello', b' ', b'world']
+>>> h = blake2b()
+>>> for item in items:
+...   h.update(item)
+...
+>>> h.hexdigest()
+'6ff843ba685842aa82031d3f53c48b66326df7639a63d128974c5c14f31a0f33343a8c65551134ed1ae0f2b0dd2bb495dc81039e3eeb0aa1bb0388bbeac29183'
+
+```
+
+#### Using different digest sizes[¶](https://docs.python.org/3/library/hashlib.html#using-different-digest-sizes "Link to this heading")
+BLAKE2 has configurable size of digests up to 64 bytes for BLAKE2b and up to 32 bytes for BLAKE2s. For example, to replace SHA-1 with BLAKE2b without changing the size of output, we can tell BLAKE2b to produce 20-byte digests:
+>>>```
+>>> fromhashlibimport blake2b
+>>> h = blake2b(digest_size=20)
+>>> h.update(b'Replacing SHA1 with the more secure function')
+>>> h.hexdigest()
+'d24f26cf8de66472d58d4e1b1774b4c9158b1f4c'
+>>> h.digest_size
+20
+>>> len(h.digest())
+20
+
+```
+
+Hash objects with different digest sizes have completely different outputs (shorter hashes are _not_ prefixes of longer hashes); BLAKE2b and BLAKE2s produce different outputs even if the output length is the same:
+>>>```
+>>> fromhashlibimport blake2b, blake2s
+>>> blake2b(digest_size=10).hexdigest()
+'6fa1d8fcfd719046d762'
+>>> blake2b(digest_size=11).hexdigest()
+'eb6ec15daf9546254f0809'
+>>> blake2s(digest_size=10).hexdigest()
+'1bf21a98c78a1c376ae9'
+>>> blake2s(digest_size=11).hexdigest()
+'567004bf96e4a25773ebf4'
+
+```
+
+#### Keyed hashing[¶](https://docs.python.org/3/library/hashlib.html#keyed-hashing "Link to this heading")
+Keyed hashing can be used for authentication as a faster and simpler replacement for [Hash-based message authentication code](https://en.wikipedia.org/wiki/HMAC) (HMAC). BLAKE2 can be securely used in prefix-MAC mode thanks to the indifferentiability property inherited from BLAKE.
+This example shows how to get a (hex-encoded) 128-bit authentication code for message `b'message data'` with key `b'pseudorandom key'`:
+>>>```
+>>> fromhashlibimport blake2b
+>>> h = blake2b(key=b'pseudorandom key', digest_size=16)
+>>> h.update(b'message data')
+>>> h.hexdigest()
+'3d363ff7401e02026f4a4687d4863ced'
+
+```
+
+As a practical example, a web application can symmetrically sign cookies sent to users and later verify them to make sure they weren’t tampered with:
+>>>```
+>>> fromhashlibimport blake2b
+>>> fromhmacimport compare_digest
+>>>
+>>> SECRET_KEY = b'pseudorandomly generated server secret key'
+>>> AUTH_SIZE = 16
+>>>
+>>> defsign(cookie):
+...   h = blake2b(digest_size=AUTH_SIZE, key=SECRET_KEY)
+...   h.update(cookie)
+...   return h.hexdigest().encode('utf-8')
+>>>
+>>> defverify(cookie, sig):
+...   good_sig = sign(cookie)
+...   return compare_digest(good_sig, sig)
+>>>
+>>> cookie = b'user-alice'
+>>> sig = sign(cookie)
+>>> print("{0},{1}".format(cookie.decode('utf-8'), sig))
+user-alice,b'43b3c982cf697e0c5ab22172d1ca7421'
+>>> verify(cookie, sig)
+True
+>>> verify(b'user-bob', sig)
+False
+>>> verify(cookie, b'0102030405060708090a0b0c0d0e0f00')
+False
+
+```
+
+Even though there’s a native keyed hashing mode, BLAKE2 can, of course, be used in HMAC construction with [`hmac`](https://docs.python.org/3/library/hmac.html#module-hmac "hmac: Keyed-Hashing for Message Authentication \(HMAC\) implementation") module:
+>>>```
+>>> importhmac,hashlib
+>>> m = hmac.new(b'secret key', digestmod=hashlib.blake2s)
+>>> m.update(b'message')
+>>> m.hexdigest()
+'e3c8102868d28b5ff85fc35dda07329970d1a01e273c37481326fe0c861c8142'

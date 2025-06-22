@@ -1,0 +1,53 @@
+Title: asyncio.WindowsProactorEventLoopPolicy
+URL: https://docs.python.org/3/library/asyncio-policy.html
+Summary: The WindowsProactorEventLoopPolicy is an alternative event loop policy for Windows that utilizes the ProactorEventLoop implementation. It includes features like process watchers, which customize how the event loop monitors child processes, crucial for knowing when a child process exits.
+---
+
+_class_ asyncio.WindowsProactorEventLoopPolicy[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.WindowsProactorEventLoopPolicy "Link to this definition")
+    
+An alternative event loop policy that uses the [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop") event loop implementation.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows.
+## Process Watchers[¶](https://docs.python.org/3/library/asyncio-policy.html#process-watchers "Link to this heading")
+A process watcher allows customization of how an event loop monitors child processes on Unix. Specifically, the event loop needs to know when a child process has exited.
+In asyncio, child processes are created with [`create_subprocess_exec()`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.create_subprocess_exec "asyncio.create_subprocess_exec") and [`loop.subprocess_exec()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.subprocess_exec "asyncio.loop.subprocess_exec") functions.
+asyncio defines the [`AbstractChildWatcher`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractChildWatcher "asyncio.AbstractChildWatcher") abstract base class, which child watchers should implement, and has four different implementations: [`ThreadedChildWatcher`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.ThreadedChildWatcher "asyncio.ThreadedChildWatcher") (configured to be used by default), [`MultiLoopChildWatcher`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.MultiLoopChildWatcher "asyncio.MultiLoopChildWatcher"), [`SafeChildWatcher`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.SafeChildWatcher "asyncio.SafeChildWatcher"), and [`FastChildWatcher`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.FastChildWatcher "asyncio.FastChildWatcher").
+See also the [Subprocess and Threads](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio-subprocess-threads) section.
+The following two functions can be used to customize the child process watcher implementation used by the asyncio event loop: 
+
+asyncio.get_child_watcher()[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.get_child_watcher "Link to this definition")
+    
+Return the current child watcher for the current policy.
+Deprecated since version 3.12. 
+
+asyncio.set_child_watcher(_watcher_)[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.set_child_watcher "Link to this definition")
+    
+Set the current child watcher to _watcher_ for the current policy. _watcher_ must implement methods defined in the [`AbstractChildWatcher`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractChildWatcher "asyncio.AbstractChildWatcher") base class.
+Deprecated since version 3.12.
+Note
+Third-party event loops implementations might not support custom child watchers. For such event loops, using [`set_child_watcher()`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.set_child_watcher "asyncio.set_child_watcher") might be prohibited or have no effect. 
+
+_class_ asyncio.AbstractChildWatcher[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractChildWatcher "Link to this definition")
+     
+
+add_child_handler(_pid_ , _callback_ , _* args_)[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractChildWatcher.add_child_handler "Link to this definition")
+    
+Register a new child handler.
+Arrange for `callback(pid, returncode, *args)` to be called when a process with PID equal to _pid_ terminates. Specifying another callback for the same process replaces the previous handler.
+The _callback_ callable must be thread-safe. 
+
+remove_child_handler(_pid_)[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractChildWatcher.remove_child_handler "Link to this definition")
+    
+Removes the handler for process with PID equal to _pid_.
+The function returns `True` if the handler was successfully removed, `False` if there was nothing to remove. 
+
+attach_loop(_loop_)[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractChildWatcher.attach_loop "Link to this definition")
+    
+Attach the watcher to an event loop.
+If the watcher was previously attached to an event loop, then it is first detached before attaching to the new loop.
+Note: loop may be `None`. 
+
+is_active()[¶](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractChildWatcher.is_active "Link to this definition")
+    
+Return `True` if the watcher is ready to use.
+Spawning a subprocess with _inactive_ current child watcher raises [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError").
+Added in version 3.8.

@@ -1,0 +1,44 @@
+Title: sqlite3.NotSupportedError and SQLite Type Compatibility
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: The `sqlite3.NotSupportedError` exception is raised when a method or database API is unsupported by the SQLite library. It occurs, for example, when using the `deterministic` option in `create_function()` without library support. Additionally, the section outlines the compatibility between Python and SQLite types, highlighting native SQLite types such as `NULL`, `INTEGER`, `REAL`, `TEXT`, and `BLOB`, which correspond to Python types like `None`.
+---
+
+_exception_ sqlite3.NotSupportedError[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.NotSupportedError "Link to this definition")
+    
+Exception raised in case a method or database API is not supported by the underlying SQLite library. For example, setting _deterministic_ to `True` in [`create_function()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.create_function "sqlite3.Connection.create_function"), if the underlying SQLite library does not support deterministic functions. `NotSupportedError` is a subclass of [`DatabaseError`](https://docs.python.org/3/library/sqlite3.html#sqlite3.DatabaseError "sqlite3.DatabaseError").
+### SQLite and Python types[¶](https://docs.python.org/3/library/sqlite3.html#sqlite-and-python-types "Link to this heading")
+SQLite natively supports the following types: `NULL`, `INTEGER`, `REAL`, `TEXT`, `BLOB`.
+The following Python types can thus be sent to SQLite without any problem:
+Python type | SQLite type  
+---|---  
+`None` | `NULL`  
+[`int`](https://docs.python.org/3/library/functions.html#int "int") | `INTEGER`  
+[`float`](https://docs.python.org/3/library/functions.html#float "float") | `REAL`  
+[`str`](https://docs.python.org/3/library/stdtypes.html#str "str") | `TEXT`  
+[`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") | `BLOB`  
+This is how SQLite types are converted to Python types by default:
+SQLite type | Python type  
+---|---  
+`NULL` | `None`  
+`INTEGER` | [`int`](https://docs.python.org/3/library/functions.html#int "int")  
+`REAL` | [`float`](https://docs.python.org/3/library/functions.html#float "float")  
+`TEXT` | depends on [`text_factory`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.text_factory "sqlite3.Connection.text_factory"), [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") by default  
+`BLOB` | [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes")  
+The type system of the `sqlite3` module is extensible in two ways: you can store additional Python types in an SQLite database via [object adapters](https://docs.python.org/3/library/sqlite3.html#sqlite3-adapters), and you can let the `sqlite3` module convert SQLite types to Python types via [converters](https://docs.python.org/3/library/sqlite3.html#sqlite3-converters).
+### Default adapters and converters (deprecated)[¶](https://docs.python.org/3/library/sqlite3.html#default-adapters-and-converters-deprecated "Link to this heading")
+Note
+The default adapters and converters are deprecated as of Python 3.12. Instead, use the [Adapter and converter recipes](https://docs.python.org/3/library/sqlite3.html#sqlite3-adapter-converter-recipes) and tailor them to your needs.
+The deprecated default adapters and converters consist of:
+  * An adapter for [`datetime.date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date") objects to [`strings`](https://docs.python.org/3/library/stdtypes.html#str "str") in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
+  * An adapter for [`datetime.datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") objects to strings in ISO 8601 format.
+  * A converter for [declared](https://docs.python.org/3/library/sqlite3.html#sqlite3-converters) “date” types to [`datetime.date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date") objects.
+  * A converter for declared “timestamp” types to [`datetime.datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") objects. Fractional parts will be truncated to 6 digits (microsecond precision).
+
+
+Note
+The default “timestamp” converter ignores UTC offsets in the database and always returns a naive [`datetime.datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") object. To preserve UTC offsets in timestamps, either leave converters disabled, or register an offset-aware converter with [`register_converter()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.register_converter "sqlite3.register_converter").
+Deprecated since version 3.12.
+### Command-line interface[¶](https://docs.python.org/3/library/sqlite3.html#command-line-interface "Link to this heading")
+The `sqlite3` module can be invoked as a script, using the interpreter’s [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m) switch, in order to provide a simple SQLite shell. The argument signature is as follows:
+```
+python -m sqlite3 [-h] [-v] [filename] [sql]

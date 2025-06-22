@@ -1,0 +1,43 @@
+Title: Registering Error Handlers in Codecs
+URL: https://docs.python.org/3/library/codecs.html
+Summary: The `codecs.register_error` function allows users to register a custom error handling function under a specified name, which is invoked during encoding and decoding errors. The handler must either raise an exception or return a tuple containing a replacement for the problematic input and a position to continue encoding.
+---
+
+codecs.register_error(_name_ , _error_handler_)[¶](https://docs.python.org/3/library/codecs.html#codecs.register_error "Link to this definition")
+    
+Register the error handling function _error_handler_ under the name _name_. The _error_handler_ argument will be called during encoding and decoding in case of an error, when _name_ is specified as the errors parameter.
+For encoding, _error_handler_ will be called with a [`UnicodeEncodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeEncodeError "UnicodeEncodeError") instance, which contains information about the location of the error. The error handler must either raise this or a different exception, or return a tuple with a replacement for the unencodable part of the input and a position where encoding should continue. The replacement may be either [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"). If the replacement is bytes, the encoder will simply copy them into the output buffer. If the replacement is a string, the encoder will encode the replacement. Encoding continues on original input at the specified position. Negative position values will be treated as being relative to the end of the input string. If the resulting position is out of bound an [`IndexError`](https://docs.python.org/3/library/exceptions.html#IndexError "IndexError") will be raised.
+Decoding and translating works similarly, except [`UnicodeDecodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeDecodeError "UnicodeDecodeError") or [`UnicodeTranslateError`](https://docs.python.org/3/library/exceptions.html#UnicodeTranslateError "UnicodeTranslateError") will be passed to the handler and that the replacement from the error handler will be put into the output directly.
+Previously registered error handlers (including the standard error handlers) can be looked up by name: 
+
+codecs.lookup_error(_name_)[¶](https://docs.python.org/3/library/codecs.html#codecs.lookup_error "Link to this definition")
+    
+Return the error handler previously registered under the name _name_.
+Raises a [`LookupError`](https://docs.python.org/3/library/exceptions.html#LookupError "LookupError") in case the handler cannot be found.
+The following standard error handlers are also made available as module level functions: 
+
+codecs.strict_errors(_exception_)[¶](https://docs.python.org/3/library/codecs.html#codecs.strict_errors "Link to this definition")
+    
+Implements the `'strict'` error handling.
+Each encoding or decoding error raises a [`UnicodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeError "UnicodeError"). 
+
+codecs.ignore_errors(_exception_)[¶](https://docs.python.org/3/library/codecs.html#codecs.ignore_errors "Link to this definition")
+    
+Implements the `'ignore'` error handling.
+Malformed data is ignored; encoding or decoding is continued without further notice. 
+
+codecs.replace_errors(_exception_)[¶](https://docs.python.org/3/library/codecs.html#codecs.replace_errors "Link to this definition")
+    
+Implements the `'replace'` error handling.
+Substitutes `?` (ASCII character) for encoding errors or `�` (U+FFFD, the official REPLACEMENT CHARACTER) for decoding errors. 
+
+codecs.backslashreplace_errors(_exception_)[¶](https://docs.python.org/3/library/codecs.html#codecs.backslashreplace_errors "Link to this definition")
+    
+Implements the `'backslashreplace'` error handling.
+Malformed data is replaced by a backslashed escape sequence. On encoding, use the hexadecimal form of Unicode code point with formats `\x_hh_``\u_xxxx_``\U_xxxxxxxx_`. On decoding, use the hexadecimal form of byte value with format`\x _hh_`.
+Changed in version 3.5: Works with decoding and translating. 
+
+codecs.xmlcharrefreplace_errors(_exception_)[¶](https://docs.python.org/3/library/codecs.html#codecs.xmlcharrefreplace_errors "Link to this definition")
+    
+Implements the `'xmlcharrefreplace'` error handling (for encoding within [text encoding](https://docs.python.org/3/glossary.html#term-text-encoding) only).
+The unencodable character is replaced by an appropriate XML/HTML numeric character reference, which is a decimal form of Unicode code point with format `&#_num_;`.

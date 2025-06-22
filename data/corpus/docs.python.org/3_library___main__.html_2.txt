@@ -1,0 +1,46 @@
+Title: Using the main Function in Python Scripts
+URL: https://docs.python.org/3/library/__main__.html
+Summary: When defining the `main` function in Python scripts, it should return a value suitable for `sys.exit()`, typically an integer or `None`. This ensures consistent behavior whether the script is run directly or as a console script entry-point. Avoid returning strings from the `main` function, as they will lead `sys.exit()` to treat it as a failure, resulting in an exit code of `1`.
+---
+
+```
+
+Since the call to `main` is wrapped in [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit"), the expectation is that your function will return some value acceptable as an input to [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit"); typically, an integer or `None` (which is implicitly returned if your function does not have a return statement).
+By proactively following this convention ourselves, our module will have the same behavior when run directly (i.e. `python echo.py`) as it will have if we later package it as a console script entry-point in a pip-installable package.
+In particular, be careful about returning strings from your `main` function. [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit") will interpret a string argument as a failure message, so your program will have an exit code of `1`, indicating failure, and the string will be written to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr"). The `echo.py` example from earlier exemplifies using the `sys.exit(main())` convention.
+See also
+[Python Packaging User Guide](https://packaging.python.org/) contains a collection of tutorials and references on how to distribute and install Python packages with modern tools.
+## `__main__.py` in Python Packages[¶](https://docs.python.org/3/library/__main__.html#main-py-in-python-packages "Link to this heading")
+If you are not familiar with Python packages, see section [Packages](https://docs.python.org/3/tutorial/modules.html#tut-packages) of the tutorial. Most commonly, the `__main__.py` file is used to provide a command-line interface for a package. Consider the following hypothetical package, “bandclass”:
+```
+bandclass
+ ├── __init__.py
+ ├── __main__.py
+ └── student.py
+
+```
+
+`__main__.py` will be executed when the package itself is invoked directly from the command line using the [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m) flag. For example:
+```
+$ python-mbandclass
+
+```
+
+This command will cause `__main__.py` to run. How you utilize this mechanism will depend on the nature of the package you are writing, but in this hypothetical case, it might make sense to allow the teacher to search for students:
+```
+# bandclass/__main__.py
+importsys
+from.studentimport search_students
+student_name = sys.argv[1] if len(sys.argv) >= 2 else ''
+print(f'Found student: {search_students(student_name)}')
+
+```
+
+Note that `from .student import search_students` is an example of a relative import. This import style can be used when referencing modules within a package. For more details, see [Intra-package References](https://docs.python.org/3/tutorial/modules.html#intra-package-references) in the [Modules](https://docs.python.org/3/tutorial/modules.html#tut-modules) section of the tutorial.
+### Idiomatic Usage[¶](https://docs.python.org/3/library/__main__.html#id1 "Link to this heading")
+The content of `__main__.py` typically isn’t fenced with an `if __name__ == '__main__'` block. Instead, those files are kept short and import functions to execute from other modules. Those other modules can then be easily unit-tested and are properly reusable.
+If used, an `if __name__ == '__main__'` block will still work as expected for a `__main__.py` file within a package, because its `__name__` attribute will include the package’s path if imported:
+>>>```
+>>> importasyncio.__main__
+>>> asyncio.__main__.__name__
+'asyncio.__main__'

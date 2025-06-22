@@ -1,0 +1,40 @@
+Title: Understanding Streamlit Custom Components
+URL: https://docs.streamlit.io/develop/concepts/custom-components/intro
+Summary: This section explains the behavior of custom components in Streamlit, detailing how to set values in the frontend and access them in Python. It clarifies that although data transmission appears synchronous, it is actually asynchronous due to the re-execution of the Python script. Additionally, it mentions the use of `Streamlit.setFrameHeight()` to control component height.
+---
+
+`// Set value in frontend: Streamlit.setComponentValue(3.14); `
+`# Access value in Python: result = my_component(greeting="Hello", name="Streamlit") st.write("result = ", result) # result = 3.14 `
+When you call `Streamlit.setComponentValue(new_value)`, that new value is sent to Streamlit, which then _re-executes the Python script from top to bottom_. When the script is re-executed, the call to `my_component(...)` will return the new value.
+From a _code flow_ perspective, it appears that you're transmitting data synchronously with the frontend: Python sends the arguments to JavaScript, and JavaScript returns a value to Python, all in a single function call! But in reality this is all happening _asynchronously_ , and it's the re-execution of the Python script that achieves the sleight of hand.
+  * Use `Streamlit.setFrameHeight()` to control the height of your component. By default, the React template calls this automatically (see `StreamlitComponentBase.componentDidUpdate()`). You can override this behavior if you need more control.
+  * There's a tiny bit of magic in the last line of the file: `export default withStreamlitConnection(MyComponent)` - this does some handshaking with Streamlit, and sets up the mechanisms for bi-directional data communication.
+
+
+#### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#typescript-only)TypeScript-only
+The TypeScript-only template is in `template-reactless/my_component/frontend/src/MyComponent.tsx`.
+This template has much more code than its React sibling, in that all the mechanics of handshaking, setting up event listeners, and updating the component's frame height are done manually. The React version of the template handles most of these details automatically.
+  * Towards the bottom of the source file, the template calls `Streamlit.setComponentReady()` to tell Streamlit it's ready to start receiving data. (You'll generally want to do this after creating and loading everything that the Component relies on.)
+  * It subscribes to `Streamlit.RENDER_EVENT` to be notified of when to redraw. (This event won't be fired until `setComponentReady` is called)
+  * Within its `onRender` event handler, it accesses the arguments passed in the Python script via `event.detail.args`
+  * It sends data back to the Python script in the same way that the React template does—clicking on the "Click Me!" button calls `Streamlit.setComponentValue()`
+  * It informs Streamlit when its height may have changed via `Streamlit.setFrameHeight()`
+
+
+#### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#working-with-themes)Working with Themes
+_push_pin_
+#### Note
+Custom component theme support requires streamlit-component-lib version 1.2.0 or higher.
+Along with sending an `args` object to your component, Streamlit also sends a `theme` object defining the active theme so that your component can adjust its styling in a compatible way. This object is sent in the same message as `args`, so it can be accessed via `this.props.theme` (when using the React template) or `event.detail.theme` (when using the plain TypeScript template).
+The `theme` object has the following shape:
+`{ "base": "lightORdark", "primaryColor": "someColor1", "backgroundColor": "someColor2", "secondaryBackgroundColor": "someColor3", "textColor": "someColor4", "font": "someFont" } `
+The `base` option allows you to specify a preset Streamlit theme that your custom theme inherits from. Any theme config options not defined in your theme settings have their values set to those of the base theme. Valid values for `base` are `"light"` and `"dark"`.
+Note that the theme object has fields with the same names and semantics as the options in the "theme" section of the config options printed with the command `streamlit config show`.
+When using the React template, the following CSS variables are also set automatically.
+`--base --primary-color --background-color --secondary-background-color --text-color --font `
+If you're not familiar with [CSS variables](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties), the TLDR version is that you can use them like this:
+`.mySelector { color: var(--text-color); } `
+These variables match the fields defined in the `theme` object above, and whether to use CSS variables or the theme object in your component is a matter of personal preference.
+#### [](https://docs.streamlit.io/develop/concepts/custom-components/intro#other-frontend-details)Other frontend details
+  * Because you're hosting your component from a dev server (via `npm run start`), any changes you make should be automatically reflected in the Streamlit app when you save.
+  * If you want to add more packages to your component, run `npm add` to add them from within your component's `frontend/` directory.

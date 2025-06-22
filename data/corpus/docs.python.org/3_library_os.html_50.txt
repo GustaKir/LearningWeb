@@ -1,0 +1,44 @@
+Title: Timer Configuration in Python's OS Library
+URL: https://docs.python.org/3/library/os.html
+Summary: This section explains how to configure timers in Python's OS library. It details how to enable or disable a timer using the _initial_ parameter, with specific behaviors for different values, including handling exceptions. It also covers the effects of the TFD_TIMER_ABSTIME flag and setting the timer's interval.
+---
+
+The timer is disabled by setting _initial_ to zero (`0`). If _initial_ is equal to or greater than zero, the timer is enabled. If _initial_ is less than zero, it raises an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") exception with `errno` set to [`errno.EINVAL`](https://docs.python.org/3/library/errno.html#errno.EINVAL "errno.EINVAL")
+By default the timer will fire when _initial_ seconds have elapsed. (If _initial_ is zero, timer will fire immediately.)
+However, if the [`TFD_TIMER_ABSTIME`](https://docs.python.org/3/library/os.html#os.TFD_TIMER_ABSTIME "os.TFD_TIMER_ABSTIME") flag is set, the timer will fire when the timer’s clock (set by _clockid_ in [`timerfd_create()`](https://docs.python.org/3/library/os.html#os.timerfd_create "os.timerfd_create")) reaches _initial_ seconds.
+The timer’s interval is set by the _interval_ [`float`](https://docs.python.org/3/library/functions.html#float "float"). If _interval_ is zero, the timer only fires once, on the initial expiration. If _interval_ is greater than zero, the timer fires every time _interval_ seconds have elapsed since the previous expiration. If _interval_ is less than zero, it raises [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") with `errno` set to [`errno.EINVAL`](https://docs.python.org/3/library/errno.html#errno.EINVAL "errno.EINVAL")
+If the [`TFD_TIMER_CANCEL_ON_SET`](https://docs.python.org/3/library/os.html#os.TFD_TIMER_CANCEL_ON_SET "os.TFD_TIMER_CANCEL_ON_SET") flag is set along with [`TFD_TIMER_ABSTIME`](https://docs.python.org/3/library/os.html#os.TFD_TIMER_ABSTIME "os.TFD_TIMER_ABSTIME") and the clock for this timer is [`time.CLOCK_REALTIME`](https://docs.python.org/3/library/time.html#time.CLOCK_REALTIME "time.CLOCK_REALTIME"), the timer is marked as cancelable if the real-time clock is changed discontinuously. Reading the descriptor is aborted with the error ECANCELED.
+Linux manages system clock as UTC. A daylight-savings time transition is done by changing time offset only and doesn’t cause discontinuous system clock change.
+Discontinuous system clock change will be caused by the following events:
+  * `settimeofday`
+  * `clock_settime`
+  * set the system date and time by `date` command
+
+
+Return a two-item tuple of (`next_expiration`, `interval`) from the previous timer state, before this function executed.
+See also
+_[timerfd_create(2)](https://manpages.debian.org/timerfd_create\(2\))_ , _[timerfd_settime(2)](https://manpages.debian.org/timerfd_settime\(2\))_ , _[settimeofday(2)](https://manpages.debian.org/settimeofday\(2\))_ , _[clock_settime(2)](https://manpages.debian.org/clock_settime\(2\))_ , and _[date(1)](https://manpages.debian.org/date\(1\))_.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Linux >= 2.6.27 with glibc >= 2.8
+Added in version 3.13. 
+
+os.timerfd_settime_ns(_fd_ , _/_ , _*_ , _flags =0_, _initial =0_, _interval =0_)[¶](https://docs.python.org/3/library/os.html#os.timerfd_settime_ns "Link to this definition")
+    
+Similar to [`timerfd_settime()`](https://docs.python.org/3/library/os.html#os.timerfd_settime "os.timerfd_settime"), but use time as nanoseconds. This function operates the same interval timer as [`timerfd_settime()`](https://docs.python.org/3/library/os.html#os.timerfd_settime "os.timerfd_settime").
+[Availability](https://docs.python.org/3/library/intro.html#availability): Linux >= 2.6.27 with glibc >= 2.8
+Added in version 3.13. 
+
+os.timerfd_gettime(_fd_ , _/_)[¶](https://docs.python.org/3/library/os.html#os.timerfd_gettime "Link to this definition")
+    
+Return a two-item tuple of floats (`next_expiration`, `interval`).
+`next_expiration` denotes the relative time until next the timer next fires, regardless of if the [`TFD_TIMER_ABSTIME`](https://docs.python.org/3/library/os.html#os.TFD_TIMER_ABSTIME "os.TFD_TIMER_ABSTIME") flag is set.
+`interval` denotes the timer’s interval. If zero, the timer will only fire once, after `next_expiration` seconds have elapsed.
+See also
+_[timerfd_gettime(2)](https://manpages.debian.org/timerfd_gettime\(2\))_
+[Availability](https://docs.python.org/3/library/intro.html#availability): Linux >= 2.6.27 with glibc >= 2.8
+Added in version 3.13. 
+
+os.timerfd_gettime_ns(_fd_ , _/_)[¶](https://docs.python.org/3/library/os.html#os.timerfd_gettime_ns "Link to this definition")
+    
+Similar to [`timerfd_gettime()`](https://docs.python.org/3/library/os.html#os.timerfd_gettime "os.timerfd_gettime"), but return time as nanoseconds.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Linux >= 2.6.27 with glibc >= 2.8
+Added in version 3.13.

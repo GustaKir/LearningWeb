@@ -1,0 +1,96 @@
+Title: Pickling Enums and Functional API in Python
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section explains the restrictions and methods associated with pickling enums in Python. It states that enums must be defined at the module's top level for pickling and describes how to customize pickling behavior using the `__reduce_ex__()` method. Additionally, it notes that protocol version 4 allows pickling for nested enums, while cautioning against using by-name for flags due to unpickling issues.
+---
+
+```
+
+The usual restrictions for pickling apply: picklable enums must be defined in the top level of a module, since unpickling requires them to be importable from that module.
+Note
+With pickle protocol version 4 it is possible to easily pickle enums nested in other classes.
+It is possible to modify how enum members are pickled/unpickled by defining [`__reduce_ex__()`](https://docs.python.org/3/library/pickle.html#object.__reduce_ex__ "object.__reduce_ex__") in the enumeration class. The default method is by-value, but enums with complicated values may want to use by-name:
+>>>```
+>>> importenum
+>>> classMyEnum(enum.Enum):
+...   __reduce_ex__ = enum.pickle_by_enum_name
+
+```
+
+Note
+Using by-name for flags is not recommended, as unnamed aliases will not unpickle.
+## Functional API[¶](https://docs.python.org/3/howto/enum.html#functional-api "Link to this heading")
+The [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") class is callable, providing the following functional API:
+>>>```
+>>> Animal = Enum('Animal', 'ANT BEE CAT DOG')
+>>> Animal
+<enum 'Animal'>
+>>> Animal.ANT
+<Animal.ANT: 1>
+>>> list(Animal)
+[<Animal.ANT: 1>, <Animal.BEE: 2>, <Animal.CAT: 3>, <Animal.DOG: 4>]
+
+```
+
+The semantics of this API resemble [`namedtuple`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple"). The first argument of the call to [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") is the name of the enumeration.
+The second argument is the _source_ of enumeration member names. It can be a whitespace-separated string of names, a sequence of names, a sequence of 2-tuples with key/value pairs, or a mapping (e.g. dictionary) of names to values. The last two options enable assigning arbitrary values to enumerations; the others auto-assign increasing integers starting with 1 (use the `start` parameter to specify a different starting value). A new class derived from [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") is returned. In other words, the above assignment to `Animal` is equivalent to:
+>>>```
+>>> classAnimal(Enum):
+...   ANT = 1
+...   BEE = 2
+...   CAT = 3
+...   DOG = 4
+...
+
+```
+
+The reason for defaulting to `1` as the starting number and not `0` is that `0` is `False` in a boolean sense, but by default enum members all evaluate to `True`.
+Pickling enums created with the functional API can be tricky as frame stack implementation details are used to try and figure out which module the enumeration is being created in (e.g. it will fail if you use a utility function in a separate module, and also may not work on IronPython or Jython). The solution is to specify the module name explicitly as follows:
+>>>```
+>>> Animal = Enum('Animal', 'ANT BEE CAT DOG', module=__name__)
+
+```
+
+Warning
+If `module` is not supplied, and Enum cannot determine what it is, the new Enum members will not be unpicklable; to keep errors closer to the source, pickling will be disabled.
+The new pickle protocol 4 also, in some circumstances, relies on [`__qualname__`](https://docs.python.org/3/reference/datamodel.html#type.__qualname__ "type.__qualname__") being set to the location where pickle will be able to find the class. For example, if the class was made available in class SomeData in the global scope:
+>>>```
+>>> Animal = Enum('Animal', 'ANT BEE CAT DOG', qualname='SomeData.Animal')
+
+```
+
+The complete signature is:
+```
+Enum(
+  value='NewEnumName',
+  names=<...>,
+  *,
+  module='...',
+  qualname='...',
+  type=<mixed-in class>,
+  start=1,
+  )
+
+```
+
+  * _value_ : What the new enum class will record as its name.
+  * _names_ : The enum members. This can be a whitespace- or comma-separated string (values will start at 1 unless otherwise specified):
+```
+'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
+
+```
+
+or an iterator of names:
+```
+['RED', 'GREEN', 'BLUE']
+
+```
+
+or an iterator of (name, value) pairs:
+```
+[('CYAN', 4), ('MAGENTA', 5), ('YELLOW', 6)]
+
+```
+
+or a mapping:
+```
+{'CHARTREUSE': 7, 'SEA_GREEN': 11, 'ROSEMARY': 42}

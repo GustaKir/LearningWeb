@@ -1,0 +1,103 @@
+Title: Using Path Parameters with Types in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/path-params/
+Summary: This section explains how to declare path parameters in FastAPI using Python type annotations, specifically demonstrating an example where `item_id` is defined as an integer. It highlights the benefits of type annotations, such as improved editor support and automatic data conversion, ensuring that the value is treated as an integer in function responses.
+---
+
+```
+
+## Path parameters with types[¶](https://fastapi.tiangolo.com/tutorial/path-params/#path-parameters-with-types "Permanent link")
+You can declare the type of a path parameter in the function, using standard Python type annotations:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-params/#__tabbed_2_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_item(item_id: int):
+  return {"item_id": item_id}
+
+```
+
+In this case, `item_id` is declared to be an `int`.
+Check
+This will give you editor support inside of your function, with error checks, completion, etc.
+## Data conversion[¶](https://fastapi.tiangolo.com/tutorial/path-params/#data-conversion "Permanent link")
+If you run this example and open your browser at <http://127.0.0.1:8000/items/3>, you will see a response of:
+```
+{"item_id":3}
+
+```
+
+Check
+Notice that the value your function received (and returned) is `3`, as a Python `int`, not a string `"3"`.
+So, with that type declaration, **FastAPI** gives you automatic request "parsing".
+## Data validation[¶](https://fastapi.tiangolo.com/tutorial/path-params/#data-validation "Permanent link")
+But if you go to the browser at <http://127.0.0.1:8000/items/foo>, you will see a nice HTTP error of:
+```
+{
+"detail":[
+{
+"type":"int_parsing",
+"loc":[
+"path",
+"item_id"
+],
+"msg":"Input should be a valid integer, unable to parse string as an integer",
+"input":"foo",
+"url":"https://errors.pydantic.dev/2.1/v/int_parsing"
+}
+]
+}
+
+```
+
+because the path parameter `item_id` had a value of `"foo"`, which is not an `int`.
+The same error would appear if you provided a `float` instead of an `int`, as in: <http://127.0.0.1:8000/items/4.2>
+Check
+So, with the same Python type declaration, **FastAPI** gives you data validation.
+Notice that the error also clearly states exactly the point where the validation didn't pass.
+This is incredibly helpful while developing and debugging code that interacts with your API.
+## Documentation[¶](https://fastapi.tiangolo.com/tutorial/path-params/#documentation "Permanent link")
+And when you open your browser at <http://127.0.0.1:8000/docs>, you will see an automatic, interactive, API documentation like:
+![](https://fastapi.tiangolo.com/img/tutorial/path-params/image01.png)
+Check
+Again, just with that same Python type declaration, **FastAPI** gives you automatic, interactive documentation (integrating Swagger UI).
+Notice that the path parameter is declared to be an integer.
+## Standards-based benefits, alternative documentation[¶](https://fastapi.tiangolo.com/tutorial/path-params/#standards-based-benefits-alternative-documentation "Permanent link")
+And because the generated schema is from the [OpenAPI](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.1.0.md) standard, there are many compatible tools.
+Because of this, **FastAPI** itself provides an alternative API documentation (using ReDoc), which you can access at <http://127.0.0.1:8000/redoc>:
+![](https://fastapi.tiangolo.com/img/tutorial/path-params/image02.png)
+The same way, there are many compatible tools. Including code generation tools for many languages.
+## Pydantic[¶](https://fastapi.tiangolo.com/tutorial/path-params/#pydantic "Permanent link")
+All the data validation is performed under the hood by [Pydantic](https://docs.pydantic.dev/), so you get all the benefits from it. And you know you are in good hands.
+You can use the same type declarations with `str`, `float`, `bool` and many other complex data types.
+Several of these are explored in the next chapters of the tutorial.
+## Order matters[¶](https://fastapi.tiangolo.com/tutorial/path-params/#order-matters "Permanent link")
+When creating _path operations_ , you can find situations where you have a fixed path.
+Like `/users/me`, let's say that it's to get data about the current user.
+And then you can also have a path `/users/{user_id}` to get data about a specific user by some user ID.
+Because _path operations_ are evaluated in order, you need to make sure that the path for `/users/me` is declared before the one for `/users/{user_id}`:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-params/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/users/me")
+async defread_user_me():
+  return {"user_id": "the current user"}
+@app.get("/users/{user_id}")
+async defread_user(user_id: str):
+  return {"user_id": user_id}
+
+```
+
+Otherwise, the path for `/users/{user_id}` would match also for `/users/me`, "thinking" that it's receiving a parameter `user_id` with a value of `"me"`.
+Similarly, you cannot redefine a path operation:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-params/#__tabbed_4_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/users")
+async defread_users():
+  return ["Rick", "Morty"]
+@app.get("/users")
+async defread_users2():
+  return ["Bean", "Elfo"]

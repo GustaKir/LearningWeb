@@ -1,0 +1,37 @@
+Title: ctypes.PyDLL Class Overview
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: The `ctypes.PyDLL` class allows instances to interact with shared libraries similarly to `CDLL`, but it retains the Python GIL during function calls and checks the Python error flag afterward. It is intended for direct calls to the Python C API. As of version 3.12, the `_name_` parameter can accept path-like objects.
+---
+
+_class_ ctypes.PyDLL(_name_ , _mode =DEFAULT_MODE_, _handle =None_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.PyDLL "Link to this definition")
+    
+Instances of this class behave like [`CDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.CDLL "ctypes.CDLL") instances, except that the Python GIL is _not_ released during the function call, and after the function execution the Python error flag is checked. If the error flag is set, a Python exception is raised.
+Thus, this is only useful to call Python C api functions directly.
+Changed in version 3.12: The _name_ parameter can now be a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+All these classes can be instantiated by calling them with at least one argument, the pathname of the shared library. If you have an existing handle to an already loaded shared library, it can be passed as the `handle` named parameter, otherwise the underlying platform’s `dlopen()` or `LoadLibrary()` function is used to load the library into the process, and to get a handle to it.
+The _mode_ parameter can be used to specify how the library is loaded. For details, consult the _[dlopen(3)](https://manpages.debian.org/dlopen\(3\))_ manpage. On Windows, _mode_ is ignored. On posix systems, RTLD_NOW is always added, and is not configurable.
+The _use_errno_ parameter, when set to true, enables a ctypes mechanism that allows accessing the system [`errno`](https://docs.python.org/3/library/errno.html#module-errno "errno: Standard errno system symbols.") error number in a safe way. [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") maintains a thread-local copy of the system’s [`errno`](https://docs.python.org/3/library/errno.html#module-errno "errno: Standard errno system symbols.") variable; if you call foreign functions created with `use_errno=True` then the [`errno`](https://docs.python.org/3/library/errno.html#module-errno "errno: Standard errno system symbols.") value before the function call is swapped with the ctypes private copy, the same happens immediately after the function call.
+The function [`ctypes.get_errno()`](https://docs.python.org/3/library/ctypes.html#ctypes.get_errno "ctypes.get_errno") returns the value of the ctypes private copy, and the function [`ctypes.set_errno()`](https://docs.python.org/3/library/ctypes.html#ctypes.set_errno "ctypes.set_errno") changes the ctypes private copy to a new value and returns the former value.
+The _use_last_error_ parameter, when set to true, enables the same mechanism for the Windows error code which is managed by the [`GetLastError()`](https://docs.python.org/3/library/ctypes.html#ctypes.GetLastError "ctypes.GetLastError") and `SetLastError()` Windows API functions; [`ctypes.get_last_error()`](https://docs.python.org/3/library/ctypes.html#ctypes.get_last_error "ctypes.get_last_error") and [`ctypes.set_last_error()`](https://docs.python.org/3/library/ctypes.html#ctypes.set_last_error "ctypes.set_last_error") are used to request and change the ctypes private copy of the windows error code.
+The _winmode_ parameter is used on Windows to specify how the library is loaded (since _mode_ is ignored). It takes any value that is valid for the Win32 API `LoadLibraryEx` flags parameter. When omitted, the default is to use the flags that result in the most secure DLL load, which avoids issues such as DLL hijacking. Passing the full path to the DLL is the safest way to ensure the correct library and dependencies are loaded.
+Changed in version 3.8: Added _winmode_ parameter. 
+
+ctypes.RTLD_GLOBAL
+    
+Flag to use as _mode_ parameter. On platforms where this flag is not available, it is defined as the integer zero. 
+
+ctypes.RTLD_LOCAL
+    
+Flag to use as _mode_ parameter. On platforms where this is not available, it is the same as _RTLD_GLOBAL_. 
+
+ctypes.DEFAULT_MODE
+    
+The default mode which is used to load shared libraries. On OSX 10.3, this is _RTLD_GLOBAL_ , otherwise it is the same as _RTLD_LOCAL_.
+Instances of these classes have no public methods. Functions exported by the shared library can be accessed as attributes or by index. Please note that accessing the function through an attribute caches the result and therefore accessing it repeatedly returns the same object each time. On the other hand, accessing it through an index returns a new object each time:
+>>>```
+>>> fromctypesimport CDLL
+>>> libc = CDLL("libc.so.6") # On Linux
+>>> libc.time == libc.time
+True
+>>> libc['time'] == libc['time']
+False

@@ -1,0 +1,64 @@
+Title: Using Skipping in Unittest
+URL: https://docs.python.org/3/library/unittest.html
+Summary: This section explains how to use the unittest framework to skip tests based on conditions such as library versions or platform requirements. It includes examples of decorated methods that demonstrate skipping tests explicitly and conditionally.
+---
+
+```
+classMyTestCase(unittest.TestCase):
+  @unittest.skip("demonstrating skipping")
+  deftest_nothing(self):
+    self.fail("shouldn't happen")
+  @unittest.skipIf(mylib.__version__ < (1, 3),
+           "not supported in this library version")
+  deftest_format(self):
+    # Tests that work for only a certain version of the library.
+    pass
+  @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+  deftest_windows_support(self):
+    # windows specific testing code
+    pass
+  deftest_maybe_skipped(self):
+    if not external_resource_available():
+      self.skipTest("external resource not available")
+    # test code that depends on the external resource
+    pass
+
+```
+
+This is the output of running the example above in verbose mode:
+```
+test_format (__main__.MyTestCase.test_format) ... skipped 'not supported in this library version'
+test_nothing (__main__.MyTestCase.test_nothing) ... skipped 'demonstrating skipping'
+test_maybe_skipped (__main__.MyTestCase.test_maybe_skipped) ... skipped 'external resource not available'
+test_windows_support (__main__.MyTestCase.test_windows_support) ... skipped 'requires Windows'
+----------------------------------------------------------------------
+Ran 4 tests in 0.005s
+OK (skipped=4)
+
+```
+
+Classes can be skipped just like methods:
+```
+@unittest.skip("showing class skipping")
+classMySkippedTestCase(unittest.TestCase):
+  deftest_not_run(self):
+    pass
+
+```
+
+[`TestCase.setUp()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUp "unittest.TestCase.setUp") can also skip the test. This is useful when a resource that needs to be set up is not available.
+Expected failures use the [`expectedFailure()`](https://docs.python.org/3/library/unittest.html#unittest.expectedFailure "unittest.expectedFailure") decorator.
+```
+classExpectedFailureTestCase(unittest.TestCase):
+  @unittest.expectedFailure
+  deftest_fail(self):
+    self.assertEqual(1, 0, "broken")
+
+```
+
+It’s easy to roll your own skipping decorators by making a decorator that calls [`skip()`](https://docs.python.org/3/library/unittest.html#unittest.skip "unittest.skip") on the test when it wants it to be skipped. This decorator skips the test unless the passed object has a certain attribute:
+```
+defskipUnlessHasattr(obj, attr):
+  if hasattr(obj, attr):
+    return lambda func: func
+  return unittest.skip("{!r} doesn't have {!r}".format(obj, attr))

@@ -1,0 +1,27 @@
+Title: Changes in CPython Bytecode and FrameObject
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: The `f_lasti` member of `FrameObject` now represents a wordcode offset, necessitating a multiplication by 2 for use with certain APIs. It is recommended to use `PyFrame_GetLineNumber()` for stability. Additionally, the `MAKE_FUNCTION` instruction can now accept a dictionary or a tuple of strings for function annotations.
+---
+
+```
+
+    * For `FrameObject` objects, the [`f_lasti`](https://docs.python.org/3/reference/datamodel.html#frame.f_lasti "frame.f_lasti") member now represents a wordcode offset instead of a simple offset into the bytecode string. This means that this number needs to be multiplied by 2 to be used with APIs that expect a byte offset instead (like [`PyCode_Addr2Line()`](https://docs.python.org/3/c-api/code.html#c.PyCode_Addr2Line "PyCode_Addr2Line") for example). Notice as well that the `f_lasti` member of `FrameObject` objects is not considered stable: please use [`PyFrame_GetLineNumber()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLineNumber "PyFrame_GetLineNumber") instead.
+
+
+## CPython bytecode changes[¶](https://docs.python.org/3/whatsnew/3.10.html#cpython-bytecode-changes "Link to this heading")
+  * The `MAKE_FUNCTION` instruction now accepts either a dict or a tuple of strings as the function’s annotations. (Contributed by Yurii Karabas and Inada Naoki in [bpo-42202](https://bugs.python.org/issue?@action=redirect&bpo=42202).)
+
+
+## Build Changes[¶](https://docs.python.org/3/whatsnew/3.10.html#build-changes "Link to this heading")
+  * [**PEP 644**](https://peps.python.org/pep-0644/): Python now requires OpenSSL 1.1.1 or newer. OpenSSL 1.0.2 is no longer supported. (Contributed by Christian Heimes in [bpo-43669](https://bugs.python.org/issue?@action=redirect&bpo=43669).)
+  * The C99 functions `snprintf()` and `vsnprintf()` are now required to build Python. (Contributed by Victor Stinner in [bpo-36020](https://bugs.python.org/issue?@action=redirect&bpo=36020).)
+  * [`sqlite3`](https://docs.python.org/3/library/sqlite3.html#module-sqlite3 "sqlite3: A DB-API 2.0 implementation using SQLite 3.x.") requires SQLite 3.7.15 or higher. (Contributed by Sergey Fedoseev and Erlend E. Aasland in [bpo-40744](https://bugs.python.org/issue?@action=redirect&bpo=40744) and [bpo-40810](https://bugs.python.org/issue?@action=redirect&bpo=40810).)
+  * The [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions.") module must now always be built as a built-in module. (Contributed by Victor Stinner in [bpo-42639](https://bugs.python.org/issue?@action=redirect&bpo=42639).)
+  * Add [`--disable-test-modules`](https://docs.python.org/3/using/configure.html#cmdoption-disable-test-modules) option to the `configure` script: don’t build nor install test modules. (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in [bpo-27640](https://bugs.python.org/issue?@action=redirect&bpo=27640).)
+  * Add [`--with-wheel-pkg-dir=PATH option`](https://docs.python.org/3/using/configure.html#cmdoption-with-wheel-pkg-dir) to the `./configure` script. If specified, the [`ensurepip`](https://docs.python.org/3/library/ensurepip.html#module-ensurepip "ensurepip: Bootstrapping the "pip" installer into an existing Python installation or virtual environment.") module looks for `setuptools` and `pip` wheel packages in this directory: if both are present, these wheel packages are used instead of ensurepip bundled wheel packages.
+Some Linux distribution packaging policies recommend against bundling dependencies. For example, Fedora installs wheel packages in the `/usr/share/python-wheels/` directory and don’t install the `ensurepip._bundled` package.
+(Contributed by Victor Stinner in [bpo-42856](https://bugs.python.org/issue?@action=redirect&bpo=42856).)
+  * Add a new [`configure --without-static-libpython option`](https://docs.python.org/3/using/configure.html#cmdoption-without-static-libpython) to not build the `libpythonMAJOR.MINOR.a` static library and not install the `python.o` object file.
+(Contributed by Victor Stinner in [bpo-43103](https://bugs.python.org/issue?@action=redirect&bpo=43103).)
+  * The `configure` script now uses the `pkg-config` utility, if available, to detect the location of Tcl/Tk headers and libraries. As before, those locations can be explicitly specified with the `--with-tcltk-includes` and `--with-tcltk-libs` configuration options. (Contributed by Manolis Stamatogiannakis in [bpo-42603](https://bugs.python.org/issue?@action=redirect&bpo=42603).)
+  * Add [`--with-openssl-rpath`](https://docs.python.org/3/using/configure.html#cmdoption-with-openssl-rpath) option to `configure` script. The option simplifies building Python with a custom OpenSSL installation, e.g. `./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto`. (Contributed by Christian Heimes in [bpo-43466](https://bugs.python.org/issue?@action=redirect&bpo=43466).)

@@ -1,0 +1,111 @@
+Title: Using functools.reduce() with Operator Functions
+URL: https://docs.python.org/3/howto/functional.html
+Summary: This document illustrates how to use `functools.reduce()` in combination with `operator` functions to aggregate elements. Examples include concatenating strings and multiplying numbers, demonstrating behavior with empty sequences. It also highlights the built-in `sum()` function as a common alternative for addition.
+---
+
+```
+>>> importoperator,functools
+>>> functools.reduce(operator.concat, ['A', 'BB', 'C'])
+'ABBC'
+>>> functools.reduce(operator.concat, [])
+Traceback (most recent call last):
+...
+TypeError: reduce() of empty sequence with no initial value
+>>> functools.reduce(operator.mul, [1, 2, 3], 1)
+6
+>>> functools.reduce(operator.mul, [], 1)
+1
+
+```
+
+If you use [`operator.add()`](https://docs.python.org/3/library/operator.html#operator.add "operator.add") with [`functools.reduce()`](https://docs.python.org/3/library/functools.html#functools.reduce "functools.reduce"), you’ll add up all the elements of the iterable. This case is so common that there’s a special built-in called [`sum()`](https://docs.python.org/3/library/functions.html#sum "sum") to compute it:
+>>>```
+>>> importfunctools,operator
+>>> functools.reduce(operator.add, [1, 2, 3, 4], 0)
+10
+>>> sum([1, 2, 3, 4])
+10
+>>> sum([])
+0
+
+```
+
+For many uses of [`functools.reduce()`](https://docs.python.org/3/library/functools.html#functools.reduce "functools.reduce"), though, it can be clearer to just write the obvious [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) loop:
+```
+importfunctools
+# Instead of:
+product = functools.reduce(operator.mul, [1, 2, 3], 1)
+# You can write:
+product = 1
+for i in [1, 2, 3]:
+  product *= i
+
+```
+
+A related function is [`itertools.accumulate(iterable, func=operator.add)`](https://docs.python.org/3/library/itertools.html#itertools.accumulate "itertools.accumulate"). It performs the same calculation, but instead of returning only the final result, [`accumulate()`](https://docs.python.org/3/library/itertools.html#itertools.accumulate "itertools.accumulate") returns an iterator that also yields each partial result:
+```
+itertools.accumulate([1, 2, 3, 4, 5]) =>
+ 1, 3, 6, 10, 15
+itertools.accumulate([1, 2, 3, 4, 5], operator.mul) =>
+ 1, 2, 6, 24, 120
+
+```
+
+### The operator module[¶](https://docs.python.org/3/howto/functional.html#the-operator-module "Link to this heading")
+The [`operator`](https://docs.python.org/3/library/operator.html#module-operator "operator: Functions corresponding to the standard operators.") module was mentioned earlier. It contains a set of functions corresponding to Python’s operators. These functions are often useful in functional-style code because they save you from writing trivial functions that perform a single operation.
+Some of the functions in this module are:
+  * Math operations: `add()`, `sub()`, `mul()`, `floordiv()`, `abs()`, …
+  * Logical operations: `not_()`, `truth()`.
+  * Bitwise operations: `and_()`, `or_()`, `invert()`.
+  * Comparisons: `eq()`, `ne()`, `lt()`, `le()`, `gt()`, and `ge()`.
+  * Object identity: `is_()`, `is_not()`.
+
+
+Consult the operator module’s documentation for a complete list.
+## Small functions and the lambda expression[¶](https://docs.python.org/3/howto/functional.html#small-functions-and-the-lambda-expression "Link to this heading")
+When writing functional-style programs, you’ll often need little functions that act as predicates or that combine elements in some way.
+If there’s a Python built-in or a module function that’s suitable, you don’t need to define a new function at all:
+```
+stripped_lines = [line.strip() for line in lines]
+existing_files = filter(os.path.exists, file_list)
+
+```
+
+If the function you need doesn’t exist, you need to write it. One way to write small functions is to use the [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda) expression. `lambda` takes a number of parameters and an expression combining these parameters, and creates an anonymous function that returns the value of the expression:
+```
+adder = lambda x, y: x+y
+print_assign = lambda name, value: name + '=' + str(value)
+
+```
+
+An alternative is to just use the `def` statement and define a function in the usual way:
+```
+defadder(x, y):
+  return x + y
+defprint_assign(name, value):
+  return name + '=' + str(value)
+
+```
+
+Which alternative is preferable? That’s a style question; my usual course is to avoid using `lambda`.
+One reason for my preference is that `lambda` is quite limited in the functions it can define. The result has to be computable as a single expression, which means you can’t have multiway `if... elif... else` comparisons or `try... except` statements. If you try to do too much in a `lambda` statement, you’ll end up with an overly complicated expression that’s hard to read. Quick, what’s the following code doing?
+```
+importfunctools
+total = functools.reduce(lambda a, b: (0, a[1] + b[1]), items)[1]
+
+```
+
+You can figure it out, but it takes time to disentangle the expression to figure out what’s going on. Using a short nested `def` statements makes things a little bit better:
+```
+importfunctools
+defcombine(a, b):
+  return 0, a[1] + b[1]
+total = functools.reduce(combine, items)[1]
+
+```
+
+But it would be best of all if I had simply used a `for` loop:
+```
+total = 0
+for a, b in items:
+  total += b

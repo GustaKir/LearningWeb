@@ -1,0 +1,160 @@
+Title: Using Flag Enum in Python for Multiple Selections
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section introduces the `Flag` enum in Python, designed to handle multiple selections of values. The `Weekday` class inherits from `Flag`, with enum values set as powers of 2 to allow for combination of days. This enables users to represent chore schedules without resorting to lists, maintaining the ability to select single or multiple days.
+---
+
+```
+
+Of course, if you’re reading this on some other day, you’ll see that day instead.
+This `Weekday` enum is great if our variable only needs one day, but what if we need several? Maybe we’re writing a function to plot chores during a week, and don’t want to use a [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") – we could use a different type of [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum"):
+>>>```
+>>> fromenumimport Flag
+>>> classWeekday(Flag):
+...   MONDAY = 1
+...   TUESDAY = 2
+...   WEDNESDAY = 4
+...   THURSDAY = 8
+...   FRIDAY = 16
+...   SATURDAY = 32
+...   SUNDAY = 64
+
+```
+
+We’ve changed two things: we’re inherited from [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag"), and the values are all powers of 2.
+Just like the original `Weekday` enum above, we can have a single selection:
+>>>```
+>>> first_week_day = Weekday.MONDAY
+>>> first_week_day
+<Weekday.MONDAY: 1>
+
+```
+
+But [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") also allows us to combine several members into a single variable:
+>>>```
+>>> weekend = Weekday.SATURDAY | Weekday.SUNDAY
+>>> weekend
+<Weekday.SATURDAY|SUNDAY: 96>
+
+```
+
+You can even iterate over a [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") variable:
+>>>```
+>>> for day in weekend:
+...   print(day)
+Weekday.SATURDAY
+Weekday.SUNDAY
+
+```
+
+Okay, let’s get some chores set up:
+>>>```
+>>> chores_for_ethan = {
+...   'feed the cat': Weekday.MONDAY | Weekday.WEDNESDAY | Weekday.FRIDAY,
+...   'do the dishes': Weekday.TUESDAY | Weekday.THURSDAY,
+...   'answer SO questions': Weekday.SATURDAY,
+...   }
+
+```
+
+And a function to display the chores for a given day:
+>>>```
+>>> defshow_chores(chores, day):
+...   for chore, days in chores.items():
+...     if day in days:
+...       print(chore)
+...
+>>> show_chores(chores_for_ethan, Weekday.SATURDAY)
+answer SO questions
+
+```
+
+In cases where the actual values of the members do not matter, you can save yourself some work and use [`auto()`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") for the values:
+>>>```
+>>> fromenumimport auto
+>>> classWeekday(Flag):
+...   MONDAY = auto()
+...   TUESDAY = auto()
+...   WEDNESDAY = auto()
+...   THURSDAY = auto()
+...   FRIDAY = auto()
+...   SATURDAY = auto()
+...   SUNDAY = auto()
+...   WEEKEND = SATURDAY | SUNDAY
+
+```
+
+## Programmatic access to enumeration members and their attributes[¶](https://docs.python.org/3/howto/enum.html#programmatic-access-to-enumeration-members-and-their-attributes "Link to this heading")
+Sometimes it’s useful to access members in enumerations programmatically (i.e. situations where `Color.RED` won’t do because the exact color is not known at program-writing time). `Enum` allows such access:
+>>>```
+>>> Color(1)
+<Color.RED: 1>
+>>> Color(3)
+<Color.BLUE: 3>
+
+```
+
+If you want to access enum members by _name_ , use item access:
+>>>```
+>>> Color['RED']
+<Color.RED: 1>
+>>> Color['GREEN']
+<Color.GREEN: 2>
+
+```
+
+If you have an enum member and need its `name` or `value`:
+>>>```
+>>> member = Color.RED
+>>> member.name
+'RED'
+>>> member.value
+1
+
+```
+
+## Duplicating enum members and values[¶](https://docs.python.org/3/howto/enum.html#duplicating-enum-members-and-values "Link to this heading")
+Having two enum members with the same name is invalid:
+>>>```
+>>> classShape(Enum):
+...   SQUARE = 2
+...   SQUARE = 3
+...
+Traceback (most recent call last):
+...
+TypeError: 'SQUARE' already defined as 2
+
+```
+
+However, an enum member can have other names associated with it. Given two entries `A` and `B` with the same value (and `A` defined first), `B` is an alias for the member `A`. By-value lookup of the value of `A` will return the member `A`. By-name lookup of `A` will return the member `A`. By-name lookup of `B` will also return the member `A`:
+>>>```
+>>> classShape(Enum):
+...   SQUARE = 2
+...   DIAMOND = 1
+...   CIRCLE = 3
+...   ALIAS_FOR_SQUARE = 2
+...
+>>> Shape.SQUARE
+<Shape.SQUARE: 2>
+>>> Shape.ALIAS_FOR_SQUARE
+<Shape.SQUARE: 2>
+>>> Shape(2)
+<Shape.SQUARE: 2>
+
+```
+
+Note
+Attempting to create a member with the same name as an already defined attribute (another member, a method, etc.) or attempting to create an attribute with the same name as a member is not allowed.
+## Ensuring unique enumeration values[¶](https://docs.python.org/3/howto/enum.html#ensuring-unique-enumeration-values "Link to this heading")
+By default, enumerations allow multiple names as aliases for the same value. When this behavior isn’t desired, you can use the [`unique()`](https://docs.python.org/3/library/enum.html#enum.unique "enum.unique") decorator:
+>>>```
+>>> fromenumimport Enum, unique
+>>> @unique
+... classMistake(Enum):
+...   ONE = 1
+...   TWO = 2
+...   THREE = 3
+...   FOUR = 3
+...
+Traceback (most recent call last):
+...
+ValueError: duplicate values found in <enum 'Mistake'>: FOUR -> THREE

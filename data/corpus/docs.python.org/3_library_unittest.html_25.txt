@@ -1,0 +1,37 @@
+Title: unittest TestLoader.discover Method
+URL: https://docs.python.org/3/library/unittest.html
+Summary: The discover method finds all test modules in a specified start directory, recursively loading those that match a given pattern. It returns a TestSuite object and only includes importable test modules. If a module fails to import due to errors, it continues the process, recording errors appropriately.
+---
+
+discover(_start_dir_ , _pattern ='test*.py'_, _top_level_dir =None_)[¶](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.discover "Link to this definition")
+    
+Find all the test modules by recursing into subdirectories from the specified start directory, and return a TestSuite object containing them. Only test files that match _pattern_ will be loaded. (Using shell style pattern matching.) Only module names that are importable (i.e. are valid Python identifiers) will be loaded.
+All test modules must be importable from the top level of the project. If the start directory is not the top level directory then _top_level_dir_ must be specified separately.
+If importing a module fails, for example due to a syntax error, then this will be recorded as a single error and discovery will continue. If the import failure is due to [`SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest") being raised, it will be recorded as a skip instead of an error.
+If a package (a directory containing a file named `__init__.py`) is found, the package will be checked for a `load_tests` function. If this exists then it will be called `package.load_tests(loader, tests, pattern)`. Test discovery takes care to ensure that a package is only checked for tests once during an invocation, even if the load_tests function itself calls `loader.discover`.
+If `load_tests` exists then discovery does _not_ recurse into the package, `load_tests` is responsible for loading all tests in the package.
+The pattern is deliberately not stored as a loader attribute so that packages can continue discovery themselves.
+_top_level_dir_ is stored internally, and used as a default to any nested calls to `discover()`. That is, if a package’s `load_tests` calls `loader.discover()`, it does not need to pass this argument.
+_start_dir_ can be a dotted module name as well as a directory.
+Added in version 3.2.
+Changed in version 3.4: Modules that raise [`SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest") on import are recorded as skips, not errors.
+Changed in version 3.4: _start_dir_ can be a [namespace packages](https://docs.python.org/3/glossary.html#term-namespace-package).
+Changed in version 3.4: Paths are sorted before being imported so that execution order is the same even if the underlying file system’s ordering is not dependent on file name.
+Changed in version 3.5: Found packages are now checked for `load_tests` regardless of whether their path matches _pattern_ , because it is impossible for a package name to match the default pattern.
+Changed in version 3.11: _start_dir_ can not be a [namespace packages](https://docs.python.org/3/glossary.html#term-namespace-package). It has been broken since Python 3.7 and Python 3.11 officially remove it.
+Changed in version 3.13: _top_level_dir_ is only stored for the duration of _discover_ call.
+The following attributes of a [`TestLoader`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader "unittest.TestLoader") can be configured either by subclassing or assignment on an instance: 
+
+testMethodPrefix[¶](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.testMethodPrefix "Link to this definition")
+    
+String giving the prefix of method names which will be interpreted as test methods. The default value is `'test'`.
+This affects [`getTestCaseNames()`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.getTestCaseNames "unittest.TestLoader.getTestCaseNames") and all the `loadTestsFrom*` methods. 
+
+sortTestMethodsUsing[¶](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.sortTestMethodsUsing "Link to this definition")
+    
+Function to be used to compare method names when sorting them in [`getTestCaseNames()`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.getTestCaseNames "unittest.TestLoader.getTestCaseNames") and all the `loadTestsFrom*` methods. 
+
+suiteClass[¶](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.suiteClass "Link to this definition")
+    
+Callable object that constructs a test suite from a list of tests. No methods on the resulting object are needed. The default value is the [`TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite") class.
+This affects all the `loadTestsFrom*` methods.

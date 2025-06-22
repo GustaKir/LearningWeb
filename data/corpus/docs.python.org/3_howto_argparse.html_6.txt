@@ -1,0 +1,73 @@
+Title: Translating argparse Output
+URL: https://docs.python.org/3/howto/argparse.html
+Summary: The argparse module's output, including help text and error messages, can be translated using the gettext module, enabling easy localization of messages in applications that use argparse.
+---
+
+```
+$ pythonprog.py--help
+usage: prog.py [-h] [-v | -q] x y
+calculate X to the power of Y
+positional arguments:
+ x       the base
+ y       the exponent
+options:
+ -h, --help   show this help message and exit
+ -v, --verbose
+ -q, --quiet
+
+```
+
+## How to translate the argparse output[¶](https://docs.python.org/3/howto/argparse.html#how-to-translate-the-argparse-output "Link to this heading")
+The output of the [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") module such as its help text and error messages are all made translatable using the [`gettext`](https://docs.python.org/3/library/gettext.html#module-gettext "gettext: Multilingual internationalization services.") module. This allows applications to easily localize messages produced by [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library."). See also [Internationalizing your programs and modules](https://docs.python.org/3/library/gettext.html#i18n-howto).
+For instance, in this [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") output:
+```
+$ pythonprog.py--help
+usage: prog.py [-h] [-v | -q] x y
+calculate X to the power of Y
+positional arguments:
+ x       the base
+ y       the exponent
+options:
+ -h, --help   show this help message and exit
+ -v, --verbose
+ -q, --quiet
+
+```
+
+The strings `usage:`, `positional arguments:`, `options:` and `show this help message and exit` are all translatable.
+In order to translate these strings, they must first be extracted into a `.po` file. For example, using [Babel](https://babel.pocoo.org/), run this command:
+```
+$ pybabelextract-omessages.po/usr/lib/python3.12/argparse.py
+
+```
+
+This command will extract all translatable strings from the [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") module and output them into a file named `messages.po`. This command assumes that your Python installation is in `/usr/lib`.
+You can find out the location of the [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") module on your system using this script:
+```
+importargparse
+print(argparse.__file__)
+
+```
+
+Once the messages in the `.po` file are translated and the translations are installed using [`gettext`](https://docs.python.org/3/library/gettext.html#module-gettext "gettext: Multilingual internationalization services."), [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") will be able to display the translated messages.
+To translate your own strings in the [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") output, use [`gettext`](https://docs.python.org/3/library/gettext.html#module-gettext "gettext: Multilingual internationalization services.").
+## Custom type converters[¶](https://docs.python.org/3/howto/argparse.html#custom-type-converters "Link to this heading")
+The [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") module allows you to specify custom type converters for your command-line arguments. This allows you to modify user input before it’s stored in the [`argparse.Namespace`](https://docs.python.org/3/library/argparse.html#argparse.Namespace "argparse.Namespace"). This can be useful when you need to pre-process the input before it is used in your program.
+When using a custom type converter, you can use any callable that takes a single string argument (the argument value) and returns the converted value. However, if you need to handle more complex scenarios, you can use a custom action class with the **action** parameter instead.
+For example, let’s say you want to handle arguments with different prefixes and process them accordingly:
+```
+importargparse
+parser = argparse.ArgumentParser(prefix_chars='-+')
+parser.add_argument('-a', metavar='<value>', action='append',
+          type=lambda x: ('-', x))
+parser.add_argument('+a', metavar='<value>', action='append',
+          type=lambda x: ('+', x))
+args = parser.parse_args()
+print(args)
+
+```
+
+Output:
+```
+$ pythonprog.py-avalue1+avalue2
+Namespace(a=[('-', 'value1'), ('+', 'value2')])

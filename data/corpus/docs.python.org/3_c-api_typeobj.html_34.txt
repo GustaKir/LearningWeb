@@ -1,0 +1,31 @@
+Title: PyTypeObject Field Descriptions
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section outlines specific fields of the PyTypeObject in the Python C API, including tp_version_tag, which is used for internal method cache indexing, and tp_finalize, an optional pointer for instance finalization functions that the interpreter calls during garbage collection.
+---
+
+unsignedint[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_version_tag[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_version_tag "Link to this definition")
+    
+Used to index into the method cache. Internal use only.
+**Inheritance:**
+This field is not inherited. 
+
+[destructor](https://docs.python.org/3/c-api/typeobj.html#c.destructor "destructor")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_finalize[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_finalize "Link to this definition")
+    
+An optional pointer to an instance finalization function. Its signature is:
+```
+voidtp_finalize(PyObject*self);
+
+```
+
+If [`tp_finalize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_finalize "PyTypeObject.tp_finalize") is set, the interpreter calls it once when finalizing an instance. It is called either from the garbage collector (if the instance is part of an isolated reference cycle) or just before the object is deallocated. Either way, it is guaranteed to be called before attempting to break reference cycles, ensuring that it finds the object in a sane state.
+[`tp_finalize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_finalize "PyTypeObject.tp_finalize") should not mutate the current exception status; therefore, a recommended way to write a non-trivial finalizer is:
+```
+staticvoid
+local_finalize(PyObject*self)
+{
+/* Save the current exception, if any. */
+PyObject*exc=PyErr_GetRaisedException();
+/* ... */
+/* Restore the saved exception. */
+PyErr_SetRaisedException(exc);
+}

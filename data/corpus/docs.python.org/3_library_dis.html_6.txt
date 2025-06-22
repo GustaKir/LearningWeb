@@ -1,0 +1,131 @@
+Title: Python Bytecode Instructions
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section provides an overview of new bytecode instructions added in Python 3.11 and 3.12. It describes general operations on the interpreter stack, including instructions like NOP for no-operation, POP_TOP for removing the top item from the stack, and END_FOR for cleaning up at the end of loops.
+---
+
+Added in version 3.11.
+The Python compiler currently generates the following bytecode instructions.
+**General instructions**
+In the following, We will refer to the interpreter stack as `STACK` and describe operations on it as if it was a Python list. The top of the stack corresponds to `STACK[-1]` in this language. 
+
+NOP[¶](https://docs.python.org/3/library/dis.html#opcode-NOP "Link to this definition")
+    
+Do nothing code. Used as a placeholder by the bytecode optimizer, and to generate line tracing events. 
+
+POP_TOP[¶](https://docs.python.org/3/library/dis.html#opcode-POP_TOP "Link to this definition")
+    
+Removes the top-of-stack item:
+```
+STACK.pop()
+
+```
+
+
+END_FOR[¶](https://docs.python.org/3/library/dis.html#opcode-END_FOR "Link to this definition")
+    
+Removes the top-of-stack item. Equivalent to `POP_TOP`. Used to clean up at the end of loops, hence the name.
+Added in version 3.12. 
+
+END_SEND[¶](https://docs.python.org/3/library/dis.html#opcode-END_SEND "Link to this definition")
+    
+Implements `del STACK[-2]`. Used to clean up when a generator exits.
+Added in version 3.12. 
+
+COPY(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-COPY "Link to this definition")
+    
+Push the i-th item to the top of the stack without removing it from its original location:
+```
+assert i > 0
+STACK.append(STACK[-i])
+
+```
+
+Added in version 3.11. 
+
+SWAP(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-SWAP "Link to this definition")
+    
+Swap the top of the stack with the i-th element:
+```
+STACK[-i], STACK[-1] = STACK[-1], STACK[-i]
+
+```
+
+Added in version 3.11. 
+
+CACHE[¶](https://docs.python.org/3/library/dis.html#opcode-CACHE "Link to this definition")
+    
+Rather than being an actual instruction, this opcode is used to mark extra space for the interpreter to cache useful data directly in the bytecode itself. It is automatically hidden by all `dis` utilities, but can be viewed with `show_caches=True`.
+Logically, this space is part of the preceding instruction. Many opcodes expect to be followed by an exact number of caches, and will instruct the interpreter to skip over them at runtime.
+Populated caches can look like arbitrary instructions, so great care should be taken when reading or modifying raw, adaptive bytecode containing quickened data.
+Added in version 3.11.
+**Unary operations**
+Unary operations take the top of the stack, apply the operation, and push the result back on the stack. 
+
+UNARY_NEGATIVE[¶](https://docs.python.org/3/library/dis.html#opcode-UNARY_NEGATIVE "Link to this definition")
+    
+Implements `STACK[-1] = -STACK[-1]`. 
+
+UNARY_NOT[¶](https://docs.python.org/3/library/dis.html#opcode-UNARY_NOT "Link to this definition")
+    
+Implements `STACK[-1] = not STACK[-1]`.
+Changed in version 3.13: This instruction now requires an exact [`bool`](https://docs.python.org/3/library/functions.html#bool "bool") operand. 
+
+UNARY_INVERT[¶](https://docs.python.org/3/library/dis.html#opcode-UNARY_INVERT "Link to this definition")
+    
+Implements `STACK[-1] = ~STACK[-1]`. 
+
+GET_ITER[¶](https://docs.python.org/3/library/dis.html#opcode-GET_ITER "Link to this definition")
+    
+Implements `STACK[-1] = iter(STACK[-1])`. 
+
+GET_YIELD_FROM_ITER[¶](https://docs.python.org/3/library/dis.html#opcode-GET_YIELD_FROM_ITER "Link to this definition")
+    
+If `STACK[-1]` is a [generator iterator](https://docs.python.org/3/glossary.html#term-generator-iterator) or [coroutine](https://docs.python.org/3/glossary.html#term-coroutine) object it is left as is. Otherwise, implements `STACK[-1] = iter(STACK[-1])`.
+Added in version 3.5. 
+
+TO_BOOL[¶](https://docs.python.org/3/library/dis.html#opcode-TO_BOOL "Link to this definition")
+    
+Implements `STACK[-1] = bool(STACK[-1])`.
+Added in version 3.13.
+**Binary and in-place operations**
+Binary operations remove the top two items from the stack (`STACK[-1]` and `STACK[-2]`). They perform the operation, then put the result back on the stack.
+In-place operations are like binary operations, but the operation is done in-place when `STACK[-2]` supports it, and the resulting `STACK[-1]` may be (but does not have to be) the original `STACK[-2]`. 
+
+BINARY_OP(_op_)[¶](https://docs.python.org/3/library/dis.html#opcode-BINARY_OP "Link to this definition")
+    
+Implements the binary and in-place operators (depending on the value of _op_):
+```
+rhs = STACK.pop()
+lhs = STACK.pop()
+STACK.append(lhs op rhs)
+
+```
+
+Added in version 3.11. 
+
+BINARY_SUBSCR[¶](https://docs.python.org/3/library/dis.html#opcode-BINARY_SUBSCR "Link to this definition")
+    
+Implements:
+```
+key = STACK.pop()
+container = STACK.pop()
+STACK.append(container[key])
+
+```
+
+
+STORE_SUBSCR[¶](https://docs.python.org/3/library/dis.html#opcode-STORE_SUBSCR "Link to this definition")
+    
+Implements:
+```
+key = STACK.pop()
+container = STACK.pop()
+value = STACK.pop()
+container[key] = value
+
+```
+
+
+DELETE_SUBSCR[¶](https://docs.python.org/3/library/dis.html#opcode-DELETE_SUBSCR "Link to this definition")
+    
+Implements:

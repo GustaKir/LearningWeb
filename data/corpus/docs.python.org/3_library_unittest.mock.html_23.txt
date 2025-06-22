@@ -1,0 +1,52 @@
+Title: Patching Descriptors and Proxy Objects
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section covers the usage of `patch` and `patch.object` in the unittest.mock library for correctly patching and restoring descriptors, such as class methods, static methods, and properties. It emphasizes the need to perform patching on the class level and mentions compatibility with certain proxy objects like the Django settings object.
+---
+
+```
+
+### Patching Descriptors and Proxy Objects[¶](https://docs.python.org/3/library/unittest.mock.html#patching-descriptors-and-proxy-objects "Link to this heading")
+Both [patch](https://docs.python.org/3/library/unittest.mock.html#patch) and [patch.object](https://docs.python.org/3/library/unittest.mock.html#patch-object) correctly patch and restore descriptors: class methods, static methods and properties. You should patch these on the _class_ rather than an instance. They also work with _some_ objects that proxy attribute access, like the [django settings object](https://web.archive.org/web/20200603181648/http://www.voidspace.org.uk/python/weblog/arch_d7_2010_12_04.shtml#e1198).
+## MagicMock and magic method support[¶](https://docs.python.org/3/library/unittest.mock.html#magicmock-and-magic-method-support "Link to this heading")
+### Mocking Magic Methods[¶](https://docs.python.org/3/library/unittest.mock.html#mocking-magic-methods "Link to this heading")
+[`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") supports mocking the Python protocol methods, also known as [“magic methods”](https://docs.python.org/3/glossary.html#term-magic-method). This allows mock objects to replace containers or other objects that implement Python protocols.
+Because magic methods are looked up differently from normal methods [[2]](https://docs.python.org/3/library/unittest.mock.html#id9), this support has been specially implemented. This means that only specific magic methods are supported. The supported list includes _almost_ all of them. If there are any missing that you need please let us know.
+You mock magic methods by setting the method you are interested in to a function or a mock instance. If you are using a function then it _must_ take `self` as the first argument [[3]](https://docs.python.org/3/library/unittest.mock.html#id10).
+>>>```
+>>> def__str__(self):
+...   return 'fooble'
+...
+>>> mock = Mock()
+>>> mock.__str__ = __str__
+>>> str(mock)
+'fooble'
+
+```
+
+>>>```
+>>> mock = Mock()
+>>> mock.__str__ = Mock()
+>>> mock.__str__.return_value = 'fooble'
+>>> str(mock)
+'fooble'
+
+```
+
+>>>```
+>>> mock = Mock()
+>>> mock.__iter__ = Mock(return_value=iter([]))
+>>> list(mock)
+[]
+
+```
+
+One use case for this is for mocking objects used as context managers in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement:
+>>>```
+>>> mock = Mock()
+>>> mock.__enter__ = Mock(return_value='foo')
+>>> mock.__exit__ = Mock(return_value=False)
+>>> with mock as m:
+...   assert m == 'foo'
+...
+>>> mock.__enter__.assert_called_with()
+>>> mock.__exit__.assert_called_with(None, None, None)

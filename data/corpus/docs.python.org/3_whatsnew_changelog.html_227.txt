@@ -1,0 +1,27 @@
+Title: Enhancements in Trace Functions and Stats Collection
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This document outlines recent updates including the introduction of `sys._stats_on()`, `sys._stats_off()`, `sys._stats_clear()`, and `sys._stats_dump()` functions for statistics gathering in Python, improvements in the tracing of instructions, and the modification of `types.GenericAlias` to not relay the `__class__` attribute.
+---
+
+Instead, each function takes the CFG and other data that it actually needs. This will make it possible to test this code directly.
+  * [gh-93841](https://github.com/python/cpython/issues/93841): When built with `-enable-pystats`, `sys._stats_on()`, `sys._stats_off()`, `sys._stats_clear()` and `sys._stats_dump()` functions have been added to enable gathering stats for parts of programs.
+  * [gh-93516](https://github.com/python/cpython/issues/93516): Store offset of first traceable instruction in code object to avoid having to recompute it for each instruction when tracing.
+  * [gh-93516](https://github.com/python/cpython/issues/93516): Lazily create a table mapping bytecode offsets to line numbers to speed up calculation of line numbers when tracing.
+  * [gh-89828](https://github.com/python/cpython/issues/89828): [`types.GenericAlias`](https://docs.python.org/3/library/types.html#types.GenericAlias "types.GenericAlias") no longer relays the `__class__` attribute. For example, `isinstance(list[int], type)` no longer returns `True`.
+  * [gh-93678](https://github.com/python/cpython/issues/93678): Refactor the compiler to reduce boilerplate and repetition.
+  * [gh-93671](https://github.com/python/cpython/issues/93671): Fix some exponential backtrace case happening with deeply nested sequence patterns in match statements. Patch by Pablo Galindo
+  * [gh-93662](https://github.com/python/cpython/issues/93662): Make sure that the end column offsets are correct in multi-line method calls. Previously, the end column could precede the column offset.
+  * [gh-93461](https://github.com/python/cpython/issues/93461): [`importlib.invalidate_caches()`](https://docs.python.org/3/library/importlib.html#importlib.invalidate_caches "importlib.invalidate_caches") now drops entries from [`sys.path_importer_cache`](https://docs.python.org/3/library/sys.html#sys.path_importer_cache "sys.path_importer_cache") with a relative path as name. This solves a caching issue when a process changes its current working directory.
+`FileFinder` no longer inserts a dot in the path, e.g. `/egg/./spam` is now `/egg/spam`.
+  * [gh-93621](https://github.com/python/cpython/issues/93621): Change order of bytecode instructions emitted for [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) and [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) to reduce the number of entries in the exception table.
+  * [gh-93533](https://github.com/python/cpython/issues/93533): Reduce the size of the inline cache for `LOAD_METHOD` by 2 bytes.
+  * [gh-93444](https://github.com/python/cpython/issues/93444): Removed redundant fields from the compiler’s basicblock struct: `b_nofallthrough`, `b_exit`, `b_return`. They can be easily calculated from the opcode of the last instruction of the block.
+  * [gh-93429](https://github.com/python/cpython/issues/93429): `LOAD_METHOD` instruction has been removed. It was merged back into `LOAD_ATTR`.
+  * [gh-93418](https://github.com/python/cpython/issues/93418): Fixed an assert where an f-string has an equal sign ‘=’ following an expression, but there’s no trailing brace. For example, f”{i=”.
+  * [gh-93382](https://github.com/python/cpython/issues/93382): Cache the result of [`PyCode_GetCode()`](https://docs.python.org/3/c-api/code.html#c.PyCode_GetCode "PyCode_GetCode") function to restore the _O_(1) lookup of the `co_code` attribute.
+  * [gh-93359](https://github.com/python/cpython/issues/93359): Ensure that custom [`ast`](https://docs.python.org/3/library/ast.html#module-ast "ast: Abstract Syntax Tree classes and manipulation.") nodes without explicit end positions can be compiled. Patch by Pablo Galindo.
+  * [gh-93356](https://github.com/python/cpython/issues/93356): Code for exception handlers is emitted at the end of the code unit’s bytecode. This avoids one jump when no exception is raised.
+  * [gh-93354](https://github.com/python/cpython/issues/93354): Use exponential backoff for specialization counters in the interpreter. Can reduce the number of failed specializations significantly and avoid slowdown for those parts of a program that are not suitable for specialization.
+  * [gh-93283](https://github.com/python/cpython/issues/93283): Improve error message for invalid syntax of conversion character in f-string expressions.
+  * [gh-93345](https://github.com/python/cpython/issues/93345): Fix a crash in substitution of a `TypeVar` in nested generic alias after `TypeVarTuple`.
+  * [gh-93223](https://github.com/python/cpython/issues/93223): When a bytecode instruction jumps to an unconditional jump instruction, the first instruction can often be optimized to target the unconditional jump’s target directly. For tracing reasons, this would previously only occur if both instructions have the same line number.

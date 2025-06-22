@@ -1,0 +1,49 @@
+Title: threading.Semaphore Class
+URL: https://docs.python.org/3/library/threading.html
+Summary: The threading.Semaphore class implements semaphore objects that manage an atomic counter representing the difference between release and acquire calls, starting from an initial value (default is 1). The acquire method blocks until it can safely decrement the counter, ensuring it does not go negative.
+---
+
+_class_ threading.Semaphore(_value =1_)[¶](https://docs.python.org/3/library/threading.html#threading.Semaphore "Link to this definition")
+    
+This class implements semaphore objects. A semaphore manages an atomic counter representing the number of [`release()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.release "threading.Semaphore.release") calls minus the number of [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.acquire "threading.Semaphore.acquire") calls, plus an initial value. The [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.acquire "threading.Semaphore.acquire") method blocks if necessary until it can return without making the counter negative. If not given, _value_ defaults to 1.
+The optional argument gives the initial _value_ for the internal counter; it defaults to `1`. If the _value_ given is less than 0, [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised.
+Changed in version 3.3: changed from a factory function to a class. 
+
+acquire(_blocking =True_, _timeout =None_)[¶](https://docs.python.org/3/library/threading.html#threading.Semaphore.acquire "Link to this definition")
+    
+Acquire a semaphore.
+When invoked without arguments:
+  * If the internal counter is larger than zero on entry, decrement it by one and return `True` immediately.
+  * If the internal counter is zero on entry, block until awoken by a call to [`release()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.release "threading.Semaphore.release"). Once awoken (and the counter is greater than 0), decrement the counter by 1 and return `True`. Exactly one thread will be awoken by each call to [`release()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.release "threading.Semaphore.release"). The order in which threads are awoken should not be relied on.
+
+
+When invoked with _blocking_ set to `False`, do not block. If a call without an argument would block, return `False` immediately; otherwise, do the same thing as when called without arguments, and return `True`.
+When invoked with a _timeout_ other than `None`, it will block for at most _timeout_ seconds. If acquire does not complete successfully in that interval, return `False`. Return `True` otherwise.
+Changed in version 3.2: The _timeout_ parameter is new. 
+
+release(_n =1_)[¶](https://docs.python.org/3/library/threading.html#threading.Semaphore.release "Link to this definition")
+    
+Release a semaphore, incrementing the internal counter by _n_. When it was zero on entry and other threads are waiting for it to become larger than zero again, wake up _n_ of those threads.
+Changed in version 3.9: Added the _n_ parameter to release multiple waiting threads at once. 
+
+_class_ threading.BoundedSemaphore(_value =1_)[¶](https://docs.python.org/3/library/threading.html#threading.BoundedSemaphore "Link to this definition")
+    
+Class implementing bounded semaphore objects. A bounded semaphore checks to make sure its current value doesn’t exceed its initial value. If it does, [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised. In most situations semaphores are used to guard resources with limited capacity. If the semaphore is released too many times it’s a sign of a bug. If not given, _value_ defaults to 1.
+Changed in version 3.3: changed from a factory function to a class.
+### [`Semaphore`](https://docs.python.org/3/library/threading.html#threading.Semaphore "threading.Semaphore") Example[¶](https://docs.python.org/3/library/threading.html#semaphore-example "Link to this heading")
+Semaphores are often used to guard resources with limited capacity, for example, a database server. In any situation where the size of the resource is fixed, you should use a bounded semaphore. Before spawning any worker threads, your main thread would initialize the semaphore:
+```
+maxconnections = 5
+# ...
+pool_sema = BoundedSemaphore(value=maxconnections)
+
+```
+
+Once spawned, worker threads call the semaphore’s acquire and release methods when they need to connect to the server:
+```
+with pool_sema:
+  conn = connectdb()
+  try:
+    # ... use connection ...
+  finally:
+    conn.close()

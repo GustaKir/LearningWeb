@@ -1,0 +1,201 @@
+Title: Handling CORS in FastAPI Middleware
+URL: https://fastapi.tiangolo.com/reference/middleware/
+Summary: This chunk of code demonstrates how to handle Cross-Origin Resource Sharing (CORS) in FastAPI middleware. It modifies the response headers based on the request origin and cookies, ensuring that the appropriate origin is set when responding based on the CORS policy.
+---
+
+```
+async defsend(self, message: Message, send: Send, request_headers: Headers) -> None:
+  if message["type"] != "http.response.start":
+    await send(message)
+    return
+  message.setdefault("headers", [])
+  headers = MutableHeaders(scope=message)
+  headers.update(self.simple_headers)
+  origin = request_headers["Origin"]
+  has_cookie = "cookie" in request_headers
+  # If request includes any cookie headers, then we must respond
+  # with the specific origin instead of '*'.
+  if self.allow_all_origins and has_cookie:
+    self.allow_explicit_origin(headers, origin)
+  # If we only allow specific origins, then we have to mirror back
+  # the Origin header in the response.
+  elif not self.allow_all_origins and self.is_allowed_origin(origin=origin):
+    self.allow_explicit_origin(headers, origin)
+  await send(message)
+
+```
+  
+---|---  
+###  allow_explicit_origin `staticmethod` [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.cors.CORSMiddleware.allow_explicit_origin "Permanent link")
+```
+allow_explicit_origin(headers, origin)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`headers` |  **TYPE:** `MutableHeaders`  
+`origin` |  **TYPE:** `str`  
+Source code in `starlette/middleware/cors.py`
+```
+169
+170
+171
+172
+```
+| ```
+@staticmethod
+defallow_explicit_origin(headers: MutableHeaders, origin: str) -> None:
+  headers["Access-Control-Allow-Origin"] = origin
+  headers.add_vary_header("Origin")
+
+```
+  
+---|---  
+It can be imported from `fastapi`:
+```
+fromfastapi.middleware.corsimport CORSMiddleware
+
+```
+
+##  fastapi.middleware.gzip.GZipMiddleware [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.gzip.GZipMiddleware "Permanent link")
+```
+GZipMiddleware(app, minimum_size=500, compresslevel=9)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`app` |  **TYPE:** `ASGIApp`  
+`minimum_size` |  **TYPE:** `int` **DEFAULT:** `500`  
+`compresslevel` |  **TYPE:** `int` **DEFAULT:** `9`  
+Source code in `starlette/middleware/gzip.py`
+```
+12
+13
+14
+15
+```
+| ```
+def__init__(self, app: ASGIApp, minimum_size: int = 500, compresslevel: int = 9) -> None:
+  self.app = app
+  self.minimum_size = minimum_size
+  self.compresslevel = compresslevel
+
+```
+  
+---|---  
+###  app `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.gzip.GZipMiddleware.app "Permanent link")
+```
+app = app
+
+```
+
+###  minimum_size `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.gzip.GZipMiddleware.minimum_size "Permanent link")
+```
+minimum_size = minimum_size
+
+```
+
+###  compresslevel `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.gzip.GZipMiddleware.compresslevel "Permanent link")
+```
+compresslevel = compresslevel
+
+```
+
+It can be imported from `fastapi`:
+```
+fromfastapi.middleware.gzipimport GZipMiddleware
+
+```
+
+##  fastapi.middleware.httpsredirect.HTTPSRedirectMiddleware [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.httpsredirect.HTTPSRedirectMiddleware "Permanent link")
+```
+HTTPSRedirectMiddleware(app)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`app` |  **TYPE:** `ASGIApp`  
+Source code in `starlette/middleware/httpsredirect.py`
+```
+7
+8
+```
+| ```
+def__init__(self, app: ASGIApp) -> None:
+  self.app = app
+
+```
+  
+---|---  
+###  app `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.httpsredirect.HTTPSRedirectMiddleware.app "Permanent link")
+```
+app = app
+
+```
+
+It can be imported from `fastapi`:
+```
+fromfastapi.middleware.httpsredirectimport HTTPSRedirectMiddleware
+
+```
+
+##  fastapi.middleware.trustedhost.TrustedHostMiddleware [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.trustedhost.TrustedHostMiddleware "Permanent link")
+```
+TrustedHostMiddleware(
+  app, allowed_hosts=None, www_redirect=True
+)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`app` |  **TYPE:** `ASGIApp`  
+`allowed_hosts` |  **TYPE:** `Sequence[str] | None` **DEFAULT:** `None`  
+`www_redirect` |  **TYPE:** `bool` **DEFAULT:** `True`  
+Source code in `starlette/middleware/trustedhost.py`
+```
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+```
+| ```
+def__init__(
+  self,
+  app: ASGIApp,
+  allowed_hosts: typing.Sequence[str] | None = None,
+  www_redirect: bool = True,
+) -> None:
+  if allowed_hosts is None:
+    allowed_hosts = ["*"]
+  for pattern in allowed_hosts:
+    assert "*" not in pattern[1:], ENFORCE_DOMAIN_WILDCARD
+    if pattern.startswith("*") and pattern != "*":
+      assert pattern.startswith("*."), ENFORCE_DOMAIN_WILDCARD
+  self.app = app
+  self.allowed_hosts = list(allowed_hosts)
+  self.allow_any = "*" in allowed_hosts
+  self.www_redirect = www_redirect
+
+```
+  
+---|---  
+###  app `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/middleware/#fastapi.middleware.trustedhost.TrustedHostMiddleware.app "Permanent link")
+```
+app = app

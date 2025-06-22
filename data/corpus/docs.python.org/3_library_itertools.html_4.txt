@@ -1,0 +1,93 @@
+Title: itertools Module - count and cycle Functions
+URL: https://docs.python.org/3/library/itertools.html
+Summary: The `itertools.count` function creates an iterator that returns evenly spaced values starting from a specified value. It can be used in combination with `map()` and `zip()` to generate sequences or to add indices. The function allows for both integer and floating-point increments. Additionally, `itertools.cycle` is mentioned as part of the section, indicating it would follow in the documentation.
+---
+
+```
+
+Added in version 3.1. 
+
+itertools.count(_start =0_, _step =1_)[¶](https://docs.python.org/3/library/itertools.html#itertools.count "Link to this definition")
+    
+Make an iterator that returns evenly spaced values beginning with _start_. Can be used with [`map()`](https://docs.python.org/3/library/functions.html#map "map") to generate consecutive data points or with [`zip()`](https://docs.python.org/3/library/functions.html#zip "zip") to add sequence numbers. Roughly equivalent to:
+```
+defcount(start=0, step=1):
+  # count(10) → 10 11 12 13 14 ...
+  # count(2.5, 0.5) → 2.5 3.0 3.5 ...
+  n = start
+  while True:
+    yield n
+    n += step
+
+```
+
+When counting with floating-point numbers, better accuracy can sometimes be achieved by substituting multiplicative code such as: `(start + step * i for i in count())`.
+Changed in version 3.1: Added _step_ argument and allowed non-integer arguments. 
+
+itertools.cycle(_iterable_)[¶](https://docs.python.org/3/library/itertools.html#itertools.cycle "Link to this definition")
+    
+Make an iterator returning elements from the _iterable_ and saving a copy of each. When the iterable is exhausted, return elements from the saved copy. Repeats indefinitely. Roughly equivalent to:
+```
+defcycle(iterable):
+  # cycle('ABCD') → A B C D A B C D A B C D ...
+  saved = []
+  for element in iterable:
+    yield element
+    saved.append(element)
+  while saved:
+    for element in saved:
+      yield element
+
+```
+
+This itertool may require significant auxiliary storage (depending on the length of the iterable). 
+
+itertools.dropwhile(_predicate_ , _iterable_)[¶](https://docs.python.org/3/library/itertools.html#itertools.dropwhile "Link to this definition")
+    
+Make an iterator that drops elements from the _iterable_ while the _predicate_ is true and afterwards returns every element. Roughly equivalent to:
+```
+defdropwhile(predicate, iterable):
+  # dropwhile(lambda x: x<5, [1,4,6,3,8]) → 6 3 8
+  iterator = iter(iterable)
+  for x in iterator:
+    if not predicate(x):
+      yield x
+      break
+  for x in iterator:
+    yield x
+
+```
+
+Note this does not produce _any_ output until the predicate first becomes false, so this itertool may have a lengthy start-up time. 
+
+itertools.filterfalse(_predicate_ , _iterable_)[¶](https://docs.python.org/3/library/itertools.html#itertools.filterfalse "Link to this definition")
+    
+Make an iterator that filters elements from the _iterable_ returning only those for which the _predicate_ returns a false value. If _predicate_ is `None`, returns the items that are false. Roughly equivalent to:
+```
+deffilterfalse(predicate, iterable):
+  # filterfalse(lambda x: x<5, [1,4,6,3,8]) → 6 8
+  if predicate is None:
+    predicate = bool
+  for x in iterable:
+    if not predicate(x):
+      yield x
+
+```
+
+
+itertools.groupby(_iterable_ , _key =None_)[¶](https://docs.python.org/3/library/itertools.html#itertools.groupby "Link to this definition")
+    
+Make an iterator that returns consecutive keys and groups from the _iterable_. The _key_ is a function computing a key value for each element. If not specified or is `None`, _key_ defaults to an identity function and returns the element unchanged. Generally, the iterable needs to already be sorted on the same key function.
+The operation of [`groupby()`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby") is similar to the `uniq` filter in Unix. It generates a break or new group every time the value of the key function changes (which is why it is usually necessary to have sorted the data using the same key function). That behavior differs from SQL’s GROUP BY which aggregates common elements regardless of their input order.
+The returned group is itself an iterator that shares the underlying iterable with [`groupby()`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby"). Because the source is shared, when the [`groupby()`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby") object is advanced, the previous group is no longer visible. So, if that data is needed later, it should be stored as a list:
+```
+groups = []
+uniquekeys = []
+data = sorted(data, key=keyfunc)
+for k, g in groupby(data, keyfunc):
+  groups.append(list(g))   # Store group iterator as a list
+  uniquekeys.append(k)
+
+```
+
+[`groupby()`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby") is roughly equivalent to:

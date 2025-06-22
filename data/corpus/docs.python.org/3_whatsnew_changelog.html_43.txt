@@ -1,0 +1,32 @@
+Title: Python Change Log - Crash Fixes
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section highlights several bug fixes in Python, including a crash when iterating over a generator expression due to changes in `gi_frame.f_locals`, fixes related to the `__str__()` method of `UnicodeError` objects with invalid values, and issues with immortal interned strings in sub-interpreters.
+---
+
+8): Fix crash when iterating over a generator expression after direct changes on `gi_frame.f_locals`. Patch by Mikhail Efimov.
+  * [gh-123378](https://github.com/python/cpython/issues/123378): Fix a crash in the [`__str__()`](https://docs.python.org/3/reference/datamodel.html#object.__str__ "object.__str__") method of [`UnicodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeError "UnicodeError") objects when the [`UnicodeError.start`](https://docs.python.org/3/library/exceptions.html#UnicodeError.start "UnicodeError.start") and [`UnicodeError.end`](https://docs.python.org/3/library/exceptions.html#UnicodeError.end "UnicodeError.end") values are invalid or out-of-range. Patch by Bénédikt Tran.
+  * [gh-116510](https://github.com/python/cpython/issues/116510): Fix a crash caused by immortal interned strings being shared between sub-interpreters that use basic single-phase init. In that case, the string can be used by an interpreter that outlives the interpreter that created and interned it. For interpreters that share obmalloc state, also share the interned dict with the main interpreter.
+  * [gh-122878](https://github.com/python/cpython/issues/122878): Use the `pager` binary, if available (e.g. on Debian and derivatives), to display REPL `help()`.
+  * [gh-124188](https://github.com/python/cpython/issues/124188): Fix reading and decoding a line from the source file witn non-UTF-8 encoding for syntax errors raised in the compiler.
+  * [gh-123930](https://github.com/python/cpython/issues/123930): Improve the error message when a script shadowing a module from the standard library causes [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") to be raised during a “from” import. Similarly, improve the error message when a script shadowing a third party module attempts to “from” import an attribute from that third party module while still initialising.
+  * [gh-122907](https://github.com/python/cpython/issues/122907): Building with `HAVE_DYNAMIC_LOADING` now works as well as it did in 3.12. Existing deficiences will be addressed separately. (See <https://github.com/python/cpython/issues/122950>.)
+  * [gh-118950](https://github.com/python/cpython/issues/118950): Fix bug where SSLProtocol.connection_lost wasn’t getting called when OSError was thrown on writing to socket.
+  * [gh-113570](https://github.com/python/cpython/issues/113570): Fixed a bug in `reprlib.repr` where it incorrectly called the repr method on shadowed Python built-in types.
+  * [gh-109746](https://github.com/python/cpython/issues/109746): If `_thread.start_new_thread()` fails to start a new thread, it deletes its state from interpreter and thus avoids its repeated cleanup on finalization.
+
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id26 "Link to this heading")
+  * [gh-126554](https://github.com/python/cpython/issues/126554): Fix error handling in [`ctypes.CDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.CDLL "ctypes.CDLL") objects which could result in a crash in rare situations.
+  * [gh-125608](https://github.com/python/cpython/issues/125608): Fix a bug where dictionary watchers (e.g., [`PyDict_Watch()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_Watch "PyDict_Watch")) on an object’s attribute dictionary ([`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__")) were not triggered when the object’s attributes were modified.
+  * [bpo-34008](https://bugs.python.org/issue?@action=redirect&bpo=34008): Added `Py_IsInitialized` to the list of APIs that are safe to call before the interpreter is initialized, and updated the embedding tests to cover it.
+
+
+### Build[¶](https://docs.python.org/3/whatsnew/changelog.html#id27 "Link to this heading")
+  * [gh-123877](https://github.com/python/cpython/issues/123877): Set `wasm32-wasip1` as the WASI target. The old `wasm32-wasi` target is deprecated so it can be used for an eventual WASI 1.0.
+  * [gh-89640](https://github.com/python/cpython/issues/89640): Hard-code float word ordering as little endian on WASM.
+  * [gh-125940](https://github.com/python/cpython/issues/125940): The Android build now supports [16 KB page sizes](https://developer.android.com/guide/practices/page-sizes).
+  * [gh-89640](https://github.com/python/cpython/issues/89640): Improve detection of float word ordering on Linux when link-time optimizations are enabled.
+  * [gh-125269](https://github.com/python/cpython/issues/125269): Fix detection of whether `-latomic` is needed when cross-compiling CPython using the configure script.
+  * [gh-121634](https://github.com/python/cpython/issues/121634): Allow for specifying the target compile triple for WASI.
+  * [gh-122578](https://github.com/python/cpython/issues/122578): Use WASI SDK 24 for testing.
+  * [gh-115382](https://github.com/python/cpython/issues/115382): Fix cross compile failures when the host and target SOABIs match.

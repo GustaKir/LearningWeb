@@ -1,0 +1,35 @@
+Title: Python 3.3 Release Notes
+URL: https://docs.python.org/3/whatsnew/3.3.html
+Summary: Python 3.3 introduces enhancements such as the ability for `abc.ABCMeta.register()` to return registered subclasses, allowing its use as a class decorator. Additionally, the `array` module now supports the longlong type with new type codes and the `base64` module accepts ASCII-only Unicode strings for decoding.
+---
+
+(Contributed by Darren Dale in [bpo-11610](https://bugs.python.org/issue?@action=redirect&bpo=11610).)
+[`abc.ABCMeta.register()`](https://docs.python.org/3/library/abc.html#abc.ABCMeta.register "abc.ABCMeta.register") now returns the registered subclass, which means it can now be used as a class decorator ([bpo-10868](https://bugs.python.org/issue?@action=redirect&bpo=10868)).
+### array[¶](https://docs.python.org/3/whatsnew/3.3.html#array "Link to this heading")
+The [`array`](https://docs.python.org/3/library/array.html#module-array "array: Space efficient arrays of uniformly typed numeric values.") module supports the longlong type using `q` and `Q` type codes.
+(Contributed by Oren Tirosh and Hirokazu Yamamoto in [bpo-1172711](https://bugs.python.org/issue?@action=redirect&bpo=1172711).)
+### base64[¶](https://docs.python.org/3/whatsnew/3.3.html#base64 "Link to this heading")
+ASCII-only Unicode strings are now accepted by the decoding functions of the [`base64`](https://docs.python.org/3/library/base64.html#module-base64 "base64: RFC 4648: Base16, Base32, Base64 Data Encodings; Base85 and Ascii85") modern interface. For example, `base64.b64decode('YWJj')` returns `b'abc'`. (Contributed by Catalin Iacob in [bpo-13641](https://bugs.python.org/issue?@action=redirect&bpo=13641).)
+### binascii[¶](https://docs.python.org/3/whatsnew/3.3.html#binascii "Link to this heading")
+In addition to the binary objects they normally accept, the `a2b_` functions now all also accept ASCII-only strings as input. (Contributed by Antoine Pitrou in [bpo-13637](https://bugs.python.org/issue?@action=redirect&bpo=13637).)
+### bz2[¶](https://docs.python.org/3/whatsnew/3.3.html#bz2 "Link to this heading")
+The [`bz2`](https://docs.python.org/3/library/bz2.html#module-bz2 "bz2: Interfaces for bzip2 compression and decompression.") module has been rewritten from scratch. In the process, several new features have been added:
+  * New [`bz2.open()`](https://docs.python.org/3/library/bz2.html#bz2.open "bz2.open") function: open a bzip2-compressed file in binary or text mode.
+  * [`bz2.BZ2File`](https://docs.python.org/3/library/bz2.html#bz2.BZ2File "bz2.BZ2File") can now read from and write to arbitrary file-like objects, by means of its constructor’s _fileobj_ argument.
+(Contributed by Nadeem Vawda in [bpo-5863](https://bugs.python.org/issue?@action=redirect&bpo=5863).)
+  * [`bz2.BZ2File`](https://docs.python.org/3/library/bz2.html#bz2.BZ2File "bz2.BZ2File") and [`bz2.decompress()`](https://docs.python.org/3/library/bz2.html#bz2.decompress "bz2.decompress") can now decompress multi-stream inputs (such as those produced by the **pbzip2** tool). [`bz2.BZ2File`](https://docs.python.org/3/library/bz2.html#bz2.BZ2File "bz2.BZ2File") can now also be used to create this type of file, using the `'a'` (append) mode.
+(Contributed by Nir Aides in [bpo-1625](https://bugs.python.org/issue?@action=redirect&bpo=1625).)
+  * [`bz2.BZ2File`](https://docs.python.org/3/library/bz2.html#bz2.BZ2File "bz2.BZ2File") now implements all of the [`io.BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") API, except for the `detach()` and `truncate()` methods.
+
+
+### codecs[¶](https://docs.python.org/3/whatsnew/3.3.html#codecs "Link to this heading")
+The [`mbcs`](https://docs.python.org/3/library/codecs.html#module-encodings.mbcs "encodings.mbcs: Windows ANSI codepage") codec has been rewritten to handle correctly `replace` and `ignore` error handlers on all Windows versions. The [`mbcs`](https://docs.python.org/3/library/codecs.html#module-encodings.mbcs "encodings.mbcs: Windows ANSI codepage") codec now supports all error handlers, instead of only `replace` to encode and `ignore` to decode.
+A new Windows-only codec has been added: `cp65001` ([bpo-13216](https://bugs.python.org/issue?@action=redirect&bpo=13216)). It is the Windows code page 65001 (Windows UTF-8, `CP_UTF8`). For example, it is used by `sys.stdout` if the console output code page is set to cp65001 (e.g., using `chcp 65001` command).
+Multibyte CJK decoders now resynchronize faster. They only ignore the first byte of an invalid byte sequence. For example, `b'\xff\n'.decode('gb2312', 'replace')` now returns a `\n` after the replacement character.
+([bpo-12016](https://bugs.python.org/issue?@action=redirect&bpo=12016))
+Incremental CJK codec encoders are no longer reset at each call to their encode() methods. For example:
+>>>```
+>>> importcodecs
+>>> encoder = codecs.getincrementalencoder('hz')('strict')
+>>> b''.join(encoder.encode(x) for x in '\u52ff\u65bd\u65bc\u4eba\u3002 Bye.')
+b'~{NpJ)l6HK!#~} Bye.'

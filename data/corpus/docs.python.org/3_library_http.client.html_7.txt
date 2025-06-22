@@ -1,0 +1,91 @@
+Title: Deprecated Methods in HTTPResponse
+URL: https://docs.python.org/3/library/http.client.html
+Summary: This section outlines methods in the HTTPResponse class that have been deprecated since version 3.9. The methods include geturl(), info(), and getcode(), which are now replaced by url, headers, and status respectively.
+---
+
+HTTPResponse.geturl()[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse.geturl "Link to this definition")
+    
+Deprecated since version 3.9: Deprecated in favor of [`url`](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse.url "http.client.HTTPResponse.url"). 
+
+HTTPResponse.info()[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse.info "Link to this definition")
+    
+Deprecated since version 3.9: Deprecated in favor of [`headers`](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse.headers "http.client.HTTPResponse.headers"). 
+
+HTTPResponse.getcode()[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse.getcode "Link to this definition")
+    
+Deprecated since version 3.9: Deprecated in favor of [`status`](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse.status "http.client.HTTPResponse.status").
+## Examples[¶](https://docs.python.org/3/library/http.client.html#examples "Link to this heading")
+Here is an example session that uses the `GET` method:
+>>>```
+>>> importhttp.client
+>>> conn = http.client.HTTPSConnection("www.python.org")
+>>> conn.request("GET", "/")
+>>> r1 = conn.getresponse()
+>>> print(r1.status, r1.reason)
+200 OK
+>>> data1 = r1.read() # This will return entire content.
+>>> # The following example demonstrates reading data in chunks.
+>>> conn.request("GET", "/")
+>>> r1 = conn.getresponse()
+>>> while chunk := r1.read(200):
+...   print(repr(chunk))
+b'<!doctype html>\n<!--[if"...
+...
+>>> # Example of an invalid request
+>>> conn = http.client.HTTPSConnection("docs.python.org")
+>>> conn.request("GET", "/parrot.spam")
+>>> r2 = conn.getresponse()
+>>> print(r2.status, r2.reason)
+404 Not Found
+>>> data2 = r2.read()
+>>> conn.close()
+
+```
+
+Here is an example session that uses the `HEAD` method. Note that the `HEAD` method never returns any data.
+>>>```
+>>> importhttp.client
+>>> conn = http.client.HTTPSConnection("www.python.org")
+>>> conn.request("HEAD", "/")
+>>> res = conn.getresponse()
+>>> print(res.status, res.reason)
+200 OK
+>>> data = res.read()
+>>> print(len(data))
+0
+>>> data == b''
+True
+
+```
+
+Here is an example session that uses the `POST` method:
+>>>```
+>>> importhttp.client,urllib.parse
+>>> params = urllib.parse.urlencode({'@number': 12524, '@type': 'issue', '@action': 'show'})
+>>> headers = {"Content-type": "application/x-www-form-urlencoded",
+...       "Accept": "text/plain"}
+>>> conn = http.client.HTTPConnection("bugs.python.org")
+>>> conn.request("POST", "", params, headers)
+>>> response = conn.getresponse()
+>>> print(response.status, response.reason)
+302 Found
+>>> data = response.read()
+>>> data
+b'Redirecting to <a href="https://bugs.python.org/issue12524">https://bugs.python.org/issue12524</a>'
+>>> conn.close()
+
+```
+
+Client side HTTP `PUT` requests are very similar to `POST` requests. The difference lies only on the server side where HTTP servers will allow resources to be created via `PUT` requests. It should be noted that custom HTTP methods are also handled in [`urllib.request.Request`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request "urllib.request.Request") by setting the appropriate method attribute. Here is an example session that uses the `PUT` method:
+>>>```
+>>> # This creates an HTTP request
+>>> # with the content of BODY as the enclosed representation
+>>> # for the resource http://localhost:8080/file
+...
+>>> importhttp.client
+>>> BODY = "***filecontents***"
+>>> conn = http.client.HTTPConnection("localhost", 8080)
+>>> conn.request("PUT", "/file", BODY)
+>>> response = conn.getresponse()
+>>> print(response.status, response.reason)
+200, OK

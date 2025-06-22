@@ -1,0 +1,62 @@
+Title: IMAP4 Mailbox Operations
+URL: https://docs.python.org/3/library/imaplib.html
+Summary: This section covers key methods of the IMAP4 class for interacting with mailboxes in an IMAP server. It includes the selection of mailboxes with 'select', sending data with 'send', setting access control lists with 'setacl', and setting annotations with 'setannotation'. Each method is described with its parameters and behavior.
+---
+
+```
+
+
+IMAP4.select(_mailbox ='INBOX'_, _readonly =False_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.select "Link to this definition")
+    
+Select a mailbox. Returned data is the count of messages in _mailbox_ (`EXISTS` response). The default _mailbox_ is `'INBOX'`. If the _readonly_ flag is set, modifications to the mailbox are not allowed. 
+
+IMAP4.send(_data_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.send "Link to this definition")
+    
+Sends `data` to the remote server. You may override this method.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `imaplib.send` with arguments `self`, `data`. 
+
+IMAP4.setacl(_mailbox_ , _who_ , _what_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.setacl "Link to this definition")
+    
+Set an `ACL` for _mailbox_. The method is non-standard, but is supported by the `Cyrus` server. 
+
+IMAP4.setannotation(_mailbox_ , _entry_ , _attribute_[, _..._])[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.setannotation "Link to this definition")
+    
+Set `ANNOTATION`s for _mailbox_. The method is non-standard, but is supported by the `Cyrus` server. 
+
+IMAP4.setquota(_root_ , _limits_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.setquota "Link to this definition")
+    
+Set the `quota` _root_ ’s resource _limits_. This method is part of the IMAP4 QUOTA extension defined in rfc2087. 
+
+IMAP4.shutdown()[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.shutdown "Link to this definition")
+    
+Close connection established in `open`. This method is implicitly called by [`IMAP4.logout()`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.logout "imaplib.IMAP4.logout"). You may override this method. 
+
+IMAP4.socket()[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.socket "Link to this definition")
+    
+Returns socket instance used to connect to server. 
+
+IMAP4.sort(_sort_criteria_ , _charset_ , _search_criterion_[, _..._])[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.sort "Link to this definition")
+    
+The `sort` command is a variant of `search` with sorting semantics for the results. Returned data contains a space separated list of matching message numbers.
+Sort has two arguments before the _search_criterion_ argument(s); a parenthesized list of _sort_criteria_ , and the searching _charset_. Note that unlike `search`, the searching _charset_ argument is mandatory. There is also a `uid sort` command which corresponds to `sort` the way that `uid search` corresponds to `search`. The `sort` command first searches the mailbox for messages that match the given searching criteria using the charset argument for the interpretation of strings in the searching criteria. It then returns the numbers of matching messages.
+This is an `IMAP4rev1` extension command. 
+
+IMAP4.starttls(_ssl_context =None_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.starttls "Link to this definition")
+    
+Send a `STARTTLS` command. The _ssl_context_ argument is optional and should be a [`ssl.SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") object. This will enable encryption on the IMAP connection. Please read [Security considerations](https://docs.python.org/3/library/ssl.html#ssl-security) for best practices.
+Added in version 3.2.
+Changed in version 3.4: The method now supports hostname check with [`ssl.SSLContext.check_hostname`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.check_hostname "ssl.SSLContext.check_hostname") and _Server Name Indication_ (see [`ssl.HAS_SNI`](https://docs.python.org/3/library/ssl.html#ssl.HAS_SNI "ssl.HAS_SNI")). 
+
+IMAP4.status(_mailbox_ , _names_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.status "Link to this definition")
+    
+Request named status conditions for _mailbox_. 
+
+IMAP4.store(_message_set_ , _command_ , _flag_list_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.store "Link to this definition")
+    
+Alters flag dispositions for messages in mailbox. _command_ is specified by section 6.4.6 of [**RFC 2060**](https://datatracker.ietf.org/doc/html/rfc2060.html) as being one of “FLAGS”, “+FLAGS”, or “-FLAGS”, optionally with a suffix of “.SILENT”.
+For example, to set the delete flag on all messages:
+```
+typ, data = M.search(None, 'ALL')
+for num in data[0].split():
+  M.store(num, '+FLAGS', '\\Deleted')
+M.expunge()

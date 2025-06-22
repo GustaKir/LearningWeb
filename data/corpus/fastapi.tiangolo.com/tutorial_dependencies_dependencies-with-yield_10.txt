@@ -1,0 +1,49 @@
+Title: Using Context Managers in FastAPI Dependencies
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/
+Summary: This section explains how to use context managers within FastAPI dependencies using the `yield` statement. It describes the behavior of context managers when a `with` block finishes and cautions that this concept is advanced. It also mentions that users can create context managers through classes with `__enter__()` and `__exit__()` methods.
+---
+
+```
+
+Underneath, the `open("./somefile.txt")` creates an object that is called a "Context Manager".
+When the `with` block finishes, it makes sure to close the file, even if there were exceptions.
+When you create a dependency with `yield`, **FastAPI** will internally create a context manager for it, and combine it with some other related tools.
+### Using context managers in dependencies with `yield`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#using-context-managers-in-dependencies-with-yield "Permanent link")
+Warning
+This is, more or less, an "advanced" idea.
+If you are just starting with **FastAPI** you might want to skip it for now.
+In Python, you can create Context Managers by [creating a class with two methods: `__enter__()` and `__exit__()`](https://docs.python.org/3/reference/datamodel.html#context-managers).
+You can also use them inside of **FastAPI** dependencies with `yield` by using `with` or `async with` statements inside of the dependency function:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_15_1)
+```
+classMySuperContextManager:
+  def__init__(self):
+    self.db = DBSession()
+  def__enter__(self):
+    return self.db
+  def__exit__(self, exc_type, exc_value, traceback):
+    self.db.close()
+async defget_db():
+  with MySuperContextManager() as db:
+    yield db
+
+```
+
+Tip
+Another way to create a context manager is with:
+  * [`@contextlib.contextmanager`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager) or
+  * [`@contextlib.asynccontextmanager`](https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager)
+
+
+using them to decorate a function with a single `yield`.
+That's what **FastAPI** uses internally for dependencies with `yield`.
+But you don't have to use the decorators for FastAPI dependencies (and you shouldn't).
+FastAPI will do it for you internally.
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Global Dependencies  ](https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/) [ Next  Security  ](https://fastapi.tiangolo.com/tutorial/security/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")
+  *[extra steps after finishing]: sometimes also called "exit code", "cleanup code", "teardown code", "closing code", "context manager exit code", etc.

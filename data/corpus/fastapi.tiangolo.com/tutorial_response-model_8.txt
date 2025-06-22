@@ -1,0 +1,51 @@
+Title: Using Response Models in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/response-model/
+Summary: This section discusses how FastAPI utilizes Pydantic to filter data based on defined output models. It highlights the importance of the `response_model` parameter for ensuring data types match and how to handle scenarios where functions return additional data beyond the annotated type.
+---
+
+```
+
+So, **FastAPI** will take care of filtering out all the data that is not declared in the output model (using Pydantic).
+### `response_model` or Return Type[¶](https://fastapi.tiangolo.com/tutorial/response-model/#response_model-or-return-type "Permanent link")
+In this case, because the two models are different, if we annotated the function return type as `UserOut`, the editor and tools would complain that we are returning an invalid type, as those are different classes.
+That's why in this example we have to declare it in the `response_model` parameter.
+...but continue reading below to see how to overcome that.
+## Return Type and Data Filtering[¶](https://fastapi.tiangolo.com/tutorial/response-model/#return-type-and-data-filtering "Permanent link")
+Let's continue from the previous example. We wanted to **annotate the function with one type** , but we wanted to be able to return from the function something that actually includes **more data**.
+We want FastAPI to keep **filtering** the data using the response model. So that even though the function returns more data, the response will only include the fields declared in the response model.
+In the previous example, because the classes were different, we had to use the `response_model` parameter. But that also means that we don't get the support from the editor and tools checking the function return type.
+But in most of the cases where we need to do something like this, we want the model just to **filter/remove** some of the data as in this example.
+And in those cases, we can use classes and inheritance to take advantage of function **type annotations** to get better support in the editor and tools, and still get the FastAPI **data filtering**.
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_15_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classBaseUser(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: str | None = None
+classUserIn(BaseUser):
+  password: str
+@app.post("/user/")
+async defcreate_user(user: UserIn) -> BaseUser:
+  return user
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_16_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classBaseUser(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+classUserIn(BaseUser):
+  password: str
+@app.post("/user/")
+async defcreate_user(user: UserIn) -> BaseUser:
+  return user

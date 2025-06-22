@@ -1,0 +1,34 @@
+Title: Performance Improvements in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: Python 3.11 introduces a 10-15% faster interpreter startup, benefiting short-running programs. Enhancements include optimized Python frames with reduced memory allocation and a streamlined frame creation process, focusing on essential execution information.
+---
+
+```
+
+Interpreter startup is now 10-15% faster in Python 3.11. This has a big impact for short-running programs using Python.
+(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in many issues.)
+### Faster Runtime[¶](https://docs.python.org/3/whatsnew/3.11.html#faster-runtime "Link to this heading")
+#### Cheaper, lazy Python frames[¶](https://docs.python.org/3/whatsnew/3.11.html#cheaper-lazy-python-frames "Link to this heading")
+Python frames, holding execution information, are created whenever Python calls a Python function. The following are new frame optimizations:
+  * Streamlined the frame creation process.
+  * Avoided memory allocation by generously re-using frame space on the C stack.
+  * Streamlined the internal frame struct to contain only essential information. Frames previously held extra debugging and memory management information.
+
+
+Old-style [frame objects](https://docs.python.org/3/reference/datamodel.html#frame-objects) are now created only when requested by debuggers or by Python introspection functions such as [`sys._getframe()`](https://docs.python.org/3/library/sys.html#sys._getframe "sys._getframe") and [`inspect.currentframe()`](https://docs.python.org/3/library/inspect.html#inspect.currentframe "inspect.currentframe"). For most user code, no frame objects are created at all. As a result, nearly all Python functions calls have sped up significantly. We measured a 3-7% speedup in pyperformance.
+(Contributed by Mark Shannon in [bpo-44590](https://bugs.python.org/issue?@action=redirect&bpo=44590).)
+#### Inlined Python function calls[¶](https://docs.python.org/3/whatsnew/3.11.html#inlined-python-function-calls "Link to this heading")
+During a Python function call, Python will call an evaluating C function to interpret that function’s code. This effectively limits pure Python recursion to what’s safe for the C stack.
+In 3.11, when CPython detects Python code calling another Python function, it sets up a new frame, and “jumps” to the new code inside the new frame. This avoids calling the C interpreting function altogether.
+Most Python function calls now consume no C stack space, speeding them up. In simple recursive functions like fibonacci or factorial, we observed a 1.7x speedup. This also means recursive functions can recurse significantly deeper (if the user increases the recursion limit with [`sys.setrecursionlimit()`](https://docs.python.org/3/library/sys.html#sys.setrecursionlimit "sys.setrecursionlimit")). We measured a 1-3% improvement in pyperformance.
+(Contributed by Pablo Galindo and Mark Shannon in [bpo-45256](https://bugs.python.org/issue?@action=redirect&bpo=45256).)
+#### PEP 659: Specializing Adaptive Interpreter[¶](https://docs.python.org/3/whatsnew/3.11.html#pep-659-specializing-adaptive-interpreter "Link to this heading")
+[**PEP 659**](https://peps.python.org/pep-0659/) is one of the key parts of the Faster CPython project. The general idea is that while Python is a dynamic language, most code has regions where objects and types rarely change. This concept is known as _type stability_.
+At runtime, Python will try to look for common patterns and type stability in the executing code. Python will then replace the current operation with a more specialized one. This specialized operation uses fast paths available only to those use cases/types, which generally outperform their generic counterparts. This also brings in another concept called _inline caching_ , where Python caches the results of expensive operations directly in the [bytecode](https://docs.python.org/3/glossary.html#term-bytecode).
+The specializer will also combine certain common instruction pairs into one superinstruction, reducing the overhead during execution.
+Python will only specialize when it sees code that is “hot” (executed multiple times). This prevents Python from wasting time on run-once code. Python can also de-specialize when code is too dynamic or when the use changes. Specialization is attempted periodically, and specialization attempts are not too expensive, allowing specialization to adapt to new circumstances.
+(PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler. See [**PEP 659**](https://peps.python.org/pep-0659/) for more information. Implementation by Mark Shannon and Brandt Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
+Operation | Form | Specialization | Operation speedup (up to) | Contributor(s)  
+---|---|---|---|---  
+Binary operations | `x + x` `x - x` `x * x` | Binary add, multiply and subtract for common types such as [`int`](https://docs.python.org/3/library/functions.html#int "int"), [`float`](https://docs.python.org/3/library/functions.html#float "float") and [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") take custom fast paths for their underlying types. | 10% | Mark Shannon, Donghee Na, Brandt Bucher, Dennis Sweeney  
+Subscript | `a[i]` | Subscripting container types such as [`list`](https://docs.python.org/3/library/

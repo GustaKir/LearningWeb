@@ -1,0 +1,83 @@
+Title: Getting Distribution Information with importlib.metadata
+URL: https://docs.python.org/3/library/importlib.metadata.html
+Summary: The importlib.metadata module allows users to retrieve a distribution's version number, list its constituent files, and identify its distribution requirements. It also defines the PackageNotFoundError exception for cases where a queried distribution package is not installed.
+---
+
+```
+
+You can also get a [distribution’s version number](https://docs.python.org/3/library/importlib.metadata.html#version), list its [constituent files](https://docs.python.org/3/library/importlib.metadata.html#files), and get a list of the distribution’s [Distribution requirements](https://docs.python.org/3/library/importlib.metadata.html#requirements). 
+
+_exception_ importlib.metadata.PackageNotFoundError[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.PackageNotFoundError "Link to this definition")
+    
+Subclass of [`ModuleNotFoundError`](https://docs.python.org/3/library/exceptions.html#ModuleNotFoundError "ModuleNotFoundError") raised by several functions in this module when queried for a distribution package which is not installed in the current Python environment.
+## Functional API[¶](https://docs.python.org/3/library/importlib.metadata.html#functional-api "Link to this heading")
+This package provides the following functionality via its public API.
+### Entry points[¶](https://docs.python.org/3/library/importlib.metadata.html#entry-points "Link to this heading") 
+
+importlib.metadata.entry_points(_** select_params_)[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.entry_points "Link to this definition")
+    
+Returns a [`EntryPoints`](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.EntryPoints "importlib.metadata.EntryPoints") instance describing entry points for the current environment. Any given keyword parameters are passed to the `select()` method for comparison to the attributes of the individual entry point definitions.
+Note: it is not currently possible to query for entry points based on their `EntryPoint.dist` attribute (as different `Distribution` instances do not currently compare equal, even if they have the same attributes) 
+
+_class_ importlib.metadata.EntryPoints[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.EntryPoints "Link to this definition")
+    
+Details of a collection of installed entry points.
+Also provides a `.groups` attribute that reports all identified entry point groups, and a `.names` attribute that reports all identified entry point names. 
+
+_class_ importlib.metadata.EntryPoint[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.EntryPoint "Link to this definition")
+    
+Details of an installed entry point.
+Each `EntryPoint` instance has `.name`, `.group`, and `.value` attributes and a `.load()` method to resolve the value. There are also `.module`, `.attr`, and `.extras` attributes for getting the components of the `.value` attribute, and `.dist` for obtaining information regarding the distribution package that provides the entry point.
+Query all entry points:
+>>>```
+>>> eps = entry_points()
+
+```
+
+The `entry_points()` function returns a `EntryPoints` object, a collection of all `EntryPoint` objects with `names` and `groups` attributes for convenience:
+>>>```
+>>> sorted(eps.groups)
+['console_scripts', 'distutils.commands', 'distutils.setup_keywords', 'egg_info.writers', 'setuptools.installation']
+
+```
+
+`EntryPoints` has a `select()` method to select entry points matching specific properties. Select entry points in the `console_scripts` group:
+>>>```
+>>> scripts = eps.select(group='console_scripts')
+
+```
+
+Equivalently, since `entry_points()` passes keyword arguments through to select:
+>>>```
+>>> scripts = entry_points(group='console_scripts')
+
+```
+
+Pick out a specific script named “wheel” (found in the wheel project):
+>>>```
+>>> 'wheel' in scripts.names
+True
+>>> wheel = scripts['wheel']
+
+```
+
+Equivalently, query for that entry point during selection:
+>>>```
+>>> (wheel,) = entry_points(group='console_scripts', name='wheel')
+>>> (wheel,) = entry_points().select(group='console_scripts', name='wheel')
+
+```
+
+Inspect the resolved entry point:
+>>>```
+>>> wheel
+EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')
+>>> wheel.module
+'wheel.cli'
+>>> wheel.attr
+'main'
+>>> wheel.extras
+[]
+>>> main = wheel.load()
+>>> main
+<function main at 0x103528488>

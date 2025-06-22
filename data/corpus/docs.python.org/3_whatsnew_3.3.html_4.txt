@@ -1,0 +1,33 @@
+Title: PEP 393: Flexible String Representation
+URL: https://docs.python.org/3/whatsnew/3.3.html
+Summary: PEP 393 introduces a new Unicode string representation that adapts its internal format based on the maximum Unicode ordinal of the string's characters, improving space efficiency while ensuring UCS-4 access. This change is designed to be backward compatible with existing APIs and aims for a gradual transition away from legacy representations.
+---
+
+(Contributed by Stefan Krah in [bpo-10181](https://bugs.python.org/issue?@action=redirect&bpo=10181).)
+See also
+[**PEP 3118**](https://peps.python.org/pep-3118/) - Revising the Buffer Protocol
+## PEP 393: Flexible String Representation[¶](https://docs.python.org/3/whatsnew/3.3.html#pep-393-flexible-string-representation "Link to this heading")
+The Unicode string type is changed to support multiple internal representations, depending on the character with the largest Unicode ordinal (1, 2, or 4 bytes) in the represented string. This allows a space-efficient representation in common cases, but gives access to full UCS-4 on all systems. For compatibility with existing APIs, several representations may exist in parallel; over time, this compatibility should be phased out.
+On the Python side, there should be no downside to this change.
+On the C API side, [**PEP 393**](https://peps.python.org/pep-0393/) is fully backward compatible. The legacy API should remain available at least five years. Applications using the legacy API will not fully benefit of the memory reduction, or - worse - may use a bit more memory, because Python may have to maintain two versions of each string (in the legacy format and in the new efficient storage).
+### Functionality[¶](https://docs.python.org/3/whatsnew/3.3.html#functionality "Link to this heading")
+Changes introduced by [**PEP 393**](https://peps.python.org/pep-0393/) are the following:
+  * Python now always supports the full range of Unicode code points, including non-BMP ones (i.e. from `U+0000` to `U+10FFFF`). The distinction between narrow and wide builds no longer exists and Python now behaves like a wide build, even under Windows.
+  * With the death of narrow builds, the problems specific to narrow builds have also been fixed, for example:
+    * [`len()`](https://docs.python.org/3/library/functions.html#len "len") now always returns 1 for non-BMP characters, so `len('\U0010FFFF') == 1`;
+    * surrogate pairs are not recombined in string literals, so `'\uDBFF\uDFFF' != '\U0010FFFF'`;
+    * indexing or slicing non-BMP characters returns the expected value, so `'\U0010FFFF'[0]` now returns `'\U0010FFFF'` and not `'\uDBFF'`;
+    * all other functions in the standard library now correctly handle non-BMP code points.
+  * The value of [`sys.maxunicode`](https://docs.python.org/3/library/sys.html#sys.maxunicode "sys.maxunicode") is now always `1114111` (`0x10FFFF` in hexadecimal). The `PyUnicode_GetMax()` function still returns either `0xFFFF` or `0x10FFFF` for backward compatibility, and it should not be used with the new Unicode API (see [bpo-13054](https://bugs.python.org/issue?@action=redirect&bpo=13054)).
+  * The `./configure` flag `--with-wide-unicode` has been removed.
+
+
+### Performance and resource usage[¶](https://docs.python.org/3/whatsnew/3.3.html#performance-and-resource-usage "Link to this heading")
+The storage of Unicode strings now depends on the highest code point in the string:
+  * pure ASCII and Latin1 strings (`U+0000-U+00FF`) use 1 byte per code point;
+  * BMP strings (`U+0000-U+FFFF`) use 2 bytes per code point;
+  * non-BMP strings (`U+10000-U+10FFFF`) use 4 bytes per code point.
+
+
+The net effect is that for most applications, memory usage of string storage should decrease significantly - especially compared to former wide unicode builds - as, in many cases, strings will be pure ASCII even in international contexts (because many strings store non-human language data, such as XML fragments, HTTP headers, JSON-encoded data, etc.). We also hope that it will, for the same reasons, increase CPU cache efficiency on non-trivial applications. The memory usage of Python 3.3 is two to three times smaller than Python 3.2, and a little bit better than Python 2.7, on a Django benchmark (see the PEP for details).
+See also

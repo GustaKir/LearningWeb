@@ -1,0 +1,67 @@
+Title: Enhancements to __getitem__ Method for Iteration
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: __getitem__() is designed for indexing in Python objects, allowing retrieval via obj[5] for the sixth element. However, its use in for loops can be misleading, particularly in file-like objects. The incrementing index during __getitem__() calls may not support random access suitably, despite expectations.
+---
+
+```
+
+[`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") is more properly used to define an indexing operation on an object so that you can write `obj[5]` to retrieve the sixth element. It’s a bit misleading when you’re using this only to support [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) loops. Consider some file-like object that wants to be looped over; the _index_ parameter is essentially meaningless, as the class probably assumes that a series of [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") calls will be made with _index_ incrementing by one each time. In other words, the presence of the [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") method doesn’t mean that using `file[5]` to randomly access the sixth element will work, though it really should.
+In Python 2.2, iteration can be implemented separately, and [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") methods can be limited to classes that really do support random access. The basic idea of iterators is simple. A new built-in function, `iter(obj)` or `iter(C, sentinel)`, is used to get an iterator. `iter(obj)` returns an iterator for the object _obj_ , while `iter(C, sentinel)` returns an iterator that will invoke the callable object _C_ until it returns _sentinel_ to signal that the iterator is done.
+Python classes can define an `__iter__()` method, which should create and return a new iterator for the object; if the object is its own iterator, this method can just return `self`. In particular, iterators will usually be their own iterators. Extension types implemented in C can implement a [`tp_iter`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_iter "PyTypeObject.tp_iter") function in order to return an iterator, and extension types that want to behave as iterators can define a [`tp_iternext`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_iternext "PyTypeObject.tp_iternext") function.
+So, after all this, what do iterators actually do? They have one required method, [`next()`](https://docs.python.org/3/library/functions.html#next "next"), which takes no arguments and returns the next value. When there are no more values to be returned, calling [`next()`](https://docs.python.org/3/library/functions.html#next "next") should raise the [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") exception.
+>>>```
+>>> L = [1,2,3]
+>>> i = iter(L)
+>>> print i
+<iterator object at 0x8116870>
+>>> i.next()
+1
+>>> i.next()
+2
+>>> i.next()
+3
+>>> i.next()
+Traceback (most recent call last):
+ File "<stdin>", line 1, in ?
+StopIteration
+>>>
+
+```
+
+In 2.2, Python’s [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) statement no longer expects a sequence; it expects something for which [`iter()`](https://docs.python.org/3/library/functions.html#iter "iter") will return an iterator. For backward compatibility and convenience, an iterator is automatically constructed for sequences that don’t implement `__iter__()` or a [`tp_iter`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_iter "PyTypeObject.tp_iter") slot, so `for i in [1,2,3]` will still work. Wherever the Python interpreter loops over a sequence, it’s been changed to use the iterator protocol. This means you can do things like this:
+>>>```
+>>> L = [1,2,3]
+>>> i = iter(L)
+>>> a,b,c = i
+>>> a,b,c
+(1, 2, 3)
+
+```
+
+Iterator support has been added to some of Python’s basic types. Calling [`iter()`](https://docs.python.org/3/library/functions.html#iter "iter") on a dictionary will return an iterator which loops over its keys:
+>>>```
+>>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+...    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+>>> for key in m: print key, m[key]
+...
+Mar 3
+Feb 2
+Aug 8
+Sep 9
+May 5
+Jun 6
+Jul 7
+Jan 1
+Apr 4
+Nov 11
+Dec 12
+Oct 10
+
+```
+
+That’s just the default behaviour. If you want to iterate over keys, values, or key/value pairs, you can explicitly call the `iterkeys()`, `itervalues()`, or `iteritems()` methods to get an appropriate iterator. In a minor related change, the [`in`](https://docs.python.org/3/reference/expressions.html#in) operator now works on dictionaries, so `key in dict` is now equivalent to `dict.has_key(key)`.
+Files also provide an iterator, which calls the [`readline()`](https://docs.python.org/3/library/readline.html#module-readline "readline: GNU readline support for Python. \(Unix\)") method until there are no more lines in the file. This means you can now read each line of a file using code like this:
+```
+for line in file:
+  # do something for each line
+  ...

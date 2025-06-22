@@ -1,0 +1,57 @@
+Title: MultiHitLRUCache Class
+URL: https://docs.python.org/3/library/collections.html
+Summary: This class implements a Least Recently Used (LRU) cache that only caches results after a function has been requested multiple times, helping manage cache size and avoid unnecessary storage of infrequently requested data.
+---
+
+```
+classMultiHitLRUCache:
+""" LRU cache that defers caching a result until
+    it has been requested multiple times.
+    To avoid flushing the LRU cache with one-time requests,
+    we don't cache until a request has been made more than once.
+  """
+  def__init__(self, func, maxsize=128, maxrequests=4096, cache_after=1):
+    self.requests = OrderedDict()  # { uncached_key : request_count }
+    self.cache = OrderedDict()   # { cached_key : function_result }
+    self.func = func
+    self.maxrequests = maxrequests # max number of uncached requests
+    self.maxsize = maxsize     # max number of stored return values
+    self.cache_after = cache_after
+  def__call__(self, *args):
+    if args in self.cache:
+      self.cache.move_to_end(args)
+      return self.cache[args]
+    result = self.func(*args)
+    self.requests[args] = self.requests.get(args, 0) + 1
+    if self.requests[args] <= self.cache_after:
+      self.requests.move_to_end(args)
+      if len(self.requests) > self.maxrequests:
+        self.requests.popitem(last=False)
+    else:
+      self.requests.pop(args, None)
+      self.cache[args] = result
+      if len(self.cache) > self.maxsize:
+        self.cache.popitem(last=False)
+    return result
+
+```
+
+## [`UserDict`](https://docs.python.org/3/library/collections.html#collections.UserDict "collections.UserDict") objects[¶](https://docs.python.org/3/library/collections.html#userdict-objects "Link to this heading")
+The class, [`UserDict`](https://docs.python.org/3/library/collections.html#collections.UserDict "collections.UserDict") acts as a wrapper around dictionary objects. The need for this class has been partially supplanted by the ability to subclass directly from [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict"); however, this class can be easier to work with because the underlying dictionary is accessible as an attribute. 
+
+_class_ collections.UserDict([_initialdata_])[¶](https://docs.python.org/3/library/collections.html#collections.UserDict "Link to this definition")
+    
+Class that simulates a dictionary. The instance’s contents are kept in a regular dictionary, which is accessible via the [`data`](https://docs.python.org/3/library/collections.html#collections.UserDict.data "collections.UserDict.data") attribute of [`UserDict`](https://docs.python.org/3/library/collections.html#collections.UserDict "collections.UserDict") instances. If _initialdata_ is provided, [`data`](https://docs.python.org/3/library/collections.html#collections.UserDict.data "collections.UserDict.data") is initialized with its contents; note that a reference to _initialdata_ will not be kept, allowing it to be used for other purposes.
+In addition to supporting the methods and operations of mappings, [`UserDict`](https://docs.python.org/3/library/collections.html#collections.UserDict "collections.UserDict") instances provide the following attribute: 
+
+data[¶](https://docs.python.org/3/library/collections.html#collections.UserDict.data "Link to this definition")
+    
+A real dictionary used to store the contents of the [`UserDict`](https://docs.python.org/3/library/collections.html#collections.UserDict "collections.UserDict") class.
+## [`UserList`](https://docs.python.org/3/library/collections.html#collections.UserList "collections.UserList") objects[¶](https://docs.python.org/3/library/collections.html#userlist-objects "Link to this heading")
+This class acts as a wrapper around list objects. It is a useful base class for your own list-like classes which can inherit from them and override existing methods or add new ones. In this way, one can add new behaviors to lists.
+The need for this class has been partially supplanted by the ability to subclass directly from [`list`](https://docs.python.org/3/library/stdtypes.html#list "list"); however, this class can be easier to work with because the underlying list is accessible as an attribute. 
+
+_class_ collections.UserList([_list_])[¶](https://docs.python.org/3/library/collections.html#collections.UserList "Link to this definition")
+    
+Class that simulates a list. The instance’s contents are kept in a regular list, which is accessible via the [`data`](https://docs.python.org/3/library/collections.html#collections.UserList.data "collections.UserList.data") attribute of [`UserList`](https://docs.python.org/3/library/collections.html#collections.UserList "collections.UserList") instances. The instance’s contents are initially set to a copy of _list_ , defaulting to the empty list `[]`. _list_ can be any iterable, for example a real Python list or a [`UserList`](https://docs.python.org/3/library/collections.html#collections.UserList "collections.UserList") object.
+In addition to supporting the methods and operations of mutable sequences, [`UserList`](https://docs.python.org/3/library/collections.html#collections.UserList "collections.UserList") instances provide the following attribute:

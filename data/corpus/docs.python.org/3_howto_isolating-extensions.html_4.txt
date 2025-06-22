@@ -1,0 +1,32 @@
+Title: Isolating Extensions: Handling Module State and Heap Types
+URL: https://docs.python.org/3/howto/isolating-extensions.html
+Summary: This section discusses the behavior of `PyModule_GetState`, noting it can return `NULL` without setting an exception if there's no module state. It also contrasts static types, which are defined in C and shared across processes, highlighting the importance of managing their state to avoid issues. Immutable types shared between interpreters can be safe, but care must be taken with mutable objects.
+---
+
+```
+
+Note
+`PyModule_GetState` may return `NULL` without setting an exception if there is no module state, i.e. `PyModuleDef.m_size` was zero. In your own module, you’re in control of `m_size`, so this is easy to prevent.
+## Heap Types[¶](https://docs.python.org/3/howto/isolating-extensions.html#heap-types "Link to this heading")
+Traditionally, types defined in C code are _static_ ; that is, `static PyTypeObject` structures defined directly in code and initialized using `PyType_Ready()`.
+Such types are necessarily shared across the process. Sharing them between module objects requires paying attention to any state they own or access. To limit the possible issues, static types are immutable at the Python level: for example, you can’t set `str.myattribute = 123`.
+**CPython implementation detail:** Sharing truly immutable objects between interpreters is fine, as long as they don’t provide access to mutable objects. However, in CPython, every Python object has a mutable implementation detail: the reference count. Changes to the refcount are guarded by the GIL. Thus, code that shares any Python objects across interpreters implicitly depends on CPython’s current, process-wide GIL.
+Because they are immutable and process-global, static types cannot access “their” module state. If any method of such a type requires access to module state, the type must be converted to a _heap-allocated type_ , or _heap type_ for short. These correspond more closely to classes created by Python’s `class` statement.
+For new modules, using heap types by default is a good rule of thumb.
+### Changing Static Types to Heap Types[¶](https://docs.python.org/3/howto/isolating-extensions.html#changing-static-types-to-heap-types "Link to this heading")
+Static types can be converted to heap types, but note that the heap type API was not designed for “lossless” conversion from static types—that is, creating a type that works exactly like a given static type. So, when rewriting the class definition in a new API, you are likely to unintentionally change a few details (e.g. pickleability or inherited slots). Always test the details that are important to you.
+Watch out for the following two points in particular (but note that this is not a comprehensive list):
+  * Unlike static types, heap type objects are mutable by default. Use the [`Py_TPFLAGS_IMMUTABLETYPE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_IMMUTABLETYPE "Py_TPFLAGS_IMMUTABLETYPE") flag to prevent mutability.
+  * Heap types inherit [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") by default, so it may become possible to instantiate them from Python code. You can prevent this with the [`Py_TPFLAGS_DISALLOW_INSTANTIATION`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_DISALLOW_INSTANTIATION "Py_TPFLAGS_DISALLOW_INSTANTIATION") flag.
+
+
+### Defining Heap Types[¶](https://docs.python.org/3/howto/isolating-extensions.html#defining-heap-types "Link to this heading")
+Heap types can be created by filling a [`PyType_Spec`](https://docs.python.org/3/c-api/type.html#c.PyType_Spec "PyType_Spec") structure, a description or “blueprint” of a class, and calling [`PyType_FromModuleAndSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromModuleAndSpec "PyType_FromModuleAndSpec") to construct a new class object.
+Note
+Other functions, like [`PyType_FromSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromSpec "PyType_FromSpec"), can also create heap types, but [`PyType_FromModuleAndSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromModuleAndSpec "PyType_FromModuleAndSpec") associates the module with the class, allowing access to the module state from methods.
+The class should generally be stored in _both_ the module state (for safe access from C) and the module’s `__dict__` (for access from Python code).
+### Garbage-Collection Protocol[¶](https://docs.python.org/3/howto/isolating-extensions.html#garbage-collection-protocol "Link to this heading")
+Instances of heap types hold a reference to their type. This ensures that the type isn’t destroyed before all its instances are, but may result in reference cycles that need to be broken by the garbage collector.
+To avoid memory leaks, instances of heap types must implement the garbage collection protocol. That is, heap types should:
+  * Have the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag.
+  * Define a traverse function using `Py_tp_traverse`, which visits the type (e.g. using `Py_VISIT(Py_TYPE(self))`).

@@ -1,0 +1,33 @@
+Title: Reentrant Lock Objects in Python's threading Module
+URL: https://docs.python.org/3/library/threading.html
+Summary: The `threading.RLock` class implements reentrant lock objects that allow the same thread to acquire the lock multiple times without blocking. Each acquisition must be matched with a release. The `RLock` class acts as a factory function returning the most efficient implementation available on the platform. The `acquire()` method enables locking in both blocking and non-blocking modes.
+---
+
+_class_ threading.RLock[¶](https://docs.python.org/3/library/threading.html#threading.RLock "Link to this definition")
+    
+This class implements reentrant lock objects. A reentrant lock must be released by the thread that acquired it. Once a thread has acquired a reentrant lock, the same thread may acquire it again without blocking; the thread must release it once for each time it has acquired it.
+Note that `RLock` is actually a factory function which returns an instance of the most efficient version of the concrete RLock class that is supported by the platform. 
+
+acquire(_blocking =True_, _timeout =-1_)[¶](https://docs.python.org/3/library/threading.html#threading.RLock.acquire "Link to this definition")
+    
+Acquire a lock, blocking or non-blocking.
+See also 
+
+[Using RLock as a context manager](https://docs.python.org/3/library/threading.html#with-locks)
+    
+Recommended over manual `acquire()` and [`release()`](https://docs.python.org/3/library/threading.html#threading.RLock.release "threading.RLock.release") calls whenever practical.
+When invoked with the _blocking_ argument set to `True` (the default):
+>   * If no thread owns the lock, acquire the lock and return immediately.
+>   * If another thread owns the lock, block until we are able to acquire lock, or _timeout_ , if set to a positive float value.
+>   * If the same thread owns the lock, acquire the lock again, and return immediately. This is the difference between [`Lock`](https://docs.python.org/3/library/threading.html#threading.Lock "threading.Lock") and `RLock`; [`Lock`](https://docs.python.org/3/library/threading.html#threading.Lock "threading.Lock") handles this case the same as the previous, blocking until the lock can be acquired.
+> 
+
+When invoked with the _blocking_ argument set to `False`:
+>   * If no thread owns the lock, acquire the lock and return immediately.
+>   * If another thread owns the lock, return immediately.
+>   * If the same thread owns the lock, acquire the lock again and return immediately.
+> 
+
+In all cases, if the thread was able to acquire the lock, return `True`. If the thread was unable to acquire the lock (i.e. if not blocking or the timeout was reached) return `False`.
+If called multiple times, failing to call [`release()`](https://docs.python.org/3/library/threading.html#threading.RLock.release "threading.RLock.release") as many times may lead to deadlock. Consider using `RLock` as a context manager rather than calling acquire/release directly.
+Changed in version 3.2: The _timeout_ parameter is new.

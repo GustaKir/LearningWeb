@@ -1,0 +1,47 @@
+Title: shlex.quote Function
+URL: https://docs.python.org/3/library/shlex.html
+Summary: The `shlex.quote()` function returns a shell-escaped version of a string _s_, ensuring it's safe for use in a shell command line as a single token. It is designed for Unix shells and may not function correctly on non-POSIX compliant shells, potentially leading to command injection vulnerabilities. For improved security, consider using argument-passing functions that utilize lists.
+---
+
+```
+
+The returned value is shell-escaped to protect against injection vulnerabilities (see [`quote()`](https://docs.python.org/3/library/shlex.html#shlex.quote "shlex.quote")).
+Added in version 3.8. 
+
+shlex.quote(_s_)[¶](https://docs.python.org/3/library/shlex.html#shlex.quote "Link to this definition")
+    
+Return a shell-escaped version of the string _s_. The returned value is a string that can safely be used as one token in a shell command line, for cases where you cannot use a list.
+Warning
+The `shlex` module is **only designed for Unix shells**.
+The [`quote()`](https://docs.python.org/3/library/shlex.html#shlex.quote "shlex.quote") function is not guaranteed to be correct on non-POSIX compliant shells or shells from other operating systems such as Windows. Executing commands quoted by this module on such shells can open up the possibility of a command injection vulnerability.
+Consider using functions that pass command arguments with lists such as [`subprocess.run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run") with `shell=False`.
+This idiom would be unsafe:
+>>>```
+>>> filename = 'somefile; rm -rf ~'
+>>> command = 'ls -l {}'.format(filename)
+>>> print(command) # executed by a shell: boom!
+ls -l somefile; rm -rf ~
+
+```
+
+[`quote()`](https://docs.python.org/3/library/shlex.html#shlex.quote "shlex.quote") lets you plug the security hole:
+>>>```
+>>> fromshleximport quote
+>>> command = 'ls -l {}'.format(quote(filename))
+>>> print(command)
+ls -l 'somefile; rm -rf ~'
+>>> remote_command = 'ssh home {}'.format(quote(command))
+>>> print(remote_command)
+ssh home 'ls -l '"'"'somefile; rm -rf ~'"'"''
+
+```
+
+The quoting is compatible with UNIX shells and with [`split()`](https://docs.python.org/3/library/shlex.html#shlex.split "shlex.split"):
+>>>```
+>>> fromshleximport split
+>>> remote_command = split(remote_command)
+>>> remote_command
+['ssh', 'home', "ls -l 'somefile; rm -rf ~'"]
+>>> command = split(remote_command[-1])
+>>> command
+['ls', '-l', 'somefile; rm -rf ~']

@@ -1,0 +1,59 @@
+Title: Type Hints in Python 3.5
+URL: https://docs.python.org/3/whatsnew/3.5.html
+Summary: Python 3.5 introduces type hints that enhance the type system with support for unions, generic types, and an 'Any' type. While annotations are accessible at runtime, automatic type checking does not occur; developers are encouraged to utilize offline type checkers like mypy for analysis.
+---
+
+```
+
+While these annotations are available at runtime through the usual `__annotations__` attribute, _no automatic type checking happens at runtime_. Instead, it is assumed that a separate off-line type checker (e.g. [mypy](https://mypy-lang.org)) will be used for on-demand source code analysis.
+The type system supports unions, generic types, and a special type named [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") which is consistent with (i.e. assignable to and from) all types.
+See also
+  * [`typing`](https://docs.python.org/3/library/typing.html#module-typing "typing: Support for type hints \(see :pep:`484`\).") module documentation
+  * 
+
+[**PEP 484**](https://peps.python.org/pep-0484/) – Type Hints
+    
+PEP written by Guido van Rossum, Jukka Lehtosalo, and Łukasz Langa; implemented by Guido van Rossum.
+  * 
+
+[**PEP 483**](https://peps.python.org/pep-0483/) – The Theory of Type Hints
+    
+PEP written by Guido van Rossum
+
+
+### PEP 471 - os.scandir() function – a better and faster directory iterator[¶](https://docs.python.org/3/whatsnew/3.5.html#pep-471-os-scandir-function-a-better-and-faster-directory-iterator "Link to this heading")
+[**PEP 471**](https://peps.python.org/pep-0471/) adds a new directory iteration function, [`os.scandir()`](https://docs.python.org/3/library/os.html#os.scandir "os.scandir"), to the standard library. Additionally, [`os.walk()`](https://docs.python.org/3/library/os.html#os.walk "os.walk") is now implemented using `scandir`, which makes it 3 to 5 times faster on POSIX systems and 7 to 20 times faster on Windows systems. This is largely achieved by greatly reducing the number of calls to [`os.stat()`](https://docs.python.org/3/library/os.html#os.stat "os.stat") required to walk a directory tree.
+Additionally, `scandir` returns an iterator, as opposed to returning a list of file names, which improves memory efficiency when iterating over very large directories.
+The following example shows a simple use of [`os.scandir()`](https://docs.python.org/3/library/os.html#os.scandir "os.scandir") to display all the files (excluding directories) in the given _path_ that don’t start with `'.'`. The [`entry.is_file()`](https://docs.python.org/3/library/os.html#os.DirEntry.is_file "os.DirEntry.is_file") call will generally not make an additional system call:
+```
+for entry in os.scandir(path):
+  if not entry.name.startswith('.') and entry.is_file():
+    print(entry.name)
+
+```
+
+See also 
+
+[**PEP 471**](https://peps.python.org/pep-0471/) – os.scandir() function – a better and faster directory iterator
+    
+PEP written and implemented by Ben Hoyt with the help of Victor Stinner.
+### PEP 475: Retry system calls failing with EINTR[¶](https://docs.python.org/3/whatsnew/3.5.html#pep-475-retry-system-calls-failing-with-eintr "Link to this heading")
+An [`errno.EINTR`](https://docs.python.org/3/library/errno.html#errno.EINTR "errno.EINTR") error code is returned whenever a system call, that is waiting for I/O, is interrupted by a signal. Previously, Python would raise [`InterruptedError`](https://docs.python.org/3/library/exceptions.html#InterruptedError "InterruptedError") in such cases. This meant that, when writing a Python application, the developer had two choices:
+  1. Ignore the `InterruptedError`.
+  2. Handle the `InterruptedError` and attempt to restart the interrupted system call at every call site.
+
+
+The first option makes an application fail intermittently. The second option adds a large amount of boilerplate that makes the code nearly unreadable. Compare:
+```
+print("Hello World")
+
+```
+
+and:
+```
+while True:
+  try:
+    print("Hello World")
+    break
+  except InterruptedError:
+    continue

@@ -1,0 +1,43 @@
+Title: Comparison Functions in PyTypeObject
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section describes the proper implementation of comparison functions in the C API for Python objects, detailing return values for comparisons, error conditions, and constants used for rich comparisons.
+---
+
+```
+
+The first parameter is guaranteed to be an instance of the type that is defined by [`PyTypeObject`](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").
+The function should return the result of the comparison (usually `Py_True` or `Py_False`). If the comparison is undefined, it must return `Py_NotImplemented`, if another error occurred it must return `NULL` and set an exception condition.
+The following constants are defined to be used as the third argument for [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare") and for [`PyObject_RichCompare()`](https://docs.python.org/3/c-api/object.html#c.PyObject_RichCompare "PyObject_RichCompare"):
+Constant | Comparison  
+---|--- 
+
+Py_LT[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_LT "Link to this definition")
+| `<` 
+
+Py_LE[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_LE "Link to this definition")
+| `<=` 
+
+Py_EQ[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_EQ "Link to this definition")
+| `==` 
+
+Py_NE[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_NE "Link to this definition")
+| `!=` 
+
+Py_GT[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_GT "Link to this definition")
+| `>` 
+
+Py_GE[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_GE "Link to this definition")
+| `>=`  
+The following macro is defined to ease writing rich comparison functions: 
+
+Py_RETURN_RICHCOMPARE(VAL_A, VAL_B, op)[¶](https://docs.python.org/3/c-api/typeobj.html#c.Py_RETURN_RICHCOMPARE "Link to this definition")
+    
+Return `Py_True` or `Py_False` from the function, depending on the result of a comparison. VAL_A and VAL_B must be orderable by C comparison operators (for example, they may be C ints or floats). The third argument specifies the requested operation, as for [`PyObject_RichCompare()`](https://docs.python.org/3/c-api/object.html#c.PyObject_RichCompare "PyObject_RichCompare").
+The returned value is a new [strong reference](https://docs.python.org/3/glossary.html#term-strong-reference).
+On error, sets an exception and returns `NULL` from the function.
+Added in version 3.7.
+**Inheritance:**
+Group: [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash"), [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare")
+This field is inherited by subtypes together with [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash"): a subtype inherits [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare") and [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash") when the subtype’s [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare") and [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash") are both `NULL`.
+**Default:**
+[`PyBaseObject_Type`](https://docs.python.org/3/c-api/structures.html#c.PyBaseObject_Type "PyBaseObject_Type") provides a [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare") implementation, which may be inherited. However, if only [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash") is defined, not even the inherited function is used and instances of the type will not be able to participate in any comparisons.

@@ -1,0 +1,51 @@
+Title: Streamlit MSSQL Tutorial
+URL: https://docs.streamlit.io/develop/tutorials/databases/mssql
+Summary: This document outlines a tutorial for using Microsoft SQL Server with Streamlit, covering topics such as creating a database, connecting locally, inserting data, managing app secrets, and configuring requirements for deployment.
+---
+
+1. Contents
+  2. [Introduction](https://docs.streamlit.io/develop/tutorials/databases/mssql#introduction)
+  3. [Create an SQL Server database](https://docs.streamlit.io/develop/tutorials/databases/mssql#create-an-sql-server-database)
+  4. [Connect locally](https://docs.streamlit.io/develop/tutorials/databases/mssql#connect-locally)
+  5. [Create a SQL Server database](https://docs.streamlit.io/develop/tutorials/databases/mssql#create-a-sql-server-database)
+  6. [Insert some data](https://docs.streamlit.io/develop/tutorials/databases/mssql#insert-some-data)
+  7. [Add username and password to your local app secrets](https://docs.streamlit.io/develop/tutorials/databases/mssql#add-username-and-password-to-your-local-app-secrets)
+  8. [Copy your app secrets to Streamlit Community Cloud](https://docs.streamlit.io/develop/tutorials/databases/mssql#copy-your-app-secrets-to-streamlit-community-cloud)
+  9. [Add pyodbc to your requirements file](https://docs.streamlit.io/develop/tutorials/databases/mssql#add-pyodbc-to-your-requirements-file)
+  10. [Write your Streamlit app](https://docs.streamlit.io/develop/tutorials/databases/mssql#write-your-streamlit-app)
+
+
+# [](https://docs.streamlit.io/develop/tutorials/databases/mssql#connect-streamlit-to-microsoft-sql-server)Connect Streamlit to Microsoft SQL Server
+## [](https://docs.streamlit.io/develop/tutorials/databases/mssql#introduction)Introduction
+This guide explains how to securely access a **_remote_** Microsoft SQL Server database from Streamlit Community Cloud. It uses the [pyodbc](https://github.com/mkleehammer/pyodbc/wiki) library and Streamlit's [Secrets management](https://docs.streamlit.io/develop/concepts/connections/secrets-management).
+## [](https://docs.streamlit.io/develop/tutorials/databases/mssql#create-an-sql-server-database)Create an SQL Server database
+_push_pin_
+#### Note
+If you already have a remote database that you want to use, feel free to [skip to the next step](https://docs.streamlit.io/develop/tutorials/databases/mssql#add-username-and-password-to-your-local-app-secrets).
+First, follow the Microsoft documentation to install [SQL Server](https://docs.microsoft.com/en-gb/sql/sql-server/?view=sql-server-ver15) and the `sqlcmd` [Utility](https://docs.microsoft.com/en-gb/sql/tools/sqlcmd-utility?view=sql-server-ver15). They have detailed installation guides on how to:
+  * [Install SQL Server on Windows](https://docs.microsoft.com/en-gb/sql/database-engine/install-windows/install-sql-server?view=sql-server-ver15)
+  * [Install on Red Hat Enterprise Linux](https://docs.microsoft.com/en-gb/sql/linux/quickstart-install-connect-red-hat?view=sql-server-ver15)
+  * [Install on SUSE Linux Enterprise Server](https://docs.microsoft.com/en-gb/sql/linux/quickstart-install-connect-suse?view=sql-server-ver15)
+  * [Install on Ubuntu](https://docs.microsoft.com/en-gb/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-ver15)
+  * [Run on Docker](https://docs.microsoft.com/en-gb/sql/linux/quickstart-install-connect-docker?view=sql-server-ver15)
+  * [Provision a SQL VM in Azure](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/sql/provision-sql-server-linux-virtual-machine?toc=/sql/toc/toc.json)
+
+
+Once you have SQL Server installed, note down your SQL Server name, username, and password during setup.
+## [](https://docs.streamlit.io/develop/tutorials/databases/mssql#connect-locally)Connect locally
+If you are connecting locally, use `sqlcmd` to connect to your new local SQL Server instance.
+  1. In your terminal, run the following command:
+`sqlcmd -S localhost -U SA -P '<YourPassword>' `
+As you are connecting locally, the SQL Server name is `localhost`, the username is `SA`, and the password is the one you provided during the SA account setup.
+  2. You should see a **sqlcmd** command prompt `1>`, if successful.
+  3. If you run into a connection failure, review Microsoft's connection troubleshooting recommendations for your OS ([Linux](https://docs.microsoft.com/en-gb/sql/linux/sql-server-linux-troubleshooting-guide?view=sql-server-ver15#connection) & [Windows](https://docs.microsoft.com/en-gb/sql/linux/sql-server-linux-troubleshooting-guide?view=sql-server-ver15#connection)).
+
+_star_
+#### Tip
+When connecting remotely, the SQL Server name is the machine name or IP address. You might also need to open the SQL Server TCP port (default 1433) on your firewall.
+### [](https://docs.streamlit.io/develop/tutorials/databases/mssql#create-a-sql-server-database)Create a SQL Server database
+By now, you have SQL Server running and have connected to it with `sqlcmd`! 🥳 Let's put it to use by creating a database containing a table with some example values.
+  1. From the `sqlcmd` command prompt, run the following Transact-SQL command to create a test database `mydb`:
+`CREATE DATABASE mydb `
+  2. To execute the above command, type `GO` on a new line:
+`GO `

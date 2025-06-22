@@ -1,0 +1,33 @@
+Title: Memory Management and Safety in Free-Threaded Python
+URL: https://docs.python.org/3/howto/free-threading-python.html
+Summary: This section discusses increased memory usage due to immortal objects in Python, which are expected to remain in version 3.14. It highlights that frame objects should not be accessed from other threads due to potential crashes, making functions like `sys._current_frames()` unsafe in a free-threaded context.
+---
+
+Because immortal objects are never deallocated, applications that create many objects of these types may see increased memory usage. This is expected to be addressed in the 3.14 release.
+Additionally, numeric and string literals in the code as well as strings returned by [`sys.intern()`](https://docs.python.org/3/library/sys.html#sys.intern "sys.intern") are also immortalized. This behavior is expected to remain in the 3.14 free-threaded build.
+### Frame objects[¶](https://docs.python.org/3/howto/free-threading-python.html#frame-objects "Link to this heading")
+It is not safe to access [frame](https://docs.python.org/3/reference/datamodel.html#frame-objects) objects from other threads and doing so may cause your program to crash . This means that [`sys._current_frames()`](https://docs.python.org/3/library/sys.html#sys._current_frames "sys._current_frames") is generally not safe to use in a free-threaded build. Functions like [`inspect.currentframe()`](https://docs.python.org/3/library/inspect.html#inspect.currentframe "inspect.currentframe") and [`sys._getframe()`](https://docs.python.org/3/library/sys.html#sys._getframe "sys._getframe") are generally safe as long as the resulting frame object is not passed to another thread.
+### Iterators[¶](https://docs.python.org/3/howto/free-threading-python.html#iterators "Link to this heading")
+Sharing the same iterator object between multiple threads is generally not safe and threads may see duplicate or missing elements when iterating or crash the interpreter.
+### Single-threaded performance[¶](https://docs.python.org/3/howto/free-threading-python.html#single-threaded-performance "Link to this heading")
+The free-threaded build has additional overhead when executing Python code compared to the default GIL-enabled build. In 3.13, this overhead is about 40% on the [pyperformance](https://pyperformance.readthedocs.io/) suite. Programs that spend most of their time in C extensions or I/O will see less of an impact. The largest impact is because the specializing adaptive interpreter ([**PEP 659**](https://peps.python.org/pep-0659/)) is disabled in the free-threaded build. We expect to re-enable it in a thread-safe way in the 3.14 release. This overhead is expected to be reduced in upcoming Python release. We are aiming for an overhead of 10% or less on the pyperformance suite compared to the default GIL-enabled build.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Python experimental support for free threading](https://docs.python.org/3/howto/free-threading-python.html)
+    * [Installation](https://docs.python.org/3/howto/free-threading-python.html#installation)
+    * [Identifying free-threaded Python](https://docs.python.org/3/howto/free-threading-python.html#identifying-free-threaded-python)
+    * [The global interpreter lock in free-threaded Python](https://docs.python.org/3/howto/free-threading-python.html#the-global-interpreter-lock-in-free-threaded-python)
+    * [Thread safety](https://docs.python.org/3/howto/free-threading-python.html#thread-safety)
+    * [Known limitations](https://docs.python.org/3/howto/free-threading-python.html#known-limitations)
+      * [Immortalization](https://docs.python.org/3/howto/free-threading-python.html#immortalization)
+      * [Frame objects](https://docs.python.org/3/howto/free-threading-python.html#frame-objects)
+      * [Iterators](https://docs.python.org/3/howto/free-threading-python.html#iterators)
+      * [Single-threaded performance](https://docs.python.org/3/howto/free-threading-python.html#single-threaded-performance)
+
+
+#### Previous topic
+[The Python 2.3 Method Resolution Order](https://docs.python.org/3/howto/mro.html "previous chapter")
+#### Next topic
+[C API Extension Support for Free Threading](https://docs.python.org/3/howto/free-threading-extensions.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/free-threading-python.rst)

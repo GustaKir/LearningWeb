@@ -1,0 +1,65 @@
+Title: Sharing State Between Processes in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: This section discusses the importance of avoiding shared state in concurrent programming with multiple processes, but acknowledges that when necessary, shared data can be managed using the `multiprocessing` module. It highlights the options available for shared memory, specifically through `Value` and `Array` for data storage.
+---
+
+```
+
+Without using the lock output from the different processes is liable to get all mixed up.
+### Sharing state between processes[¶](https://docs.python.org/3/library/multiprocessing.html#sharing-state-between-processes "Link to this heading")
+As mentioned above, when doing concurrent programming it is usually best to avoid using shared state as far as possible. This is particularly true when using multiple processes.
+However, if you really do need to use some shared data then [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") provides a couple of ways of doing so.
+**Shared memory**
+> Data can be stored in a shared memory map using [`Value`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Value "multiprocessing.Value") or [`Array`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Array "multiprocessing.Array"). For example, the following code
+> ```
+frommultiprocessingimport Process, Value, Array
+deff(n, a):
+  n.value = 3.1415927
+  for i in range(len(a)):
+    a[i] = -a[i]
+if __name__ == '__main__':
+  num = Value('d', 0.0)
+  arr = Array('i', range(10))
+  p = Process(target=f, args=(num, arr))
+  p.start()
+  p.join()
+  print(num.value)
+  print(arr[:])
+
+```
+
+> will print
+> ```
+3.1415927
+[0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
+
+```
+
+> The `'d'` and `'i'` arguments used when creating `num` and `arr` are typecodes of the kind used by the [`array`](https://docs.python.org/3/library/array.html#module-array "array: Space efficient arrays of uniformly typed numeric values.") module: `'d'` indicates a double precision float and `'i'` indicates a signed integer. These shared objects will be process and thread-safe.
+> For more flexibility in using shared memory one can use the [`multiprocessing.sharedctypes`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing.sharedctypes "multiprocessing.sharedctypes: Allocate ctypes objects from shared memory.") module which supports the creation of arbitrary ctypes objects allocated from shared memory.
+**Server process**
+> A manager object returned by [`Manager()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Manager "multiprocessing.Manager") controls a server process which holds Python objects and allows other processes to manipulate them using proxies.
+> A manager returned by [`Manager()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Manager "multiprocessing.Manager") will support types [`list`](https://docs.python.org/3/library/stdtypes.html#list "list"), [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict"), [`Namespace`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.Namespace "multiprocessing.managers.Namespace"), [`Lock`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Lock "multiprocessing.Lock"), [`RLock`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.RLock "multiprocessing.RLock"), [`Semaphore`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Semaphore "multiprocessing.Semaphore"), [`BoundedSemaphore`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.BoundedSemaphore "multiprocessing.BoundedSemaphore"), [`Condition`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Condition "multiprocessing.Condition"), [`Event`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Event "multiprocessing.Event"), [`Barrier`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Barrier "multiprocessing.Barrier"), [`Queue`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue "multiprocessing.Queue"), [`Value`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Value "multiprocessing.Value") and [`Array`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Array "multiprocessing.Array"). For example,
+> ```
+frommultiprocessingimport Process, Manager
+deff(d, l):
+  d[1] = '1'
+  d['2'] = 2
+  d[0.25] = None
+  l.reverse()
+if __name__ == '__main__':
+  with Manager() as manager:
+    d = manager.dict()
+    l = manager.list(range(10))
+    p = Process(target=f, args=(d, l))
+    p.start()
+    p.join()
+    print(d)
+    print(l)
+
+```
+
+> will print
+> ```
+{0.25: None, 1: '1', '2': 2}
+[9, 8, 7, 6, 5, 4, 3, 2, 1, 0]

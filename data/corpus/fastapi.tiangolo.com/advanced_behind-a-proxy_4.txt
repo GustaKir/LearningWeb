@@ -1,0 +1,84 @@
+Title: Working with FastAPI Behind a Proxy
+URL: https://fastapi.tiangolo.com/advanced/behind-a-proxy/
+Summary: This document discusses how to configure FastAPI applications when running behind proxies, including handling stripped path prefixes and setting the `root_path`. It covers methods for providing and checking the `root_path`, as well as testing configurations locally using Traefik.
+---
+
+Table of contents 
+  * [ Proxy with a stripped path prefix  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#proxy-with-a-stripped-path-prefix)
+    * [ Providing the `root_path` ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#providing-the-root_path)
+    * [ Checking the current `root_path` ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#checking-the-current-root_path)
+    * [ Setting the `root_path` in the FastAPI app  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#setting-the-root_path-in-the-fastapi-app)
+    * [ About `root_path` ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#about-root_path)
+  * [ About proxies with a stripped path prefix  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#about-proxies-with-a-stripped-path-prefix)
+  * [ Testing locally with Traefik  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#testing-locally-with-traefik)
+    * [ Check the responses  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#check-the-responses)
+    * [ Check the docs UI  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#check-the-docs-ui)
+  * [ Additional servers  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#additional-servers)
+    * [ Disable automatic server from `root_path` ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#disable-automatic-server-from-root_path)
+  * [ Mounting a sub-application  ](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#mounting-a-sub-application)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Advanced User Guide  ](https://fastapi.tiangolo.com/advanced/)
+
+
+# Behind a Proxy[¶](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#behind-a-proxy "Permanent link")
+In some situations, you might need to use a **proxy** server like Traefik or Nginx with a configuration that adds an extra path prefix that is not seen by your application.
+In these cases you can use `root_path` to configure your application.
+The `root_path` is a mechanism provided by the ASGI specification (that FastAPI is built on, through Starlette).
+The `root_path` is used to handle these specific cases.
+And it's also used internally when mounting sub-applications.
+## Proxy with a stripped path prefix[¶](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#proxy-with-a-stripped-path-prefix "Permanent link")
+Having a proxy with a stripped path prefix, in this case, means that you could declare a path at `/app` in your code, but then, you add a layer on top (the proxy) that would put your **FastAPI** application under a path like `/api/v1`.
+In this case, the original path `/app` would actually be served at `/api/v1/app`.
+Even though all your code is written assuming there's just `/app`.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI, Request
+app = FastAPI()
+@app.get("/app")
+defread_main(request: Request):
+  return {"message": "Hello World", "root_path": request.scope.get("root_path")}
+
+```
+
+And the proxy would be **"stripping"** the **path prefix** on the fly before transmitting the request to the app server (probably Uvicorn via FastAPI CLI), keeping your application convinced that it is being served at `/app`, so that you don't have to update all your code to include the prefix `/api/v1`.
+Up to here, everything would work as normally.
+But then, when you open the integrated docs UI (the frontend), it would expect to get the OpenAPI schema at `/openapi.json`, instead of `/api/v1/openapi.json`.
+So, the frontend (that runs in the browser) would try to reach `/openapi.json` and wouldn't be able to get the OpenAPI schema.
+Because we have a proxy with a path prefix of `/api/v1` for our app, the frontend needs to fetch the OpenAPI schema at `/api/v1/openapi.json`.
+```
+graph LR
+browser("Browser")
+proxy["Proxy on http://0.0.0.0:9999/api/v1/app"]
+server["Server on http://127.0.0.1:8000/app"]
+browser --> proxy
+proxy --> server
+```
+
+Tip
+The IP `0.0.0.0` is commonly used to mean that the program listens on all the IPs available in that machine/server.
+The docs UI would also need the OpenAPI schema to declare that this API `server` is located at `/api/v1` (behind the proxy). For example:
+```
+{
+"openapi":"3.1.0",
+// More stuff here
+"servers":[
+{
+"url":"/api/v1"
+}
+],
+"paths":{
+// More stuff here
+}
+}
+
+```
+
+In this example, the "Proxy" could be something like **Traefik**. And the server would be something like FastAPI CLI with **Uvicorn** , running your FastAPI application.
+### Providing the `root_path`[¶](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#providing-the-root_path "Permanent link")
+To achieve this, you can use the command line option `--root-path` like:
+```
+
+fast →[](https://fastapi.tiangolo.com/advanced/behind-a-proxy/)fastapi run main.py --root-path /api/v1INFO:   Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)restart ↻[](https://fastapi.tiangolo.com/advanced/behind-a-proxy/)

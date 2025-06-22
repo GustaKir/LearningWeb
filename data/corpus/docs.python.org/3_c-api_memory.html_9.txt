@@ -1,0 +1,37 @@
+Title: Memory Management in the Python C API
+URL: https://docs.python.org/3/c-api/memory.html
+Summary: The PYMEM_DEBUG_SERIALNO macro enables tracking memory allocation with a serial number for debugging purposes. This incremented serial number allows the identification of memory corruption by setting breakpoints on offending allocations. Additionally, functions check memory integrity by validating special bytes; any alterations trigger diagnostic outputs and cause program termination. Handling special bit patterns can lead to memory errors if misused.
+---
+
+`p[N+S:N+2*S]`
+    
+Only used if the `PYMEM_DEBUG_SERIALNO` macro is defined (not defined by default).
+A serial number, incremented by 1 on each call to a malloc-like or realloc-like function. Big-endian `size_t`. If “bad memory” is detected later, the serial number gives an excellent way to set a breakpoint on the next run, to capture the instant at which this block was passed out. The static function bumpserialno() in obmalloc.c is the only place the serial number is incremented, and exists so you can set such a breakpoint easily.
+A realloc-like or free-like function first checks that the PYMEM_FORBIDDENBYTE bytes at each end are intact. If they’ve been altered, diagnostic output is written to stderr, and the program is aborted via Py_FatalError(). The other main failure mode is provoking a memory error when a program reads up one of the special bit patterns and tries to use it as an address. If you get in a debugger then and look at the object, you’re likely to see that it’s entirely filled with PYMEM_DEADBYTE (meaning freed memory is getting used) or PYMEM_CLEANBYTE (meaning uninitialized memory is getting used).
+Changed in version 3.6: The [`PyMem_SetupDebugHooks()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetupDebugHooks "PyMem_SetupDebugHooks") function now also works on Python compiled in release mode. On error, the debug hooks now use [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") to get the traceback where a memory block was allocated. The debug hooks now also check if the GIL is held when functions of [`PYMEM_DOMAIN_OBJ`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_OBJ "PYMEM_DOMAIN_OBJ") and [`PYMEM_DOMAIN_MEM`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_MEM "PYMEM_DOMAIN_MEM") domains are called.
+Changed in version 3.8: Byte patterns `0xCB` (`PYMEM_CLEANBYTE`), `0xDB` (`PYMEM_DEADBYTE`) and `0xFB` (`PYMEM_FORBIDDENBYTE`) have been replaced with `0xCD`, `0xDD` and `0xFD` to use the same values than Windows CRT debug `malloc()` and `free()`.
+## The pymalloc allocator[¶](https://docs.python.org/3/c-api/memory.html#the-pymalloc-allocator "Link to this heading")
+Python has a _pymalloc_ allocator optimized for small objects (smaller or equal to 512 bytes) with a short lifetime. It uses memory mappings called “arenas” with a fixed size of either 256 KiB on 32-bit platforms or 1 MiB on 64-bit platforms. It falls back to [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc") and [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc") for allocations larger than 512 bytes.
+_pymalloc_ is the [default allocator](https://docs.python.org/3/c-api/memory.html#default-memory-allocators) of the [`PYMEM_DOMAIN_MEM`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_MEM "PYMEM_DOMAIN_MEM") (ex: [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc")) and [`PYMEM_DOMAIN_OBJ`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_OBJ "PYMEM_DOMAIN_OBJ") (ex: [`PyObject_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Malloc "PyObject_Malloc")) domains.
+The arena allocator uses the following functions:
+  * `VirtualAlloc()` and `VirtualFree()` on Windows,
+  * `mmap()` and `munmap()` if available,
+  * `malloc()` and `free()` otherwise.
+
+
+This allocator is disabled if Python is configured with the [`--without-pymalloc`](https://docs.python.org/3/using/configure.html#cmdoption-without-pymalloc) option. It can also be disabled at runtime using the [`PYTHONMALLOC`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONMALLOC) environment variable (ex: `PYTHONMALLOC=malloc`).
+### Customize pymalloc Arena Allocator[¶](https://docs.python.org/3/c-api/memory.html#customize-pymalloc-arena-allocator "Link to this heading")
+Added in version 3.4. 
+
+typePyObjectArenaAllocator[¶](https://docs.python.org/3/c-api/memory.html#c.PyObjectArenaAllocator "Link to this definition")
+    
+Structure used to describe an arena allocator. The structure has three fields:
+Field | Meaning  
+---|---  
+`void *ctx` | user context passed as first argument  
+`void* alloc(void *ctx, size_t size)` | allocate an arena of size bytes  
+`void free(void *ctx, void *ptr, size_t size)` | free an arena 
+
+voidPyObject_GetArenaAllocator([PyObjectArenaAllocator](https://docs.python.org/3/c-api/memory.html#c.PyObjectArenaAllocator "PyObjectArenaAllocator")*allocator)[¶](https://docs.python.org/3/c-api/memory.html#c.PyObject_GetArenaAllocator "Link to this definition")
+      
+Get the arena allocator.

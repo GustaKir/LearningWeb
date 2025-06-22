@@ -1,0 +1,44 @@
+Title: st.login - User Authentication in Streamlit
+URL: https://docs.streamlit.io/develop/api-reference/user/st.login
+Summary: The `st.login` function initiates the login flow for a user by redirecting them to an OpenID Connect provider. After authentication, users are redirected back to the app's home page, with identity information stored in a cookie, accessible via `st.experimental_user`.
+---
+
+_star_
+#### Tip
+Learn more in [User authentication and information](https://docs.streamlit.io/develop/concepts/connections/authentication).
+## [](https://docs.streamlit.io/develop/api-reference/user/st.login#stlogin)st.login
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Initiate the login flow for the given provider.
+This command redirects the user to an OpenID Connect (OIDC) provider. After the user authenticates their identity, they are redirected back to the home page of your app. Streamlit stores a cookie with the user's identity information in the user's browser . You can access the identity information through [`st.experimental_user`](https://docs.streamlit.io/develop/api-reference/utilities/st.experimental_user). Call `st.logout()` to remove the cookie and start a new session.
+You can use any OIDC provider, including Google, Microsoft, Okta, and more. You must configure the provider through secrets management. Although OIDC is an extension of OAuth 2.0, you can't use generic OAuth providers. Streamlit parses the user's identity token and surfaces its attributes in `st.experimental_user`. If the provider returns an access token, that token is ignored. Therefore, this command will not allow your app to act on behalf of a user in a secure system.
+For all providers, there are two shared settings, `redirect_uri` and `cookie_secret`, which you must specify in an `[auth]` dictionary in `secrets.toml`. Other settings must be defined as described in the `provider` parameter.
+  * `redirect_uri` is your app's absolute URL with the pathname `oauth2callback`. For local development using the default port, this is `http://localhost:8501/oauth2callback`.
+  * `cookie_secret` should be a strong, randomly generated secret.
+
+
+In addition to the shared settings, the following settings are required:
+  * `client_id`
+  * `client_secret`
+  * `server_metadata_url`
+
+
+For a complete list of OIDC parameters, see [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest) and your provider's documentation. By default, Streamlit sets `scope="openid profile email"` and `prompt="select_account"`. You can change these and other OIDC parameters by passing a dictionary of settings to `client_kwargs`. `state` and `nonce`, which are used for security, are handled automatically and don't need to be specified. For more information, see Example 4.
+Important
+  * You must install `Authlib>=1.3.2` to use this command.
+  * Your authentication configuration is dependent on your host location. When you deploy your app, remember to update your `redirect_uri` within your app and your provider.
+  * All URLs declared in the settings must be absolute (i.e., begin with `http://` or `https://`).
+  * Streamlit automatically enables CORS and XSRF protection when you configure authentication in `secrets.toml`. This takes precedence over configuration options in `config.toml`.
+  * If a user is logged into your app and opens a new tab in the same browser, they will automatically be logged in to the new session with the same account.
+  * If a user closes your app without logging out, the identity cookie will expire after 30 days.
+  * For security reasons, authentication is not supported for embedded apps.
+
+
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/user_info.py#L50 "View st.login source code on GitHub")  
+---  
+st.login(provider=None)  
+Parameters  
+provider (str or None) |  The name of your provider configuration to use for login. If `provider` is `None` (default), Streamlit will use all settings in the `[auth]` dictionary within your app's `secrets.toml` file. Otherwise, use an `[auth.{provider}]` dictionary for the named provider, as shown in the examples that follow. When you pass a string to `provider`, Streamlit will use `redirect_uri` and `cookie_secret`, while ignoring any other values in the `[auth]` dictionary. Due to internal implementation details, Streamlit does not support using an underscore within `provider` at this time.  
+#### Examples
+**Example 1: Use an unnamed default identity provider**
+If you do not specify a name for your provider, specify all settings within the `[auth]` dictionary of your `secrets.toml` file. The following example configures Google as the default provider. For information about using OIDC with Google, see [Google Identity](https://developers.google.com/identity/openid-connect/openid-connect).
+`.streamlit/secrets.toml`:

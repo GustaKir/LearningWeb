@@ -1,0 +1,31 @@
+Title: BaseHTTPRequestHandler Attributes
+URL: https://docs.python.org/3/library/http.server.html
+Summary: This section describes the attributes of `BaseHTTPRequestHandler` in the HTTP server library. It outlines the `MessageClass`, which defaults to `http.client.HTTPMessage` for parsing HTTP headers, and the `responses` attribute, which maps error codes to short and long messages for error responses.
+---
+
+MessageClass[¶](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.MessageClass "Link to this definition")
+    
+Specifies an [`email.message.Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message")-like class to parse HTTP headers. Typically, this is not overridden, and it defaults to [`http.client.HTTPMessage`](https://docs.python.org/3/library/http.client.html#http.client.HTTPMessage "http.client.HTTPMessage"). 
+
+responses[¶](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.responses "Link to this definition")
+    
+This attribute contains a mapping of error code integers to two-element tuples containing a short and long message. For example, `{code: (shortmessage, longmessage)}`. The _shortmessage_ is usually used as the _message_ key in an error response, and _longmessage_ as the _explain_ key. It is used by [`send_response_only()`](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.send_response_only "http.server.BaseHTTPRequestHandler.send_response_only") and [`send_error()`](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.send_error "http.server.BaseHTTPRequestHandler.send_error") methods.
+A [`BaseHTTPRequestHandler`](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler "http.server.BaseHTTPRequestHandler") instance has the following methods: 
+
+handle()[¶](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.handle "Link to this definition")
+    
+Calls [`handle_one_request()`](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.handle_one_request "http.server.BaseHTTPRequestHandler.handle_one_request") once (or, if persistent connections are enabled, multiple times) to handle incoming HTTP requests. You should never need to override it; instead, implement appropriate `do_*()` methods. 
+
+handle_one_request()[¶](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.handle_one_request "Link to this definition")
+    
+This method will parse and dispatch the request to the appropriate `do_*()` method. You should never need to override it. 
+
+handle_expect_100()[¶](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.handle_expect_100 "Link to this definition")
+    
+When an HTTP/1.1 conformant server receives an `Expect: 100-continue` request header it responds back with a `100 Continue` followed by `200 OK` headers. This method can be overridden to raise an error if the server does not want the client to continue. For e.g. server can choose to send `417 Expectation Failed` as a response header and `return False`.
+Added in version 3.2. 
+
+send_error(_code_ , _message =None_, _explain =None_)[¶](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.send_error "Link to this definition")
+    
+Sends and logs a complete error reply to the client. The numeric _code_ specifies the HTTP error code, with _message_ as an optional, short, human readable description of the error. The _explain_ argument can be used to provide more detailed information about the error; it will be formatted using the [`error_message_format`](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.error_message_format "http.server.BaseHTTPRequestHandler.error_message_format") attribute and emitted, after a complete set of headers, as the response body. The [`responses`](https://docs.python.org/3/library/http.server.html#http.server.BaseHTTPRequestHandler.responses "http.server.BaseHTTPRequestHandler.responses") attribute holds the default values for _message_ and _explain_ that will be used if no value is provided; for unknown codes the default value for both is the string `???`. The body will be empty if the method is HEAD or the response code is one of the following: `1_xx_`,`204 No Content` , `205 Reset Content`, `304 Not Modified`.
+Changed in version 3.4: The error response includes a Content-Length header. Added the _explain_ argument.

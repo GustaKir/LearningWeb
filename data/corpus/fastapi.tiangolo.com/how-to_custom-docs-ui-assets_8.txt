@@ -1,0 +1,60 @@
+Title: Using OAuth2 with Swagger UI in FastAPI
+URL: https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/
+Summary: This section discusses the `_path operation_` for `swagger_ui_redirect`, which helps when integrating an API with OAuth2, allowing users to authenticate and return to the API docs with the acquired credentials. It also provides a code snippet for creating a `_path operation_` to test static files in FastAPI.
+---
+
+```
+
+Tip
+The _path operation_ for `swagger_ui_redirect` is a helper for when you use OAuth2.
+If you integrate your API with an OAuth2 provider, you will be able to authenticate and come back to the API docs with the acquired credentials. And interact with it using the real OAuth2 authentication.
+Swagger UI will handle it behind the scenes for you, but it needs this "redirect" helper.
+### Create a _path operation_ to test static files[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#create-a-path-operation-to-test-static-files "Permanent link")
+Now, to be able to test that everything works, create a _path operation_ :
+[Python 3.8+](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#__tabbed_7_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.openapi.docsimport (
+  get_redoc_html,
+  get_swagger_ui_html,
+  get_swagger_ui_oauth2_redirect_html,
+)
+fromfastapi.staticfilesimport StaticFiles
+app = FastAPI(docs_url=None, redoc_url=None)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/docs", include_in_schema=False)
+async defcustom_swagger_ui_html():
+  return get_swagger_ui_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - Swagger UI",
+    oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+    swagger_js_url="/static/swagger-ui-bundle.js",
+    swagger_css_url="/static/swagger-ui.css",
+  )
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async defswagger_ui_redirect():
+  return get_swagger_ui_oauth2_redirect_html()
+@app.get("/redoc", include_in_schema=False)
+async defredoc_html():
+  return get_redoc_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - ReDoc",
+    redoc_js_url="/static/redoc.standalone.js",
+  )
+@app.get("/users/{username}")
+async defread_user(username: str):
+  return {"message": f"Hello {username}"}
+
+```
+
+### Test Static Files UI[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#test-static-files-ui "Permanent link")
+Now, you should be able to disconnect your WiFi, go to your docs at <http://127.0.0.1:8000/docs>, and reload the page.
+And even without Internet, you would be able to see the docs for your API and interact with it.
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Separate OpenAPI Schemas for Input and Output or Not  ](https://fastapi.tiangolo.com/how-to/separate-openapi-schemas/) [ Next  Configure Swagger UI  ](https://fastapi.tiangolo.com/how-to/configure-swagger-ui/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")
+  *[CDN]: Content Delivery Network

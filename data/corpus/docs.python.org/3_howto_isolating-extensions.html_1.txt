@@ -1,0 +1,32 @@
+Title: Isolating Extension Modules
+URL: https://docs.python.org/3/howto/isolating-extensions.html
+Summary: This document outlines best practices and guidelines for isolating Python extension modules to prevent conflicts and ensure smooth operation within Python environments.
+---
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/timerfd.html "timer file descriptor HOWTO") |
+  * [previous](https://docs.python.org/3/howto/annotations.html "Annotations Best Practices") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Isolating Extension Modules](https://docs.python.org/3/howto/isolating-extensions.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Isolating Extension Modules[¶](https://docs.python.org/3/howto/isolating-extensions.html#isolating-extension-modules "Link to this heading")
+Abstract
+Traditionally, state belonging to Python extension modules was kept in C `static` variables, which have process-wide scope. This document describes problems of such per-process state and shows a safer way: per-module state.
+The document also describes how to switch to per-module state where possible. This transition involves allocating space for that state, potentially switching from static types to heap types, and—perhaps most importantly—accessing per-module state from code.
+## Who should read this[¶](https://docs.python.org/3/howto/isolating-extensions.html#who-should-read-this "Link to this heading")
+This guide is written for maintainers of [C-API](https://docs.python.org/3/c-api/index.html#c-api-index) extensions who would like to make that extension safer to use in applications where Python itself is used as a library.
+## Background[¶](https://docs.python.org/3/howto/isolating-extensions.html#background "Link to this heading")
+An _interpreter_ is the context in which Python code runs. It contains configuration (e.g. the import path) and runtime state (e.g. the set of imported modules).
+Python supports running multiple interpreters in one process. There are two cases to think about—users may run interpreters:
+  * in sequence, with several [`Py_InitializeEx()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeEx "Py_InitializeEx")/[`Py_FinalizeEx()`](https://docs.python.org/3/c-api/init.html#c.Py_FinalizeEx "Py_FinalizeEx") cycles, and
+  * in parallel, managing “sub-interpreters” using [`Py_NewInterpreter()`](https://docs.python.org/3/c-api/init.html#c.Py_NewInterpreter "Py_NewInterpreter")/[`Py_EndInterpreter()`](https://docs.python.org/3/c-api/init.html#c.Py_EndInterpreter "Py_EndInterpreter").

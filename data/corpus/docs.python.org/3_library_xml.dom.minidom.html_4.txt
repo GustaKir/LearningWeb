@@ -1,0 +1,76 @@
+Title: Using xml.dom.minidom for XML Processing
+URL: https://docs.python.org/3/library/xml.dom.minidom.html
+Summary: This document provides an example of using Python's xml.dom.minidom library to parse and process XML data. It demonstrates how to parse a slideshow XML structure, extract text from nodes, and handle different elements such as titles and points within slides.
+---
+
+```
+importxml.dom.minidom
+document = """\
+<slideshow>
+<title>Demo slideshow</title>
+<slide><title>Slide title</title>
+<point>This is a demo</point>
+<point>Of a program for processing slides</point>
+</slide>
+<slide><title>Another demo slide</title>
+<point>It is important</point>
+<point>To have more than</point>
+<point>one slide</point>
+</slide>
+</slideshow>
+"""
+dom = xml.dom.minidom.parseString(document)
+defgetText(nodelist):
+  rc = []
+  for node in nodelist:
+    if node.nodeType == node.TEXT_NODE:
+      rc.append(node.data)
+  return ''.join(rc)
+defhandleSlideshow(slideshow):
+  print("<html>")
+  handleSlideshowTitle(slideshow.getElementsByTagName("title")[0])
+  slides = slideshow.getElementsByTagName("slide")
+  handleToc(slides)
+  handleSlides(slides)
+  print("</html>")
+defhandleSlides(slides):
+  for slide in slides:
+    handleSlide(slide)
+defhandleSlide(slide):
+  handleSlideTitle(slide.getElementsByTagName("title")[0])
+  handlePoints(slide.getElementsByTagName("point"))
+defhandleSlideshowTitle(title):
+  print(f"<title>{getText(title.childNodes)}</title>")
+defhandleSlideTitle(title):
+  print(f"<h2>{getText(title.childNodes)}</h2>")
+defhandlePoints(points):
+  print("<ul>")
+  for point in points:
+    handlePoint(point)
+  print("</ul>")
+defhandlePoint(point):
+  print(f"<li>{getText(point.childNodes)}</li>")
+defhandleToc(slides):
+  for slide in slides:
+    title = slide.getElementsByTagName("title")[0]
+    print(f"<p>{getText(title.childNodes)}</p>")
+handleSlideshow(dom)
+
+```
+
+## minidom and the DOM standard[¶](https://docs.python.org/3/library/xml.dom.minidom.html#minidom-and-the-dom-standard "Link to this heading")
+The [`xml.dom.minidom`](https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom "xml.dom.minidom: Minimal Document Object Model \(DOM\) implementation.") module is essentially a DOM 1.0-compatible DOM with some DOM 2 features (primarily namespace features).
+Usage of the DOM interface in Python is straight-forward. The following mapping rules apply:
+  * Interfaces are accessed through instance objects. Applications should not instantiate the classes themselves; they should use the creator functions available on the `Document` object. Derived interfaces support all operations (and attributes) from the base interfaces, plus any new operations.
+  * Operations are used as methods. Since the DOM uses only [`in`](https://docs.python.org/3/reference/expressions.html#in) parameters, the arguments are passed in normal order (from left to right). There are no optional arguments. `void` operations return `None`.
+  * IDL attributes map to instance attributes. For compatibility with the OMG IDL language mapping for Python, an attribute `foo` can also be accessed through accessor methods `_get_foo()` and `_set_foo()`. `readonly` attributes must not be changed; this is not enforced at runtime.
+  * The types `short int`, `unsigned int`, `unsigned long long`, and `boolean` all map to Python integer objects.
+  * The type `DOMString` maps to Python strings. [`xml.dom.minidom`](https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom "xml.dom.minidom: Minimal Document Object Model \(DOM\) implementation.") supports either bytes or strings, but will normally produce strings. Values of type `DOMString` may also be `None` where allowed to have the IDL `null` value by the DOM specification from the W3C.
+  * `const` declarations map to variables in their respective scope (e.g. `xml.dom.minidom.Node.PROCESSING_INSTRUCTION_NODE`); they must not be changed.
+  * `DOMException` is currently not supported in [`xml.dom.minidom`](https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom "xml.dom.minidom: Minimal Document Object Model \(DOM\) implementation."). Instead, [`xml.dom.minidom`](https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom "xml.dom.minidom: Minimal Document Object Model \(DOM\) implementation.") uses standard Python exceptions such as [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") and [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError").
+  * `NodeList` objects are implemented using Python’s built-in list type. These objects provide the interface defined in the DOM specification, but with earlier versions of Python they do not support the official API. They are, however, much more “Pythonic” than the interface defined in the W3C recommendations.
+
+
+The following interfaces have no implementation in [`xml.dom.minidom`](https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom "xml.dom.minidom: Minimal Document Object Model \(DOM\) implementation."):
+  * `DOMTimeStamp`
+  * `EntityReference`

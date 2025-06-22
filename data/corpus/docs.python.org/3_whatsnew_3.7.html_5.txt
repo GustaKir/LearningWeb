@@ -1,0 +1,32 @@
+Title: PEP 540: Forced UTF-8 Runtime Mode
+URL: https://docs.python.org/3/whatsnew/3.7.html
+Summary: Python 3.7 introduces PEP 540, allowing users to enable a forced UTF-8 mode via the `-X utf8` command line option or the `PYTHONUTF8` environment variable. This mode ignores locale settings, defaulting to UTF-8 encoding and using `surrogateescape` for error handling in standard input and output streams.
+---
+
+[**PEP 538**](https://peps.python.org/pep-0538/) – Coercing the legacy C locale to a UTF-8 based locale
+    
+PEP written and implemented by Nick Coghlan.
+### PEP 540: Forced UTF-8 Runtime Mode[¶](https://docs.python.org/3/whatsnew/3.7.html#pep-540-forced-utf-8-runtime-mode "Link to this heading")
+The new [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) `utf8` command line option and [`PYTHONUTF8`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONUTF8) environment variable can be used to enable the [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode).
+When in UTF-8 mode, CPython ignores the locale settings, and uses the UTF-8 encoding by default. The error handlers for [`sys.stdin`](https://docs.python.org/3/library/sys.html#sys.stdin "sys.stdin") and [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") streams are set to `surrogateescape`.
+The forced UTF-8 mode can be used to change the text handling behavior in an embedded Python interpreter without changing the locale settings of an embedding application.
+While [**PEP 540**](https://peps.python.org/pep-0540/)’s UTF-8 mode has the benefit of working regardless of which locales are available on the running system, it has the downside of having no effect on extension modules (such as GNU `readline`), child processes running non-Python applications, and child processes running older versions of Python. To reduce the risk of corrupting text data when communicating with such components, Python 3.7 also implements [PEP 540: Forced UTF-8 Runtime Mode](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep540)).
+The UTF-8 mode is enabled by default when the locale is `C` or `POSIX`, and the [**PEP 538**](https://peps.python.org/pep-0538/) locale coercion feature fails to change it to a UTF-8 based alternative (whether that failure is due to `PYTHONCOERCECLOCALE=0` being set, `LC_ALL` being set, or the lack of a suitable target locale).
+See also 
+
+[**PEP 540**](https://peps.python.org/pep-0540/) – Add a new UTF-8 mode
+    
+PEP written and implemented by Victor Stinner
+### PEP 553: Built-in `breakpoint()`[¶](https://docs.python.org/3/whatsnew/3.7.html#pep-553-built-in-breakpoint "Link to this heading")
+Python 3.7 includes the new built-in [`breakpoint()`](https://docs.python.org/3/library/functions.html#breakpoint "breakpoint") function as an easy and consistent way to enter the Python debugger.
+Built-in `breakpoint()` calls [`sys.breakpointhook()`](https://docs.python.org/3/library/sys.html#sys.breakpointhook "sys.breakpointhook"). By default, the latter imports [`pdb`](https://docs.python.org/3/library/pdb.html#module-pdb "pdb: The Python debugger for interactive interpreters.") and then calls `pdb.set_trace()`, but by binding `sys.breakpointhook()` to the function of your choosing, `breakpoint()` can enter any debugger. Additionally, the environment variable [`PYTHONBREAKPOINT`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONBREAKPOINT) can be set to the callable of your debugger of choice. Set `PYTHONBREAKPOINT=0` to completely disable built-in `breakpoint()`.
+See also 
+
+[**PEP 553**](https://peps.python.org/pep-0553/) – Built-in breakpoint()
+    
+PEP written and implemented by Barry Warsaw
+### PEP 539: New C API for Thread-Local Storage[¶](https://docs.python.org/3/whatsnew/3.7.html#pep-539-new-c-api-for-thread-local-storage "Link to this heading")
+While Python provides a C API for thread-local storage support; the existing [Thread Local Storage (TLS) API](https://docs.python.org/3/c-api/init.html#thread-local-storage-api) has used int to represent TLS keys across all platforms. This has not generally been a problem for officially support platforms, but that is neither POSIX-compliant, nor portable in any practical sense.
+[**PEP 539**](https://peps.python.org/pep-0539/) changes this by providing a new [Thread Specific Storage (TSS) API](https://docs.python.org/3/c-api/init.html#thread-specific-storage-api) to CPython which supersedes use of the existing TLS API within the CPython interpreter, while deprecating the existing API. The TSS API uses a new type [`Py_tss_t`](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t") instead of int to represent TSS keys–an opaque type the definition of which may depend on the underlying TLS implementation. Therefore, this will allow to build CPython on platforms where the native TLS key is defined in a way that cannot be safely cast to int.
+Note that on platforms where the native TLS key is defined in a way that cannot be safely cast to int, all functions of the existing TLS API will be no-op and immediately return failure. This indicates clearly that the old API is not supported on platforms where it cannot be used reliably, and that no effort will be made to add such support.
+See also

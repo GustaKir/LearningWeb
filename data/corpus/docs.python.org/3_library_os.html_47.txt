@@ -1,0 +1,29 @@
+Title: os.eventfd - Create an Event File Descriptor
+URL: https://docs.python.org/3/library/os.html
+Summary: The os.eventfd function creates and returns an event file descriptor that supports raw read and write operations, as well as select and poll mechanisms. The function requires an initial value for the event counter, which is a 32-bit unsigned integer. By default, the file descriptor is non-inheritable.
+---
+
+os.eventfd(_initval_[, _flags=os.EFD_CLOEXEC_])[¶](https://docs.python.org/3/library/os.html#os.eventfd "Link to this definition")
+    
+Create and return an event file descriptor. The file descriptors supports raw [`read()`](https://docs.python.org/3/library/os.html#os.read "os.read") and [`write()`](https://docs.python.org/3/library/os.html#os.write "os.write") with a buffer size of 8, [`select()`](https://docs.python.org/3/library/select.html#select.select "select.select"), [`poll()`](https://docs.python.org/3/library/select.html#select.poll "select.poll") and similar. See man page _[eventfd(2)](https://manpages.debian.org/eventfd\(2\))_ for more information. By default, the new file descriptor is [non-inheritable](https://docs.python.org/3/library/os.html#fd-inheritance).
+_initval_ is the initial value of the event counter. The initial value must be a 32 bit unsigned integer. Please note that the initial value is limited to a 32 bit unsigned int although the event counter is an unsigned 64 bit integer with a maximum value of 264-2.
+_flags_ can be constructed from [`EFD_CLOEXEC`](https://docs.python.org/3/library/os.html#os.EFD_CLOEXEC "os.EFD_CLOEXEC"), [`EFD_NONBLOCK`](https://docs.python.org/3/library/os.html#os.EFD_NONBLOCK "os.EFD_NONBLOCK"), and [`EFD_SEMAPHORE`](https://docs.python.org/3/library/os.html#os.EFD_SEMAPHORE "os.EFD_SEMAPHORE").
+If [`EFD_SEMAPHORE`](https://docs.python.org/3/library/os.html#os.EFD_SEMAPHORE "os.EFD_SEMAPHORE") is specified and the event counter is non-zero, [`eventfd_read()`](https://docs.python.org/3/library/os.html#os.eventfd_read "os.eventfd_read") returns 1 and decrements the counter by one.
+If [`EFD_SEMAPHORE`](https://docs.python.org/3/library/os.html#os.EFD_SEMAPHORE "os.EFD_SEMAPHORE") is not specified and the event counter is non-zero, [`eventfd_read()`](https://docs.python.org/3/library/os.html#os.eventfd_read "os.eventfd_read") returns the current event counter value and resets the counter to zero.
+If the event counter is zero and [`EFD_NONBLOCK`](https://docs.python.org/3/library/os.html#os.EFD_NONBLOCK "os.EFD_NONBLOCK") is not specified, [`eventfd_read()`](https://docs.python.org/3/library/os.html#os.eventfd_read "os.eventfd_read") blocks.
+[`eventfd_write()`](https://docs.python.org/3/library/os.html#os.eventfd_write "os.eventfd_write") increments the event counter. Write blocks if the write operation would increment the counter to a value larger than 264-2.
+Example:
+```
+importos
+# semaphore with start value '1'
+fd = os.eventfd(1, os.EFD_SEMAPHORE | os.EFC_CLOEXEC)
+try:
+  # acquire semaphore
+  v = os.eventfd_read(fd)
+  try:
+    do_work()
+  finally:
+    # release semaphore
+    os.eventfd_write(fd, v)
+finally:
+  os.close(fd)

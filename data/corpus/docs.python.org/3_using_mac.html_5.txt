@@ -1,0 +1,55 @@
+Title: Installing Python 3.13 on macOS Using Command Line
+URL: https://docs.python.org/3/using/mac.html
+Summary: This section discusses how to install Python 3.13 on macOS via the command line using the installer utility. It highlights the ability to select non-default options and provides a shell snippet to download the installer package for version 3.13.0b2.
+---
+
+```
+aliaspy3.13="/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13"
+aliaspy3.13t="/Library/Frameworks/PythonT.framework/Versions/3.13/bin/python3.13t"
+
+```
+
+
+
+### 5.5.2. Installing using the command line[¶](https://docs.python.org/3/using/mac.html#installing-using-the-command-line "Link to this heading")
+If you want to use automation to install the `python.org` installer package (rather than by using the familiar macOS **Installer** GUI app), the macOS command line **installer** utility lets you select non-default options, too. If you are not familiar with **installer** , it can be somewhat cryptic (see **man installer** for more information). As an example, the following shell snippet shows one way to do it, using the `3.13.0b2` release and selecting the free-threaded interpreter option:
+```
+RELEASE="python-3.13.0b2-macos11.pkg"
+# download installer pkg
+curl-Ohttps://www.python.org/ftp/python/3.13.0/${RELEASE}
+# create installer choicechanges to customize the install:
+#  enable the PythonTFramework-3.13 package
+#  while accepting the other defaults (install all other packages)
+cat>./choicechanges.plist<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+    <dict>
+        <key>attributeSetting</key>
+        <integer>1</integer>
+        <key>choiceAttribute</key>
+        <string>selected</string>
+        <key>choiceIdentifier</key>
+        <string>org.python.Python.PythonTFramework-3.13</string>
+    </dict>
+</array>
+</plist>
+EOF
+sudoinstaller-pkg./${RELEASE}-applyChoiceChangesXML./choicechanges.plist-target/
+
+```
+
+You can then test that both installer builds are now available with something like:
+```
+$ # test that the free-threaded interpreter was installed if the Unix Command Tools package was enabled
+$ /usr/local/bin/python3.13t-VV
+Python 3.13.0b2 experimental free-threading build (v3.13.0b2:3a83b172af, Jun 5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+$ #  and the traditional interpreter
+$ /usr/local/bin/python3.13-VV
+Python 3.13.0b2 (v3.13.0b2:3a83b172af, Jun 5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
+$ # test that they are also available without the prefix if /usr/local/bin is on $PATH
+$ python3.13t-VV
+Python 3.13.0b2 experimental free-threading build (v3.13.0b2:3a83b172af, Jun 5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+$ python3.13-VV
+Python 3.13.0b2 (v3.13.0b2:3a83b172af, Jun 5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]

@@ -1,0 +1,102 @@
+Title: Customizing FastAPI Documentation UI Assets
+URL: https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/
+Summary: This section explains how to disable the automatic API documentation in FastAPI to serve custom static files instead. It details the necessary configuration steps to set the documentation URLs to 'None' when creating a FastAPI application.
+---
+
+```
+/*!
+ * ReDoc - OpenAPI/Swagger-generated API Reference Documentation
+ * -------------------------------------------------------------
+ *  Version: "2.0.0-rc.18"
+ *  Repo: https://github.com/Redocly/redoc
+ */
+!function(e,t){"object"==typeofexports&&"object"==typeofm
+...
+
+```
+
+That confirms that you are being able to serve static files from your app, and that you placed the static files for the docs in the correct place.
+Now we can configure the app to use those static files for the docs.
+### Disable the automatic docs for static files[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#disable-the-automatic-docs-for-static-files "Permanent link")
+The same as when using a custom CDN, the first step is to disable the automatic docs, as those use the CDN by default.
+To disable them, set their URLs to `None` when creating your `FastAPI` app:
+[Python 3.8+](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.openapi.docsimport (
+  get_redoc_html,
+  get_swagger_ui_html,
+  get_swagger_ui_oauth2_redirect_html,
+)
+fromfastapi.staticfilesimport StaticFiles
+app = FastAPI(docs_url=None, redoc_url=None)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/docs", include_in_schema=False)
+async defcustom_swagger_ui_html():
+  return get_swagger_ui_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - Swagger UI",
+    oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+    swagger_js_url="/static/swagger-ui-bundle.js",
+    swagger_css_url="/static/swagger-ui.css",
+  )
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async defswagger_ui_redirect():
+  return get_swagger_ui_oauth2_redirect_html()
+@app.get("/redoc", include_in_schema=False)
+async defredoc_html():
+  return get_redoc_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - ReDoc",
+    redoc_js_url="/static/redoc.standalone.js",
+  )
+@app.get("/users/{username}")
+async defread_user(username: str):
+  return {"message": f"Hello {username}"}
+
+```
+
+### Include the custom docs for static files[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#include-the-custom-docs-for-static-files "Permanent link")
+And the same way as with a custom CDN, now you can create the _path operations_ for the custom docs.
+Again, you can reuse FastAPI's internal functions to create the HTML pages for the docs, and pass them the needed arguments:
+  * `openapi_url`: the URL where the HTML page for the docs can get the OpenAPI schema for your API. You can use here the attribute `app.openapi_url`.
+  * `title`: the title of your API.
+  * `oauth2_redirect_url`: you can use `app.swagger_ui_oauth2_redirect_url` here to use the default.
+  * `swagger_js_url`: the URL where the HTML for your Swagger UI docs can get the **JavaScript** file. **This is the one that your own app is now serving**.
+  * `swagger_css_url`: the URL where the HTML for your Swagger UI docs can get the **CSS** file. **This is the one that your own app is now serving**.
+
+
+And similarly for ReDoc...
+[Python 3.8+](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#__tabbed_6_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.openapi.docsimport (
+  get_redoc_html,
+  get_swagger_ui_html,
+  get_swagger_ui_oauth2_redirect_html,
+)
+fromfastapi.staticfilesimport StaticFiles
+app = FastAPI(docs_url=None, redoc_url=None)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/docs", include_in_schema=False)
+async defcustom_swagger_ui_html():
+  return get_swagger_ui_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - Swagger UI",
+    oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+    swagger_js_url="/static/swagger-ui-bundle.js",
+    swagger_css_url="/static/swagger-ui.css",
+  )
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async defswagger_ui_redirect():
+  return get_swagger_ui_oauth2_redirect_html()
+@app.get("/redoc", include_in_schema=False)
+async defredoc_html():
+  return get_redoc_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - ReDoc",
+    redoc_js_url="/static/redoc.standalone.js",
+  )
+@app.get("/users/{username}")
+async defread_user(username: str):
+  return {"message": f"Hello {username}"}

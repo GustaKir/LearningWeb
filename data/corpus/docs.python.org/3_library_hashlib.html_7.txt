@@ -1,0 +1,75 @@
+Title: Hash Parameters and Specifications in hashlib
+URL: https://docs.python.org/3/library/hashlib.html
+Summary: This section outlines the limits for parameters such as digest size, key length, salt length, and personalization length for the BLAKE2b and BLAKE2s hash functions. It notes that while the BLAKE2 specification defines fixed lengths for salt and personalization, the implementation allows variable sizes padded with zeros. Additionally, it introduces tree hashing parameters like fanout, depth, and leaf size for constructor functions.
+---
+
+The following table shows limits for general parameters (in bytes):
+Hash | digest_size | len(key) | len(salt) | len(person)  
+---|---|---|---|---  
+BLAKE2b | 64 | 64 | 16 | 16  
+BLAKE2s | 32 | 32 | 8 | 8  
+Note
+BLAKE2 specification defines constant lengths for salt and personalization parameters, however, for convenience, this implementation accepts byte strings of any size up to the specified length. If the length of the parameter is less than specified, it is padded with zeros, thus, for example, `b'salt'` and `b'salt\x00'` is the same value. (This is not the case for _key_.)
+These sizes are available as module [constants](https://docs.python.org/3/library/hashlib.html#constants) described below.
+Constructor functions also accept the following tree hashing parameters:
+  * _fanout_ : fanout (0 to 255, 0 if unlimited, 1 in sequential mode).
+  * _depth_ : maximal depth of tree (1 to 255, 255 if unlimited, 1 in sequential mode).
+  * _leaf_size_ : maximal byte length of leaf (0 to `2**32-1`, 0 if unlimited or in sequential mode).
+  * _node_offset_ : node offset (0 to `2**64-1` for BLAKE2b, 0 to `2**48-1` for BLAKE2s, 0 for the first, leftmost, leaf, or in sequential mode).
+  * _node_depth_ : node depth (0 to 255, 0 for leaves, or in sequential mode).
+  * _inner_size_ : inner digest size (0 to 64 for BLAKE2b, 0 to 32 for BLAKE2s, 0 in sequential mode).
+  * _last_node_ : boolean indicating whether the processed node is the last one (`False` for sequential mode).
+
+![Explanation of tree mode parameters.](https://docs.python.org/3/_images/hashlib-blake2-tree.png)
+See section 2.10 in [BLAKE2 specification](https://www.blake2.net/blake2_20130129.pdf) for comprehensive review of tree hashing.
+### Constants[¶](https://docs.python.org/3/library/hashlib.html#constants "Link to this heading") 
+
+blake2b.SALT_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2b.SALT_SIZE "Link to this definition")
+
+
+blake2s.SALT_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2s.SALT_SIZE "Link to this definition")
+
+Salt length (maximum length accepted by constructors). 
+
+blake2b.PERSON_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2b.PERSON_SIZE "Link to this definition")
+
+
+blake2s.PERSON_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2s.PERSON_SIZE "Link to this definition")
+
+Personalization string length (maximum length accepted by constructors). 
+
+blake2b.MAX_KEY_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2b.MAX_KEY_SIZE "Link to this definition")
+
+
+blake2s.MAX_KEY_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2s.MAX_KEY_SIZE "Link to this definition")
+
+Maximum key size. 
+
+blake2b.MAX_DIGEST_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2b.MAX_DIGEST_SIZE "Link to this definition")
+
+
+blake2s.MAX_DIGEST_SIZE[¶](https://docs.python.org/3/library/hashlib.html#hashlib.blake2s.MAX_DIGEST_SIZE "Link to this definition")
+
+Maximum digest size that the hash function can output.
+### Examples[¶](https://docs.python.org/3/library/hashlib.html#examples "Link to this heading")
+#### Simple hashing[¶](https://docs.python.org/3/library/hashlib.html#simple-hashing "Link to this heading")
+To calculate hash of some data, you should first construct a hash object by calling the appropriate constructor function ([`blake2b()`](https://docs.python.org/3/library/hashlib.html#hashlib.blake2b "hashlib.blake2b") or [`blake2s()`](https://docs.python.org/3/library/hashlib.html#hashlib.blake2s "hashlib.blake2s")), then update it with the data by calling [`update()`](https://docs.python.org/3/library/hashlib.html#hashlib.hash.update "hashlib.hash.update") on the object, and, finally, get the digest out of the object by calling [`digest()`](https://docs.python.org/3/library/hashlib.html#hashlib.hash.digest "hashlib.hash.digest") (or [`hexdigest()`](https://docs.python.org/3/library/hashlib.html#hashlib.hash.hexdigest "hashlib.hash.hexdigest") for hex-encoded string).
+>>>```
+>>> fromhashlibimport blake2b
+>>> h = blake2b()
+>>> h.update(b'Hello world')
+>>> h.hexdigest()
+'6ff843ba685842aa82031d3f53c48b66326df7639a63d128974c5c14f31a0f33343a8c65551134ed1ae0f2b0dd2bb495dc81039e3eeb0aa1bb0388bbeac29183'
+
+```
+
+As a shortcut, you can pass the first chunk of data to update directly to the constructor as the positional argument:
+>>>```
+>>> fromhashlibimport blake2b
+>>> blake2b(b'Hello world').hexdigest()
+'6ff843ba685842aa82031d3f53c48b66326df7639a63d128974c5c14f31a0f33343a8c65551134ed1ae0f2b0dd2bb495dc81039e3eeb0aa1bb0388bbeac29183'
+
+```
+
+You can call [`hash.update()`](https://docs.python.org/3/library/hashlib.html#hashlib.hash.update "hashlib.hash.update") as many times as you need to iteratively update the hash:
+>>>

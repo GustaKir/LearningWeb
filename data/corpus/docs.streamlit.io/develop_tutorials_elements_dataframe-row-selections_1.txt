@@ -1,0 +1,41 @@
+Title: Get Dataframe Row Selections from Users
+URL: https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections
+Summary: This document introduces two Streamlit commands for interactive dataframes: `st.data_editor` for editable data and `st.dataframe` for non-editable data. It highlights the ability to sort, search, and activate user selections with dataframes starting from Streamlit version 1.35.0, and provides a link to an older workaround for earlier versions.
+---
+
+# [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#get-dataframe-row-selections-from-users)Get dataframe row-selections from users
+Streamlit offers two commands for rendering beautiful, interactive dataframes in your app. If you need users to edit data, add rows, or delete rows, use `st.data_editor`. If you don't want users to change the data in your dataframe, use `st.dataframe`. Users can sort and search through data rendered with `st.dataframe`. Additionally, you can activate selections to work with users' row and column selections.
+This tutorial uses row selections, which were introduced in Streamlit version 1.35.0. For an older workaround using `st.data_editor`, see [Get dataframe row-selections (`streamlit<1.35.0`)](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections-old).
+## [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#applied-concepts)Applied concepts
+  * Use dataframe row selections to filter a dataframe.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#prerequisites)Prerequisites
+  * This tutorial requires the following version of Streamlit:
+`streamlit>=1.35.0 `
+  * You should have a clean working directory called `your-repository`.
+  * You should have a basic understanding of caching and `st.dataframe`.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#summary)Summary
+In this example, you'll build an app that displays a table of members and their activity for an imaginary organization. Within the table, a user can select one or more rows to create a filtered view. Your app will show a combined chart that compares the selected employees.
+Here's a look at what you'll build:
+Complete code _expand_more_
+`import numpy as np import pandas as pd import streamlit as st from faker import Faker @st.cache_data def get_profile_dataset(number_of_items: int = 20, seed: int = 0) -> pd.DataFrame:   new_data = []   fake = Faker()   np.random.seed(seed)   Faker.seed(seed) for i in range(number_of_items):     profile = fake.profile()     new_data.append( { "name": profile["name"], "daily_activity": np.random.rand(25), "activity": np.random.randint(2, 90, size=12), } )   profile_df = pd.DataFrame(new_data) return profile_df  column_configuration = { "name": st.column_config.TextColumn( "Name", help="The name of the user", max_chars=100, width="medium" ), "activity": st.column_config.LineChartColumn( "Activity (1 year)", help="The user's activity over the last 1 year",     width="large",     y_min=0,     y_max=100, ), "daily_activity": st.column_config.BarChartColumn( "Activity (daily)", help="The user's activity in the last 25 days",     width="medium",     y_min=0,     y_max=1, ), } select, compare = st.tabs(["Select members", "Compare selected"]) with select:   st.header("All members")   df = get_profile_dataset()   event = st.dataframe(     df,     column_config=column_configuration,     use_container_width=True,     hide_index=True,     on_select="rerun",     selection_mode="multi-row", )   st.header("Selected members")   people = event.selection.rows   filtered_df = df.iloc[people]   st.dataframe(     filtered_df,     column_config=column_configuration,     use_container_width=True, ) with compare:   activity_df = {} for person in people:     activity_df[df.iloc[person]["name"]] = df.iloc[person]["activity"]   activity_df = pd.DataFrame(activity_df)   daily_activity_df = {} for person in people:     daily_activity_df[df.iloc[person]["name"]] = df.iloc[person]["daily_activity"]   daily_activity_df = pd.DataFrame(daily_activity_df) if len(people) > 0:     st.header("Daily activity comparison")     st.bar_chart(daily_activity_df)     st.header("Yearly activity comparison")     st.line_chart(activity_df) else:     st.markdown("No members selected.") `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-tutorial-dataframe-row-selections.streamlit.app/?utm_medium=oembed)
+## [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#build-the-example)Build the example
+### [](https://docs.streamlit.io/develop/tutorials/elements/dataframe-row-selections#initialize-your-app)Initialize your app
+  1. In `your_repository`, create a file named `app.py`.
+  2. In a terminal, change directories to `your_repository`, and start your app:
+`streamlit run app.py `
+Your app will be blank because you still need to add code.
+  3. In `app.py`, write the following:
+`import numpy as np import pandas as pd import streamlit as st from faker import Faker `
+You'll be using these libraries as follows:
+     * You'll generate random member names with `faker`.
+     * You'll generate random activity data with `numpy`.
+     * You'll manipulate the data with `pandas`.
+  4. Save your `app.py` file, and view your running app.
+  5. In your app, select "**Always rerun** ", or press the "**A** " key.
+Your preview will be blank but wi

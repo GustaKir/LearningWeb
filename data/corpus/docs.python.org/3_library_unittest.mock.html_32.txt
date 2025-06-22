@@ -1,0 +1,96 @@
+Title: Sealing Mocks in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: The section explains that sealing a mock using `unittest.mock.seal` disables the automatic creation of mocks for attributes of the sealed mock, as well as its recursively contained mocks. It notes that if an attribute is assigned a mock instance that has a name or spec, it won't be included in the sealing, thereby allowing control over which parts of the mock are affected.
+---
+
+```
+
+[[4](https://docs.python.org/3/library/unittest.mock.html#id11)]
+This only applies to classes or already instantiated objects. Calling a mocked class to create a mock instance _does not_ create a real instance. It is only attribute lookups - along with calls to [`dir()`](https://docs.python.org/3/library/functions.html#dir "dir") - that are done.
+### Sealing mocks[¶](https://docs.python.org/3/library/unittest.mock.html#sealing-mocks "Link to this heading") 
+
+unittest.mock.seal(_mock_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.seal "Link to this definition")
+    
+Seal will disable the automatic creation of mocks when accessing an attribute of the mock being sealed or any of its attributes that are already mocks recursively.
+If a mock instance with a name or a spec is assigned to an attribute it won’t be considered in the sealing chain. This allows one to prevent seal from fixing part of the mock object.
+>>>```
+>>> mock = Mock()
+>>> mock.submock.attribute1 = 2
+>>> mock.not_submock = mock.Mock(name="sample_name")
+>>> seal(mock)
+>>> mock.new_attribute # This will raise AttributeError.
+>>> mock.submock.attribute2 # This will raise AttributeError.
+>>> mock.not_submock.attribute2 # This won't raise.
+
+```
+
+Added in version 3.7.
+## Order of precedence of `side_effect`, `return_value` and _wraps_[¶](https://docs.python.org/3/library/unittest.mock.html#order-of-precedence-of-side-effect-return-value-and-wraps "Link to this heading")
+The order of their precedence is:
+  1. [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect")
+  2. [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value")
+  3. _wraps_
+
+
+If all three are set, mock will return the value from [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect"), ignoring [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value") and the wrapped object altogether. If any two are set, the one with the higher precedence will return the value. Regardless of the order of which was set first, the order of precedence remains unchanged.
+>>>```
+>>> fromunittest.mockimport Mock
+>>> classOrder:
+...   @staticmethod
+...   defget_value():
+...     return "third"
+...
+>>> order_mock = Mock(spec=Order, wraps=Order)
+>>> order_mock.get_value.side_effect = ["first"]
+>>> order_mock.get_value.return_value = "second"
+>>> order_mock.get_value()
+'first'
+
+```
+
+As `None` is the default value of [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect"), if you reassign its value back to `None`, the order of precedence will be checked between [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value") and the wrapped object, ignoring [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect").
+>>>```
+>>> order_mock.get_value.side_effect = None
+>>> order_mock.get_value()
+'second'
+
+```
+
+If the value being returned by [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") is [`DEFAULT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.DEFAULT "unittest.mock.DEFAULT"), it is ignored and the order of precedence moves to the successor to obtain the value to return.
+>>>```
+>>> fromunittest.mockimport DEFAULT
+>>> order_mock.get_value.side_effect = [DEFAULT]
+>>> order_mock.get_value()
+'second'
+
+```
+
+When [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") wraps an object, the default value of [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value") will be [`DEFAULT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.DEFAULT "unittest.mock.DEFAULT").
+>>>```
+>>> order_mock = Mock(spec=Order, wraps=Order)
+>>> order_mock.return_value
+sentinel.DEFAULT
+>>> order_mock.get_value.return_value
+sentinel.DEFAULT
+
+```
+
+The order of precedence will ignore this value and it will move to the last successor which is the wrapped object.
+As the real call is being made to the wrapped object, creating an instance of this mock will return the real instance of the class. The positional arguments, if any, required by the wrapped object must be passed.
+>>>```
+>>> order_mock_instance = order_mock()
+>>> isinstance(order_mock_instance, Order)
+True
+>>> order_mock_instance.get_value()
+'third'
+
+```
+
+>>>```
+>>> order_mock.get_value.return_value = DEFAULT
+>>> order_mock.get_value()
+'third'
+
+```
+
+>>>

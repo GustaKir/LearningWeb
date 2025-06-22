@@ -1,0 +1,22 @@
+Title: Python 2.1 Release Notes
+URL: https://docs.python.org/3/whatsnew/2.1.html
+Summary: This segment discusses new features in Python 2.1, including the addition of the `popitem()` method for dictionaries, which allows destructively iterating over dictionary items more efficiently. It also covers the new `__all__` attribute for modules, which controls the names imported with the wildcard import syntax.
+---
+
+```
+
+For a fuller discussion of the line I/O changes, see the python-dev summary for January 1–15, 2001 at <https://mail.python.org/pipermail/python-dev/2001-January/>.
+  * A new method, [`popitem()`](https://docs.python.org/3/library/stdtypes.html#dict.popitem "dict.popitem"), was added to dictionaries to enable destructively iterating through the contents of a dictionary; this can be faster for large dictionaries because there’s no need to construct a list containing all the keys or values. `D.popitem()` removes a random `(key, value)` pair from the dictionary `D` and returns it as a 2-tuple. This was implemented mostly by Tim Peters and Guido van Rossum, after a suggestion and preliminary patch by Moshe Zadka.
+  * Modules can now control which names are imported when `from module import *` is used, by defining an `__all__` attribute containing a list of names that will be imported. One common complaint is that if the module imports other modules such as [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") or [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations."), `from module import *` will add them to the importing module’s namespace. To fix this, simply list the public names in `__all__`:
+```
+# List public names
+__all__ = ['Database', 'open']
+
+```
+
+A stricter version of this patch was first suggested and implemented by Ben Wolfson, but after some python-dev discussion, a weaker final version was checked in.
+  * Applying [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") to strings previously used octal escapes for non-printable characters; for example, a newline was `'\012'`. This was a vestigial trace of Python’s C ancestry, but today octal is of very little practical use. Ka-Ping Yee suggested using hex escapes instead of octal ones, and using the `\n`, `\t`, `\r` escapes for the appropriate characters, and implemented this new formatting.
+  * Syntax errors detected at compile-time can now raise exceptions containing the filename and line number of the error, a pleasant side effect of the compiler reorganization done by Jeremy Hylton.
+  * C extensions which import other modules have been changed to use [`PyImport_ImportModule()`](https://docs.python.org/3/c-api/import.html#c.PyImport_ImportModule "PyImport_ImportModule"), which means that they will use any import hooks that have been installed. This is also encouraged for third-party extensions that need to import some other module from C code.
+  * The size of the Unicode character database was shrunk by another 340K thanks to Fredrik Lundh.
+  * Some new ports were contributed: MacOS X (by Steven Majewski), Cygwin (by Jason Tishler); RISCOS (by Dietmar Schwertberger); Unixware 7 (by Billy G. Allie).

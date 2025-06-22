@@ -1,0 +1,61 @@
+Title: Managing Subprocesses in asyncio
+URL: https://docs.python.org/3/library/asyncio-protocol.html
+Summary: This section describes methods to manage subprocesses in asyncio, focusing on `SubprocessTransport.terminate()` to stop a subprocess using signal handling appropriate for the operating system and `SubprocessTransport.close()` to kill a subprocess and close its standard input/output streams.
+---
+
+SubprocessTransport.terminate()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.terminate "Link to this definition")
+    
+Stop the subprocess.
+On POSIX systems, this method sends [`SIGTERM`](https://docs.python.org/3/library/signal.html#signal.SIGTERM "signal.SIGTERM") to the subprocess. On Windows, the Windows API function `TerminateProcess()` is called to stop the subprocess.
+See also [`subprocess.Popen.terminate()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.terminate "subprocess.Popen.terminate"). 
+
+SubprocessTransport.close()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.close "Link to this definition")
+    
+Kill the subprocess by calling the [`kill()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.kill "asyncio.SubprocessTransport.kill") method.
+If the subprocess hasn’t returned yet, and close transports of _stdin_ , _stdout_ , and _stderr_ pipes.
+## Protocols[¶](https://docs.python.org/3/library/asyncio-protocol.html#protocols "Link to this heading")
+**Source code:** [Lib/asyncio/protocols.py](https://github.com/python/cpython/tree/3.13/Lib/asyncio/protocols.py)
+asyncio provides a set of abstract base classes that should be used to implement network protocols. Those classes are meant to be used together with [transports](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-transport).
+Subclasses of abstract base protocol classes may implement some or all methods. All these methods are callbacks: they are called by transports on certain events, for example when some data is received. A base protocol method should be called by the corresponding transport.
+### Base Protocols[¶](https://docs.python.org/3/library/asyncio-protocol.html#base-protocols "Link to this heading") 
+
+_class_ asyncio.BaseProtocol[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol "Link to this definition")
+    
+Base protocol with methods that all protocols share. 
+
+_class_ asyncio.Protocol(_BaseProtocol_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.Protocol "Link to this definition")
+    
+The base class for implementing streaming protocols (TCP, Unix sockets, etc). 
+
+_class_ asyncio.BufferedProtocol(_BaseProtocol_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BufferedProtocol "Link to this definition")
+    
+A base class for implementing streaming protocols with manual control of the receive buffer. 
+
+_class_ asyncio.DatagramProtocol(_BaseProtocol_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.DatagramProtocol "Link to this definition")
+    
+The base class for implementing datagram (UDP) protocols. 
+
+_class_ asyncio.SubprocessProtocol(_BaseProtocol_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessProtocol "Link to this definition")
+    
+The base class for implementing protocols communicating with child processes (unidirectional pipes).
+### Base Protocol[¶](https://docs.python.org/3/library/asyncio-protocol.html#base-protocol "Link to this heading")
+All asyncio protocols can implement Base Protocol callbacks.
+Connection Callbacks
+Connection callbacks are called on all protocols, exactly once per a successful connection. All other protocol callbacks can only be called between those two methods. 
+
+BaseProtocol.connection_made(_transport_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.connection_made "Link to this definition")
+    
+Called when a connection is made.
+The _transport_ argument is the transport representing the connection. The protocol is responsible for storing the reference to its transport. 
+
+BaseProtocol.connection_lost(_exc_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.connection_lost "Link to this definition")
+    
+Called when the connection is lost or closed.
+The argument is either an exception object or [`None`](https://docs.python.org/3/library/constants.html#None "None"). The latter means a regular EOF is received, or the connection was aborted or closed by this side of the connection.
+Flow Control Callbacks
+Flow control callbacks can be called by transports to pause or resume writing performed by the protocol.
+See the documentation of the [`set_write_buffer_limits()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.set_write_buffer_limits "asyncio.WriteTransport.set_write_buffer_limits") method for more details. 
+
+BaseProtocol.pause_writing()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.pause_writing "Link to this definition")
+    
+Called when the transport’s buffer goes over the high watermark.

@@ -1,0 +1,77 @@
+Title: Using Connection Shortcut Methods in SQLite3
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: This section explains how to use the `execute()`, `executemany()`, and `executescript()` methods of the `Connection` class in SQLite3 to simplify code by avoiding the explicit creation of `Cursor` objects.
+---
+
+```
+
+### How to use connection shortcut methods[¶](https://docs.python.org/3/library/sqlite3.html#how-to-use-connection-shortcut-methods "Link to this heading")
+Using the [`execute()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.execute "sqlite3.Connection.execute"), [`executemany()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.executemany "sqlite3.Connection.executemany"), and [`executescript()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.executescript "sqlite3.Connection.executescript") methods of the [`Connection`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection "sqlite3.Connection") class, your code can be written more concisely because you don’t have to create the (often superfluous) [`Cursor`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor "sqlite3.Cursor") objects explicitly. Instead, the [`Cursor`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor "sqlite3.Cursor") objects are created implicitly and these shortcut methods return the cursor objects. This way, you can execute a `SELECT` statement and iterate over it directly using only a single call on the [`Connection`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection "sqlite3.Connection") object.
+```
+# Create and fill the table.
+con = sqlite3.connect(":memory:")
+con.execute("CREATE TABLE lang(name, first_appeared)")
+data = [
+  ("C++", 1985),
+  ("Objective-C", 1984),
+]
+con.executemany("INSERT INTO lang(name, first_appeared) VALUES(?, ?)", data)
+# Print the table contents
+for row in con.execute("SELECT name, first_appeared FROM lang"):
+  print(row)
+print("I just deleted", con.execute("DELETE FROM lang").rowcount, "rows")
+# close() is not a shortcut method and it's not called automatically;
+# the connection object should be closed manually
+con.close()
+
+```
+
+### How to use the connection context manager[¶](https://docs.python.org/3/library/sqlite3.html#how-to-use-the-connection-context-manager "Link to this heading")
+A [`Connection`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection "sqlite3.Connection") object can be used as a context manager that automatically commits or rolls back open transactions when leaving the body of the context manager. If the body of the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement finishes without exceptions, the transaction is committed. If this commit fails, or if the body of the `with` statement raises an uncaught exception, the transaction is rolled back. If [`autocommit`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.autocommit "sqlite3.Connection.autocommit") is `False`, a new transaction is implicitly opened after committing or rolling back.
+If there is no open transaction upon leaving the body of the `with` statement, or if [`autocommit`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.autocommit "sqlite3.Connection.autocommit") is `True`, the context manager does nothing.
+Note
+The context manager neither implicitly opens a new transaction nor closes the connection. If you need a closing context manager, consider using [`contextlib.closing()`](https://docs.python.org/3/library/contextlib.html#contextlib.closing "contextlib.closing").
+```
+con = sqlite3.connect(":memory:")
+con.execute("CREATE TABLE lang(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE)")
+# Successful, con.commit() is called automatically afterwards
+with con:
+  con.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
+# con.rollback() is called after the with block finishes with an exception,
+# the exception is still raised and must be caught
+try:
+  with con:
+    con.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
+except sqlite3.IntegrityError:
+  print("couldn't add Python twice")
+# Connection object used as context manager only commits or rollbacks transactions,
+# so the connection object should be closed manually
+con.close()
+
+```
+
+### How to work with SQLite URIs[¶](https://docs.python.org/3/library/sqlite3.html#how-to-work-with-sqlite-uris "Link to this heading")
+Some useful URI tricks include:
+  * Open a database in read-only mode:
+
+
+>>>```
+>>> con = sqlite3.connect("file:tutorial.db?mode=ro", uri=True)
+>>> con.execute("CREATE TABLE readonly(data)")
+Traceback (most recent call last):
+OperationalError: attempt to write a readonly database
+>>> con.close()
+
+```
+
+  * Do not implicitly create a new database file if it does not already exist; will raise [`OperationalError`](https://docs.python.org/3/library/sqlite3.html#sqlite3.OperationalError "sqlite3.OperationalError") if unable to create a new file:
+
+
+>>>```
+>>> con = sqlite3.connect("file:nosuchdb.db?mode=rw", uri=True)
+Traceback (most recent call last):
+OperationalError: unable to open database file
+
+```
+
+  * Create a shared named in-memory database:

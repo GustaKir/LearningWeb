@@ -1,0 +1,27 @@
+Title: Managing Python C API Thread State with PyGILState_Ensure
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The `PyGILState_Ensure()` function prepares the current thread to use the Python C API by managing the state of the Global Interpreter Lock (GIL). This function can be called multiple times by a thread but must match each call with a corresponding `PyGILState_Release()` to maintain thread safety. Other thread-related APIs may be used in between these calls, provided the thread state is correctly restored before releasing the GIL.
+---
+
+PyGILState_STATEPyGILState_Ensure()[¶](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Ensure that the current thread is ready to call the Python C API regardless of the current state of Python, or of the global interpreter lock. This may be called as many times as desired by a thread as long as each call is matched with a call to [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release"). In general, other thread-related APIs may be used between [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") and [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release") calls as long as the thread state is restored to its previous state before the Release(). For example, normal usage of the [`Py_BEGIN_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Py_BEGIN_ALLOW_THREADS") and [`Py_END_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Py_END_ALLOW_THREADS") macros is acceptable.
+The return value is an opaque “handle” to the thread state when [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") was called, and must be passed to [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release") to ensure Python is left in the same state. Even though recursive calls are allowed, these handles _cannot_ be shared - each unique call to [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") must save the handle for its call to [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release").
+When the function returns, the current thread will hold the GIL and be able to call arbitrary Python code. Failure is a fatal error.
+Note
+Calling this function from a thread when the runtime is finalizing will terminate the thread, even if the thread was not created by Python. You can use [`Py_IsFinalizing()`](https://docs.python.org/3/c-api/init.html#c.Py_IsFinalizing "Py_IsFinalizing") or [`sys.is_finalizing()`](https://docs.python.org/3/library/sys.html#sys.is_finalizing "sys.is_finalizing") to check if the interpreter is in process of being finalized before calling this function to avoid unwanted termination. 
+
+voidPyGILState_Release(PyGILState_STATE)[¶](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Release any resources previously acquired. After this call, Python’s state will be the same as it was prior to the corresponding [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") call (but generally this state will be unknown to the caller, hence the use of the GILState API).
+Every call to [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") must be matched by a call to [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release") on the same thread. 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyGILState_GetThisThreadState()[¶](https://docs.python.org/3/c-api/init.html#c.PyGILState_GetThisThreadState "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Get the current thread state for this thread. May return `NULL` if no GILState API has been used on the current thread. Note that the main thread always has such a thread-state, even if no auto-thread-state call has been made on the main thread. This is mainly a helper/diagnostic function. 
+
+intPyGILState_Check()[¶](https://docs.python.org/3/c-api/init.html#c.PyGILState_Check "Link to this definition")
+    
+Return `1` if the current thread is holding the GIL and `0` otherwise. This function can be called from any thread at any time. Only if it has had its Python thread state initialized and currently is holding the GIL will it return `1`. This is mainly a helper/diagnostic function. It can be useful for example in callback contexts or memory allocation functions when knowing that the GIL is locked can allow the caller to perform sensitive actions or otherwise behave differently.
+Added in version 3.4.
+The following macros are normally used without a trailing semicolon; look for example usage in the Python source distribution.

@@ -1,0 +1,80 @@
+Title: Overview of the Counter Class in Collections
+URL: https://docs.python.org/3/library/collections.html
+Summary: The Counter class, added in Python 3.1 and updated in 3.7, is a subclass of dict that remembers order of insertion and supports math operations while preserving element sequence. It includes additional methods, such as elements(), which returns an iterator over elements based on their counts, maintaining the order of their first occurrence.
+---
+
+```
+
+Added in version 3.1.
+Changed in version 3.7: As a [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") subclass, [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") inherited the capability to remember insertion order. Math operations on _Counter_ objects also preserve order. Results are ordered according to when an element is first encountered in the left operand and then by the order encountered in the right operand.
+Counter objects support additional methods beyond those available for all dictionaries: 
+
+elements()[¶](https://docs.python.org/3/library/collections.html#collections.Counter.elements "Link to this definition")
+    
+Return an iterator over elements repeating each as many times as its count. Elements are returned in the order first encountered. If an element’s count is less than one, [`elements()`](https://docs.python.org/3/library/collections.html#collections.Counter.elements "collections.Counter.elements") will ignore it.
+>>>```
+>>> c = Counter(a=4, b=2, c=0, d=-2)
+>>> sorted(c.elements())
+['a', 'a', 'a', 'a', 'b', 'b']
+
+```
+
+
+most_common([_n_])[¶](https://docs.python.org/3/library/collections.html#collections.Counter.most_common "Link to this definition")
+    
+Return a list of the _n_ most common elements and their counts from the most common to the least. If _n_ is omitted or `None`, [`most_common()`](https://docs.python.org/3/library/collections.html#collections.Counter.most_common "collections.Counter.most_common") returns _all_ elements in the counter. Elements with equal counts are ordered in the order first encountered:
+>>>```
+>>> Counter('abracadabra').most_common(3)
+[('a', 5), ('b', 2), ('r', 2)]
+
+```
+
+
+subtract([_iterable-or-mapping_])[¶](https://docs.python.org/3/library/collections.html#collections.Counter.subtract "Link to this definition")
+    
+Elements are subtracted from an _iterable_ or from another _mapping_ (or counter). Like [`dict.update()`](https://docs.python.org/3/library/stdtypes.html#dict.update "dict.update") but subtracts counts instead of replacing them. Both inputs and outputs may be zero or negative.
+>>>```
+>>> c = Counter(a=4, b=2, c=0, d=-2)
+>>> d = Counter(a=1, b=2, c=3, d=4)
+>>> c.subtract(d)
+>>> c
+Counter({'a': 3, 'b': 0, 'c': -3, 'd': -6})
+
+```
+
+Added in version 3.2. 
+
+total()[¶](https://docs.python.org/3/library/collections.html#collections.Counter.total "Link to this definition")
+    
+Compute the sum of the counts.
+>>>```
+>>> c = Counter(a=10, b=5, c=0)
+>>> c.total()
+15
+
+```
+
+Added in version 3.10.
+The usual dictionary methods are available for [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") objects except for two which work differently for counters. 
+
+fromkeys(_iterable_)[¶](https://docs.python.org/3/library/collections.html#collections.Counter.fromkeys "Link to this definition")
+    
+This class method is not implemented for [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") objects. 
+
+update([_iterable-or-mapping_])[¶](https://docs.python.org/3/library/collections.html#collections.Counter.update "Link to this definition")
+    
+Elements are counted from an _iterable_ or added-in from another _mapping_ (or counter). Like [`dict.update()`](https://docs.python.org/3/library/stdtypes.html#dict.update "dict.update") but adds counts instead of replacing them. Also, the _iterable_ is expected to be a sequence of elements, not a sequence of `(key, value)` pairs.
+Counters support rich comparison operators for equality, subset, and superset relationships: `==`, `!=`, `<`, `<=`, `>`, `>=`. All of those tests treat missing elements as having zero counts so that `Counter(a=1) == Counter(a=1, b=0)` returns true.
+Changed in version 3.10: Rich comparison operations were added.
+Changed in version 3.10: In equality tests, missing elements are treated as having zero counts. Formerly, `Counter(a=3)` and `Counter(a=3, b=0)` were considered distinct.
+Common patterns for working with [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") objects:
+```
+c.total()            # total of all counts
+c.clear()            # reset all counts
+list(c)             # list unique elements
+set(c)             # convert to a set
+dict(c)             # convert to a regular dictionary
+c.items()            # access the (elem, cnt) pairs
+Counter(dict(list_of_pairs))  # convert from a list of (elem, cnt) pairs
+c.most_common()[:-n-1:-1]    # n least common elements
++c               # remove zero and negative counts

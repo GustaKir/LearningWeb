@@ -1,0 +1,48 @@
+Title: Weak References and Caching in Python
+URL: https://docs.python.org/3/whatsnew/2.1.html
+Summary: This document discusses the use of weak references in Python to implement a cache that avoids keeping objects alive unnecessarily, thus preventing memory issues. It explains how to create weak references and provides a basis for developing a `memoize()` function that utilizes this caching method without retaining objects beyond their lifespan.
+---
+
+```
+
+This version works for simple things such as integers, but it has a side effect; the `_cache` dictionary holds a reference to the return values, so they’ll never be deallocated until the Python process exits and cleans up. This isn’t very noticeable for integers, but if `f()` returns an object, or a data structure that takes up a lot of memory, this can be a problem.
+Weak references provide a way to implement a cache that won’t keep objects alive beyond their time. If an object is only accessible through weak references, the object will be deallocated and the weak references will now indicate that the object it referred to no longer exists. A weak reference to an object _obj_ is created by calling `wr = weakref.ref(obj)`. The object being referred to is returned by calling the weak reference as if it were a function: `wr()`. It will return the referenced object, or `None` if the object no longer exists.
+This makes it possible to write a `memoize()` function whose cache doesn’t keep objects alive, by storing weak references in the cache.
+```
+_cache = {}
+defmemoize(x):
+  if _cache.has_key(x):
+    obj = _cache[x]()
+    # If weak reference object still exists,
+    # return it
+    if obj is not None: return obj
+  retval = f(x)
+  # Cache a weak reference
+  _cache[x] = weakref.ref(retval)
+  return retval
+
+```
+
+The [`weakref`](https://docs.python.org/3/library/weakref.html#module-weakref "weakref: Support for weak references and weak dictionaries.") module also allows creating proxy objects which behave like weak references — an object referenced only by proxy objects is deallocated – but instead of requiring an explicit call to retrieve the object, the proxy transparently forwards all operations to the object as long as the object still exists. If the object is deallocated, attempting to use a proxy will cause a `weakref.ReferenceError` exception to be raised.
+```
+proxy = weakref.proxy(obj)
+proxy.attr  # Equivalent to obj.attr
+proxy.meth() # Equivalent to obj.meth()
+del obj
+proxy.attr  # raises weakref.ReferenceError
+
+```
+
+See also 
+
+[**PEP 205**](https://peps.python.org/pep-0205/) - Weak References
+    
+Written and implemented by Fred L. Drake, Jr.
+## PEP 232: Function Attributes[¶](https://docs.python.org/3/whatsnew/2.1.html#pep-232-function-attributes "Link to this heading")
+In Python 2.1, functions can now have arbitrary information attached to them. People were often using docstrings to hold information about functions and methods, because the [`__doc__`](https://docs.python.org/3/reference/datamodel.html#function.__doc__ "function.__doc__") attribute was the only way of attaching any information to a function. For example, in the Zope web application server, functions are marked as safe for public access by having a docstring, and in John Aycock’s SPARK parsing framework, docstrings hold parts of the BNF grammar to be parsed. This overloading is unfortunate, since docstrings are really intended to hold a function’s documentation; for example, it means you can’t properly document functions intended for private use in Zope.
+Arbitrary attributes can now be set and retrieved on functions using the regular Python syntax:
+```
+deff(): pass
+f.publish = 1
+f.secure = 1
+f.grammar = "A ::= B (C D)*"

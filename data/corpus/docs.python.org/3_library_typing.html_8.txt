@@ -1,0 +1,78 @@
+Title: Nominal vs Structural Subtyping in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section discusses the use of `object` and `Any` for type indication in a typesafe manner and details the concepts of nominal and structural subtyping as defined in PEP 484, highlighting the limitations of nominal subtyping in Python's static type system.
+---
+
+```
+
+Use [`object`](https://docs.python.org/3/library/functions.html#object "object") to indicate that a value could be any type in a typesafe manner. Use [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") to indicate that a value is dynamically typed.
+## Nominal vs structural subtyping[¶](https://docs.python.org/3/library/typing.html#nominal-vs-structural-subtyping "Link to this heading")
+Initially [**PEP 484**](https://peps.python.org/pep-0484/) defined the Python static type system as using _nominal subtyping_. This means that a class `A` is allowed where a class `B` is expected if and only if `A` is a subclass of `B`.
+This requirement previously also applied to abstract base classes, such as [`Iterable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable "collections.abc.Iterable"). The problem with this approach is that a class had to be explicitly marked to support them, which is unpythonic and unlike what one would normally do in idiomatic dynamically typed Python code. For example, this conforms to [**PEP 484**](https://peps.python.org/pep-0484/):
+```
+fromcollections.abcimport Sized, Iterable, Iterator
+classBucket(Sized, Iterable[int]):
+  ...
+  def__len__(self) -> int: ...
+  def__iter__(self) -> Iterator[int]: ...
+
+```
+
+[**PEP 544**](https://peps.python.org/pep-0544/) allows to solve this problem by allowing users to write the above code without explicit base classes in the class definition, allowing `Bucket` to be implicitly considered a subtype of both `Sized` and `Iterable[int]` by static type checkers. This is known as _structural subtyping_ (or static duck-typing):
+```
+fromcollections.abcimport Iterator, Iterable
+classBucket: # Note: no base classes
+  ...
+  def__len__(self) -> int: ...
+  def__iter__(self) -> Iterator[int]: ...
+defcollect(items: Iterable[int]) -> int: ...
+result = collect(Bucket()) # Passes type check
+
+```
+
+Moreover, by subclassing a special class [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol"), a user can define new custom protocols to fully enjoy structural subtyping (see examples below).
+## Module contents[¶](https://docs.python.org/3/library/typing.html#module-contents "Link to this heading")
+The `typing` module defines the following classes, functions and decorators.
+### Special typing primitives[¶](https://docs.python.org/3/library/typing.html#special-typing-primitives "Link to this heading")
+#### Special types[¶](https://docs.python.org/3/library/typing.html#special-types "Link to this heading")
+These can be used as types in annotations. They do not support subscription using `[]`. 
+
+typing.Any[¶](https://docs.python.org/3/library/typing.html#typing.Any "Link to this definition")
+    
+Special type indicating an unconstrained type.
+  * Every type is compatible with [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any").
+  * [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") is compatible with every type.
+
+
+Changed in version 3.11: [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") can now be used as a base class. This can be useful for avoiding type checker errors with classes that can duck type anywhere or are highly dynamic. 
+
+typing.AnyStr[¶](https://docs.python.org/3/library/typing.html#typing.AnyStr "Link to this definition")
+    
+A [constrained type variable](https://docs.python.org/3/library/typing.html#typing-constrained-typevar).
+Definition:
+```
+AnyStr = TypeVar('AnyStr', str, bytes)
+
+```
+
+`AnyStr` is meant to be used for functions that may accept [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") arguments but cannot allow the two to mix.
+For example:
+```
+defconcat(a: AnyStr, b: AnyStr) -> AnyStr:
+  return a + b
+concat("foo", "bar")  # OK, output has type 'str'
+concat(b"foo", b"bar") # OK, output has type 'bytes'
+concat("foo", b"bar")  # Error, cannot mix str and bytes
+
+```
+
+Note that, despite its name, `AnyStr` has nothing to do with the [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") type, nor does it mean “any string”. In particular, `AnyStr` and `str | bytes` are different from each other and have different use cases:
+```
+# Invalid use of AnyStr:
+# The type variable is used only once in the function signature,
+# so cannot be "solved" by the type checker
+defgreet_bad(cond: bool) -> AnyStr:
+  return "hi there!" if cond else b"greetings!"
+# The better way of annotating this function:
+defgreet_proper(cond: bool) -> str | bytes:
+  return "hi there!" if cond else b"greetings!"

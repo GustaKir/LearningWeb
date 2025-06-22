@@ -1,0 +1,44 @@
+Title: New Features in Python 3.10: Encoding Warning
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: Python 3.10 introduces an optional `EncodingWarning` to help identify common bugs related to file encoding in `TextIOWrapper` and the `open()` function. The default encoding is platform-dependent, leading to potential issues when opening files without specifying the encoding, especially for common formats like JSON.
+---
+
+```
+
+
+
+For the full specification see [**PEP 634**](https://peps.python.org/pep-0634/). Motivation and rationale are in [**PEP 635**](https://peps.python.org/pep-0635/), and a longer tutorial is in [**PEP 636**](https://peps.python.org/pep-0636/).
+### Optional `EncodingWarning` and `encoding="locale"` option[¶](https://docs.python.org/3/whatsnew/3.10.html#optional-encodingwarning-and-encoding-locale-option "Link to this heading")
+The default encoding of [`TextIOWrapper`](https://docs.python.org/3/library/io.html#io.TextIOWrapper "io.TextIOWrapper") and [`open()`](https://docs.python.org/3/library/functions.html#open "open") is platform and locale dependent. Since UTF-8 is used on most Unix platforms, omitting `encoding` option when opening UTF-8 files (e.g. JSON, YAML, TOML, Markdown) is a very common bug. For example:
+```
+# BUG: "rb" mode or encoding="utf-8" should be used.
+with open("data.json") as f:
+  data = json.load(f)
+
+```
+
+To find this type of bug, an optional `EncodingWarning` is added. It is emitted when [`sys.flags.warn_default_encoding`](https://docs.python.org/3/library/sys.html#sys.flags "sys.flags") is true and locale-specific default encoding is used.
+`-X warn_default_encoding` option and [`PYTHONWARNDEFAULTENCODING`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNDEFAULTENCODING) are added to enable the warning.
+See [Text Encoding](https://docs.python.org/3/library/io.html#io-text-encoding) for more information.
+## New Features Related to Type Hints[¶](https://docs.python.org/3/whatsnew/3.10.html#new-features-related-to-type-hints "Link to this heading")
+This section covers major changes affecting [**PEP 484**](https://peps.python.org/pep-0484/) type hints and the [`typing`](https://docs.python.org/3/library/typing.html#module-typing "typing: Support for type hints \(see :pep:`484`\).") module.
+### PEP 604: New Type Union Operator[¶](https://docs.python.org/3/whatsnew/3.10.html#pep-604-new-type-union-operator "Link to this heading")
+A new type union operator was introduced which enables the syntax `X | Y`. This provides a cleaner way of expressing ‘either type X or type Y’ instead of using [`typing.Union`](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union"), especially in type hints.
+In previous versions of Python, to apply a type hint for functions accepting arguments of multiple types, [`typing.Union`](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union") was used:
+```
+defsquare(number: Union[int, float]) -> Union[int, float]:
+  return number ** 2
+
+```
+
+Type hints can now be written in a more succinct manner:
+```
+defsquare(number: int | float) -> int | float:
+  return number ** 2
+
+```
+
+This new syntax is also accepted as the second argument to [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") and [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass"):
+>>>```
+>>> isinstance(1, int | str)
+True

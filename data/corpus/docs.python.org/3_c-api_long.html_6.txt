@@ -1,0 +1,75 @@
+Title: Getting Buffer Size for Python Long Values
+URL: https://docs.python.org/3/c-api/long.html
+Summary: This section explains how to determine the buffer size required to hold a Python long value using the `PyLong_AsNativeBytes` function. Passing `_n_bytes=0_` returns a size estimate but does not provide an accurate bit length. A two-step process is recommended: first to get the size, then to allocate the buffer and retrieve the value.
+---
+
+```
+
+Passing zero to _n_bytes_ will return the size of a buffer that would be large enough to hold the value. This may be larger than technically necessary, but not unreasonably so. If _n_bytes=0_ , _buffer_ may be `NULL`.
+Note
+Passing _n_bytes=0_ to this function is not an accurate way to determine the bit length of the value.
+To get at the entire Python value of an unknown size, the function can be called twice: first to determine the buffer size, then to fill it:
+```
+// Ask how much space we need.
+Py_ssize_texpected=PyLong_AsNativeBytes(pylong,NULL,0,-1);
+if(expected<0){
+// Failed. A Python exception was set with the reason.
+returnNULL;
+}
+assert(expected!=0);// Impossible per the API definition.
+uint8_t*bignum=malloc(expected);
+if(!bignum){
+PyErr_SetString(PyExc_MemoryError,"bignum malloc failed.");
+returnNULL;
+}
+// Safely get the entire value.
+Py_ssize_tbytes=PyLong_AsNativeBytes(pylong,bignum,expected,-1);
+if(bytes<0){// Exception has been set.
+free(bignum);
+returnNULL;
+}
+elseif(bytes>expected){// This should not be possible.
+PyErr_SetString(PyExc_RuntimeError,
+"Unexpected bignum truncation after a size check.");
+free(bignum);
+returnNULL;
+}
+// The expected success given the above pre-check.
+// ... use bignum ...
+free(bignum);
+
+```
+
+_flags_ is either `-1` (`Py_ASNATIVEBYTES_DEFAULTS`) to select defaults that behave most like a C cast, or a combination of the other flags in the table below. Note that `-1` cannot be combined with other flags.
+Currently, `-1` corresponds to `Py_ASNATIVEBYTES_NATIVE_ENDIAN | Py_ASNATIVEBYTES_UNSIGNED_BUFFER`.
+Flag | Value  
+---|--- 
+
+Py_ASNATIVEBYTES_DEFAULTS[¶](https://docs.python.org/3/c-api/long.html#c.Py_ASNATIVEBYTES_DEFAULTS "Link to this definition")
+| `-1` 
+
+Py_ASNATIVEBYTES_BIG_ENDIAN[¶](https://docs.python.org/3/c-api/long.html#c.Py_ASNATIVEBYTES_BIG_ENDIAN "Link to this definition")
+| `0` 
+
+Py_ASNATIVEBYTES_LITTLE_ENDIAN[¶](https://docs.python.org/3/c-api/long.html#c.Py_ASNATIVEBYTES_LITTLE_ENDIAN "Link to this definition")
+| `1` 
+
+Py_ASNATIVEBYTES_NATIVE_ENDIAN[¶](https://docs.python.org/3/c-api/long.html#c.Py_ASNATIVEBYTES_NATIVE_ENDIAN "Link to this definition")
+| `3` 
+
+Py_ASNATIVEBYTES_UNSIGNED_BUFFER[¶](https://docs.python.org/3/c-api/long.html#c.Py_ASNATIVEBYTES_UNSIGNED_BUFFER "Link to this definition")
+| `4` 
+
+Py_ASNATIVEBYTES_REJECT_NEGATIVE[¶](https://docs.python.org/3/c-api/long.html#c.Py_ASNATIVEBYTES_REJECT_NEGATIVE "Link to this definition")
+| `8` 
+
+Py_ASNATIVEBYTES_ALLOW_INDEX[¶](https://docs.python.org/3/c-api/long.html#c.Py_ASNATIVEBYTES_ALLOW_INDEX "Link to this definition")
+| `16`  
+Specifying `Py_ASNATIVEBYTES_NATIVE_ENDIAN` will override any other endian flags. Passing `2` is reserved.
+By default, sufficient buffer will be requested to include a sign bit. For example, when converting 128 with _n_bytes=1_ , the function will return 2 (or more) in order to store a zero sign bit.
+If `Py_ASNATIVEBYTES_UNSIGNED_BUFFER` is specified, a zero sign bit will be omitted from size calculations. This allows, for example, 128 to fit in a single-byte buffer. If the destination buffer is later treated as signed, a positive input value may become negative. Note that the flag does not affect handling of negative values: for those, space for a sign bit is always requested.
+Specifying `Py_ASNATIVEBYTES_REJECT_NEGATIVE` causes an exception to be set if _pylong_ is negative. Without this flag, negative values will be copied provided there is enough space for at least one sign bit, regardless of whether `Py_ASNATIVEBYTES_UNSIGNED_BUFFER` was specified.
+If `Py_ASNATIVEBYTES_ALLOW_INDEX` is specified and a non-integer value is passed, its [`__index__()`](https://docs.python.org/3/reference/datamodel.html#object.__index__ "object.__index__") method will be called first. This may result in Python code executing and other threads being allowed to run, which could cause changes to other objects or values in use. When _flags_ is `-1`, this option is not set, and non-integer values will raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError").
+Note
+With the default _flags_ (`-1`, or _UNSIGNED_BUFFER_ without _REJECT_NEGATIVE_), multiple Python integers can map to a single value without overflow. For example, both `255` and `-1` fit a single-byte buffer and set all its bits. This matches typical C cast behavior.
+Added in version 3.13.

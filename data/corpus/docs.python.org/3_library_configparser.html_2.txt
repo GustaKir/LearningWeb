@@ -1,0 +1,62 @@
+Title: Using ConfigParser's getboolean() and Related Methods
+URL: https://docs.python.org/3/library/configparser.html
+Summary: This section provides examples of using the `getboolean()` method in Python's ConfigParser, highlighting its capability to retrieve boolean values from configuration files. It mentions equivalent methods like `getint()` and `getfloat()`, and notes the possibility of registering custom converters.
+---
+
+```
+>>> topsecret.getboolean('ForwardX11')
+False
+>>> config['forge.example'].getboolean('ForwardX11')
+True
+>>> config.getboolean('forge.example', 'Compression')
+True
+
+```
+
+Apart from [`getboolean()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean "configparser.ConfigParser.getboolean"), config parsers also provide equivalent [`getint()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getint "configparser.ConfigParser.getint") and [`getfloat()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getfloat "configparser.ConfigParser.getfloat") methods. You can register your own converters and customize the provided ones. [[1]](https://docs.python.org/3/library/configparser.html#id16)
+## Fallback Values[¶](https://docs.python.org/3/library/configparser.html#fallback-values "Link to this heading")
+As with a dictionary, you can use a section’s [`get()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.get "configparser.ConfigParser.get") method to provide fallback values:
+>>>```
+>>> topsecret.get('Port')
+'50022'
+>>> topsecret.get('CompressionLevel')
+'9'
+>>> topsecret.get('Cipher')
+>>> topsecret.get('Cipher', '3des-cbc')
+'3des-cbc'
+
+```
+
+Please note that default values have precedence over fallback values. For instance, in our example the `'CompressionLevel'` key was specified only in the `'DEFAULT'` section. If we try to get it from the section `'topsecret.server.example'`, we will always get the default, even if we specify a fallback:
+>>>```
+>>> topsecret.get('CompressionLevel', '3')
+'9'
+
+```
+
+One more thing to be aware of is that the parser-level [`get()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.get "configparser.ConfigParser.get") method provides a custom, more complex interface, maintained for backwards compatibility. When using this method, a fallback value can be provided via the `fallback` keyword-only argument:
+>>>```
+>>> config.get('forge.example', 'monster',
+...       fallback='No such things as monsters')
+'No such things as monsters'
+
+```
+
+The same `fallback` argument can be used with the [`getint()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getint "configparser.ConfigParser.getint"), [`getfloat()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getfloat "configparser.ConfigParser.getfloat") and [`getboolean()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean "configparser.ConfigParser.getboolean") methods, for example:
+>>>```
+>>> 'BatchMode' in topsecret
+False
+>>> topsecret.getboolean('BatchMode', fallback=True)
+True
+>>> config['DEFAULT']['BatchMode'] = 'no'
+>>> topsecret.getboolean('BatchMode', fallback=True)
+False
+
+```
+
+## Supported INI File Structure[¶](https://docs.python.org/3/library/configparser.html#supported-ini-file-structure "Link to this heading")
+A configuration file consists of sections, each led by a `[section]` header, followed by key/value entries separated by a specific string (`=` or `:` by default [[1]](https://docs.python.org/3/library/configparser.html#id16)). By default, section names are case sensitive but keys are not [[1]](https://docs.python.org/3/library/configparser.html#id16). Leading and trailing whitespace is removed from keys and values. Values can be omitted if the parser is configured to allow it [[1]](https://docs.python.org/3/library/configparser.html#id16), in which case the key/value delimiter may also be left out. Values can also span multiple lines, as long as they are indented deeper than the first line of the value. Depending on the parser’s mode, blank lines may be treated as parts of multiline values or ignored.
+By default, a valid section name can be any string that does not contain ‘\n’. To change this, see [`ConfigParser.SECTCRE`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.SECTCRE "configparser.ConfigParser.SECTCRE").
+The first section name may be omitted if the parser is configured to allow an unnamed top level section with `allow_unnamed_section=True`. In this case, the keys/values may be retrieved by [`UNNAMED_SECTION`](https://docs.python.org/3/library/configparser.html#configparser.UNNAMED_SECTION "configparser.UNNAMED_SECTION") as in `config[UNNAMED_SECTION]`.
+Configuration files may include comments, prefixed by specific characters (`#` and `;` by default [[1]](https://docs.python.org/3/library/configparser.html#id16)). Comments may appear on their own on an otherwise empty line, possibly indented. [[1]](https://docs.python.org/3/library/configparser.html#id16)
+For example:

@@ -1,0 +1,46 @@
+Title: Python 2.1 Release Overview
+URL: https://docs.python.org/3/whatsnew/2.1.html
+Summary: This article outlines the new features introduced in Python 2.1, marking its first release guided by Python Enhancement Proposals (PEPs). While it offers fewer changes than Python 2.0, it highlights the transitions and improvements available in this update. Users are encouraged to refer to the official documentation or specific PEPs for detailed insights on the new features.
+---
+
+Author:
+    
+A.M. Kuchling
+## Introduction[¶](https://docs.python.org/3/whatsnew/2.1.html#introduction "Link to this heading")
+This article explains the new features in Python 2.1. While there aren’t as many changes in 2.1 as there were in Python 2.0, there are still some pleasant surprises in store. 2.1 is the first release to be steered through the use of Python Enhancement Proposals, or PEPs, so most of the sizable changes have accompanying PEPs that provide more complete documentation and a design rationale for the change. This article doesn’t attempt to document the new features completely, but simply provides an overview of the new features for Python programmers. Refer to the Python 2.1 documentation, or to the specific PEP, for more details about any new feature that particularly interests you.
+One recent goal of the Python development team has been to accelerate the pace of new releases, with a new release coming every 6 to 9 months. 2.1 is the first release to come out at this faster pace, with the first alpha appearing in January, 3 months after the final version of 2.0 was released.
+The final release of Python 2.1 was made on April 17, 2001.
+## PEP 227: Nested Scopes[¶](https://docs.python.org/3/whatsnew/2.1.html#pep-227-nested-scopes "Link to this heading")
+The largest change in Python 2.1 is to Python’s scoping rules. In Python 2.0, at any given time there are at most three namespaces used to look up variable names: local, module-level, and the built-in namespace. This often surprised people because it didn’t match their intuitive expectations. For example, a nested recursive function definition doesn’t work:
+```
+deff():
+  ...
+  defg(value):
+    ...
+    return g(value-1) + 1
+  ...
+
+```
+
+The function `g()` will always raise a [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") exception, because the binding of the name `g` isn’t in either its local namespace or in the module-level namespace. This isn’t much of a problem in practice (how often do you recursively define interior functions like this?), but this also made using the [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda) expression clumsier, and this was a problem in practice. In code which uses [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda) you can often find local variables being copied by passing them as the default values of arguments.
+```
+deffind(self, name):
+  "Return list of any entries equal to 'name'"
+  L = filter(lambda x, name=name: x == name,
+        self.list_attribute)
+  return L
+
+```
+
+The readability of Python code written in a strongly functional style suffers greatly as a result.
+The most significant change to Python 2.1 is that static scoping has been added to the language to fix this problem. As a first effect, the `name=name` default argument is now unnecessary in the above example. Put simply, when a given variable name is not assigned a value within a function (by an assignment, or the [`def`](https://docs.python.org/3/reference/compound_stmts.html#def), [`class`](https://docs.python.org/3/reference/compound_stmts.html#class), or [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) statements), references to the variable will be looked up in the local namespace of the enclosing scope. A more detailed explanation of the rules, and a dissection of the implementation, can be found in the PEP.
+This change may cause some compatibility problems for code where the same variable name is used both at the module level and as a local variable within a function that contains further function definitions. This seems rather unlikely though, since such code would have been pretty confusing to read in the first place.
+One side effect of the change is that the `from module import *` and `exec` statements have been made illegal inside a function scope under certain conditions. The Python reference manual has said all along that `from module import *` is only legal at the top level of a module, but the CPython interpreter has never enforced this before. As part of the implementation of nested scopes, the compiler which turns Python source into bytecodes has to generate different code to access variables in a containing scope. `from module import *` and `exec` make it impossible for the compiler to figure this out, because they add names to the local namespace that are unknowable at compile time. Therefore, if a function contains function definitions or [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda) expressions with free variables, the compiler will flag this by raising a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") exception.
+To make the preceding explanation a bit clearer, here’s an example:
+```
+x = 1
+deff():
+  # The next line is a syntax error
+  exec 'x=2'
+  defg():
+    return x

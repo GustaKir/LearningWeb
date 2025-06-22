@@ -1,0 +1,60 @@
+Title: abc.ABCMeta - Metaclass for Abstract Base Classes
+URL: https://docs.python.org/3/library/abc.html
+Summary: Introduced in Python version 3.4, the `abc.ABCMeta` is a metaclass used to define Abstract Base Classes (ABCs). It allows direct subclassing and can register unrelated concrete classes and ABCs as 'virtual subclasses.' These subclasses are recognized by the `issubclass()` function but will not appear in the MRO of the registering ABC, nor can they invoke its method implementations via `super()`.
+---
+
+```
+
+Added in version 3.4. 
+
+_class_ abc.ABCMeta[¶](https://docs.python.org/3/library/abc.html#abc.ABCMeta "Link to this definition")
+    
+Metaclass for defining Abstract Base Classes (ABCs).
+Use this metaclass to create an ABC. An ABC can be subclassed directly, and then acts as a mix-in class. You can also register unrelated concrete classes (even built-in classes) and unrelated ABCs as “virtual subclasses” – these and their descendants will be considered subclasses of the registering ABC by the built-in [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass") function, but the registering ABC won’t show up in their MRO (Method Resolution Order) nor will method implementations defined by the registering ABC be callable (not even via [`super()`](https://docs.python.org/3/library/functions.html#super "super")). [[1]](https://docs.python.org/3/library/abc.html#id2)
+Classes created with a metaclass of `ABCMeta` have the following method: 
+
+register(_subclass_)[¶](https://docs.python.org/3/library/abc.html#abc.ABCMeta.register "Link to this definition")
+    
+Register _subclass_ as a “virtual subclass” of this ABC. For example:
+```
+fromabcimport ABC
+classMyABC(ABC):
+  pass
+MyABC.register(tuple)
+assert issubclass(tuple, MyABC)
+assert isinstance((), MyABC)
+
+```
+
+Changed in version 3.3: Returns the registered subclass, to allow usage as a class decorator.
+Changed in version 3.4: To detect calls to `register()`, you can use the [`get_cache_token()`](https://docs.python.org/3/library/abc.html#abc.get_cache_token "abc.get_cache_token") function.
+You can also override this method in an abstract base class: 
+
+__subclasshook__(_subclass_)[¶](https://docs.python.org/3/library/abc.html#abc.ABCMeta.__subclasshook__ "Link to this definition")
+    
+(Must be defined as a class method.)
+Check whether _subclass_ is considered a subclass of this ABC. This means that you can customize the behavior of [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass") further without the need to call [`register()`](https://docs.python.org/3/library/abc.html#abc.ABCMeta.register "abc.ABCMeta.register") on every class you want to consider a subclass of the ABC. (This class method is called from the [`__subclasscheck__()`](https://docs.python.org/3/reference/datamodel.html#type.__subclasscheck__ "type.__subclasscheck__") method of the ABC.)
+This method should return `True`, `False` or [`NotImplemented`](https://docs.python.org/3/library/constants.html#NotImplemented "NotImplemented"). If it returns `True`, the _subclass_ is considered a subclass of this ABC. If it returns `False`, the _subclass_ is not considered a subclass of this ABC, even if it would normally be one. If it returns `NotImplemented`, the subclass check is continued with the usual mechanism.
+For a demonstration of these concepts, look at this example ABC definition:
+```
+classFoo:
+  def__getitem__(self, index):
+    ...
+  def__len__(self):
+    ...
+  defget_iterator(self):
+    return iter(self)
+classMyIterable(ABC):
+  @abstractmethod
+  def__iter__(self):
+    while False:
+      yield None
+  defget_iterator(self):
+    return self.__iter__()
+  @classmethod
+  def__subclasshook__(cls, C):
+    if cls is MyIterable:
+      if any("__iter__" in B.__dict__ for B in C.__mro__):
+        return True
+    return NotImplemented
+MyIterable.register(Foo)

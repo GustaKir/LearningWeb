@@ -1,0 +1,89 @@
+Title: Generating TypeScript Clients with Improved Method Names
+URL: https://fastapi.tiangolo.com/advanced/generate-clients/
+Summary: This section discusses generating TypeScript clients with customized operation IDs, resulting in method names that exclude URL path and HTTP operation details. It also highlights the issue of duplicated information in the generated code, noting that method names still include tag prefixes despite the relation to items being clear from the tag.
+---
+
+```
+
+### Generate a TypeScript Client with Custom Operation IDs[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#generate-a-typescript-client-with-custom-operation-ids "Permanent link")
+Now if you generate the client again, you will see that it has the improved method names:
+![](https://fastapi.tiangolo.com/img/tutorial/generate-clients/image07.png)
+As you see, the method names now have the tag and then the function name, now they don't include information from the URL path and the HTTP operation.
+### Preprocess the OpenAPI Specification for the Client Generator[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#preprocess-the-openapi-specification-for-the-client-generator "Permanent link")
+The generated code still has some **duplicated information**.
+We already know that this method is related to the **items** because that word is in the `ItemsService` (taken from the tag), but we still have the tag name prefixed in the method name too. 😕
+We will probably still want to keep it for OpenAPI in general, as that will ensure that the operation IDs are **unique**.
+But for the generated client we could **modify** the OpenAPI operation IDs right before generating the clients, just to make those method names nicer and **cleaner**.
+We could download the OpenAPI JSON to a file `openapi.json` and then we could **remove that prefixed tag** with a script like this:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/generate-clients/#__tabbed_7_1)[Node.js](https://fastapi.tiangolo.com/advanced/generate-clients/#__tabbed_7_2)
+```
+importjson
+frompathlibimport Path
+file_path = Path("./openapi.json")
+openapi_content = json.loads(file_path.read_text())
+for path_data in openapi_content["paths"].values():
+  for operation in path_data.values():
+    tag = operation["tags"][0]
+    operation_id = operation["operationId"]
+    to_remove = f"{tag}-"
+    new_operation_id = operation_id[len(to_remove) :]
+    operation["operationId"] = new_operation_id
+file_path.write_text(json.dumps(openapi_content))
+
+```
+
+```
+import*asfsfrom'fs'
+asyncfunctionmodifyOpenAPIFile(filePath){
+try{
+constdata=awaitfs.promises.readFile(filePath)
+constopenapiContent=JSON.parse(data)
+constpaths=openapiContent.paths
+for(constpathKeyofObject.keys(paths)){
+constpathData=paths[pathKey]
+for(constmethodofObject.keys(pathData)){
+constoperation=pathData[method]
+if(operation.tags&&operation.tags.length>0){
+consttag=operation.tags[0]
+constoperationId=operation.operationId
+consttoRemove=`${tag}-`
+if(operationId.startsWith(toRemove)){
+constnewOperationId=operationId.substring(toRemove.length)
+operation.operationId=newOperationId
+}
+}
+}
+}
+awaitfs.promises.writeFile(
+filePath,
+JSON.stringify(openapiContent,null,2),
+)
+console.log('File successfully modified')
+}catch(err){
+console.error('Error:',err)
+}
+}
+constfilePath='./openapi.json'
+modifyOpenAPIFile(filePath)
+
+```
+
+With that, the operation IDs would be renamed from things like `items-get_items` to just `get_items`, that way the client generator can generate simpler method names.
+### Generate a TypeScript Client with the Preprocessed OpenAPI[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#generate-a-typescript-client-with-the-preprocessed-openapi "Permanent link")
+Now as the end result is in a file `openapi.json`, you would modify the `package.json` to use that local file, for example:
+```
+{
+"name":"frontend-app",
+"version":"1.0.0",
+"description":"",
+"main":"index.js",
+"scripts":{
+"generate-client":"openapi-ts --input ./openapi.json --output ./src/client --client axios"
+},
+"author":"",
+"license":"",
+"devDependencies":{
+"@hey-api/openapi-ts":"^0.27.38",
+"typescript":"^4.6.2"
+}
+}

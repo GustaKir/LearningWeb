@@ -1,0 +1,60 @@
+Title: Class Decorators and Type Parameters in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section discusses the evaluation rules for decorators in class definitions, noting that classes can be decorated with any valid assignment expression as of Python 3.9. It also describes how to indicate generic classes using type parameters in square brackets and mentions the retrieval of these parameters at runtime from the class’s __type_params__ attribute.
+---
+
+```
+
+The evaluation rules for the decorator expressions are the same as for function decorators. The result is then bound to the class name.
+Changed in version 3.9: Classes may be decorated with any valid [`assignment_expression`](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-assignment_expression). Previously, the grammar was much more restrictive; see [**PEP 614**](https://peps.python.org/pep-0614/) for details.
+A list of [type parameters](https://docs.python.org/3/reference/compound_stmts.html#type-params) may be given in square brackets immediately after the class’s name. This indicates to static type checkers that the class is generic. At runtime, the type parameters can be retrieved from the class’s [`__type_params__`](https://docs.python.org/3/reference/datamodel.html#type.__type_params__ "type.__type_params__") attribute. See [Generic classes](https://docs.python.org/3/reference/compound_stmts.html#generic-classes) for more.
+Changed in version 3.12: Type parameter lists are new in Python 3.12.
+**Programmer’s note:** Variables defined in the class definition are class attributes; they are shared by instances. Instance attributes can be set in a method with `self.name = value`. Both class and instance attributes are accessible through the notation “`self.name`”, and an instance attribute hides a class attribute with the same name when accessed in this way. Class attributes can be used as defaults for instance attributes, but using mutable values there can lead to unexpected results. [Descriptors](https://docs.python.org/3/reference/datamodel.html#descriptors) can be used to create instance variables with different implementation details.
+See also 
+
+[**PEP 3115**](https://peps.python.org/pep-3115/) - Metaclasses in Python 3000
+    
+The proposal that changed the declaration of metaclasses to the current syntax, and the semantics for how classes with metaclasses are constructed. 
+
+[**PEP 3129**](https://peps.python.org/pep-3129/) - Class Decorators
+    
+The proposal that added class decorators. Function and method decorators were introduced in [**PEP 318**](https://peps.python.org/pep-0318/).
+## 8.9. Coroutines[¶](https://docs.python.org/3/reference/compound_stmts.html#coroutines "Link to this heading")
+Added in version 3.5.
+### 8.9.1. Coroutine function definition[¶](https://docs.python.org/3/reference/compound_stmts.html#coroutine-function-definition "Link to this heading")
+```
+**async_funcdef** ::= [[decorators](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-decorators)] "async" "def" [funcname](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-funcname) "(" [[parameter_list](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-parameter_list)] ")"
+         ["->" [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression)] ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)
+
+```
+
+Execution of Python coroutines can be suspended and resumed at many points (see [coroutine](https://docs.python.org/3/glossary.html#term-coroutine)). [`await`](https://docs.python.org/3/reference/expressions.html#await) expressions, [`async for`](https://docs.python.org/3/reference/compound_stmts.html#async-for) and [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) can only be used in the body of a coroutine function.
+Functions defined with `async def` syntax are always coroutine functions, even if they do not contain `await` or `async` keywords.
+It is a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") to use a `yield from` expression inside the body of a coroutine function.
+An example of a coroutine function:
+```
+async deffunc(param1, param2):
+  do_stuff()
+  await some_coroutine()
+
+```
+
+Changed in version 3.7: `await` and `async` are now keywords; previously they were only treated as such inside the body of a coroutine function.
+### 8.9.2. The `async for` statement[¶](https://docs.python.org/3/reference/compound_stmts.html#the-async-for-statement "Link to this heading")
+```
+**async_for_stmt** ::= "async" [for_stmt](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-for_stmt)
+
+```
+
+An [asynchronous iterable](https://docs.python.org/3/glossary.html#term-asynchronous-iterable) provides an `__aiter__` method that directly returns an [asynchronous iterator](https://docs.python.org/3/glossary.html#term-asynchronous-iterator), which can call asynchronous code in its `__anext__` method.
+The `async for` statement allows convenient iteration over asynchronous iterables.
+The following code:
+```
+async for TARGET in ITER:
+  SUITE
+else:
+  SUITE2
+
+```
+
+Is semantically equivalent to:

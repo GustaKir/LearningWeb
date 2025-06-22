@@ -1,0 +1,29 @@
+Title: os.access() - Check User Access to Path
+URL: https://docs.python.org/3/library/os.html
+Summary: The os.access() function checks the real user ID and group ID for access permissions to a specified path. It uses mode constants like F_OK to test existence, or R_OK, W_OK, and X_OK for read, write, and execute permissions, respectively. This function is particularly useful in suid/sgid environments to verify access rights.
+---
+
+os.access(_path_ , _mode_ , _*_ , _dir_fd =None_, _effective_ids =False_, _follow_symlinks =True_)[¶](https://docs.python.org/3/library/os.html#os.access "Link to this definition")
+    
+Use the real uid/gid to test for access to _path_. Note that most operations will use the effective uid/gid, therefore this routine can be used in a suid/sgid environment to test if the invoking user has the specified access to _path_. _mode_ should be [`F_OK`](https://docs.python.org/3/library/os.html#os.F_OK "os.F_OK") to test the existence of _path_ , or it can be the inclusive OR of one or more of [`R_OK`](https://docs.python.org/3/library/os.html#os.R_OK "os.R_OK"), [`W_OK`](https://docs.python.org/3/library/os.html#os.W_OK "os.W_OK"), and [`X_OK`](https://docs.python.org/3/library/os.html#os.X_OK "os.X_OK") to test permissions. Return [`True`](https://docs.python.org/3/library/constants.html#True "True") if access is allowed, [`False`](https://docs.python.org/3/library/constants.html#False "False") if not. See the Unix man page _[access(2)](https://manpages.debian.org/access\(2\))_ for more information.
+This function can support specifying [paths relative to directory descriptors](https://docs.python.org/3/library/os.html#dir-fd) and [not following symlinks](https://docs.python.org/3/library/os.html#follow-symlinks).
+If _effective_ids_ is `True`, [`access()`](https://docs.python.org/3/library/os.html#os.access "os.access") will perform its access checks using the effective uid/gid instead of the real uid/gid. _effective_ids_ may not be supported on your platform; you can check whether or not it is available using [`os.supports_effective_ids`](https://docs.python.org/3/library/os.html#os.supports_effective_ids "os.supports_effective_ids"). If it is unavailable, using it will raise a [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError").
+Note
+Using [`access()`](https://docs.python.org/3/library/os.html#os.access "os.access") to check if a user is authorized to e.g. open a file before actually doing so using [`open()`](https://docs.python.org/3/library/functions.html#open "open") creates a security hole, because the user might exploit the short time interval between checking and opening the file to manipulate it. It’s preferable to use [EAFP](https://docs.python.org/3/glossary.html#term-EAFP) techniques. For example:
+```
+if os.access("myfile", os.R_OK):
+  with open("myfile") as fp:
+    return fp.read()
+return "some default data"
+
+```
+
+is better written as:
+```
+try:
+  fp = open("myfile")
+except PermissionError:
+  return "some default data"
+else:
+  with fp:
+    return fp.read()

@@ -1,0 +1,137 @@
+Title: Using Multiple Body Parameters in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/body-multiple-params/
+Summary: This section explains how to declare multiple body parameters in FastAPI, such as `item` and `user`, while also indicating that the `item` parameter is optional. It provides an example of a JSON body structure expected for an Item and illustrates the usage with FastAPI and Pydantic models.
+---
+
+```
+
+Note
+Notice that, in this case, the `item` that would be taken from the body is optional. As it has a `None` default value.
+## Multiple body parameters[¶](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#multiple-body-parameters "Permanent link")
+In the previous example, the _path operations_ would expect a JSON body with the attributes of an `Item`, like:
+```
+{
+"name":"Foo",
+"description":"The pretender",
+"price":42.0,
+"tax":3.2
+}
+
+```
+
+But you can also declare multiple body parameters, e.g. `item` and `user`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+classUser(BaseModel):
+  username: str
+  full_name: str | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item, user: User):
+  results = {"item_id": item_id, "item": item, "user": user}
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_4_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+classUser(BaseModel):
+  username: str
+  full_name: Union[str, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item, user: User):
+  results = {"item_id": item_id, "item": item, "user": user}
+  return results
+
+```
+
+In this case, **FastAPI** will notice that there is more than one body parameter in the function (there are two parameters that are Pydantic models).
+So, it will then use the parameter names as keys (field names) in the body, and expect a body like:
+```
+{
+"item":{
+"name":"Foo",
+"description":"The pretender",
+"price":42.0,
+"tax":3.2
+},
+"user":{
+"username":"dave",
+"full_name":"Dave Grohl"
+}
+}
+
+```
+
+Note
+Notice that even though the `item` was declared the same way as before, it is now expected to be inside of the body with a key `item`.
+**FastAPI** will do the automatic conversion from the request, so that the parameter `item` receives its specific content and the same for `user`.
+It will perform the validation of the compound data, and will document it like that for the OpenAPI schema and automatic docs.
+## Singular values in body[¶](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#singular-values-in-body "Permanent link")
+The same way there is a `Query` and `Path` to define extra data for query and path parameters, **FastAPI** provides an equivalent `Body`.
+For example, extending the previous model, you could decide that you want to have another key `importance` in the same body, besides the `item` and `user`.
+If you declare it as is, because it is a singular value, **FastAPI** will assume that it is a query parameter.
+But you can instruct **FastAPI** to treat it as another body key using `Body`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_5_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+classUser(BaseModel):
+  username: str
+  full_name: str | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int, item: Item, user: User, importance: Annotated[int, Body()]
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_6_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_6_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_6_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_6_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+classUser(BaseModel):
+  username: str
+  full_name: Union[str, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int, item: Item, user: User, importance: Annotated[int, Body()]
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  return results
+
+```

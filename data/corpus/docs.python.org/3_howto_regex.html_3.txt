@@ -1,0 +1,34 @@
+Title: Regular Expression Basics and Repeating Patterns
+URL: https://docs.python.org/3/howto/regex.html
+Summary: This section discusses the `` metacharacter, which matches non-alphanumeric characters, equivalent to `[^a-zA-Z0-9_]`. It explains the use of character classes and the `.` metacharacter that matches any character except a newline, with an option to match newlines using `re.DOTALL`. Additionally, it introduces the ability of regular expressions to match varying sets of characters, highlighting their advanced capabilities beyond standard string methods.
+---
+
+`\W`
+    
+Matches any non-alphanumeric character; this is equivalent to the class `[^a-zA-Z0-9_]`.
+These sequences can be included inside a character class. For example, `[\s,.]` is a character class that will match any whitespace character, or `','` or `'.'`.
+The final metacharacter in this section is `.`. It matches anything except a newline character, and there’s an alternate mode ([`re.DOTALL`](https://docs.python.org/3/library/re.html#re.DOTALL "re.DOTALL")) where it will match even a newline. `.` is often used where you want to match “any character”.
+### Repeating Things[¶](https://docs.python.org/3/howto/regex.html#repeating-things "Link to this heading")
+Being able to match varying sets of characters is the first thing regular expressions can do that isn’t already possible with the methods available on strings. However, if that was the only additional capability of regexes, they wouldn’t be much of an advance. Another capability is that you can specify that portions of the RE must be repeated a certain number of times.
+The first metacharacter for repeating things that we’ll look at is `*`. `*` doesn’t match the literal character `'*'`; instead, it specifies that the previous character can be matched zero or more times, instead of exactly once.
+For example, `ca*t` will match `'ct'` (0 `'a'` characters), `'cat'` (1 `'a'`), `'caaat'` (3 `'a'` characters), and so forth.
+Repetitions such as `*` are _greedy_ ; when repeating a RE, the matching engine will try to repeat it as many times as possible. If later portions of the pattern don’t match, the matching engine will then back up and try again with fewer repetitions.
+A step-by-step example will make this more obvious. Let’s consider the expression `a[bcd]*b`. This matches the letter `'a'`, zero or more letters from the class `[bcd]`, and finally ends with a `'b'`. Now imagine matching this RE against the string `'abcbd'`.
+Step | Matched | Explanation  
+---|---|---  
+1 | `a` | The `a` in the RE matches.  
+2 | `abcbd` | The engine matches `[bcd]*`, going as far as it can, which is to the end of the string.  
+3 | _Failure_ | The engine tries to match `b`, but the current position is at the end of the string, so it fails.  
+4 | `abcb` | Back up, so that `[bcd]*` matches one less character.  
+5 | _Failure_ | Try `b` again, but the current position is at the last character, which is a `'d'`.  
+6 | `abc` | Back up again, so that `[bcd]*` is only matching `bc`.  
+6 | `abcb` | Try `b` again. This time the character at the current position is `'b'`, so it succeeds.  
+The end of the RE has now been reached, and it has matched `'abcb'`. This demonstrates how the matching engine goes as far as it can at first, and if no match is found it will then progressively back up and retry the rest of the RE again and again. It will back up until it has tried zero matches for `[bcd]*`, and if that subsequently fails, the engine will conclude that the string doesn’t match the RE at all.
+Another repeating metacharacter is `+`, which matches one or more times. Pay careful attention to the difference between `*` and `+`; `*` matches _zero_ or more times, so whatever’s being repeated may not be present at all, while `+` requires at least _one_ occurrence. To use a similar example, `ca+t` will match `'cat'` (1 `'a'`), `'caaat'` (3 `'a'`s), but won’t match `'ct'`.
+There are two more repeating operators or quantifiers. The question mark character, `?`, matches either once or zero times; you can think of it as marking something as being optional. For example, `home-?brew` matches either `'homebrew'` or `'home-brew'`.
+The most complicated quantifier is `{m,n}`, where _m_ and _n_ are decimal integers. This quantifier means there must be at least _m_ repetitions, and at most _n_. For example, `a/{1,3}b` will match `'a/b'`, `'a//b'`, and `'a///b'`. It won’t match `'ab'`, which has no slashes, or `'a////b'`, which has four.
+You can omit either _m_ or _n_ ; in that case, a reasonable value is assumed for the missing value. Omitting _m_ is interpreted as a lower limit of 0, while omitting _n_ results in an upper bound of infinity.
+The simplest case `{m}` matches the preceding item exactly _m_ times. For example, `a/{2}b` will only match `'a//b'`.
+Readers of a reductionist bent may notice that the three other quantifiers can all be expressed using this notation. `{0,}` is the same as `*`, `{1,}` is equivalent to `+`, and `{0,1}` is the same as `?`. It’s better to use `*`, `+`, or `?` when you can, simply because they’re shorter and easier to read.
+## Using Regular Expressions[¶](https://docs.python.org/3/howto/regex.html#using-regular-expressions "Link to this heading")
+Now that we’ve looked at some simple regular expressions, how do we actually use them in Python? The [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") module provides an interface to the regular expression engine, allowing you to compile REs into objects and then perform matches w

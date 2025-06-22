@@ -1,0 +1,51 @@
+Title: shutil Module Updates and Exceptions
+URL: https://docs.python.org/3/library/shutil.html
+Summary: This chunk documents updates to the shutil module in Python, highlighting changes made in versions 3.3, 3.8, and 3.12 regarding command type handling and search path behavior on Windows. It also introduces the shutil.Error exception, which aggregates exceptions from multi-file operations.
+---
+
+```
+
+Added in version 3.3.
+Changed in version 3.8: The [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") type is now accepted. If _cmd_ type is [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"), the result type is also [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes").
+Changed in version 3.12: On Windows, the current directory is no longer prepended to the search path if _mode_ includes `os.X_OK` and WinAPI `NeedCurrentDirectoryForExePathW(cmd)` is false, else the current directory is prepended even if it is already in the search path; `PATHEXT` is used now even when _cmd_ includes a directory component or ends with an extension that is in `PATHEXT`; and filenames that have no extension can now be found. 
+
+_exception_ shutil.Error[¶](https://docs.python.org/3/library/shutil.html#shutil.Error "Link to this definition")
+    
+This exception collects exceptions that are raised during a multi-file operation. For [`copytree()`](https://docs.python.org/3/library/shutil.html#shutil.copytree "shutil.copytree"), the exception argument is a list of 3-tuples (_srcname_ , _dstname_ , _exception_).
+### Platform-dependent efficient copy operations[¶](https://docs.python.org/3/library/shutil.html#platform-dependent-efficient-copy-operations "Link to this heading")
+Starting from Python 3.8, all functions involving a file copy ([`copyfile()`](https://docs.python.org/3/library/shutil.html#shutil.copyfile "shutil.copyfile"), [`copy()`](https://docs.python.org/3/library/shutil.html#shutil.copy "shutil.copy"), [`copy2()`](https://docs.python.org/3/library/shutil.html#shutil.copy2 "shutil.copy2"), [`copytree()`](https://docs.python.org/3/library/shutil.html#shutil.copytree "shutil.copytree"), and [`move()`](https://docs.python.org/3/library/shutil.html#shutil.move "shutil.move")) may use platform-specific “fast-copy” syscalls in order to copy the file more efficiently (see [bpo-33671](https://bugs.python.org/issue?@action=redirect&bpo=33671)). “fast-copy” means that the copying operation occurs within the kernel, avoiding the use of userspace buffers in Python as in “`outfd.write(infd.read())`”.
+On macOS [fcopyfile](http://www.manpagez.com/man/3/copyfile/) is used to copy the file content (not metadata).
+On Linux [`os.sendfile()`](https://docs.python.org/3/library/os.html#os.sendfile "os.sendfile") is used.
+On Windows [`shutil.copyfile()`](https://docs.python.org/3/library/shutil.html#shutil.copyfile "shutil.copyfile") uses a bigger default buffer size (1 MiB instead of 64 KiB) and a [`memoryview()`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview")-based variant of [`shutil.copyfileobj()`](https://docs.python.org/3/library/shutil.html#shutil.copyfileobj "shutil.copyfileobj") is used.
+If the fast-copy operation fails and no data was written in the destination file then shutil will silently fallback on using less efficient [`copyfileobj()`](https://docs.python.org/3/library/shutil.html#shutil.copyfileobj "shutil.copyfileobj") function internally.
+Changed in version 3.8.
+### copytree example[¶](https://docs.python.org/3/library/shutil.html#copytree-example "Link to this heading")
+An example that uses the [`ignore_patterns()`](https://docs.python.org/3/library/shutil.html#shutil.ignore_patterns "shutil.ignore_patterns") helper:
+```
+fromshutilimport copytree, ignore_patterns
+copytree(source, destination, ignore=ignore_patterns('*.pyc', 'tmp*'))
+
+```
+
+This will copy everything except `.pyc` files and files or directories whose name starts with `tmp`.
+Another example that uses the _ignore_ argument to add a logging call:
+```
+fromshutilimport copytree
+importlogging
+def_logpath(path, names):
+  logging.info('Working in %s', path)
+  return []  # nothing will be ignored
+copytree(source, destination, ignore=_logpath)
+
+```
+
+### rmtree example[¶](https://docs.python.org/3/library/shutil.html#rmtree-example "Link to this heading")
+This example shows how to remove a directory tree on Windows where some of the files have their read-only bit set. It uses the onexc callback to clear the readonly bit and reattempt the remove. Any subsequent failure will propagate.
+```
+importos,stat
+importshutil
+defremove_readonly(func, path, _):
+  "Clear the readonly bit and reattempt the removal"
+  os.chmod(path, stat.S_IWRITE)
+  func(path)
+shutil.rmtree(directory, onexc=remove_readonly)

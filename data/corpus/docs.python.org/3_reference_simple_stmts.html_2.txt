@@ -1,0 +1,29 @@
+Title: Assignment Statements in Python
+URL: https://docs.python.org/3/reference/simple_stmts.html
+Summary: This section discusses the syntax and behavior of assignment statements in Python, including how expressions are evaluated and assigned to targets. It emphasizes that assignments can involve mutable objects and may trigger exceptions if the assignment is invalid, referencing the standard type hierarchy for further details.
+---
+
+```
+
+(See section [Primaries](https://docs.python.org/3/reference/expressions.html#primaries) for the syntax definitions for _attributeref_ , _subscription_ , and _slicing_.)
+An assignment statement evaluates the expression list (remember that this can be a single expression or a comma-separated list, the latter yielding a tuple) and assigns the single resulting object to each of the target lists, from left to right.
+Assignment is defined recursively depending on the form of the target (list). When a target is part of a mutable object (an attribute reference, subscription or slicing), the mutable object must ultimately perform the assignment and decide about its validity, and may raise an exception if the assignment is unacceptable. The rules observed by various types and the exceptions raised are given with the definition of the object types (see section [The standard type hierarchy](https://docs.python.org/3/reference/datamodel.html#types)).
+Assignment of an object to a target list, optionally enclosed in parentheses or square brackets, is recursively defined as follows.
+  * If the target list is a single target with no trailing comma, optionally in parentheses, the object is assigned to that target.
+  * Else:
+    * If the target list contains one target prefixed with an asterisk, called a “starred” target: The object must be an iterable with at least as many items as there are targets in the target list, minus one. The first items of the iterable are assigned, from left to right, to the targets before the starred target. The final items of the iterable are assigned to the targets after the starred target. A list of the remaining items in the iterable is then assigned to the starred target (the list can be empty).
+    * Else: The object must be an iterable with the same number of items as there are targets in the target list, and the items are assigned, from left to right, to the corresponding targets.
+
+
+Assignment of an object to a single target is recursively defined as follows.
+  * If the target is an identifier (name):
+    * If the name does not occur in a [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) or [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) statement in the current code block: the name is bound to the object in the current local namespace.
+    * Otherwise: the name is bound to the object in the global namespace or the outer namespace determined by [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal), respectively.
+The name is rebound if it was already bound. This may cause the reference count for the object previously bound to the name to reach zero, causing the object to be deallocated and its destructor (if it has one) to be called.
+  * If the target is an attribute reference: The primary expression in the reference is evaluated. It should yield an object with assignable attributes; if this is not the case, [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") is raised. That object is then asked to assign the assigned object to the given attribute; if it cannot perform the assignment, it raises an exception (usually but not necessarily [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError")).
+Note: If the object is a class instance and the attribute reference occurs on both sides of the assignment operator, the right-hand side expression, `a.x` can access either an instance attribute or (if no instance attribute exists) a class attribute. The left-hand side target `a.x` is always set as an instance attribute, creating it if necessary. Thus, the two occurrences of `a.x` do not necessarily refer to the same attribute: if the right-hand side expression refers to a class attribute, the left-hand side creates a new instance attribute as the target of the assignment:
+```
+classCls:
+  x = 3       # class variable
+inst = Cls()
+inst.x = inst.x + 1  # writes inst.x as 4 leaving Cls.x as 3

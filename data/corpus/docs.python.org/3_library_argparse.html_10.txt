@@ -1,0 +1,90 @@
+Title: Using Actions in argparse
+URL: https://docs.python.org/3/library/argparse.html
+Summary: This section explains that only certain actions like 'store', 'append', or 'extend' can be used with positional arguments. It introduces the `BooleanOptionalAction`, which allows for boolean flags in command-line arguments, demonstrated with an example. The section also notes that the recommended method to create custom actions is by extending the `Action` class.
+---
+
+```
+
+
+
+Only actions that consume command-line arguments (e.g. `'store'`, `'append'` or `'extend'`) can be used with positional arguments. 
+
+_class_ argparse.BooleanOptionalAction[¶](https://docs.python.org/3/library/argparse.html#argparse.BooleanOptionalAction "Link to this definition")
+    
+You may also specify an arbitrary action by passing an [`Action`](https://docs.python.org/3/library/argparse.html#argparse.Action "argparse.Action") subclass or other object that implements the same interface. The `BooleanOptionalAction` is available in `argparse` and adds support for boolean actions such as `--foo` and `--no-foo`:
+>>>```
+>>> importargparse
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+>>> parser.parse_args(['--no-foo'])
+Namespace(foo=False)
+
+```
+
+Added in version 3.9.
+The recommended way to create a custom action is to extend [`Action`](https://docs.python.org/3/library/argparse.html#argparse.Action "argparse.Action"), overriding the `__call__()` method and optionally the `__init__()` and `format_usage()` methods. You can also register custom actions using the [`register()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.register "argparse.ArgumentParser.register") method and reference them by their registered name.
+An example of a custom action:
+>>>```
+>>> classFooAction(argparse.Action):
+...   def__init__(self, option_strings, dest, nargs=None, **kwargs):
+...     if nargs is not None:
+...       raise ValueError("nargs not allowed")
+...     super().__init__(option_strings, dest, **kwargs)
+...   def__call__(self, parser, namespace, values, option_string=None):
+...     print('%r%r%r' % (namespace, values, option_string))
+...     setattr(namespace, self.dest, values)
+...
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', action=FooAction)
+>>> parser.add_argument('bar', action=FooAction)
+>>> args = parser.parse_args('1 --foo 2'.split())
+Namespace(bar=None, foo=None) '1' None
+Namespace(bar='1', foo=None) '2' '--foo'
+>>> args
+Namespace(bar='1', foo='2')
+
+```
+
+For more details, see [`Action`](https://docs.python.org/3/library/argparse.html#argparse.Action "argparse.Action").
+### nargs[¶](https://docs.python.org/3/library/argparse.html#nargs "Link to this heading")
+[`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") objects usually associate a single command-line argument with a single action to be taken. The `nargs` keyword argument associates a different number of command-line arguments with a single action. See also [Specifying ambiguous arguments](https://docs.python.org/3/howto/argparse.html#specifying-ambiguous-arguments). The supported values are:
+  * `N` (an integer). `N` arguments from the command line will be gathered together into a list. For example:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', nargs=2)
+>>> parser.add_argument('bar', nargs=1)
+>>> parser.parse_args('c --foo a b'.split())
+Namespace(bar=['c'], foo=['a', 'b'])
+
+```
+
+Note that `nargs=1` produces a list of one item. This is different from the default, in which the item is produced by itself.
+
+
+  * `'?'`. One argument will be consumed from the command line if possible, and produced as a single item. If no command-line argument is present, the value from [default](https://docs.python.org/3/library/argparse.html#default) will be produced. Note that for optional arguments, there is an additional case - the option string is present but not followed by a command-line argument. In this case the value from [const](https://docs.python.org/3/library/argparse.html#const) will be produced. Some examples to illustrate this:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', nargs='?', const='c', default='d')
+>>> parser.add_argument('bar', nargs='?', default='d')
+>>> parser.parse_args(['XX', '--foo', 'YY'])
+Namespace(bar='XX', foo='YY')
+>>> parser.parse_args(['XX', '--foo'])
+Namespace(bar='XX', foo='c')
+>>> parser.parse_args([])
+Namespace(bar='d', foo='d')
+
+```
+
+One of the more common uses of `nargs='?'` is to allow optional input and output files:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('infile', nargs='?', type=argparse.FileType('r'),
+...           default=sys.stdin)
+>>> parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
+...           default=sys.stdout)
+>>> parser.parse_args(['input.txt', 'output.txt'])
+Namespace(infile=<_io.TextIOWrapper name='input.txt' encoding='UTF-8'>,
+     outfile=<_io.TextIOWrapper name='output.txt' encoding='UTF-8'>)
+>>> parser.parse_args([])
+Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>,
+     outfile=<_io.TextIOWrapper name='<stdout>' encoding='UTF-8'>)

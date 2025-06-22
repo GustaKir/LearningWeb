@@ -1,0 +1,22 @@
+Title: Improvements to the socket Module in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The socket module in Python 3.2 introduces two enhancements: a new detach() method for socket objects that allows a socket to be put into a closed state while keeping the underlying file descriptor reusable, and an update to socket.create_connection() to support context management, ensuring socket.error exceptions are handled and the socket is closed appropriately.
+---
+
+```
+
+### socket[¶](https://docs.python.org/3/whatsnew/3.2.html#socket "Link to this heading")
+The [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.") module has two new improvements.
+  * Socket objects now have a [`detach()`](https://docs.python.org/3/library/socket.html#socket.socket.detach "socket.socket.detach") method which puts the socket into closed state without actually closing the underlying file descriptor. The latter can then be reused for other purposes. (Added by Antoine Pitrou; [bpo-8524](https://bugs.python.org/issue?@action=redirect&bpo=8524).)
+  * [`socket.create_connection()`](https://docs.python.org/3/library/socket.html#socket.create_connection "socket.create_connection") now supports the context management protocol to unconditionally consume [`socket.error`](https://docs.python.org/3/library/socket.html#socket.error "socket.error") exceptions and to close the socket when done. (Contributed by Giampaolo Rodolà; [bpo-9794](https://bugs.python.org/issue?@action=redirect&bpo=9794).)
+
+
+### ssl[¶](https://docs.python.org/3/whatsnew/3.2.html#ssl "Link to this heading")
+The [`ssl`](https://docs.python.org/3/library/ssl.html#module-ssl "ssl: TLS/SSL wrapper for socket objects") module added a number of features to satisfy common requirements for secure (encrypted, authenticated) internet connections:
+  * A new class, [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext"), serves as a container for persistent SSL data, such as protocol settings, certificates, private keys, and various other options. It includes a [`wrap_socket()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_socket "ssl.SSLContext.wrap_socket") for creating an SSL socket from an SSL context.
+  * A new function, `ssl.match_hostname()`, supports server identity verification for higher-level protocols by implementing the rules of HTTPS (from [**RFC 2818**](https://datatracker.ietf.org/doc/html/rfc2818.html)) which are also suitable for other protocols.
+  * The [`ssl.wrap_socket()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_socket "ssl.SSLContext.wrap_socket") constructor function now takes a _ciphers_ argument. The _ciphers_ string lists the allowed encryption algorithms using the format described in the [OpenSSL documentation](https://docs.openssl.org/1.0.2/man1/ciphers/#cipher-list-format).
+  * When linked against recent versions of OpenSSL, the [`ssl`](https://docs.python.org/3/library/ssl.html#module-ssl "ssl: TLS/SSL wrapper for socket objects") module now supports the Server Name Indication extension to the TLS protocol, allowing multiple “virtual hosts” using different certificates on a single IP port. This extension is only supported in client mode, and is activated by passing the _server_hostname_ argument to [`ssl.SSLContext.wrap_socket()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_socket "ssl.SSLContext.wrap_socket").
+  * Various options have been added to the [`ssl`](https://docs.python.org/3/library/ssl.html#module-ssl "ssl: TLS/SSL wrapper for socket objects") module, such as [`OP_NO_SSLv2`](https://docs.python.org/3/library/ssl.html#ssl.OP_NO_SSLv2 "ssl.OP_NO_SSLv2") which disables the insecure and obsolete SSLv2 protocol.
+  * The extension now loads all the OpenSSL ciphers and digest algorithms. If some SSL certificates cannot be verified, they are reported as an “unknown algorithm” error.
+  * The version of OpenSSL being used is now accessible using the module attributes [`ssl.OPENSSL_VERSION`](https://docs.python.org/3/library/ssl.html#ssl.OPENSSL_VERSION "ssl.OPENSSL_VERSION") (a string), [`ssl.OPENSSL_VERSION_INFO`](https://docs.python.org/3/library/ssl.html#ssl.OPENSSL_VERSION_INFO "ssl.OPENSSL_VERSION_INFO") (a 5-tuple), and [`ssl.OPENSSL_VERSION_NUMBER`](https://docs.python.org/3/library/ssl.html#ssl.OPENSSL_VERSION_NUMBER "ssl.OPENSSL_VERSION_NUMBER") (an integer).

@@ -1,0 +1,51 @@
+Title: unittest.mock Module Overview
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section covers key components of the unittest.mock module, including the DEFAULT sentinel object used for indicating normal return values in side effects, and the call() helper function.
+---
+
+```
+
+### DEFAULT[¶](https://docs.python.org/3/library/unittest.mock.html#default "Link to this heading") 
+
+unittest.mock.DEFAULT[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.DEFAULT "Link to this definition")
+    
+The [`DEFAULT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.DEFAULT "unittest.mock.DEFAULT") object is a pre-created sentinel (actually `sentinel.DEFAULT`). It can be used by [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") functions to indicate that the normal return value should be used.
+### call[¶](https://docs.python.org/3/library/unittest.mock.html#call "Link to this heading") 
+
+unittest.mock.call(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "Link to this definition")
+    
+[`call()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "unittest.mock.call") is a helper object for making simpler assertions, for comparing with [`call_args`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args "unittest.mock.Mock.call_args"), [`call_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "unittest.mock.Mock.call_args_list"), [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") and [`method_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.method_calls "unittest.mock.Mock.method_calls"). [`call()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "unittest.mock.call") can also be used with [`assert_has_calls()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_has_calls "unittest.mock.Mock.assert_has_calls").
+>>>```
+>>> m = MagicMock(return_value=None)
+>>> m(1, 2, a='foo', b='bar')
+>>> m()
+>>> m.call_args_list == [call(1, 2, a='foo', b='bar'), call()]
+True
+
+```
+
+
+call.call_list()[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call.call_list "Link to this definition")
+    
+For a call object that represents multiple calls, [`call_list()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call.call_list "unittest.mock.call.call_list") returns a list of all the intermediate calls as well as the final call.
+`call_list` is particularly useful for making assertions on “chained calls”. A chained call is multiple calls on a single line of code. This results in multiple entries in [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") on a mock. Manually constructing the sequence of calls can be tedious.
+[`call_list()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call.call_list "unittest.mock.call.call_list") can construct the sequence of calls from the same chained call:
+>>>```
+>>> m = MagicMock()
+>>> m(1).method(arg='foo').other('bar')(2.0)
+<MagicMock name='mock().method().other()()' id='...'>
+>>> kall = call(1).method(arg='foo').other('bar')(2.0)
+>>> kall.call_list()
+[call(1),
+ call().method(arg='foo'),
+ call().method().other('bar'),
+ call().method().other()(2.0)]
+>>> m.mock_calls == kall.call_list()
+True
+
+```
+
+A `call` object is either a tuple of (positional args, keyword args) or (name, positional args, keyword args) depending on how it was constructed. When you construct them yourself this isn’t particularly interesting, but the `call` objects that are in the [`Mock.call_args`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args "unittest.mock.Mock.call_args"), [`Mock.call_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "unittest.mock.Mock.call_args_list") and [`Mock.mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") attributes can be introspected to get at the individual arguments they contain.
+The `call` objects in [`Mock.call_args`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args "unittest.mock.Mock.call_args") and [`Mock.call_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "unittest.mock.Mock.call_args_list") are two-tuples of (positional args, keyword args) whereas the `call` objects in [`Mock.mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls"), along with ones you construct yourself, are three-tuples of (name, positional args, keyword args).
+You can use their “tupleness” to pull out the individual arguments for more complex introspection and assertions. The positional arguments are a tuple (an empty tuple if there are no positional arguments) and the keyword arguments are a dictionary:
+>>>

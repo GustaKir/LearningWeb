@@ -1,0 +1,52 @@
+Title: Using SharedMemoryManager with ShareableList
+URL: https://docs.python.org/3/library/multiprocessing.shared_memory.html
+Summary: This section demonstrates how to use a `SharedMemoryManager` to manage shared memory efficiently in Python multiprocessing. It shows how to create a `ShareableList`, distribute work between two processes, and wait for their completion, ensuring proper resource management using a `with` statement.
+---
+
+```
+>>> with SharedMemoryManager() as smm:
+...   sl = smm.ShareableList(range(2000))
+...   # Divide the work among two processes, storing partial results in sl
+...   p1 = Process(target=do_work, args=(sl, 0, 1000))
+...   p2 = Process(target=do_work, args=(sl, 1000, 2000))
+...   p1.start()
+...   p2.start() # A multiprocessing.Pool might be more efficient
+...   p1.join()
+...   p2.join()  # Wait for all work to complete in both processes
+...   total_result = sum(sl) # Consolidate the partial results now in sl
+
+```
+
+When using a [`SharedMemoryManager`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager "multiprocessing.managers.SharedMemoryManager") in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, the shared memory blocks created using that manager are all released when the `with` statement’s code block finishes execution. 
+
+_class_ multiprocessing.shared_memory.ShareableList(_sequence =None_, _*_ , _name =None_)[¶](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.shared_memory.ShareableList "Link to this definition")
+    
+Provide a mutable list-like object where all values stored within are stored in a shared memory block. This constrains storable values to the following built-in data types:
+  * [`int`](https://docs.python.org/3/library/functions.html#int "int") (signed 64-bit)
+  * [`float`](https://docs.python.org/3/library/functions.html#float "float")
+  * [`bool`](https://docs.python.org/3/library/functions.html#bool "bool")
+  * [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") (less than 10M bytes each when encoded as UTF-8)
+  * [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") (less than 10M bytes each)
+  * `None`
+
+
+It also notably differs from the built-in [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") type in that these lists can not change their overall length (i.e. no `append()`, `insert()`, etc.) and do not support the dynamic creation of new `ShareableList` instances via slicing.
+_sequence_ is used in populating a new `ShareableList` full of values. Set to `None` to instead attach to an already existing `ShareableList` by its unique shared memory name.
+_name_ is the unique name for the requested shared memory, as described in the definition for [`SharedMemory`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.shared_memory.SharedMemory "multiprocessing.shared_memory.SharedMemory"). When attaching to an existing `ShareableList`, specify its shared memory block’s unique name while leaving _sequence_ set to `None`.
+Note
+A known issue exists for [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") and [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") values. If they end with `\x00` nul bytes or characters, those may be _silently stripped_ when fetching them by index from the `ShareableList`. This `.rstrip(b'\x00')` behavior is considered a bug and may go away in the future. See [gh-106939](https://github.com/python/cpython/issues/106939).
+For applications where rstripping of trailing nulls is a problem, work around it by always unconditionally appending an extra non-0 byte to the end of such values when storing and unconditionally removing it when fetching:
+>>>```
+>>> frommultiprocessingimport shared_memory
+>>> nul_bug_demo = shared_memory.ShareableList(['?\x00', b'\x03\x02\x01\x00\x00\x00'])
+>>> nul_bug_demo[0]
+'?'
+>>> nul_bug_demo[1]
+b'\x03\x02\x01'
+>>> nul_bug_demo.shm.unlink()
+>>> padded = shared_memory.ShareableList(['?\x00\x07', b'\x03\x02\x01\x00\x00\x00\x07'])
+>>> padded[0][:-1]
+'?\x00'
+>>> padded[1][:-1]
+b'\x03\x02\x01\x00\x00\x00'
+>>> padded.shm.unlink()

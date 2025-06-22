@@ -1,0 +1,64 @@
+Title: PEP 357: The ‘__index__’ Method
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: PEP 357 introduces the `__index__()` method to resolve issues faced by NumPy developers regarding slice notation. This method allows specialized integer types, essential for indexing, to be recognized as valid slice indexes, distinguishing them from the `__int__()` method, which could inadvertently allow floating-point numbers.
+---
+
+64-bit platforms.
+See also 
+
+[**PEP 353**](https://peps.python.org/pep-0353/) - Using ssize_t as the index type
+    
+PEP written and implemented by Martin von Löwis.
+## PEP 357: The ‘__index__’ method[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-357-the-index-method "Link to this heading")
+The NumPy developers had a problem that could only be solved by adding a new special method, `__index__()`. When using slice notation, as in `[start:stop:step]`, the values of the _start_ , _stop_ , and _step_ indexes must all be either integers or long integers. NumPy defines a variety of specialized integer types corresponding to unsigned and signed integers of 8, 16, 32, and 64 bits, but there was no way to signal that these types could be used as slice indexes.
+Slicing can’t just use the existing `__int__()` method because that method is also used to implement coercion to integers. If slicing used `__int__()`, floating-point numbers would also become legal slice indexes and that’s clearly an undesirable behaviour.
+Instead, a new special method called `__index__()` was added. It takes no arguments and returns an integer giving the slice index to use. For example:
+```
+classC:
+  def__index__ (self):
+    return self.value
+
+```
+
+The return value must be either a Python integer or long integer. The interpreter will check that the type returned is correct, and raises a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if this requirement isn’t met.
+A corresponding [`nb_index`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods.nb_index "PyNumberMethods.nb_index") slot was added to the C-level [`PyNumberMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods "PyNumberMethods") structure to let C extensions implement this protocol. `PyNumber_Index(obj)` can be used in extension code to call the `__index__()` function and retrieve its result.
+See also 
+
+[**PEP 357**](https://peps.python.org/pep-0357/) - Allowing Any Object to be Used for Slicing
+    
+PEP written and implemented by Travis Oliphant.
+## Other Language Changes[¶](https://docs.python.org/3/whatsnew/2.5.html#other-language-changes "Link to this heading")
+Here are all of the changes that Python 2.5 makes to the core Python language.
+  * The [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") type has a new hook for letting subclasses provide a default value when a key isn’t contained in the dictionary. When a key isn’t found, the dictionary’s `__missing__(key)` method will be called. This hook is used to implement the new `defaultdict` class in the [`collections`](https://docs.python.org/3/library/collections.html#module-collections "collections: Container datatypes") module. The following example defines a dictionary that returns zero for any missing key:
+```
+classzerodict (dict):
+  def__missing__ (self, key):
+    return 0
+d = zerodict({1:1, 2:2})
+print d[1], d[2]  # Prints 1, 2
+print d[3], d[4]  # Prints 0, 0
+
+```
+
+  * Both 8-bit and Unicode strings have new `partition(sep)` and `rpartition(sep)` methods that simplify a common use case.
+The `find(S)` method is often used to get an index which is then used to slice the string and obtain the pieces that are before and after the separator. `partition(sep)` condenses this pattern into a single method call that returns a 3-tuple containing the substring before the separator, the separator itself, and the substring after the separator. If the separator isn’t found, the first element of the tuple is the entire string and the other two elements are empty. `rpartition(sep)` also returns a 3-tuple but starts searching from the end of the string; the `r` stands for ‘reverse’.
+Some examples:
+>>>```
+>>> ('http://www.python.org').partition('://')
+('http', '://', 'www.python.org')
+>>> ('file:/usr/share/doc/index.html').partition('://')
+('file:/usr/share/doc/index.html', '', '')
+>>> (u'Subject: a quick question').partition(':')
+(u'Subject', u':', u' a quick question')
+>>> 'www.python.org'.rpartition('.')
+('www.python', '.', 'org')
+>>> 'www.python.org'.rpartition(':')
+('', '', 'www.python.org')
+
+```
+
+(Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
+  * The `startswith()` and `endswith()` methods of string types now accept tuples of strings to check for.
+```
+defis_image_file (filename):
+  return filename.endswith(('.gif', '.jpg', '.tiff'))

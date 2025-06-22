@@ -1,0 +1,53 @@
+Title: Relative Imports in Python
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This section explains the usage of relative imports in Python, demonstrating how to import modules from the current package or its parent. It illustrates the syntax for relative imports using leading periods and highlights that these can only be used with the 'from ... import' form, referencing PEP 328 for more details.
+---
+
+```
+# Import names from pkg.string
+from.stringimport name1, name2
+# Import pkg.string
+from.import string
+
+```
+
+This imports the [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") module relative to the current package, so in `pkg.main` this will import _name1_ and _name2_ from `pkg.string`. Additional leading periods perform the relative import starting from the parent of the current package. For example, code in the `A.B.C` module can do:
+```
+from.import D         # Imports A.B.D
+from..import E        # Imports A.E
+from..Fimport G        # Imports A.F.G
+
+```
+
+Leading periods cannot be used with the `import modname` form of the import statement, only the `from ... import` form.
+See also 
+
+[**PEP 328**](https://peps.python.org/pep-0328/) - Imports: Multi-Line and Absolute/Relative
+    
+PEP written by Aahz; implemented by Thomas Wouters. 
+
+<https://pylib.readthedocs.io/>
+    
+The py library by Holger Krekel, which contains the `py.std` package.
+## PEP 338: Executing Modules as Scripts[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-338-executing-modules-as-scripts "Link to this heading")
+The [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m) switch added in Python 2.4 to execute a module as a script gained a few more abilities. Instead of being implemented in C code inside the Python interpreter, the switch now uses an implementation in a new module, [`runpy`](https://docs.python.org/3/library/runpy.html#module-runpy "runpy: Locate and run Python modules without importing them first.").
+The [`runpy`](https://docs.python.org/3/library/runpy.html#module-runpy "runpy: Locate and run Python modules without importing them first.") module implements a more sophisticated import mechanism so that it’s now possible to run modules in a package such as `pychecker.checker`. The module also supports alternative import mechanisms such as the [`zipimport`](https://docs.python.org/3/library/zipimport.html#module-zipimport "zipimport: Support for importing Python modules from ZIP archives.") module. This means you can add a .zip archive’s path to `sys.path` and then use the [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m) switch to execute code from the archive.
+See also 
+
+[**PEP 338**](https://peps.python.org/pep-0338/) - Executing modules as scripts
+    
+PEP written and implemented by Nick Coghlan.
+## PEP 341: Unified try/except/finally[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-341-unified-try-except-finally "Link to this heading")
+Until Python 2.5, the [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) statement came in two flavours. You could use a [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) block to ensure that code is always executed, or one or more [`except`](https://docs.python.org/3/reference/compound_stmts.html#except) blocks to catch specific exceptions. You couldn’t combine both `except` blocks and a `finally` block, because generating the right bytecode for the combined version was complicated and it wasn’t clear what the semantics of the combined statement should be.
+Guido van Rossum spent some time working with Java, which does support the equivalent of combining [`except`](https://docs.python.org/3/reference/compound_stmts.html#except) blocks and a [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) block, and this clarified what the statement should mean. In Python 2.5, you can now write:
+```
+try:
+  block-1 ...
+except Exception1:
+  handler-1 ...
+except Exception2:
+  handler-2 ...
+else:
+  else-block
+finally:
+  final-block

@@ -1,0 +1,76 @@
+Title: Using the Abstract Interface in Python C API
+URL: https://docs.python.org/3/faq/extending.html
+Summary: The document discusses the high-level API provided for interfacing with Python objects using an abstract interface, along with functions for handling sequences, numbers, and mappings. It introduces functions like PySequence_Length() and PySequence_GetItem(), and indicates that arbitrary length tuples cannot be created using Py_BuildValue().
+---
+
+ocs.python.org/3/c-api/list.html#c.PyList_Check "PyList_Check"), etc.
+There is also a high-level API to Python objects which is provided by the so-called ‘abstract’ interface – read `Include/abstract.h` for further details. It allows interfacing with any kind of Python sequence using calls like [`PySequence_Length()`](https://docs.python.org/3/c-api/sequence.html#c.PySequence_Length "PySequence_Length"), [`PySequence_GetItem()`](https://docs.python.org/3/c-api/sequence.html#c.PySequence_GetItem "PySequence_GetItem"), etc. as well as many other useful protocols such as numbers ([`PyNumber_Index()`](https://docs.python.org/3/c-api/number.html#c.PyNumber_Index "PyNumber_Index") et al.) and mappings in the PyMapping APIs.
+## [How do I use Py_BuildValue() to create a tuple of arbitrary length?](https://docs.python.org/3/faq/extending.html#id9)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-use-py-buildvalue-to-create-a-tuple-of-arbitrary-length "Link to this heading")
+You can’t. Use [`PyTuple_Pack()`](https://docs.python.org/3/c-api/tuple.html#c.PyTuple_Pack "PyTuple_Pack") instead.
+## [How do I call an object’s method from C?](https://docs.python.org/3/faq/extending.html#id10)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-call-an-object-s-method-from-c "Link to this heading")
+The [`PyObject_CallMethod()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethod "PyObject_CallMethod") function can be used to call an arbitrary method of an object. The parameters are the object, the name of the method to call, a format string like that used with [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue"), and the argument values:
+```
+PyObject*
+PyObject_CallMethod(PyObject*object,constchar*method_name,
+constchar*arg_format,...);
+
+```
+
+This works for any object that has methods – whether built-in or user-defined. You are responsible for eventually [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF")‘ing the return value.
+To call, e.g., a file object’s “seek” method with arguments 10, 0 (assuming the file object pointer is “f”):
+```
+res=PyObject_CallMethod(f,"seek","(ii)",10,0);
+if(res==NULL){
+...anexceptionoccurred...
+}
+else{
+Py_DECREF(res);
+}
+
+```
+
+Note that since [`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject") _always_ wants a tuple for the argument list, to call a function without arguments, pass “()” for the format, and to call a function with one argument, surround the argument in parentheses, e.g. “(i)”.
+## [How do I catch the output from PyErr_Print() (or anything that prints to stdout/stderr)?](https://docs.python.org/3/faq/extending.html#id11)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-catch-the-output-from-pyerr-print-or-anything-that-prints-to-stdout-stderr "Link to this heading")
+In Python code, define an object that supports the `write()` method. Assign this object to [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") and [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr"). Call print_error, or just allow the standard traceback mechanism to work. Then, the output will go wherever your `write()` method sends it.
+The easiest way to do this is to use the [`io.StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") class:
+>>>```
+>>> importio,sys
+>>> sys.stdout = io.StringIO()
+>>> print('foo')
+>>> print('hello world!')
+>>> sys.stderr.write(sys.stdout.getvalue())
+foo
+hello world!
+
+```
+
+A custom object to do the same would look like this:
+>>>```
+>>> importio,sys
+>>> classStdoutCatcher(io.TextIOBase):
+...   def__init__(self):
+...     self.data = []
+...   defwrite(self, stuff):
+...     self.data.append(stuff)
+...
+>>> importsys
+>>> sys.stdout = StdoutCatcher()
+>>> print('foo')
+>>> print('hello world!')
+>>> sys.stderr.write(''.join(sys.stdout.data))
+foo
+hello world!
+
+```
+
+## [How do I access a module written in Python from C?](https://docs.python.org/3/faq/extending.html#id12)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-access-a-module-written-in-python-from-c "Link to this heading")
+You can get a pointer to the module object as follows:
+```
+module=PyImport_ImportModule("<modulename>");
+
+```
+
+If the module hasn’t been imported yet (i.e. it is not yet present in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules")), this initializes the module; otherwise it simply returns the value of `sys.modules["<modulename>"]`. Note that it doesn’t enter the module into any namespace – it only ensures it has been initialized and is stored in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules").
+You can then access the module’s attributes (i.e. any name defined in the module) as follows:
+```
+attr=PyObject_GetAttrString(module,"<attrname>");

@@ -1,0 +1,48 @@
+Title: Multiprocessing Pool AsyncResult
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The `successful()` method checks if a call completed without exceptions, raising a `ValueError` if the result is not ready. Notably, since Python 3.7, a `ValueError` is raised instead of an `AssertionError` for unready results. An example demonstrates the use of a Pool with asynchronous task execution.
+---
+
+successful()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.AsyncResult.successful "Link to this definition")
+    
+Return whether the call completed without raising an exception. Will raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if the result is not ready.
+Changed in version 3.7: If the result is not ready, [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised instead of [`AssertionError`](https://docs.python.org/3/library/exceptions.html#AssertionError "AssertionError").
+The following example demonstrates the use of a pool:
+```
+frommultiprocessingimport Pool
+importtime
+deff(x):
+  return x*x
+if __name__ == '__main__':
+  with Pool(processes=4) as pool:     # start 4 worker processes
+    result = pool.apply_async(f, (10,)) # evaluate "f(10)" asynchronously in a single process
+    print(result.get(timeout=1))    # prints "100" unless your computer is *very* slow
+    print(pool.map(f, range(10)))    # prints "[0, 1, 4,..., 81]"
+    it = pool.imap(f, range(10))
+    print(next(it))           # prints "0"
+    print(next(it))           # prints "1"
+    print(it.next(timeout=1))      # prints "4" unless your computer is *very* slow
+    result = pool.apply_async(time.sleep, (10,))
+    print(result.get(timeout=1))    # raises multiprocessing.TimeoutError
+
+```
+
+### Listeners and Clients[¶](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing.connection "Link to this heading")
+Usually message passing between processes is done using queues or by using [`Connection`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection "multiprocessing.connection.Connection") objects returned by [`Pipe()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe "multiprocessing.Pipe").
+However, the [`multiprocessing.connection`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing.connection "multiprocessing.connection: API for dealing with sockets.") module allows some extra flexibility. It basically gives a high level message oriented API for dealing with sockets or Windows named pipes. It also has support for _digest authentication_ using the [`hmac`](https://docs.python.org/3/library/hmac.html#module-hmac "hmac: Keyed-Hashing for Message Authentication \(HMAC\) implementation") module, and for polling multiple connections at the same time. 
+
+multiprocessing.connection.deliver_challenge(_connection_ , _authkey_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.deliver_challenge "Link to this definition")
+    
+Send a randomly generated message to the other end of the connection and wait for a reply.
+If the reply matches the digest of the message using _authkey_ as the key then a welcome message is sent to the other end of the connection. Otherwise [`AuthenticationError`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.AuthenticationError "multiprocessing.AuthenticationError") is raised. 
+
+multiprocessing.connection.answer_challenge(_connection_ , _authkey_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.answer_challenge "Link to this definition")
+    
+Receive a message, calculate the digest of the message using _authkey_ as the key, and then send the digest back.
+If a welcome message is not received, then [`AuthenticationError`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.AuthenticationError "multiprocessing.AuthenticationError") is raised. 
+
+multiprocessing.connection.Client(_address_[, _family_[, _authkey_]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Client "Link to this definition")
+    
+Attempt to set up a connection to the listener which is using address _address_ , returning a [`Connection`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection "multiprocessing.connection.Connection").
+The type of the connection is determined by _family_ argument, but this can generally be omitted since it can usually be inferred from the format of _address_. (See [Address Formats](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-address-formats))
+If _authkey_ is given and not `None`, it should be a byte string and will be used as the secret key for an HMAC-based authentication challenge. No authentication is done if _authkey_ is `None`. [`AuthenticationError`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.AuthenticationError "multiprocessing.AuthenticationError") is raised if authentication fails. See [Authentication keys](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-auth-keys).

@@ -1,0 +1,55 @@
+Title: Time Zone Definitions and Daylight Saving Time
+URL: https://docs.python.org/3/library/time.html
+Summary: This section explains the components of time zone information, including standard and daylight saving time abbreviations, offsets indicating UTC differences, and formats for specifying the transition dates for Daylight Saving Time (DST) using Julian days and specific week-day formats.
+---
+
+```
+
+Where the components are: 
+
+`std` and `dst`
+    
+Three or more alphanumerics giving the timezone abbreviations. These will be propagated into time.tzname 
+
+`offset`
+    
+The offset has the form: `± hh[:mm[:ss]]`. This indicates the value added the local time to arrive at UTC. If preceded by a ‘-’, the timezone is east of the Prime Meridian; otherwise, it is west. If no offset follows dst, summer time is assumed to be one hour ahead of standard time. 
+
+`start[/time], end[/time]`
+    
+Indicates when to change to and back from DST. The format of the start and end dates are one of the following: 
+
+`J_n_`
+    
+The Julian day _n_ (1 <= _n_ <= 365). Leap days are not counted, so in all years February 28 is day 59 and March 1 is day 60. 
+
+`_n_`
+    
+The zero-based Julian day (0 <= _n_ <= 365). Leap days are counted, and it is possible to refer to February 29. 
+
+`M_m_._n_._d_`
+    
+The _d_ ’th day (0 <= _d_ <= 6) of week _n_ of month _m_ of the year (1 <= _n_ <= 5, 1 <= _m_ <= 12, where week 5 means “the last _d_ day in month _m_ ” which may occur in either the fourth or the fifth week). Week 1 is the first week in which the _d_ ’th day occurs. Day zero is a Sunday.
+`time` has the same format as `offset` except that no leading sign (‘-’ or ‘+’) is allowed. The default, if time is not given, is 02:00:00.
+>>>```
+>>> os.environ['TZ'] = 'EST+05EDT,M4.1.0,M10.5.0'
+>>> time.tzset()
+>>> time.strftime('%X%x %Z')
+'02:07:36 05/08/03 EDT'
+>>> os.environ['TZ'] = 'AEST-10AEDT-11,M10.5.0,M3.5.0'
+>>> time.tzset()
+>>> time.strftime('%X%x %Z')
+'16:08:12 05/08/03 AEST'
+
+```
+
+On many Unix systems (including *BSD, Linux, Solaris, and Darwin), it is more convenient to use the system’s zoneinfo (_[tzfile(5)](https://manpages.debian.org/tzfile\(5\))_) database to specify the timezone rules. To do this, set the `TZ` environment variable to the path of the required timezone datafile, relative to the root of the systems ‘zoneinfo’ timezone database, usually located at `/usr/share/zoneinfo`. For example, `'US/Eastern'`, `'Australia/Melbourne'`, `'Egypt'` or `'Europe/Amsterdam'`.
+>>>```
+>>> os.environ['TZ'] = 'US/Eastern'
+>>> time.tzset()
+>>> time.tzname
+('EST', 'EDT')
+>>> os.environ['TZ'] = 'Egypt'
+>>> time.tzset()
+>>> time.tzname
+('EET', 'EEST')

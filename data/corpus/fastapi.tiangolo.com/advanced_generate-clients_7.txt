@@ -1,0 +1,80 @@
+Title: Custom Operation IDs in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/generate-clients/
+Summary: This section discusses how FastAPI generates unique operation IDs for API path operations, utilizing the function name, path, and HTTP method. It also introduces the option to customize operation ID generation for simplicity, emphasizing the need for unique identifiers.
+---
+
+```
+
+...that's because the client generator uses the OpenAPI internal **operation ID** for each _path operation_.
+OpenAPI requires that each operation ID is unique across all the _path operations_ , so FastAPI uses the **function name** , the **path** , and the **HTTP method/operation** to generate that operation ID, because that way it can make sure that the operation IDs are unique.
+But I'll show you how to improve that next. 🤓
+## Custom Operation IDs and Better Method Names[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#custom-operation-ids-and-better-method-names "Permanent link")
+You can **modify** the way these operation IDs are **generated** to make them simpler and have **simpler method names** in the clients.
+In this case you will have to ensure that each operation ID is **unique** in some other way.
+For example, you could make sure that each _path operation_ has a tag, and then generate the operation ID based on the **tag** and the _path operation_ **name** (the function name).
+### Custom Generate Unique ID Function[¶](https://fastapi.tiangolo.com/advanced/generate-clients/#custom-generate-unique-id-function "Permanent link")
+FastAPI uses a **unique ID** for each _path operation_ , it is used for the **operation ID** and also for the names of any needed custom models, for requests or responses.
+You can customize that function. It takes an `APIRoute` and outputs a string.
+For example, here it is using the first tag (you will probably have only one tag) and the _path operation_ name (the function name).
+You can then pass that custom function to **FastAPI** as the `generate_unique_id_function` parameter:
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/generate-clients/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.routingimport APIRoute
+frompydanticimport BaseModel
+defcustom_generate_unique_id(route: APIRoute):
+  return f"{route.tags[0]}-{route.name}"
+app = FastAPI(generate_unique_id_function=custom_generate_unique_id)
+classItem(BaseModel):
+  name: str
+  price: float
+classResponseMessage(BaseModel):
+  message: str
+classUser(BaseModel):
+  username: str
+  email: str
+@app.post("/items/", response_model=ResponseMessage, tags=["items"])
+async defcreate_item(item: Item):
+  return {"message": "Item received"}
+@app.get("/items/", response_model=list[Item], tags=["items"])
+async defget_items():
+  return [
+    {"name": "Plumbus", "price": 3},
+    {"name": "Portal Gun", "price": 9001},
+  ]
+@app.post("/users/", response_model=ResponseMessage, tags=["users"])
+async defcreate_user(user: User):
+  return {"message": "User received"}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/generate-clients/#__tabbed_6_1)
+```
+fromtypingimport List
+fromfastapiimport FastAPI
+fromfastapi.routingimport APIRoute
+frompydanticimport BaseModel
+defcustom_generate_unique_id(route: APIRoute):
+  return f"{route.tags[0]}-{route.name}"
+app = FastAPI(generate_unique_id_function=custom_generate_unique_id)
+classItem(BaseModel):
+  name: str
+  price: float
+classResponseMessage(BaseModel):
+  message: str
+classUser(BaseModel):
+  username: str
+  email: str
+@app.post("/items/", response_model=ResponseMessage, tags=["items"])
+async defcreate_item(item: Item):
+  return {"message": "Item received"}
+@app.get("/items/", response_model=List[Item], tags=["items"])
+async defget_items():
+  return [
+    {"name": "Plumbus", "price": 3},
+    {"name": "Portal Gun", "price": 9001},
+  ]
+@app.post("/users/", response_model=ResponseMessage, tags=["users"])
+async defcreate_user(user: User):
+  return {"message": "User received"}

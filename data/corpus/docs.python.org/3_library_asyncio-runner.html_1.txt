@@ -1,0 +1,41 @@
+Title: asyncio.run() Function Overview
+URL: https://docs.python.org/3/library/asyncio-runner.html
+Summary: The asyncio.run() function executes a coroutine and manages the event loop, finalizing asynchronous generators and closing the executor. It cannot be used if another event loop is active in the same thread. Debug mode can be enabled or disabled using the _debug_ parameter, and a custom loop can be created with the _loop_factory_ parameter.
+---
+
+asyncio.run(_coro_ , _*_ , _debug =None_, _loop_factory =None_)[¶](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "Link to this definition")
+    
+Execute the [coroutine](https://docs.python.org/3/glossary.html#term-coroutine) _coro_ and return the result.
+This function runs the passed coroutine, taking care of managing the asyncio event loop, _finalizing asynchronous generators_ , and closing the executor.
+This function cannot be called when another asyncio event loop is running in the same thread.
+If _debug_ is `True`, the event loop will be run in debug mode. `False` disables debug mode explicitly. `None` is used to respect the global [Debug Mode](https://docs.python.org/3/library/asyncio-dev.html#asyncio-debug-mode) settings.
+If _loop_factory_ is not `None`, it is used to create a new event loop; otherwise [`asyncio.new_event_loop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.new_event_loop "asyncio.new_event_loop") is used. The loop is closed at the end. This function should be used as a main entry point for asyncio programs, and should ideally only be called once. It is recommended to use _loop_factory_ to configure the event loop instead of policies. Passing [`asyncio.EventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.EventLoop "asyncio.EventLoop") allows running asyncio without the policy system.
+The executor is given a timeout duration of 5 minutes to shutdown. If the executor hasn’t finished within that duration, a warning is emitted and the executor is closed.
+Example:
+```
+async defmain():
+  await asyncio.sleep(1)
+  print('hello')
+asyncio.run(main())
+
+```
+
+Added in version 3.7.
+Changed in version 3.9: Updated to use [`loop.shutdown_default_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.shutdown_default_executor "asyncio.loop.shutdown_default_executor").
+Changed in version 3.10: _debug_ is `None` by default to respect the global debug mode settings.
+Changed in version 3.12: Added _loop_factory_ parameter.
+## [Runner context manager](https://docs.python.org/3/library/asyncio-runner.html#id2)[¶](https://docs.python.org/3/library/asyncio-runner.html#runner-context-manager "Link to this heading") 
+
+_class_ asyncio.Runner(_*_ , _debug =None_, _loop_factory =None_)[¶](https://docs.python.org/3/library/asyncio-runner.html#asyncio.Runner "Link to this definition")
+    
+A context manager that simplifies _multiple_ async function calls in the same context.
+Sometimes several top-level async functions should be called in the same [event loop](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop) and [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context").
+If _debug_ is `True`, the event loop will be run in debug mode. `False` disables debug mode explicitly. `None` is used to respect the global [Debug Mode](https://docs.python.org/3/library/asyncio-dev.html#asyncio-debug-mode) settings.
+_loop_factory_ could be used for overriding the loop creation. It is the responsibility of the _loop_factory_ to set the created loop as the current one. By default [`asyncio.new_event_loop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.new_event_loop "asyncio.new_event_loop") is used and set as current event loop with [`asyncio.set_event_loop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.set_event_loop "asyncio.set_event_loop") if _loop_factory_ is `None`.
+Basically, [`asyncio.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run") example can be rewritten with the runner usage:
+```
+async defmain():
+  await asyncio.sleep(1)
+  print('hello')
+with asyncio.Runner() as runner:
+  runner.run(main())

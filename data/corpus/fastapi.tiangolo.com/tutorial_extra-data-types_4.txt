@@ -1,0 +1,130 @@
+Title: Additional Data Types in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/extra-data-types/
+Summary: This section discusses various additional data types supported in FastAPI, including UUIDs, Python datetime objects (datetime, date, time), and timedelta. It explains how these types are represented in requests and responses, typically as strings in ISO 8601 format or as floats for timedelta.
+---
+
+## Other data types[¶](https://fastapi.tiangolo.com/tutorial/extra-data-types/#other-data-types "Permanent link")
+Here are some of the additional data types you can use:
+  * `UUID`:
+    * A standard "Universally Unique Identifier", common as an ID in many databases and systems.
+    * In requests and responses will be represented as a `str`.
+  * `datetime.datetime`:
+    * A Python `datetime.datetime`.
+    * In requests and responses will be represented as a `str` in ISO 8601 format, like: `2008-09-15T15:53:00+05:00`.
+  * `datetime.date`:
+    * Python `datetime.date`.
+    * In requests and responses will be represented as a `str` in ISO 8601 format, like: `2008-09-15`.
+  * `datetime.time`:
+    * A Python `datetime.time`.
+    * In requests and responses will be represented as a `str` in ISO 8601 format, like: `14:23:55.003`.
+  * `datetime.timedelta`:
+    * A Python `datetime.timedelta`.
+    * In requests and responses will be represented as a `float` of total seconds.
+    * Pydantic also allows representing it as a "ISO 8601 time diff encoding", [see the docs for more info](https://docs.pydantic.dev/latest/concepts/serialization/#custom-serializers).
+  * `frozenset`:
+    * In requests and responses, treated the same as a `set`:
+      * In requests, a list will be read, eliminating duplicates and converting it to a `set`.
+      * In responses, the `set` will be converted to a `list`.
+      * The generated schema will specify that the `set` values are unique (using JSON Schema's `uniqueItems`).
+  * `bytes`:
+    * Standard Python `bytes`.
+    * In requests and responses will be treated as `str`.
+    * The generated schema will specify that it's a `str` with `binary` "format".
+  * `Decimal`:
+    * Standard Python `Decimal`.
+    * In requests and responses, handled the same as a `float`.
+  * You can check all the valid Pydantic data types here: [Pydantic data types](https://docs.pydantic.dev/latest/usage/types/types/).
+
+
+## Example[¶](https://fastapi.tiangolo.com/tutorial/extra-data-types/#example "Permanent link")
+Here's an example _path operation_ with parameters using some of the above types.
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/extra-data-types/#__tabbed_1_1)
+```
+fromdatetimeimport datetime, time, timedelta
+fromtypingimport Annotated
+fromuuidimport UUID
+fromfastapiimport Body, FastAPI
+app = FastAPI()
+@app.put("/items/{item_id}")
+async defread_items(
+  item_id: UUID,
+  start_datetime: Annotated[datetime, Body()],
+  end_datetime: Annotated[datetime, Body()],
+  process_after: Annotated[timedelta, Body()],
+  repeat_at: Annotated[time | None, Body()] = None,
+):
+  start_process = start_datetime + process_after
+  duration = end_datetime - start_process
+  return {
+    "item_id": item_id,
+    "start_datetime": start_datetime,
+    "end_datetime": end_datetime,
+    "process_after": process_after,
+    "repeat_at": repeat_at,
+    "start_process": start_process,
+    "duration": duration,
+  }
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/extra-data-types/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/extra-data-types/#__tabbed_2_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/extra-data-types/#__tabbed_2_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/extra-data-types/#__tabbed_2_4)
+```
+fromdatetimeimport datetime, time, timedelta
+fromtypingimport Annotated, Union
+fromuuidimport UUID
+fromfastapiimport Body, FastAPI
+app = FastAPI()
+@app.put("/items/{item_id}")
+async defread_items(
+  item_id: UUID,
+  start_datetime: Annotated[datetime, Body()],
+  end_datetime: Annotated[datetime, Body()],
+  process_after: Annotated[timedelta, Body()],
+  repeat_at: Annotated[Union[time, None], Body()] = None,
+):
+  start_process = start_datetime + process_after
+  duration = end_datetime - start_process
+  return {
+    "item_id": item_id,
+    "start_datetime": start_datetime,
+    "end_datetime": end_datetime,
+    "process_after": process_after,
+    "repeat_at": repeat_at,
+    "start_process": start_process,
+    "duration": duration,
+  }
+
+```
+
+```
+fromdatetimeimport datetime, time, timedelta
+fromtypingimport Union
+fromuuidimport UUID
+fromfastapiimport Body, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.put("/items/{item_id}")
+async defread_items(
+  item_id: UUID,
+  start_datetime: Annotated[datetime, Body()],
+  end_datetime: Annotated[datetime, Body()],
+  process_after: Annotated[timedelta, Body()],
+  repeat_at: Annotated[Union[time, None], Body()] = None,
+):
+  start_process = start_datetime + process_after
+  duration = end_datetime - start_process
+  return {
+    "item_id": item_id,
+    "start_datetime": start_datetime,
+    "end_datetime": end_datetime,
+    "process_after": process_after,
+    "repeat_at": repeat_at,
+    "start_process": start_process,
+    "duration": duration,
+  }
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

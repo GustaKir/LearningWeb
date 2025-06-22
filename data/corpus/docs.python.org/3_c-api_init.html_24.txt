@@ -1,0 +1,38 @@
+Title: Thread State Management in Python C API
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The `PyEval_ReleaseThread` function resets the current thread state to NULL and releases the global interpreter lock, requiring that the lock must have previously been created and held by the current thread. The function checks that the provided thread state is valid. For higher-level functionality, `PyEval_SaveThread` can be used as it is available regardless of thread initialization.
+---
+
+voidPyEval_ReleaseThread([PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*tstate)[¶](https://docs.python.org/3/c-api/init.html#c.PyEval_ReleaseThread "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Reset the current thread state to `NULL` and release the global interpreter lock. The lock must have been created earlier and must be held by the current thread. The _tstate_ argument, which must not be `NULL`, is only used to check that it represents the current thread state — if it isn’t, a fatal error is reported.
+[`PyEval_SaveThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "PyEval_SaveThread") is a higher-level function which is always available (even when threads have not been initialized).
+## Sub-interpreter support[¶](https://docs.python.org/3/c-api/init.html#sub-interpreter-support "Link to this heading")
+While in most uses, you will only embed a single Python interpreter, there are cases where you need to create several independent interpreters in the same process and perhaps even in the same thread. Sub-interpreters allow you to do that.
+The “main” interpreter is the first one created when the runtime initializes. It is usually the only Python interpreter in a process. Unlike sub-interpreters, the main interpreter has unique process-global responsibilities like signal handling. It is also responsible for execution during runtime initialization and is usually the active interpreter during runtime finalization. The [`PyInterpreterState_Main()`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_Main "PyInterpreterState_Main") function returns a pointer to its state.
+You can switch between sub-interpreters using the [`PyThreadState_Swap()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_Swap "PyThreadState_Swap") function. You can create and destroy them using the following functions: 
+
+typePyInterpreterConfig[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig "Link to this definition")
+    
+Structure containing most parameters to configure a sub-interpreter. Its values are used only in [`Py_NewInterpreterFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_NewInterpreterFromConfig "Py_NewInterpreterFromConfig") and never modified by the runtime.
+Added in version 3.12.
+Structure fields: 
+
+intuse_main_obmalloc[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig.use_main_obmalloc "Link to this definition")
+    
+If this is `0` then the sub-interpreter will use its own “object” allocator state. Otherwise it will use (share) the main interpreter’s.
+If this is `0` then [`check_multi_interp_extensions`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig.check_multi_interp_extensions "PyInterpreterConfig.check_multi_interp_extensions") must be `1` (non-zero). If this is `1` then [`gil`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig.gil "PyInterpreterConfig.gil") must not be [`PyInterpreterConfig_OWN_GIL`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig_OWN_GIL "PyInterpreterConfig_OWN_GIL"). 
+
+intallow_fork[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig.allow_fork "Link to this definition")
+    
+If this is `0` then the runtime will not support forking the process in any thread where the sub-interpreter is currently active. Otherwise fork is unrestricted.
+Note that the [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") module still works when fork is disallowed. 
+
+intallow_exec[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig.allow_exec "Link to this definition")
+    
+If this is `0` then the runtime will not support replacing the current process via exec (e.g. [`os.execv()`](https://docs.python.org/3/library/os.html#os.execv "os.execv")) in any thread where the sub-interpreter is currently active. Otherwise exec is unrestricted.
+Note that the [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") module still works when exec is disallowed. 
+
+intallow_threads[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig.allow_threads "Link to this definition")
+    
+If this is `0` then the sub-interpreter’s [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module won’t create threads. Otherwise threads are allowed.

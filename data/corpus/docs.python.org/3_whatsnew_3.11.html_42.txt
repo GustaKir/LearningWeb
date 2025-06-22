@@ -1,0 +1,48 @@
+Title: Changes to PyThreadState Structure in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: This chunk outlines updates to the PyThreadState structure in Python 3.11, including the removal of the 'frame' member and its replacement with PyThreadState_GetFrame(). It also mentions changes to the 'tracing' member and the introduction of new functions for entering and leaving tracing.
+---
+
+```
+
+Or use the [pythoncapi_compat project](https://github.com/python/pythoncapi-compat) to get these two functions on older Python versions.
+  * Changes of the [`PyThreadState`](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState") structure members:
+    * `frame`: removed, use [`PyThreadState_GetFrame()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_GetFrame "PyThreadState_GetFrame") (function added to Python 3.9 by [bpo-40429](https://bugs.python.org/issue?@action=redirect&bpo=40429)). Warning: the function returns a [strong reference](https://docs.python.org/3/glossary.html#term-strong-reference), need to call [`Py_XDECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_XDECREF "Py_XDECREF").
+    * `tracing`: changed, use [`PyThreadState_EnterTracing()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_EnterTracing "PyThreadState_EnterTracing") and [`PyThreadState_LeaveTracing()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_LeaveTracing "PyThreadState_LeaveTracing") (functions added to Python 3.11 by [bpo-43760](https://bugs.python.org/issue?@action=redirect&bpo=43760)).
+    * `recursion_depth`: removed, use `(tstate->recursion_limit - tstate->recursion_remaining)` instead.
+    * `stackcheck_counter`: removed.
+Code defining `PyThreadState_GetFrame()` on Python 3.8 and older:
+```
+#if PY_VERSION_HEX < 0x030900B1
+static inline PyFrameObject* PyThreadState_GetFrame(PyThreadState *tstate)
+{
+  Py_XINCREF(tstate->frame);
+  return tstate->frame;
+}
+#endif
+
+```
+
+Code defining `PyThreadState_EnterTracing()` and `PyThreadState_LeaveTracing()` on Python 3.10 and older:
+```
+#if PY_VERSION_HEX < 0x030B00A2
+static inline void PyThreadState_EnterTracing(PyThreadState *tstate)
+{
+  tstate->tracing++;
+#if PY_VERSION_HEX >= 0x030A00A1
+  tstate->cframe->use_tracing = 0;
+#else
+  tstate->use_tracing = 0;
+#endif
+}
+static inline void PyThreadState_LeaveTracing(PyThreadState *tstate)
+{
+  int use_tracing = (tstate->c_tracefunc != NULL || tstate->c_profilefunc != NULL);
+  tstate->tracing--;
+#if PY_VERSION_HEX >= 0x030A00A1
+  tstate->cframe->use_tracing = use_tracing;
+#else
+  tstate->use_tracing = use_tracing;
+#endif
+}
+#endif

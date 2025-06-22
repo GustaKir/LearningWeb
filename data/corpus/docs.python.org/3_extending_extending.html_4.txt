@@ -1,0 +1,65 @@
+Title: Using the system function in Python C Extensions
+URL: https://docs.python.org/3/extending/extending.html
+Summary: The document discusses the integration of C functions with Python, specifically how to handle argument parsing using `PyArg_ParseTuple()`, execute a system command via `system()`, and return the command's exit status as a Python object using `PyLong_FromLong()`. It emphasizes the importance of not modifying the string values assigned to pointers.
+---
+
+```
+
+It returns `NULL` (the error indicator for functions returning object pointers) if an error is detected in the argument list, relying on the exception set by [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"). Otherwise the string value of the argument has been copied to the local variable `command`. This is a pointer assignment and you are not supposed to modify the string to which it points (so in Standard C, the variable `command` should properly be declared as `const char *command`).
+The next statement is a call to the Unix function `system()`, passing it the string we just got from [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"):
+```
+sts=system(command);
+
+```
+
+Our `spam.system()` function must return the value of `sts` as a Python object. This is done using the function [`PyLong_FromLong()`](https://docs.python.org/3/c-api/long.html#c.PyLong_FromLong "PyLong_FromLong").
+```
+returnPyLong_FromLong(sts);
+
+```
+
+In this case, it will return an integer object. (Yes, even integers are objects on the heap in Python!)
+If you have a C function that returns no useful argument (a function returning void), the corresponding Python function must return `None`. You need this idiom to do so (which is implemented by the [`Py_RETURN_NONE`](https://docs.python.org/3/c-api/none.html#c.Py_RETURN_NONE "Py_RETURN_NONE") macro):
+```
+Py_INCREF(Py_None);
+returnPy_None;
+
+```
+
+[`Py_None`](https://docs.python.org/3/c-api/none.html#c.Py_None "Py_None") is the C name for the special Python object `None`. It is a genuine Python object rather than a `NULL` pointer, which means “error” in most contexts, as we have seen.
+## 1.4. The Module’s Method Table and Initialization Function[¶](https://docs.python.org/3/extending/extending.html#the-module-s-method-table-and-initialization-function "Link to this heading")
+I promised to show how `spam_system()` is called from Python programs. First, we need to list its name and address in a “method table”:
+```
+staticPyMethodDefSpamMethods[]={
+...
+{"system",spam_system,METH_VARARGS,
+"Execute a shell command."},
+...
+{NULL,NULL,0,NULL}/* Sentinel */
+};
+
+```
+
+Note the third entry (`METH_VARARGS`). This is a flag telling the interpreter the calling convention to be used for the C function. It should normally always be `METH_VARARGS` or `METH_VARARGS | METH_KEYWORDS`; a value of `0` means that an obsolete variant of [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") is used.
+When using only `METH_VARARGS`, the function should expect the Python-level parameters to be passed in as a tuple acceptable for parsing via [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"); more information on this function is provided below.
+The [`METH_KEYWORDS`](https://docs.python.org/3/c-api/structures.html#c.METH_KEYWORDS "METH_KEYWORDS") bit may be set in the third field if keyword arguments should be passed to the function. In this case, the C function should accept a third `PyObject *` parameter which will be a dictionary of keywords. Use [`PyArg_ParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTupleAndKeywords "PyArg_ParseTupleAndKeywords") to parse the arguments to such a function.
+The method table must be referenced in the module definition structure:
+```
+staticstructPyModuleDefspammodule={
+PyModuleDef_HEAD_INIT,
+"spam",/* name of module */
+spam_doc,/* module documentation, may be NULL */
+-1,/* size of per-interpreter state of the module,
+         or -1 if the module keeps state in global variables. */
+SpamMethods
+};
+
+```
+
+This structure, in turn, must be passed to the interpreter in the module’s initialization function. The initialization function must be named `PyInit_name()`, where _name_ is the name of the module, and should be the only non-`static` item defined in the module file:
+```
+PyMODINIT_FUNC
+PyInit_spam(void)
+{
+returnPyModule_Create(&spammodule);
+}

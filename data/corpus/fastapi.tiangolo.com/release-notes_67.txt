@@ -1,0 +1,36 @@
+Title: FastAPI Release Notes: Version 0.110.0
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: This release addresses a breaking change related to memory handling for internal server errors. It involves refactoring dependencies that use `yield` and `except` to ensure exceptions are re-raised, preventing memory leaks when unhandled exceptions occur. Documentation has been updated to reflect these changes.
+---
+
+## 0.110.0[¶](https://fastapi.tiangolo.com/release-notes/#01100 "Permanent link")
+### Breaking Changes[¶](https://fastapi.tiangolo.com/release-notes/#breaking-changes_1 "Permanent link")
+  * 🐛 Fix unhandled growing memory for internal server errors, refactor dependencies with `yield` and `except` to require raising again as in regular Python. PR [#11191](https://github.com/tiangolo/fastapi/pull/11191) by [@tiangolo](https://github.com/tiangolo).
+    * This is a breaking change (and only slightly) if you used dependencies with `yield`, used `except` in those dependencies, and didn't raise again.
+    * This was reported internally by [@rushilsrivastava](https://github.com/rushilsrivastava) as a memory leak when the server had unhandled exceptions that would produce internal server errors, the memory allocated before that point would not be released.
+    * Read the new docs: [Dependencies with `yield` and `except`](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#dependencies-with-yield-and-except).
+
+
+In short, if you had dependencies that looked like:
+```
+defmy_dep():
+  try:
+    yield
+  except SomeException:
+    pass
+
+```
+
+Now you need to make sure you raise again after `except`, just as you would in regular Python:
+```
+defmy_dep():
+  try:
+    yield
+  except SomeException:
+    raise
+
+```
+
+### Docs[¶](https://fastapi.tiangolo.com/release-notes/#docs_20 "Permanent link")
+  * ✏️ Fix minor typos in `docs/ko/docs/`. PR [#11126](https://github.com/tiangolo/fastapi/pull/11126) by [@KaniKim](https://github.com/KaniKim).
+  * ✏️ Fix minor typo in `fastapi/applications.py`. PR [#11099](https://github.com/tiangolo/fastapi/pull/11099) by [@JacobHayes](https://github.com/JacobHayes).

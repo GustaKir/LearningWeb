@@ -1,0 +1,55 @@
+Title: Variadic Type Variables in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: Python 3.11 introduces `TypeVarTuple`, a variadic type variable that enhances generics by allowing parameterization of types in array-like structures. This feature improves type checking for numerical computing libraries like NumPy and TensorFlow, helping to catch shape-related bugs. More details can be found in PEP 646.
+---
+
+with an _arbitrary_ number of types. In other words, a [`TypeVarTuple`](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple "typing.TypeVarTuple") is a _variadic_ type variable, enabling _variadic_ generics.
+This enables a wide variety of use cases. In particular, it allows the type of array-like structures in numerical computing libraries such as NumPy and TensorFlow to be parameterised with the array _shape_. Static type checkers will now be able to catch shape-related bugs in code that uses these libraries.
+See [**PEP 646**](https://peps.python.org/pep-0646/) for more details.
+(Contributed by Matthew Rahtz in [bpo-43224](https://bugs.python.org/issue?@action=redirect&bpo=43224), with contributions by Serhiy Storchaka and Jelle Zijlstra. PEP written by Mark Mendoza, Matthew Rahtz, Pradeep Kumar Srinivasan, and Vincent Siles.)
+### PEP 655: Marking individual `TypedDict` items as required or not-required[¶](https://docs.python.org/3/whatsnew/3.11.html#pep-655-marking-individual-typeddict-items-as-required-or-not-required "Link to this heading")
+[`Required`](https://docs.python.org/3/library/typing.html#typing.Required "typing.Required") and [`NotRequired`](https://docs.python.org/3/library/typing.html#typing.NotRequired "typing.NotRequired") provide a straightforward way to mark whether individual items in a [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict") must be present. Previously, this was only possible using inheritance.
+All fields are still required by default, unless the _total_ parameter is set to `False`, in which case all fields are still not-required by default. For example, the following specifies a `TypedDict` with one required and one not-required key:
+```
+classMovie(TypedDict):
+  title: str
+  year: NotRequired[int]
+m1: Movie = {"title": "Black Panther", "year": 2018} # OK
+m2: Movie = {"title": "Star Wars"} # OK (year is not required)
+m3: Movie = {"year": 2022} # ERROR (missing required field title)
+
+```
+
+The following definition is equivalent:
+```
+classMovie(TypedDict, total=False):
+  title: Required[str]
+  year: int
+
+```
+
+See [**PEP 655**](https://peps.python.org/pep-0655/) for more details.
+(Contributed by David Foster and Jelle Zijlstra in [bpo-47087](https://bugs.python.org/issue?@action=redirect&bpo=47087). PEP written by David Foster.)
+### PEP 673: `Self` type[¶](https://docs.python.org/3/whatsnew/3.11.html#pep-673-self-type "Link to this heading")
+The new [`Self`](https://docs.python.org/3/library/typing.html#typing.Self "typing.Self") annotation provides a simple and intuitive way to annotate methods that return an instance of their class. This behaves the same as the [`TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar")-based approach [**specified in PEP 484**](https://peps.python.org/pep-0484/#annotating-instance-and-class-methods), but is more concise and easier to follow.
+Common use cases include alternative constructors provided as [`classmethod`](https://docs.python.org/3/library/functions.html#classmethod "classmethod")s, and [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") methods that return `self`:
+```
+classMyLock:
+  def__enter__(self) -> Self:
+    self.lock()
+    return self
+  ...
+classMyInt:
+  @classmethod
+  deffromhex(cls, s: str) -> Self:
+    return cls(int(s, 16))
+  ...
+
+```
+
+[`Self`](https://docs.python.org/3/library/typing.html#typing.Self "typing.Self") can also be used to annotate method parameters or attributes of the same type as their enclosing class.
+See [**PEP 673**](https://peps.python.org/pep-0673/) for more details.
+(Contributed by James Hilton-Balfe in [bpo-46534](https://bugs.python.org/issue?@action=redirect&bpo=46534). PEP written by Pradeep Kumar Srinivasan and James Hilton-Balfe.)
+### PEP 675: Arbitrary literal string type[¶](https://docs.python.org/3/whatsnew/3.11.html#pep-675-arbitrary-literal-string-type "Link to this heading")
+The new [`LiteralString`](https://docs.python.org/3/library/typing.html#typing.LiteralString "typing.LiteralString") annotation may be used to indicate that a function parameter can be of any literal string type. This allows a function to accept arbitrary literal string types, as well as strings created from other literal strings. Type checkers can then enforce that sensitive functions, such as those that execute SQL statements or shell commands, are called only with static arguments, providing protection against injection attacks.
+For example, a SQL query function could be annotated as follows:

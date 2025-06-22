@@ -1,0 +1,29 @@
+Title: Python 3.12 C API Updates
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: This section details changes in the Python 3.12 C API, highlighting the new uses of configuration flags including `PyConfig.hash_seed`, `PyConfig.isolated`, and updates for legacy Windows flags related to file system encoding and standard I/O.
+---
+
+3/c-api/init_config.html#c.PyConfig.hash_seed "PyConfig.hash_seed")
+    * [`Py_IsolatedFlag`](https://docs.python.org/3/c-api/init.html#c.Py_IsolatedFlag "Py_IsolatedFlag"): use [`PyConfig.isolated`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.isolated "PyConfig.isolated")
+    * [`Py_LegacyWindowsFSEncodingFlag`](https://docs.python.org/3/c-api/init.html#c.Py_LegacyWindowsFSEncodingFlag "Py_LegacyWindowsFSEncodingFlag"): use [`PyPreConfig.legacy_windows_fs_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.legacy_windows_fs_encoding "PyPreConfig.legacy_windows_fs_encoding")
+    * [`Py_LegacyWindowsStdioFlag`](https://docs.python.org/3/c-api/init.html#c.Py_LegacyWindowsStdioFlag "Py_LegacyWindowsStdioFlag"): use [`PyConfig.legacy_windows_stdio`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.legacy_windows_stdio "PyConfig.legacy_windows_stdio")
+    * `Py_FileSystemDefaultEncoding`: use [`PyConfig.filesystem_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.filesystem_encoding "PyConfig.filesystem_encoding")
+    * `Py_HasFileSystemDefaultEncoding`: use [`PyConfig.filesystem_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.filesystem_encoding "PyConfig.filesystem_encoding")
+    * `Py_FileSystemDefaultEncodeErrors`: use [`PyConfig.filesystem_errors`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.filesystem_errors "PyConfig.filesystem_errors")
+    * `Py_UTF8Mode`: use [`PyPreConfig.utf8_mode`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.utf8_mode "PyPreConfig.utf8_mode") (see [`Py_PreInitialize()`](https://docs.python.org/3/c-api/init_config.html#c.Py_PreInitialize "Py_PreInitialize"))
+The [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig") API should be used with [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig") instead. (Contributed by Victor Stinner in [gh-77782](https://github.com/python/cpython/issues/77782).)
+  * Creating [`immutable types`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_IMMUTABLETYPE "Py_TPFLAGS_IMMUTABLETYPE") with mutable bases is deprecated and will be disabled in Python 3.14. ([gh-95388](https://github.com/python/cpython/issues/95388))
+  * The `structmember.h` header is deprecated, though it continues to be available and there are no plans to remove it.
+Its contents are now available just by including `Python.h`, with a `Py` prefix added if it was missing:
+    * [`PyMemberDef`](https://docs.python.org/3/c-api/structures.html#c.PyMemberDef "PyMemberDef"), [`PyMember_GetOne()`](https://docs.python.org/3/c-api/structures.html#c.PyMember_GetOne "PyMember_GetOne") and [`PyMember_SetOne()`](https://docs.python.org/3/c-api/structures.html#c.PyMember_SetOne "PyMember_SetOne")
+    * Type macros like [`Py_T_INT`](https://docs.python.org/3/c-api/structures.html#c.Py_T_INT "Py_T_INT"), [`Py_T_DOUBLE`](https://docs.python.org/3/c-api/structures.html#c.Py_T_DOUBLE "Py_T_DOUBLE"), etc. (previously `T_INT`, `T_DOUBLE`, etc.)
+    * The flags [`Py_READONLY`](https://docs.python.org/3/c-api/structures.html#c.Py_READONLY "Py_READONLY") (previously `READONLY`) and [`Py_AUDIT_READ`](https://docs.python.org/3/c-api/structures.html#c.Py_AUDIT_READ "Py_AUDIT_READ") (previously all uppercase)
+Several items are not exposed from `Python.h`:
+    * [`T_OBJECT`](https://docs.python.org/3/c-api/structures.html#c.T_OBJECT "T_OBJECT") (use [`Py_T_OBJECT_EX`](https://docs.python.org/3/c-api/structures.html#c.Py_T_OBJECT_EX "Py_T_OBJECT_EX"))
+    * [`T_NONE`](https://docs.python.org/3/c-api/structures.html#c.T_NONE "T_NONE") (previously undocumented, and pretty quirky)
+    * The macro `WRITE_RESTRICTED` which does nothing.
+    * The macros `RESTRICTED` and `READ_RESTRICTED`, equivalents of [`Py_AUDIT_READ`](https://docs.python.org/3/c-api/structures.html#c.Py_AUDIT_READ "Py_AUDIT_READ").
+    * In some configurations, `<stddef.h>` is not included from `Python.h`. It should be included manually when using `offsetof()`.
+The deprecated header continues to provide its original contents under the original names. Your old code can stay unchanged, unless the extra include and non-namespaced macros bother you greatly.
+(Contributed in [gh-47146](https://github.com/python/cpython/issues/47146) by Petr Viktorin, based on earlier work by Alexander Belopolsky and Matthias Braun.)
+  * [`PyErr_Fetch()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Fetch "PyErr_Fetch") and [`PyErr_Restore()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Restore "PyErr_Restore") are deprecated. Use [`PyErr_GetRaisedException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_GetRaisedException "PyErr_GetRaisedException") and [`PyErr_SetRaisedException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetRaisedException "PyErr_SetRaisedException") instead.

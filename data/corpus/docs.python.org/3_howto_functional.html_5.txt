@@ -1,0 +1,106 @@
+Title: Iterating Over Files and Sets in Python
+URL: https://docs.python.org/3/howto/functional.html
+Summary: This section explains how to iterate over lines in a file using the `readline()` method and how to iterate over the elements of a set. It also introduces generator expressions and list comprehensions as common operations for manipulating iterators, allowing for processing each element and filtering elements based on conditions.
+---
+
+```
+
+Files also support iteration by calling the [`readline()`](https://docs.python.org/3/library/io.html#io.TextIOBase.readline "io.TextIOBase.readline") method until there are no more lines in the file. This means you can read each line of a file like this:
+```
+for line in file:
+  # do something for each line
+  ...
+
+```
+
+Sets can take their contents from an iterable and let you iterate over the set’s elements:
+>>>```
+>>> S = {2, 3, 5, 7, 11, 13}
+>>> for i in S:
+...   print(i)
+2
+3
+5
+7
+11
+13
+
+```
+
+## Generator expressions and list comprehensions[¶](https://docs.python.org/3/howto/functional.html#generator-expressions-and-list-comprehensions "Link to this heading")
+Two common operations on an iterator’s output are 1) performing some operation for every element, 2) selecting a subset of elements that meet some condition. For example, given a list of strings, you might want to strip off trailing whitespace from each line or extract all the strings containing a given substring.
+List comprehensions and generator expressions (short form: “listcomps” and “genexps”) are a concise notation for such operations, borrowed from the functional programming language Haskell (<https://www.haskell.org/>). You can strip all the whitespace from a stream of strings with the following code:
+>>>```
+>>> line_list = [' line 1\n', 'line 2 \n', ' \n', '']
+>>> # Generator expression -- returns iterator
+>>> stripped_iter = (line.strip() for line in line_list)
+>>> # List comprehension -- returns list
+>>> stripped_list = [line.strip() for line in line_list]
+
+```
+
+You can select only certain elements by adding an `"if"` condition:
+>>>```
+>>> stripped_list = [line.strip() for line in line_list
+...          if line != ""]
+
+```
+
+With a list comprehension, you get back a Python list; `stripped_list` is a list containing the resulting lines, not an iterator. Generator expressions return an iterator that computes the values as necessary, not needing to materialize all the values at once. This means that list comprehensions aren’t useful if you’re working with iterators that return an infinite stream or a very large amount of data. Generator expressions are preferable in these situations.
+Generator expressions are surrounded by parentheses (“()”) and list comprehensions are surrounded by square brackets (“[]”). Generator expressions have the form:
+```
+( expression for expr in sequence1
+       if condition1
+       for expr2 in sequence2
+       if condition2
+       for expr3 in sequence3
+       ...
+       if condition3
+       for exprN in sequenceN
+       if conditionN )
+
+```
+
+Again, for a list comprehension only the outside brackets are different (square brackets instead of parentheses).
+The elements of the generated output will be the successive values of `expression`. The `if` clauses are all optional; if present, `expression` is only evaluated and added to the result when `condition` is true.
+Generator expressions always have to be written inside parentheses, but the parentheses signalling a function call also count. If you want to create an iterator that will be immediately passed to a function you can write:
+```
+obj_total = sum(obj.count for obj in list_all_objects())
+
+```
+
+The `for...in` clauses contain the sequences to be iterated over. The sequences do not have to be the same length, because they are iterated over from left to right, **not** in parallel. For each element in `sequence1`, `sequence2` is looped over from the beginning. `sequence3` is then looped over for each resulting pair of elements from `sequence1` and `sequence2`.
+To put it another way, a list comprehension or generator expression is equivalent to the following Python code:
+```
+for expr1 in sequence1:
+  if not (condition1):
+    continue  # Skip this element
+  for expr2 in sequence2:
+    if not (condition2):
+      continue  # Skip this element
+    ...
+    for exprN in sequenceN:
+      if not (conditionN):
+        continue  # Skip this element
+      # Output the value of
+      # the expression.
+
+```
+
+This means that when there are multiple `for...in` clauses but no `if` clauses, the length of the resulting output will be equal to the product of the lengths of all the sequences. If you have two lists of length 3, the output list is 9 elements long:
+>>>```
+>>> seq1 = 'abc'
+>>> seq2 = (1, 2, 3)
+>>> [(x, y) for x in seq1 for y in seq2]
+[('a', 1), ('a', 2), ('a', 3),
+ ('b', 1), ('b', 2), ('b', 3),
+ ('c', 1), ('c', 2), ('c', 3)]
+
+```
+
+To avoid introducing an ambiguity into Python’s grammar, if `expression` is creating a tuple, it must be surrounded with parentheses. The first list comprehension below is a syntax error, while the second one is correct:
+```
+# Syntax error
+[x, y for x in seq1 for y in seq2]
+# Correct
+[(x, y) for x in seq1 for y in seq2]

@@ -1,0 +1,62 @@
+Title: Enhancements in argparse for Command-line Parsing
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: The `argparse` module offers advanced validation features compared to `optparse`, allowing specification of argument counts with integers, `'*'`, `'+'`, or `'?'`. It supports sub-parsers for different command sets and integrates types like `FileType` to automatically handle file inputs and outputs.
+---
+
+```
+
+[`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") has much fancier validation than [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library."); you can specify an exact number of arguments as an integer, 0 or more arguments by passing `'*'`, 1 or more by passing `'+'`, or an optional argument with `'?'`. A top-level parser can contain sub-parsers to define subcommands that have different sets of switches, as in `svn commit`, `svn checkout`, etc. You can specify an argument’s type as [`FileType`](https://docs.python.org/3/library/argparse.html#argparse.FileType "argparse.FileType"), which will automatically open files for you and understands that `'-'` means standard input or output.
+See also 
+
+[`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") documentation
+    
+The documentation page of the argparse module. 
+
+[Migrating optparse code to argparse](https://docs.python.org/3/howto/argparse-optparse.html#upgrading-optparse-code)
+    
+Part of the Python documentation, describing how to convert code that uses [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library."). 
+
+[**PEP 389**](https://peps.python.org/pep-0389/) - argparse - New Command Line Parsing Module
+    
+PEP written and implemented by Steven Bethard.
+## PEP 391: Dictionary-Based Configuration For Logging[¶](https://docs.python.org/3/whatsnew/2.7.html#pep-391-dictionary-based-configuration-for-logging "Link to this heading")
+The [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") module is very flexible; applications can define a tree of logging subsystems, and each logger in this tree can filter out certain messages, format them differently, and direct messages to a varying number of handlers.
+All this flexibility can require a lot of configuration. You can write Python statements to create objects and set their properties, but a complex set-up requires verbose but boring code. [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") also supports a [`fileConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.fileConfig "logging.config.fileConfig") function that parses a file, but the file format doesn’t support configuring filters, and it’s messier to generate programmatically.
+Python 2.7 adds a [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig") function that uses a dictionary to configure logging. There are many ways to produce a dictionary from different sources: construct one with code; parse a file containing JSON; or use a YAML parsing library if one is installed. For more information see [Configuration functions](https://docs.python.org/3/library/logging.config.html#logging-config-api).
+The following example configures two loggers, the root logger and a logger named “network”. Messages sent to the root logger will be sent to the system log using the syslog protocol, and messages to the “network” logger will be written to a `network.log` file that will be rotated once the log reaches 1MB.
+```
+importlogging
+importlogging.config
+configdict = {
+ 'version': 1,  # Configuration schema in use; must be 1 for now
+ 'formatters': {
+   'standard': {
+     'format': ('%(asctime)s%(name)-15s '
+          '%(levelname)-8s%(message)s')}},
+ 'handlers': {'netlog': {'backupCount': 10,
+           'class': 'logging.handlers.RotatingFileHandler',
+           'filename': '/logs/network.log',
+           'formatter': 'standard',
+           'level': 'INFO',
+           'maxBytes': 1000000},
+       'syslog': {'class': 'logging.handlers.SysLogHandler',
+             'formatter': 'standard',
+             'level': 'ERROR'}},
+ # Specify all the subordinate loggers
+ 'loggers': {
+       'network': {
+             'handlers': ['netlog']
+       }
+ },
+ # Specify properties of the root logger
+ 'root': {
+     'handlers': ['syslog']
+ },
+}
+# Set up configuration
+logging.config.dictConfig(configdict)
+# As an example, log two error messages
+logger = logging.getLogger('/')
+logger.error('Database not found')
+netlogger = logging.getLogger('network')
+netlogger.error('Connection failed')

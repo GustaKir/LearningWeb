@@ -1,0 +1,208 @@
+Title: Defining Headers in FastAPI Responses
+URL: https://fastapi.tiangolo.com/reference/responses/
+Summary: This section details the method for initializing headers in FastAPI response objects. It explains how to handle cases when headers are not provided, including the automatic population of 'Content-Length' and 'Content-Type' based on the response body and media type.
+---
+
+```
+definit_headers(self, headers: typing.Mapping[str, str] | None = None) -> None:
+  if headers is None:
+    raw_headers: list[tuple[bytes, bytes]] = []
+    populate_content_length = True
+    populate_content_type = True
+  else:
+    raw_headers = [(k.lower().encode("latin-1"), v.encode("latin-1")) for k, v in headers.items()]
+    keys = [h[0] for h in raw_headers]
+    populate_content_length = b"content-length" not in keys
+    populate_content_type = b"content-type" not in keys
+  body = getattr(self, "body", None)
+  if (
+    body is not None
+    and populate_content_length
+    and not (self.status_code < 200 or self.status_code in (204, 304))
+  ):
+    content_length = str(len(body))
+    raw_headers.append((b"content-length", content_length.encode("latin-1")))
+  content_type = self.media_type
+  if content_type is not None and populate_content_type:
+    if content_type.startswith("text/") and "charset=" not in content_type.lower():
+      content_type += "; charset=" + self.charset
+    raw_headers.append((b"content-type", content_type.encode("latin-1")))
+  self.raw_headers = raw_headers
+
+```
+  
+---|---  
+###  set_cookie [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.StreamingResponse.set_cookie "Permanent link")
+```
+set_cookie(
+  key,
+  value="",
+  max_age=None,
+  expires=None,
+  path="/",
+  domain=None,
+  secure=False,
+  httponly=False,
+  samesite="lax",
+)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`key` |  **TYPE:** `str`  
+`value` |  **TYPE:** `str` **DEFAULT:** `''`  
+`max_age` |  **TYPE:** `int | None` **DEFAULT:** `None`  
+`expires` |  **TYPE:** `datetime | str | int | None` **DEFAULT:** `None`  
+`path` |  **TYPE:** `str | None` **DEFAULT:** `'/'`  
+`domain` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`secure` |  **TYPE:** `bool` **DEFAULT:** `False`  
+`httponly` |  **TYPE:** `bool` **DEFAULT:** `False`  
+`samesite` |  **TYPE:** `Literal['lax', 'strict', 'none'] | None` **DEFAULT:** `'lax'`  
+Source code in `starlette/responses.py`
+```
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+```
+| ```
+defset_cookie(
+  self,
+  key: str,
+  value: str = "",
+  max_age: int | None = None,
+  expires: datetime | str | int | None = None,
+  path: str | None = "/",
+  domain: str | None = None,
+  secure: bool = False,
+  httponly: bool = False,
+  samesite: typing.Literal["lax", "strict", "none"] | None = "lax",
+) -> None:
+  cookie: http.cookies.BaseCookie[str] = http.cookies.SimpleCookie()
+  cookie[key] = value
+  if max_age is not None:
+    cookie[key]["max-age"] = max_age
+  if expires is not None:
+    if isinstance(expires, datetime):
+      cookie[key]["expires"] = format_datetime(expires, usegmt=True)
+    else:
+      cookie[key]["expires"] = expires
+  if path is not None:
+    cookie[key]["path"] = path
+  if domain is not None:
+    cookie[key]["domain"] = domain
+  if secure:
+    cookie[key]["secure"] = True
+  if httponly:
+    cookie[key]["httponly"] = True
+  if samesite is not None:
+    assert samesite.lower() in [
+      "strict",
+      "lax",
+      "none",
+    ], "samesite must be either 'strict', 'lax' or 'none'"
+    cookie[key]["samesite"] = samesite
+  cookie_val = cookie.output(header="").strip()
+  self.raw_headers.append((b"set-cookie", cookie_val.encode("latin-1")))
+
+```
+  
+---|---  
+###  delete_cookie [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.StreamingResponse.delete_cookie "Permanent link")
+```
+delete_cookie(
+  key,
+  path="/",
+  domain=None,
+  secure=False,
+  httponly=False,
+  samesite="lax",
+)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`key` |  **TYPE:** `str`  
+`path` |  **TYPE:** `str` **DEFAULT:** `'/'`  
+`domain` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`secure` |  **TYPE:** `bool` **DEFAULT:** `False`  
+`httponly` |  **TYPE:** `bool` **DEFAULT:** `False`  
+`samesite` |  **TYPE:** `Literal['lax', 'strict', 'none'] | None` **DEFAULT:** `'lax'`  
+Source code in `starlette/responses.py`
+```
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+```
+| ```
+defdelete_cookie(
+  self,
+  key: str,
+  path: str = "/",
+  domain: str | None = None,
+  secure: bool = False,
+  httponly: bool = False,
+  samesite: typing.Literal["lax", "strict", "none"] | None = "lax",
+) -> None:
+  self.set_cookie(
+    key,
+    max_age=0,
+    expires=0,
+    path=path,
+    domain=domain,
+    secure=secure,
+    httponly=httponly,
+    samesite=samesite,
+  )

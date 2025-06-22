@@ -1,0 +1,44 @@
+Title: Multiprocessing Contexts and Start Methods
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The multiprocessing library in Python supports three ways to start a process, depending on the platform. One of these methods is '_spawn_', where a new Python interpreter process is created for the child process, inheriting only necessary resources. This approach ensures that unnecessary file descriptors from the parent are not inherited.
+---
+
+```
+
+For an explanation of why the `if __name__ == '__main__'` part is necessary, see [Programming guidelines](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-programming).
+### Contexts and start methods[¶](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods "Link to this heading")
+Depending on the platform, [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") supports three ways to start a process. These _start methods_ are
+> 
+
+_spawn_
+    
+> The parent process starts a fresh Python interpreter process. The child process will only inherit those resources necessary to run the process object’s [`run()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.run "multiprocessing.Process.run") method. In particular, unnecessary file descriptors and handles from the parent process will not be inherited. Starting a process using this method is rather slow compared to using _fork_ or _forkserver_.
+> Available on POSIX and Windows platforms. The default on Windows and macOS. 
+
+_fork_
+    
+> The parent process uses [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") to fork the Python interpreter. The child process, when it begins, is effectively identical to the parent process. All resources of the parent are inherited by the child process. Note that safely forking a multithreaded process is problematic.
+> Available on POSIX systems. Currently the default on POSIX except macOS.
+> Note
+> The default start method will change away from _fork_ in Python 3.14. Code that requires _fork_ should explicitly specify that via [`get_context()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context "multiprocessing.get_context") or [`set_start_method()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.set_start_method "multiprocessing.set_start_method").
+> Changed in version 3.12: If Python is able to detect that your process has multiple threads, the [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") function that this start method calls internally will raise a [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning"). Use a different start method. See the [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") documentation for further explanation. 
+
+_forkserver_
+    
+> When the program starts and selects the _forkserver_ start method, a server process is spawned. From then on, whenever a new process is needed, the parent process connects to the server and requests that it fork a new process. The fork server process is single threaded unless system libraries or preloaded imports spawn threads as a side-effect so it is generally safe for it to use [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork"). No unnecessary resources are inherited.
+> Available on POSIX platforms which support passing file descriptors over Unix pipes such as Linux.
+Changed in version 3.4: _spawn_ added on all POSIX platforms, and _forkserver_ added for some POSIX platforms. Child processes no longer inherit all of the parents inheritable handles on Windows.
+Changed in version 3.8: On macOS, the _spawn_ start method is now the default. The _fork_ start method should be considered unsafe as it can lead to crashes of the subprocess as macOS system libraries may start threads. See [bpo-33725](https://bugs.python.org/issue?@action=redirect&bpo=33725).
+On POSIX using the _spawn_ or _forkserver_ start methods will also start a _resource tracker_ process which tracks the unlinked named system resources (such as named semaphores or [`SharedMemory`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.shared_memory.SharedMemory "multiprocessing.shared_memory.SharedMemory") objects) created by processes of the program. When all processes have exited the resource tracker unlinks any remaining tracked object. Usually there should be none, but if a process was killed by a signal there may be some “leaked” resources. (Neither leaked semaphores nor shared memory segments will be automatically unlinked until the next reboot. This is problematic for both objects because the system allows only a limited number of named semaphores, and shared memory segments occupy some space in the main memory.)
+To select a start method you use the [`set_start_method()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.set_start_method "multiprocessing.set_start_method") in the `if __name__ == '__main__'` clause of the main module. For example:
+```
+importmultiprocessingasmp
+deffoo(q):
+  q.put('hello')
+if __name__ == '__main__':
+  mp.set_start_method('spawn')
+  q = mp.Queue()
+  p = mp.Process(target=foo, args=(q,))
+  p.start()
+  print(q.get())
+  p.join()

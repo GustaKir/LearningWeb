@@ -1,0 +1,57 @@
+Title: asyncio.Server Class Overview
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: The `asyncio.Server` class, introduced as a public API in Python 3.9.11 and later, functions as an asynchronous context manager since Python 3.7. It provides methods like `close()` to stop serving by closing listening sockets and `close_clients()` to manage active client connections, with additional functionality to wait for the server to close using `wait_closed()`.
+---
+
+```
+
+Changed in version 3.7: Server object is an asynchronous context manager since Python 3.7.
+Changed in version 3.11: This class was exposed publicly as `asyncio.Server` in Python 3.9.11, 3.10.3 and 3.11. 
+
+close()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.close "Link to this definition")
+    
+Stop serving: close listening sockets and set the [`sockets`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.sockets "asyncio.Server.sockets") attribute to `None`.
+The sockets that represent existing incoming client connections are left open.
+The server is closed asynchronously; use the [`wait_closed()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.wait_closed "asyncio.Server.wait_closed") coroutine to wait until the server is closed (and no more connections are active). 
+
+close_clients()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.close_clients "Link to this definition")
+    
+Close all existing incoming client connections.
+Calls [`close()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.close "asyncio.BaseTransport.close") on all associated transports.
+[`close()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.close "asyncio.Server.close") should be called before [`close_clients()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.close_clients "asyncio.Server.close_clients") when closing the server to avoid races with new clients connecting.
+Added in version 3.13. 
+
+abort_clients()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.abort_clients "Link to this definition")
+    
+Close all existing incoming client connections immediately, without waiting for pending operations to complete.
+Calls [`abort()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.abort "asyncio.WriteTransport.abort") on all associated transports.
+[`close()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.close "asyncio.Server.close") should be called before [`abort_clients()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.abort_clients "asyncio.Server.abort_clients") when closing the server to avoid races with new clients connecting.
+Added in version 3.13. 
+
+get_loop()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.get_loop "Link to this definition")
+    
+Return the event loop associated with the server object.
+Added in version 3.7. 
+
+_async_ start_serving()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.start_serving "Link to this definition")
+    
+Start accepting connections.
+This method is idempotent, so it can be called when the server is already serving.
+The _start_serving_ keyword-only parameter to [`loop.create_server()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server "asyncio.loop.create_server") and [`asyncio.start_server()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.start_server "asyncio.start_server") allows creating a Server object that is not accepting connections initially. In this case `Server.start_serving()`, or [`Server.serve_forever()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.serve_forever "asyncio.Server.serve_forever") can be used to make the Server start accepting connections.
+Added in version 3.7. 
+
+_async_ serve_forever()[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Server.serve_forever "Link to this definition")
+    
+Start accepting connections until the coroutine is cancelled. Cancellation of `serve_forever` task causes the server to be closed.
+This method can be called if the server is already accepting connections. Only one `serve_forever` task can exist per one _Server_ object.
+Example:
+```
+async defclient_connected(reader, writer):
+  # Communicate with the client with
+  # reader/writer streams. For example:
+  await reader.readline()
+async defmain(host, port):
+  srv = await asyncio.start_server(
+    client_connected, host, port)
+  await srv.serve_forever()
+asyncio.run(main('127.0.0.1', 0))

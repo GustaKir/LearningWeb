@@ -1,0 +1,34 @@
+Title: PEP 230: Warning Framework
+URL: https://docs.python.org/3/whatsnew/2.1.html
+Summary: Python 2.1 introduces a warning framework to manage obsolete modules and features. This framework allows Python developers to issue warnings before removing features, giving users a release cycle to adapt their code before any feature is permanently removed.
+---
+
+[**PEP 207**](https://peps.python.org/pep-0207/) - Rich Comparisons
+    
+Written by Guido van Rossum, heavily based on earlier work by David Ascher, and implemented by Guido van Rossum.
+## PEP 230: Warning Framework[¶](https://docs.python.org/3/whatsnew/2.1.html#pep-230-warning-framework "Link to this heading")
+Over its 10 years of existence, Python has accumulated a certain number of obsolete modules and features along the way. It’s difficult to know when a feature is safe to remove, since there’s no way of knowing how much code uses it — perhaps no programs depend on the feature, or perhaps many do. To enable removing old features in a more structured way, a warning framework was added. When the Python developers want to get rid of a feature, it will first trigger a warning in the next version of Python. The following Python version can then drop the feature, and users will have had a full release cycle to remove uses of the old feature.
+Python 2.1 adds the warning framework to be used in this scheme. It adds a [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module that provide functions to issue warnings, and to filter out warnings that you don’t want to be displayed. Third-party modules can also use this framework to deprecate old features that they no longer wish to support.
+For example, in Python 2.1 the `regex` module is deprecated, so importing it causes a warning to be printed:
+>>>```
+>>> importregex
+__main__:1: DeprecationWarning: the regex module
+     is deprecated; please use the re module
+>>>
+
+```
+
+Warnings can be issued by calling the [`warnings.warn()`](https://docs.python.org/3/library/warnings.html#warnings.warn "warnings.warn") function:
+```
+warnings.warn("feature X no longer supported")
+
+```
+
+The first parameter is the warning message; an additional optional parameters can be used to specify a particular warning category.
+Filters can be added to disable certain warnings; a regular expression pattern can be applied to the message or to the module name in order to suppress a warning. For example, you may have a program that uses the `regex` module and not want to spare the time to convert it to use the [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") module right now. The warning can be suppressed by calling
+```
+importwarnings
+warnings.filterwarnings(action = 'ignore',
+            message='.*regex module is deprecated',
+            category=DeprecationWarning,
+            module = '__main__')

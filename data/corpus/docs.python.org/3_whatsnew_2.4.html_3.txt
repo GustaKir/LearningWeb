@@ -1,0 +1,100 @@
+Title: Introduction of Template Class in PEP 292
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: PEP 292 introduces a new `Template` class in the `string` module, simplifying string substitution by using `$` for placeholders. This mitigates issues for non-programmers editing template strings by providing clearer syntax and avoiding complex format character requirements.
+---
+
+```
+
+When writing the template string, it can be easy to forget the `i` or `s` after the closing parenthesis. This isn’t a big problem if the template is in a Python module, because you run the code, get an “Unsupported format character” [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"), and fix the problem. However, consider an application such as Mailman where template strings or translations are being edited by users who aren’t aware of the Python language. The format string’s syntax is complicated to explain to such users, and if they make a mistake, it’s difficult to provide helpful feedback to them.
+PEP 292 adds a `Template` class to the [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") module that uses `$` to indicate a substitution:
+>>>```
+>>> importstring
+>>> t = string.Template('$page: $title')
+>>> t.substitute({'page':2, 'title': 'The Best of Times'})
+'2: The Best of Times'
+
+```
+
+If a key is missing from the dictionary, the `substitute()` method will raise a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError"). There’s also a `safe_substitute()` method that ignores missing keys:
+>>>```
+>>> t = string.Template('$page: $title')
+>>> t.safe_substitute({'page':3})
+'3: $title'
+
+```
+
+See also 
+
+[**PEP 292**](https://peps.python.org/pep-0292/) - Simpler String Substitutions
+    
+Written and implemented by Barry Warsaw.
+## PEP 318: Decorators for Functions and Methods[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-318-decorators-for-functions-and-methods "Link to this heading")
+Python 2.2 extended Python’s object model by adding static methods and class methods, but it didn’t extend Python’s syntax to provide any new way of defining static or class methods. Instead, you had to write a [`def`](https://docs.python.org/3/reference/compound_stmts.html#def) statement in the usual way, and pass the resulting method to a [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod") or [`classmethod()`](https://docs.python.org/3/library/functions.html#classmethod "classmethod") function that would wrap up the function as a method of the new type. Your code would look like this:
+```
+classC:
+  defmeth (cls):
+    ...
+  meth = classmethod(meth)  # Rebind name to wrapped-up class method
+
+```
+
+If the method was very long, it would be easy to miss or forget the [`classmethod()`](https://docs.python.org/3/library/functions.html#classmethod "classmethod") invocation after the function body.
+The intention was always to add some syntax to make such definitions more readable, but at the time of 2.2’s release a good syntax was not obvious. Today a good syntax _still_ isn’t obvious but users are asking for easier access to the feature; a new syntactic feature has been added to meet this need.
+The new feature is called “function decorators”. The name comes from the idea that [`classmethod()`](https://docs.python.org/3/library/functions.html#classmethod "classmethod"), [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod"), and friends are storing additional information on a function object; they’re _decorating_ functions with more details.
+The notation borrows from Java and uses the `'@'` character as an indicator. Using the new syntax, the example above would be written:
+```
+classC:
+  @classmethod
+  defmeth (cls):
+    ...
+
+```
+
+The `@classmethod` is shorthand for the `meth=classmethod(meth)` assignment. More generally, if you have the following:
+```
+@A
+@B
+@C
+deff ():
+  ...
+
+```
+
+It’s equivalent to the following pre-decorator code:
+```
+deff(): ...
+f = A(B(C(f)))
+
+```
+
+Decorators must come on the line before a function definition, one decorator per line, and can’t be on the same line as the def statement, meaning that `@A def f(): ...` is illegal. You can only decorate function definitions, either at the module level or inside a class; you can’t decorate class definitions.
+A decorator is just a function that takes the function to be decorated as an argument and returns either the same function or some new object. The return value of the decorator need not be callable (though it typically is), unless further decorators will be applied to the result. It’s easy to write your own decorators. The following simple example just sets an attribute on the function object:
+>>>```
+>>> defdeco(func):
+...   func.attr = 'decorated'
+...   return func
+...
+>>> @deco
+... deff(): pass
+...
+>>> f
+<function f at 0x402ef0d4>
+>>> f.attr
+'decorated'
+>>>
+
+```
+
+As a slightly more realistic example, the following decorator checks that the supplied argument is an integer:
+```
+defrequire_int (func):
+  defwrapper (arg):
+    assert isinstance(arg, int)
+    return func(arg)
+  return wrapper
+@require_int
+defp1 (arg):
+  print arg
+@require_int
+defp2(arg):
+  print arg*2

@@ -1,0 +1,112 @@
+Title: Resource Management with Context Managers in Python
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: This section describes the implementation of a custom resource manager using Python's context management features. It defines a ResourceManager class that acquires and releases resources while ensuring proper validation through the use of a context manager. The class includes methods for resource acquisition, validation, and cleanup on error, employing ExitStack for effective resource management.
+---
+
+```
+fromcontextlibimport contextmanager, AbstractContextManager, ExitStack
+classResourceManager(AbstractContextManager):
+  def__init__(self, acquire_resource, release_resource, check_resource_ok=None):
+    self.acquire_resource = acquire_resource
+    self.release_resource = release_resource
+    if check_resource_ok is None:
+      defcheck_resource_ok(resource):
+        return True
+    self.check_resource_ok = check_resource_ok
+  @contextmanager
+  def_cleanup_on_error(self):
+    with ExitStack() as stack:
+      stack.push(self)
+      yield
+      # The validation check passed and didn't raise an exception
+      # Accordingly, we want to keep the resource, and pass it
+      # back to our caller
+      stack.pop_all()
+  def__enter__(self):
+    resource = self.acquire_resource()
+    with self._cleanup_on_error():
+      if not self.check_resource_ok(resource):
+        msg = "Failed validation for {!r}"
+        raise RuntimeError(msg.format(resource))
+    return resource
+  def__exit__(self, *exc_details):
+    # We don't need to duplicate any of our resource release logic
+    self.release_resource()
+
+```
+
+### Replacing any use of `try-finally` and flag variables[¶](https://docs.python.org/3/library/contextlib.html#replacing-any-use-of-try-finally-and-flag-variables "Link to this heading")
+A pattern you will sometimes see is a `try-finally` statement with a flag variable to indicate whether or not the body of the `finally` clause should be executed. In its simplest form (that can’t already be handled just by using an `except` clause instead), it looks something like this:
+```
+cleanup_needed = True
+try:
+  result = perform_operation()
+  if result:
+    cleanup_needed = False
+finally:
+  if cleanup_needed:
+    cleanup_resources()
+
+```
+
+As with any `try` statement based code, this can cause problems for development and review, because the setup code and the cleanup code can end up being separated by arbitrarily long sections of code.
+[`ExitStack`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack "contextlib.ExitStack") makes it possible to instead register a callback for execution at the end of a `with` statement, and then later decide to skip executing that callback:
+```
+fromcontextlibimport ExitStack
+with ExitStack() as stack:
+  stack.callback(cleanup_resources)
+  result = perform_operation()
+  if result:
+    stack.pop_all()
+
+```
+
+This allows the intended cleanup behaviour to be made explicit up front, rather than requiring a separate flag variable.
+If a particular application uses this pattern a lot, it can be simplified even further by means of a small helper class:
+```
+fromcontextlibimport ExitStack
+classCallback(ExitStack):
+  def__init__(self, callback, /, *args, **kwds):
+    super().__init__()
+    self.callback(callback, *args, **kwds)
+  defcancel(self):
+    self.pop_all()
+with Callback(cleanup_resources) as cb:
+  result = perform_operation()
+  if result:
+    cb.cancel()
+
+```
+
+If the resource cleanup isn’t already neatly bundled into a standalone function, then it is still possible to use the decorator form of [`ExitStack.callback()`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.callback "contextlib.ExitStack.callback") to declare the resource cleanup in advance:
+```
+fromcontextlibimport ExitStack
+with ExitStack() as stack:
+  @stack.callback
+  defcleanup_resources():
+    ...
+  result = perform_operation()
+  if result:
+    stack.pop_all()
+
+```
+
+Due to the way the decorator protocol works, a callback function declared this way cannot take any parameters. Instead, any resources to be released must be accessed as closure variables.
+### Using a context manager as a function decorator[¶](https://docs.python.org/3/library/contextlib.html#using-a-context-manager-as-a-function-decorator "Link to this heading")
+[`ContextDecorator`](https://docs.python.org/3/library/contextlib.html#contextlib.ContextDecorator "contextlib.ContextDecorator") makes it possible to use a context manager in both an ordinary `with` statement and also as a function decorator.
+For example, it is sometimes useful to wrap functions or groups of statements with a logger that can track the time of entry and time of exit. Rather than writing both a function decorator and a context manager for the task, inheriting from [`ContextDecorator`](https://docs.python.org/3/library/contextlib.html#contextlib.ContextDecorator "contextlib.ContextDecorator") provides both capabilities in a single definition:
+```
+fromcontextlibimport ContextDecorator
+importlogging
+logging.basicConfig(level=logging.INFO)
+classtrack_entry_and_exit(ContextDecorator):
+  def__init__(self, name):
+    self.name = name
+  def__enter__(self):
+    logging.info('Entering: %s', self.name)
+  def__exit__(self, exc_type, exc, exc_tb):
+    logging.info('Exiting: %s', self.name)
+
+```
+
+Instances of this class can be used as both a context manager:

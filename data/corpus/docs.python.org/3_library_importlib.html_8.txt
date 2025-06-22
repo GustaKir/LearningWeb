@@ -1,0 +1,48 @@
+Title: importlib.abc.SourceLoader Class and get_data Method
+URL: https://docs.python.org/3/library/importlib.html
+Summary: The `get_data(path)` method reads a specified path as a binary file and returns its contents as bytes. The `SourceLoader` class is an abstract base class for loading source and bytecode files, requiring implementations of the `ResourceLoader.get_data()` and `ExecutionLoader.get_filename()` methods.
+---
+
+_abstractmethod_ get_data(_path_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.FileLoader.get_data "Link to this definition")
+    
+Reads _path_ as a binary file and returns the bytes from it. 
+
+_class_ importlib.abc.SourceLoader[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.SourceLoader "Link to this definition")
+    
+An abstract base class for implementing source (and optionally bytecode) file loading. The class inherits from both [`ResourceLoader`](https://docs.python.org/3/library/importlib.html#importlib.abc.ResourceLoader "importlib.abc.ResourceLoader") and [`ExecutionLoader`](https://docs.python.org/3/library/importlib.html#importlib.abc.ExecutionLoader "importlib.abc.ExecutionLoader"), requiring the implementation of:
+  * [`ResourceLoader.get_data()`](https://docs.python.org/3/library/importlib.html#importlib.abc.ResourceLoader.get_data "importlib.abc.ResourceLoader.get_data")
+  * 
+
+[`ExecutionLoader.get_filename()`](https://docs.python.org/3/library/importlib.html#importlib.abc.ExecutionLoader.get_filename "importlib.abc.ExecutionLoader.get_filename")
+    
+Should only return the path to the source file; sourceless loading is not supported.
+
+
+The abstract methods defined by this class are to add optional bytecode file support. Not implementing these optional methods (or causing them to raise [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError")) causes the loader to only work with source code. Implementing the methods allows the loader to work with source _and_ bytecode files; it does not allow for _sourceless_ loading where only bytecode is provided. Bytecode files are an optimization to speed up loading by removing the parsing step of Python’s compiler, and so no bytecode-specific API is exposed. 
+
+path_stats(_path_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.SourceLoader.path_stats "Link to this definition")
+    
+Optional abstract method which returns a [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") containing metadata about the specified path. Supported dictionary keys are:
+  * `'mtime'` (mandatory): an integer or floating-point number representing the modification time of the source code;
+  * `'size'` (optional): the size in bytes of the source code.
+
+
+Any other keys in the dictionary are ignored, to allow for future extensions. If the path cannot be handled, [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised.
+Added in version 3.3.
+Changed in version 3.4: Raise [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") instead of [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError"). 
+
+path_mtime(_path_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.SourceLoader.path_mtime "Link to this definition")
+    
+Optional abstract method which returns the modification time for the specified path.
+Deprecated since version 3.3: This method is deprecated in favour of [`path_stats()`](https://docs.python.org/3/library/importlib.html#importlib.abc.SourceLoader.path_stats "importlib.abc.SourceLoader.path_stats"). You don’t have to implement it, but it is still available for compatibility purposes. Raise [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") if the path cannot be handled.
+Changed in version 3.4: Raise [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") instead of [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError"). 
+
+set_data(_path_ , _data_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.SourceLoader.set_data "Link to this definition")
+    
+Optional abstract method which writes the specified bytes to a file path. Any intermediate directories which do not exist are to be created automatically.
+When writing to the path fails because the path is read-only ([`errno.EACCES`](https://docs.python.org/3/library/errno.html#errno.EACCES "errno.EACCES")/[`PermissionError`](https://docs.python.org/3/library/exceptions.html#PermissionError "PermissionError")), do not propagate the exception.
+Changed in version 3.4: No longer raises [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") when called. 
+
+get_code(_fullname_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.SourceLoader.get_code "Link to this definition")
+    
+Concrete implementation of [`InspectLoader.get_code()`](https://docs.python.org/3/library/importlib.html#importlib.abc.InspectLoader.get_code "importlib.abc.InspectLoader.get_code").

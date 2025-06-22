@@ -1,0 +1,84 @@
+Title: xml.etree.ElementTree - The ElementTree XML API
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: The `xml.etree.ElementTree` module provides a simple and efficient API for parsing and creating XML data. It includes updates from version 3.3 to utilize faster implementations and notes the deprecation of the `xml.etree.cElementTree` module. Caution is advised as the module is not secure against maliciously constructed data.
+---
+
+# `xml.etree.ElementTree` — The ElementTree XML API[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "Link to this heading")
+**Source code:** [Lib/xml/etree/ElementTree.py](https://github.com/python/cpython/tree/3.13/Lib/xml/etree/ElementTree.py)
+The [`xml.etree.ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "xml.etree.ElementTree: Implementation of the ElementTree API.") module implements a simple and efficient API for parsing and creating XML data.
+Changed in version 3.3: This module will use a fast implementation whenever available.
+Deprecated since version 3.3: The `xml.etree.cElementTree` module is deprecated.
+Warning
+The [`xml.etree.ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "xml.etree.ElementTree: Implementation of the ElementTree API.") module is not secure against maliciously constructed data. If you need to parse untrusted or unauthenticated data see [XML vulnerabilities](https://docs.python.org/3/library/xml.html#xml-vulnerabilities).
+## Tutorial[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#tutorial "Link to this heading")
+This is a short tutorial for using [`xml.etree.ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "xml.etree.ElementTree: Implementation of the ElementTree API.") (`ET` in short). The goal is to demonstrate some of the building blocks and basic concepts of the module.
+### XML tree and elements[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml-tree-and-elements "Link to this heading")
+XML is an inherently hierarchical data format, and the most natural way to represent it is with a tree. `ET` has two classes for this purpose - [`ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.ElementTree "xml.etree.ElementTree.ElementTree") represents the whole XML document as a tree, and [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") represents a single node in this tree. Interactions with the whole document (reading and writing to/from files) are usually done on the [`ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.ElementTree "xml.etree.ElementTree.ElementTree") level. Interactions with a single XML element and its sub-elements are done on the [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") level.
+### Parsing XML[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#parsing-xml "Link to this heading")
+We’ll be using the fictive `country_data.xml` XML document as the sample data for this section:
+```
+<?xml version="1.0"?>
+<data>
+<countryname="Liechtenstein">
+<rank>1</rank>
+<year>2008</year>
+<gdppc>141100</gdppc>
+<neighborname="Austria"direction="E"/>
+<neighborname="Switzerland"direction="W"/>
+</country>
+<countryname="Singapore">
+<rank>4</rank>
+<year>2011</year>
+<gdppc>59900</gdppc>
+<neighborname="Malaysia"direction="N"/>
+</country>
+<countryname="Panama">
+<rank>68</rank>
+<year>2011</year>
+<gdppc>13600</gdppc>
+<neighborname="Costa Rica"direction="W"/>
+<neighborname="Colombia"direction="E"/>
+</country>
+</data>
+
+```
+
+We can import this data by reading from a file:
+```
+importxml.etree.ElementTreeasET
+tree = ET.parse('country_data.xml')
+root = tree.getroot()
+
+```
+
+Or directly from a string:
+```
+root = ET.fromstring(country_data_as_string)
+
+```
+
+[`fromstring()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.fromstring "xml.etree.ElementTree.fromstring") parses XML from a string directly into an [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element"), which is the root element of the parsed tree. Other parsing functions may create an [`ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.ElementTree "xml.etree.ElementTree.ElementTree"). Check the documentation to be sure.
+As an [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element"), `root` has a tag and a dictionary of attributes:
+>>>```
+>>> root.tag
+'data'
+>>> root.attrib
+{}
+
+```
+
+It also has children nodes over which we can iterate:
+>>>```
+>>> for child in root:
+...   print(child.tag, child.attrib)
+...
+country {'name': 'Liechtenstein'}
+country {'name': 'Singapore'}
+country {'name': 'Panama'}
+
+```
+
+Children are nested, and we can access specific child nodes by index:
+>>>```
+>>> root[0][1].text
+'2008'

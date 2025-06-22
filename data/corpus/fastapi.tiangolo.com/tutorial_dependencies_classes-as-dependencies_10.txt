@@ -1,0 +1,125 @@
+Title: Using Classes as Dependencies in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/
+Summary: This section discusses the importance of declaring types for parameters in FastAPI dependencies, as it aids in code completion and type checks. It also introduces a shortcut using `Annotated` to reduce code repetition when declaring dependencies that are classes.
+---
+
+```
+
+But declaring the type is encouraged as that way your editor will know what will be passed as the parameter `commons`, and then it can help you with code completion, type checks, etc:
+![](https://fastapi.tiangolo.com/img/tutorial/dependencies/image02.png)
+## Shortcut[¶](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#shortcut "Permanent link")
+But you see that we are having some code repetition here, writing `CommonQueryParams` twice:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_16_1)[Python 3.8+ non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_16_2)
+```
+commons: Annotated[CommonQueryParams, Depends(CommonQueryParams)]
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+commons: CommonQueryParams = Depends(CommonQueryParams)
+
+```
+
+**FastAPI** provides a shortcut for these cases, in where the dependency is _specifically_ a class that **FastAPI** will "call" to create an instance of the class itself.
+For those specific cases, you can do the following:
+Instead of writing:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_17_1)[Python 3.8+ non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_17_2)
+```
+commons: Annotated[CommonQueryParams, Depends(CommonQueryParams)]
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+commons: CommonQueryParams = Depends(CommonQueryParams)
+
+```
+
+...you write:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_18_1)[Python 3.8 non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_18_2)
+```
+commons: Annotated[CommonQueryParams, Depends()]
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+commons: CommonQueryParams = Depends()
+
+```
+
+You declare the dependency as the type of the parameter, and you use `Depends()` without any parameter, instead of having to write the full class _again_ inside of `Depends(CommonQueryParams)`.
+The same example would then look like:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_19_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+classCommonQueryParams:
+  def__init__(self, q: str | None = None, skip: int = 0, limit: int = 100):
+    self.q = q
+    self.skip = skip
+    self.limit = limit
+@app.get("/items/")
+async defread_items(commons: Annotated[CommonQueryParams, Depends()]):
+  response = {}
+  if commons.q:
+    response.update({"q": commons.q})
+  items = fake_items_db[commons.skip : commons.skip + commons.limit]
+  response.update({"items": items})
+  return response
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_20_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_20_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_20_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_20_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+classCommonQueryParams:
+  def__init__(self, q: Union[str, None] = None, skip: int = 0, limit: int = 100):
+    self.q = q
+    self.skip = skip
+    self.limit = limit
+@app.get("/items/")
+async defread_items(commons: Annotated[CommonQueryParams, Depends()]):
+  response = {}
+  if commons.q:
+    response.update({"q": commons.q})
+  items = fake_items_db[commons.skip : commons.skip + commons.limit]
+  response.update({"items": items})
+  return response
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+classCommonQueryParams:
+  def__init__(self, q: Union[str, None] = None, skip: int = 0, limit: int = 100):
+    self.q = q
+    self.skip = skip
+    self.limit = limit
+@app.get("/items/")
+async defread_items(commons: Annotated[CommonQueryParams, Depends()]):
+  response = {}
+  if commons.q:
+    response.update({"q": commons.q})
+  items = fake_items_db[commons.skip : commons.skip + commons.limit]
+  response.update({"items": items})
+  return response
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

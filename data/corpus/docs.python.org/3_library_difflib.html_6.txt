@@ -1,0 +1,68 @@
+Title: get_matching_blocks Method in difflib
+URL: https://docs.python.org/3/library/difflib.html
+Summary: The get_matching_blocks method returns a list of triples representing non-overlapping matching subsequences between two sequences. Each triple indicates the start indices and length of the matches. The last triple serves as a dummy with zero length. Changes in version 3.9 include the addition of default arguments.
+---
+
+```
+
+If no blocks match, this returns `(alo, blo, 0)`.
+This method returns a [named tuple](https://docs.python.org/3/glossary.html#term-named-tuple) `Match(a, b, size)`.
+Changed in version 3.9: Added default arguments. 
+
+get_matching_blocks()[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_matching_blocks "Link to this definition")
+    
+Return list of triples describing non-overlapping matching subsequences. Each triple is of the form `(i, j, n)`, and means that `a[i:i+n] == b[j:j+n]`. The triples are monotonically increasing in _i_ and _j_.
+The last triple is a dummy, and has the value `(len(a), len(b), 0)`. It is the only triple with `n == 0`. If `(i, j, n)` and `(i', j', n')` are adjacent triples in the list, and the second is not the last triple in the list, then `i+n < i'` or `j+n < j'`; in other words, adjacent triples always describe non-adjacent equal blocks.
+>>>```
+>>> s = SequenceMatcher(None, "abxcd", "abcd")
+>>> s.get_matching_blocks()
+[Match(a=0, b=0, size=2), Match(a=3, b=2, size=2), Match(a=5, b=4, size=0)]
+
+```
+
+
+get_opcodes()[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_opcodes "Link to this definition")
+    
+Return list of 5-tuples describing how to turn _a_ into _b_. Each tuple is of the form `(tag, i1, i2, j1, j2)`. The first tuple has `i1 == j1 == 0`, and remaining tuples have _i1_ equal to the _i2_ from the preceding tuple, and, likewise, _j1_ equal to the previous _j2_.
+The _tag_ values are strings, with these meanings:
+Value | Meaning  
+---|---  
+`'replace'` | `a[i1:i2]` should be replaced by `b[j1:j2]`.  
+`'delete'` | `a[i1:i2]` should be deleted. Note that `j1 == j2` in this case.  
+`'insert'` | `b[j1:j2]` should be inserted at `a[i1:i1]`. Note that `i1 == i2` in this case.  
+`'equal'` | `a[i1:i2] == b[j1:j2]` (the sub-sequences are equal).  
+For example:
+>>>```
+>>> a = "qabxcd"
+>>> b = "abycdf"
+>>> s = SequenceMatcher(None, a, b)
+>>> for tag, i1, i2, j1, j2 in s.get_opcodes():
+...   print('{:7}  a[{}:{}] --> b[{}:{}] {!r:>8} --> {!r}'.format(
+...     tag, i1, i2, j1, j2, a[i1:i2], b[j1:j2]))
+delete  a[0:1] --> b[0:0]   'q' --> ''
+equal   a[1:3] --> b[0:2]   'ab' --> 'ab'
+replace  a[3:4] --> b[2:3]   'x' --> 'y'
+equal   a[4:6] --> b[3:5]   'cd' --> 'cd'
+insert  a[6:6] --> b[5:6]    '' --> 'f'
+
+```
+
+
+get_grouped_opcodes(_n =3_)[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_grouped_opcodes "Link to this definition")
+    
+Return a [generator](https://docs.python.org/3/glossary.html#term-generator) of groups with up to _n_ lines of context.
+Starting with the groups returned by [`get_opcodes()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_opcodes "difflib.SequenceMatcher.get_opcodes"), this method splits out smaller change clusters and eliminates intervening ranges which have no changes.
+The groups are returned in the same format as [`get_opcodes()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_opcodes "difflib.SequenceMatcher.get_opcodes"). 
+
+ratio()[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.ratio "Link to this definition")
+    
+Return a measure of the sequences’ similarity as a float in the range [0, 1].
+Where T is the total number of elements in both sequences, and M is the number of matches, this is 2.0*M / T. Note that this is `1.0` if the sequences are identical, and `0.0` if they have nothing in common.
+This is expensive to compute if [`get_matching_blocks()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_matching_blocks "difflib.SequenceMatcher.get_matching_blocks") or [`get_opcodes()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_opcodes "difflib.SequenceMatcher.get_opcodes") hasn’t already been called, in which case you may want to try [`quick_ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.quick_ratio "difflib.SequenceMatcher.quick_ratio") or [`real_quick_ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.real_quick_ratio "difflib.SequenceMatcher.real_quick_ratio") first to get an upper bound.
+Note
+Caution: The result of a [`ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.ratio "difflib.SequenceMatcher.ratio") call may depend on the order of the arguments. For instance:
+>>>```
+>>> SequenceMatcher(None, 'tide', 'diet').ratio()
+0.25
+>>> SequenceMatcher(None, 'diet', 'tide').ratio()
+0.5

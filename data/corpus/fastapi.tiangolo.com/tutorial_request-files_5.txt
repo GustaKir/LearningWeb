@@ -1,0 +1,97 @@
+Title: Handling File Uploads in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/request-files/
+Summary: This section discusses the use of the `File` class to handle file uploads in FastAPI, emphasizing the need to declare file parameters correctly to avoid misinterpretation as query or JSON body parameters. It explains that files are uploaded as form data and can be accessed as byte content or through the `UploadFile` class for better handling of larger files.
+---
+
+```
+
+Info
+`File` is a class that inherits directly from `Form`.
+But remember that when you import `Query`, `Path`, `File` and others from `fastapi`, those are actually functions that return special classes.
+Tip
+To declare File bodies, you need to use `File`, because otherwise the parameters would be interpreted as query parameters or body (JSON) parameters.
+The files will be uploaded as "form data".
+If you declare the type of your _path operation function_ parameter as `bytes`, **FastAPI** will read the file for you and you will receive the contents as `bytes`.
+Keep in mind that this means that the whole contents will be stored in memory. This will work well for small files.
+But there are several cases in which you might benefit from using `UploadFile`.
+## File Parameters with `UploadFile`[¶](https://fastapi.tiangolo.com/tutorial/request-files/#file-parameters-with-uploadfile "Permanent link")
+Define a file parameter with a type of `UploadFile`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_5_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[bytes, File()]):
+  return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: UploadFile):
+  return {"filename": file.filename}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_6_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_6_2)
+```
+fromfastapiimport FastAPI, File, UploadFile
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[bytes, File()]):
+  return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: UploadFile):
+  return {"filename": file.filename}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: bytes = File()):
+  return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(file: UploadFile):
+  return {"filename": file.filename}
+
+```
+
+Using `UploadFile` has several advantages over `bytes`:
+  * You don't have to use `File()` in the default value of the parameter.
+  * It uses a "spooled" file:
+    * A file stored in memory up to a maximum size limit, and after passing this limit it will be stored in disk.
+  * This means that it will work well for large files like images, videos, large binaries, etc. without consuming all the memory.
+  * You can get metadata from the uploaded file.
+  * It has a [file-like](https://docs.python.org/3/glossary.html#term-file-like-object) `async` interface.
+  * It exposes an actual Python [`SpooledTemporaryFile`](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile) object that you can pass directly to other libraries that expect a file-like object.
+
+
+### `UploadFile`[¶](https://fastapi.tiangolo.com/tutorial/request-files/#uploadfile "Permanent link")
+`UploadFile` has the following attributes:
+  * `filename`: A `str` with the original file name that was uploaded (e.g. `myimage.jpg`).
+  * `content_type`: A `str` with the content type (MIME type / media type) (e.g. `image/jpeg`).
+  * `file`: A [`SpooledTemporaryFile`](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile) (a [file-like](https://docs.python.org/3/glossary.html#term-file-like-object) object). This is the actual Python file object that you can pass directly to other functions or libraries that expect a "file-like" object.
+
+
+`UploadFile` has the following `async` methods. They all call the corresponding file methods underneath (using the internal `SpooledTemporaryFile`).
+  * `write(data)`: Writes `data` (`str` or `bytes`) to the file.
+  * `read(size)`: Reads `size` (`int`) bytes/characters of the file.
+  * `seek(offset)`: Goes to the byte position `offset` (`int`) in the file.
+    * E.g., `await myfile.seek(0)` would go to the start of the file.
+    * This is especially useful if you run `await myfile.read()` once and then need to read the contents again.
+  * `close()`: Closes the file.
+
+
+As all these methods are `async` methods, you need to "await" them.
+For example, inside of an `async` _path operation function_ you can get the contents with:
+```
+contents = await myfile.read()
+
+```
+
+If you are inside of a normal `def` _path operation function_ , you can access the `UploadFile.file` directly, for example:
+```
+contents = myfile.file.read()

@@ -1,0 +1,87 @@
+Title: Test Skipping and Expected Failures in unittest
+URL: https://docs.python.org/3/library/unittest.html
+Summary: This section describes decorators for skipping tests and marking expected failures in Python's unittest framework. The decorators include @unittest.skip for unconditional skips, @unittest.skipIf for conditional skips based on a specific condition, @unittest.skipUnless for skipping unless a condition is met, and @unittest.expectedFailure to mark a test as one that is expected to fail.
+---
+
+```
+
+The following decorators and exception implement test skipping and expected failures: 
+
+@unittest.skip(_reason_)[¶](https://docs.python.org/3/library/unittest.html#unittest.skip "Link to this definition")
+    
+Unconditionally skip the decorated test. _reason_ should describe why the test is being skipped. 
+
+@unittest.skipIf(_condition_ , _reason_)[¶](https://docs.python.org/3/library/unittest.html#unittest.skipIf "Link to this definition")
+    
+Skip the decorated test if _condition_ is true. 
+
+@unittest.skipUnless(_condition_ , _reason_)[¶](https://docs.python.org/3/library/unittest.html#unittest.skipUnless "Link to this definition")
+    
+Skip the decorated test unless _condition_ is true. 
+
+@unittest.expectedFailure[¶](https://docs.python.org/3/library/unittest.html#unittest.expectedFailure "Link to this definition")
+    
+Mark the test as an expected failure or error. If the test fails or errors in the test function itself (rather than in one of the _test fixture_ methods) then it will be considered a success. If the test passes, it will be considered a failure. 
+
+_exception_ unittest.SkipTest(_reason_)[¶](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "Link to this definition")
+    
+This exception is raised to skip a test.
+Usually you can use [`TestCase.skipTest()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.skipTest "unittest.TestCase.skipTest") or one of the skipping decorators instead of raising this directly.
+Skipped tests will not have [`setUp()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUp "unittest.TestCase.setUp") or [`tearDown()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.tearDown "unittest.TestCase.tearDown") run around them. Skipped classes will not have [`setUpClass()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUpClass "unittest.TestCase.setUpClass") or [`tearDownClass()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.tearDownClass "unittest.TestCase.tearDownClass") run. Skipped modules will not have `setUpModule()` or `tearDownModule()` run.
+## Distinguishing test iterations using subtests[¶](https://docs.python.org/3/library/unittest.html#distinguishing-test-iterations-using-subtests "Link to this heading")
+Added in version 3.4.
+When there are very small differences among your tests, for instance some parameters, unittest allows you to distinguish them inside the body of a test method using the [`subTest()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.subTest "unittest.TestCase.subTest") context manager.
+For example, the following test:
+```
+classNumbersTest(unittest.TestCase):
+  deftest_even(self):
+"""
+    Test that numbers between 0 and 5 are all even.
+    """
+    for i in range(0, 6):
+      with self.subTest(i=i):
+        self.assertEqual(i % 2, 0)
+
+```
+
+will produce the following output:
+```
+======================================================================
+FAIL: test_even (__main__.NumbersTest.test_even) (i=1)
+Test that numbers between 0 and 5 are all even.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+ File "subtests.py", line 11, in test_even
+  self.assertEqual(i % 2, 0)
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0
+======================================================================
+FAIL: test_even (__main__.NumbersTest.test_even) (i=3)
+Test that numbers between 0 and 5 are all even.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+ File "subtests.py", line 11, in test_even
+  self.assertEqual(i % 2, 0)
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0
+======================================================================
+FAIL: test_even (__main__.NumbersTest.test_even) (i=5)
+Test that numbers between 0 and 5 are all even.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+ File "subtests.py", line 11, in test_even
+  self.assertEqual(i % 2, 0)
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0
+
+```
+
+Without using a subtest, execution would stop after the first failure, and the error would be less easy to diagnose because the value of `i` wouldn’t be displayed:
+```
+======================================================================
+FAIL: test_even (__main__.NumbersTest.test_even)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+ File "subtests.py", line 32, in test_even
+  self.assertEqual(i % 2, 0)
+AssertionError: 1 != 0

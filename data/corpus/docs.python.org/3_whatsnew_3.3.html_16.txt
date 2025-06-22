@@ -1,0 +1,19 @@
+Title: API Changes in Python 3.3
+URL: https://docs.python.org/3/whatsnew/3.3.html
+Summary: This section outlines the API changes introduced in Python 3.3, including context limits for the C module based on machine architecture, modifications to the magnitude of Emax and Emin in context templates, and the behavior of the Decimal constructor regarding context limits.
+---
+
+#### API changes[¶](https://docs.python.org/3/whatsnew/3.3.html#id2 "Link to this heading")
+  * The C module has the following context limits, depending on the machine architecture:
+> | 32-bit | 64-bit  
+> ---|---|---  
+> `MAX_PREC` | `425000000` | `999999999999999999`  
+> `MAX_EMAX` | `425000000` | `999999999999999999`  
+> `MIN_EMIN` | `-425000000` | `-999999999999999999`  
+  * In the context templates ([`DefaultContext`](https://docs.python.org/3/library/decimal.html#decimal.DefaultContext "decimal.DefaultContext"), [`BasicContext`](https://docs.python.org/3/library/decimal.html#decimal.BasicContext "decimal.BasicContext") and [`ExtendedContext`](https://docs.python.org/3/library/decimal.html#decimal.ExtendedContext "decimal.ExtendedContext")) the magnitude of `Emax` and `Emin` has changed to `999999`.
+  * The [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") constructor in decimal.py does not observe the context limits and converts values with arbitrary exponents or precision exactly. Since the C version has internal limits, the following scheme is used: If possible, values are converted exactly, otherwise [`InvalidOperation`](https://docs.python.org/3/library/decimal.html#decimal.InvalidOperation "decimal.InvalidOperation") is raised and the result is NaN. In the latter case it is always possible to use [`create_decimal()`](https://docs.python.org/3/library/decimal.html#decimal.Context.create_decimal "decimal.Context.create_decimal") in order to obtain a rounded or inexact value.
+  * The power function in decimal.py is always correctly rounded. In the C version, it is defined in terms of the correctly rounded [`exp()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.exp "decimal.Decimal.exp") and [`ln()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.ln "decimal.Decimal.ln") functions, but the final result is only “almost always correctly rounded”.
+  * In the C version, the context dictionary containing the signals is a [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping "collections.abc.MutableMapping"). For speed reasons, `flags` and `traps` always refer to the same [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping "collections.abc.MutableMapping") that the context was initialized with. If a new signal dictionary is assigned, `flags` and `traps` are updated with the new values, but they do not reference the RHS dictionary.
+  * Pickling a [`Context`](https://docs.python.org/3/library/decimal.html#decimal.Context "decimal.Context") produces a different output in order to have a common interchange format for the Python and C versions.
+  * The order of arguments in the [`Context`](https://docs.python.org/3/library/decimal.html#decimal.Context "decimal.Context") constructor has been changed to match the order displayed by [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr").
+  * The `watchexp` parameter in the [`quantize()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.quantize "decimal.Decimal.quantize") method is deprecated.

@@ -1,0 +1,51 @@
+Title: Unittest Main Function Arguments
+URL: https://docs.python.org/3/library/unittest.html
+Summary: The 'main' function in Python's unittest module accepts several arguments: _defaultTest_ specifies which tests to run, _argv_ provides command line options, _testRunner_ determines the test execution framework, and _testLoader_ requires a TestLoader instance. If _defaultTest_ and _argv_ are not provided, all tests in the module are executed.
+---
+
+```
+
+The _defaultTest_ argument is either the name of a single test or an iterable of test names to run if no test names are specified via _argv_. If not specified or `None` and no test names are provided via _argv_ , all tests found in _module_ are run.
+The _argv_ argument can be a list of options passed to the program, with the first element being the program name. If not specified or `None`, the values of [`sys.argv`](https://docs.python.org/3/library/sys.html#sys.argv "sys.argv") are used.
+The _testRunner_ argument can either be a test runner class or an already created instance of it. By default `main` calls [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit") with an exit code indicating success (0) or failure (1) of the tests run. An exit code of 5 indicates that no tests were run or skipped.
+The _testLoader_ argument has to be a [`TestLoader`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader "unittest.TestLoader") instance, and defaults to [`defaultTestLoader`](https://docs.python.org/3/library/unittest.html#unittest.defaultTestLoader "unittest.defaultTestLoader").
+`main` supports being used from the interactive interpreter by passing in the argument `exit=False`. This displays the result on standard output without calling [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit"):
+>>>```
+>>> fromunittestimport main
+>>> main(module='test_module', exit=False)
+
+```
+
+The _failfast_ , _catchbreak_ and _buffer_ parameters have the same effect as the same-name [command-line options](https://docs.python.org/3/library/unittest.html#command-line-options).
+The _warnings_ argument specifies the [warning filter](https://docs.python.org/3/library/warnings.html#warning-filter) that should be used while running the tests. If it’s not specified, it will remain `None` if a `-W` option is passed to **python** (see [Warning control](https://docs.python.org/3/using/cmdline.html#using-on-warnings)), otherwise it will be set to `'default'`.
+Calling `main` returns an object with the `result` attribute that contains the result of the tests run as a [`unittest.TestResult`](https://docs.python.org/3/library/unittest.html#unittest.TestResult "unittest.TestResult").
+Changed in version 3.1: The _exit_ parameter was added.
+Changed in version 3.2: The _verbosity_ , _failfast_ , _catchbreak_ , _buffer_ and _warnings_ parameters were added.
+Changed in version 3.4: The _defaultTest_ parameter was changed to also accept an iterable of test names.
+#### load_tests Protocol[¶](https://docs.python.org/3/library/unittest.html#load-tests-protocol "Link to this heading")
+Added in version 3.2.
+Modules or packages can customize how tests are loaded from them during normal test runs or test discovery by implementing a function called `load_tests`.
+If a test module defines `load_tests` it will be called by [`TestLoader.loadTestsFromModule()`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.loadTestsFromModule "unittest.TestLoader.loadTestsFromModule") with the following arguments:
+```
+load_tests(loader, standard_tests, pattern)
+
+```
+
+where _pattern_ is passed straight through from `loadTestsFromModule`. It defaults to `None`.
+It should return a [`TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite").
+_loader_ is the instance of [`TestLoader`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader "unittest.TestLoader") doing the loading. _standard_tests_ are the tests that would be loaded by default from the module. It is common for test modules to only want to add or remove tests from the standard set of tests. The third argument is used when loading packages as part of test discovery.
+A typical `load_tests` function that loads tests from a specific set of [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") classes may look like:
+```
+test_cases = (TestCase1, TestCase2, TestCase3)
+defload_tests(loader, tests, pattern):
+  suite = TestSuite()
+  for test_class in test_cases:
+    tests = loader.loadTestsFromTestCase(test_class)
+    suite.addTests(tests)
+  return suite
+
+```
+
+If discovery is started in a directory containing a package, either from the command line or by calling [`TestLoader.discover()`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.discover "unittest.TestLoader.discover"), then the package `__init__.py` will be checked for `load_tests`. If that function does not exist, discovery will recurse into the package as though it were just another directory. Otherwise, discovery of the package’s tests will be left up to `load_tests` which is called with the following arguments:
+```
+load_tests(loader, standard_tests, pattern)

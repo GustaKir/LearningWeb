@@ -1,0 +1,42 @@
+Title: Python 2.7 Release Notes: Deprecation and Floating-Point Conversion Improvements
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: The `contextlib.nested()` function has been deprecated due to redundancy. Additionally, conversions between floating-point numbers and strings now ensure correct rounding across most platforms, impacting various operations such as `str()`, constructors for `float` and `complex`, and serialization methods such as `marshal` and `pickle`.
+---
+
+```
+
+The `contextlib.nested()` function provides a very similar function, so it’s no longer necessary and has been deprecated.
+(Proposed in <https://codereview.appspot.com/53094>; implemented by Georg Brandl.)
+  * Conversions between floating-point numbers and strings are now correctly rounded on most platforms. These conversions occur in many different places: [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") on floats and complex numbers; the [`float`](https://docs.python.org/3/library/functions.html#float "float") and [`complex`](https://docs.python.org/3/library/functions.html#complex "complex") constructors; numeric formatting; serializing and deserializing floats and complex numbers using the [`marshal`](https://docs.python.org/3/library/marshal.html#module-marshal "marshal: Convert Python objects to streams of bytes and back \(with different constraints\)."), [`pickle`](https://docs.python.org/3/library/pickle.html#module-pickle "pickle: Convert Python objects to streams of bytes and back.") and [`json`](https://docs.python.org/3/library/json.html#module-json "json: Encode and decode the JSON format.") modules; parsing of float and imaginary literals in Python code; and [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal")-to-float conversion.
+Related to this, the [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") of a floating-point number _x_ now returns a result based on the shortest decimal string that’s guaranteed to round back to _x_ under correct rounding (with round-half-to-even rounding mode). Previously it gave a string based on rounding x to 17 decimal digits.
+The rounding library responsible for this improvement works on Windows and on Unix platforms using the gcc, icc, or suncc compilers. There may be a small number of platforms where correct operation of this code cannot be guaranteed, so the code is not used on such systems. You can find out which code is being used by checking [`sys.float_repr_style`](https://docs.python.org/3/library/sys.html#sys.float_repr_style "sys.float_repr_style"), which will be `short` if the new code is in use and `legacy` if it isn’t.
+Implemented by Eric Smith and Mark Dickinson, using David Gay’s `dtoa.c` library; [bpo-7117](https://bugs.python.org/issue?@action=redirect&bpo=7117).
+  * Conversions from long integers and regular integers to floating point now round differently, returning the floating-point number closest to the number. This doesn’t matter for small integers that can be converted exactly, but for large numbers that will unavoidably lose precision, Python 2.7 now approximates more closely. For example, Python 2.6 computed the following:
+>>>```
+>>> n = 295147905179352891391
+>>> float(n)
+2.9514790517935283e+20
+>>> n - long(float(n))
+65535L
+
+```
+
+Python 2.7’s floating-point result is larger, but much closer to the true value:
+>>>```
+>>> n = 295147905179352891391
+>>> float(n)
+2.9514790517935289e+20
+>>> n - long(float(n))
+-1L
+
+```
+
+(Implemented by Mark Dickinson; [bpo-3166](https://bugs.python.org/issue?@action=redirect&bpo=3166).)
+Integer division is also more accurate in its rounding behaviours. (Also implemented by Mark Dickinson; [bpo-1811](https://bugs.python.org/issue?@action=redirect&bpo=1811).)
+  * Implicit coercion for complex numbers has been removed; the interpreter will no longer ever attempt to call a `__coerce__()` method on complex objects. (Removed by Meador Inge and Mark Dickinson; [bpo-5211](https://bugs.python.org/issue?@action=redirect&bpo=5211).)
+  * The [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") method now supports automatic numbering of the replacement fields. This makes using [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") more closely resemble using `%s` formatting:
+>>>```
+>>> '{}:{}:{}'.format(2009, 04, 'Sunday')
+'2009:4:Sunday'
+>>> '{}:{}:{day}'.format(2009, 4, day='Sunday')
+'2009:4:Sunday'

@@ -1,0 +1,33 @@
+Title: C API Updates
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section details recent changes to the Python C API, including improvements to the `PyType_FromSpec*` function, the ability to disable internal freelists for various object types, and the exclusion of `PyWeakref_GET_OBJECT()` from the limited C API due to its incompatibility.
+---
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id277 "Link to this heading")
+  * [bpo-29103](https://bugs.python.org/issue?@action=redirect&bpo=29103): [`PyType_FromSpec*`](https://docs.python.org/3/c-api/type.html#c.PyType_FromModuleAndSpec "PyType_FromModuleAndSpec") now copies the class name from the spec to a buffer owned by the class, so the original can be safely deallocated. Patch by Petr Viktorin.
+  * [bpo-45522](https://bugs.python.org/issue?@action=redirect&bpo=45522): The internal freelists for frame, float, list, dict, async generators, and context objects can now be disabled.
+  * [bpo-35134](https://bugs.python.org/issue?@action=redirect&bpo=35134): Exclude [`PyWeakref_GET_OBJECT()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GET_OBJECT "PyWeakref_GET_OBJECT") from the limited C API. It never worked since the `PyWeakReference` structure is opaque in the limited C API.
+  * [bpo-35081](https://bugs.python.org/issue?@action=redirect&bpo=35081): Move the `interpreteridobject.h` header file from `Include/` to `Include/internal/`. It only provides private functions. Patch by Victor Stinner.
+  * [bpo-35134](https://bugs.python.org/issue?@action=redirect&bpo=35134): The non-limited API files `cellobject.h`, `classobject.h`, `context.h`, `funcobject.h`, `genobject.h` and `longintrepr.h` have been moved to the `Include/cpython` directory. Moreover, the `eval.h` header file was removed. These files must not be included directly, as they are already included in `Python.h`: [Include Files](https://docs.python.org/3/c-api/intro.html#api-includes). If they have been included directly, consider including `Python.h` instead. Patch by Victor Stinner.
+  * [bpo-45474](https://bugs.python.org/issue?@action=redirect&bpo=45474): The following items are no longer available when `Py_LIMITED_API` is defined:
+    * [`PyMarshal_WriteLongToFile()`](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_WriteLongToFile "PyMarshal_WriteLongToFile")
+    * [`PyMarshal_WriteObjectToFile()`](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_WriteObjectToFile "PyMarshal_WriteObjectToFile")
+    * [`PyMarshal_ReadObjectFromString()`](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_ReadObjectFromString "PyMarshal_ReadObjectFromString")
+    * [`PyMarshal_WriteObjectToString()`](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_WriteObjectToString "PyMarshal_WriteObjectToString")
+    * the `Py_MARSHAL_VERSION` macro
+These are not part of the [limited API](https://docs.python.org/3/c-api/stable.html#limited-api-list).
+Patch by Victor Stinner.
+  * [bpo-45434](https://bugs.python.org/issue?@action=redirect&bpo=45434): Remove the `pystrhex.h` header file. It only contains private functions. C extensions should only include the main `<Python.h>` header file. Patch by Victor Stinner.
+  * [bpo-45440](https://bugs.python.org/issue?@action=redirect&bpo=45440): Remove the `Py_FORCE_DOUBLE()` macro. It was used by the `Py_IS_INFINITY()` macro. Patch by Victor Stinner.
+  * [bpo-45434](https://bugs.python.org/issue?@action=redirect&bpo=45434): `<Python.h>` no longer includes the header files `<stdlib.h>`, `<stdio.h>`, `<errno.h>` and `<string.h>` when the `Py_LIMITED_API` macro is set to `0x030b0000` (Python 3.11) or higher. C extensions should explicitly include the header files after `#include <Python.h>`. Patch by Victor Stinner.
+  * [bpo-41123](https://bugs.python.org/issue?@action=redirect&bpo=41123): Remove `Py_UNICODE_COPY()` and `Py_UNICODE_FILL()` macros, deprecated since Python 3.3. Use `PyUnicode_CopyCharacters()` or `memcpy()` (`wchar_t*` string), and `PyUnicode_Fill()` functions instead. Patch by Victor Stinner.
+  * [bpo-45412](https://bugs.python.org/issue?@action=redirect&bpo=45412): Remove the following math macros using the `errno` variable:
+    * `Py_ADJUST_ERANGE1()`
+    * `Py_ADJUST_ERANGE2()`
+    * `Py_OVERFLOWED()`
+    * `Py_SET_ERANGE_IF_OVERFLOW()`
+    * `Py_SET_ERRNO_ON_MATH_ERROR()`
+Patch by Victor Stinner.
+  * [bpo-45395](https://bugs.python.org/issue?@action=redirect&bpo=45395): Custom frozen modules (the array set to `PyImport_FrozenModules`) are now treated as additions, rather than replacing all the default frozen modules. Frozen stdlib modules can still be disabled by setting the “code” field of the custom array entry to NULL.
+  * [bpo-43760](https://bugs.python.org/issue?@action=redirect&bpo=43760): Add new [`PyThreadState_EnterTracing()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_EnterTracing "PyThreadState_EnterTracing"), and [`PyThreadState_LeaveTracing()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_LeaveTracing "PyThreadState_LeaveTracing") functions to the limited C API to suspend and resume tracing and profiling. Patch by Victor Stinner.
+  * [bpo-44220](https://bugs.python.org/issue?@action=redirect&bpo=44220): [`PyStructSequence_UnnamedField`](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_UnnamedField "PyS

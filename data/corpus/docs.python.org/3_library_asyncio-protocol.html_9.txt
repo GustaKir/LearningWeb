@@ -1,0 +1,42 @@
+Title: Datagram Protocols in asyncio
+URL: https://docs.python.org/3/library/asyncio-protocol.html
+Summary: This section covers the construction and usage of Datagram Protocol instances using protocol factories with the `loop.create_datagram_endpoint()` method. It details the `datagram_received` method, which handles incoming datagrams, providing the data and sender's address, and the `error_received` method, which is invoked when an error occurs during send or receive operations.
+---
+
+```
+
+### Datagram Protocols[¶](https://docs.python.org/3/library/asyncio-protocol.html#datagram-protocols "Link to this heading")
+Datagram Protocol instances should be constructed by protocol factories passed to the [`loop.create_datagram_endpoint()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_datagram_endpoint "asyncio.loop.create_datagram_endpoint") method. 
+
+DatagramProtocol.datagram_received(_data_ , _addr_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.DatagramProtocol.datagram_received "Link to this definition")
+    
+Called when a datagram is received. _data_ is a bytes object containing the incoming data. _addr_ is the address of the peer sending the data; the exact format depends on the transport. 
+
+DatagramProtocol.error_received(_exc_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.DatagramProtocol.error_received "Link to this definition")
+    
+Called when a previous send or receive operation raises an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError"). _exc_ is the [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") instance.
+This method is called in rare conditions, when the transport (e.g. UDP) detects that a datagram could not be delivered to its recipient. In many conditions though, undeliverable datagrams will be silently dropped.
+Note
+On BSD systems (macOS, FreeBSD, etc.) flow control is not supported for datagram protocols, because there is no reliable way to detect send failures caused by writing too many packets.
+The socket always appears ‘ready’ and excess packets are dropped. An [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") with `errno` set to [`errno.ENOBUFS`](https://docs.python.org/3/library/errno.html#errno.ENOBUFS "errno.ENOBUFS") may or may not be raised; if it is raised, it will be reported to [`DatagramProtocol.error_received()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.DatagramProtocol.error_received "asyncio.DatagramProtocol.error_received") but otherwise ignored.
+### Subprocess Protocols[¶](https://docs.python.org/3/library/asyncio-protocol.html#subprocess-protocols "Link to this heading")
+Subprocess Protocol instances should be constructed by protocol factories passed to the [`loop.subprocess_exec()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.subprocess_exec "asyncio.loop.subprocess_exec") and [`loop.subprocess_shell()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.subprocess_shell "asyncio.loop.subprocess_shell") methods. 
+
+SubprocessProtocol.pipe_data_received(_fd_ , _data_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessProtocol.pipe_data_received "Link to this definition")
+    
+Called when the child process writes data into its stdout or stderr pipe.
+_fd_ is the integer file descriptor of the pipe.
+_data_ is a non-empty bytes object containing the received data. 
+
+SubprocessProtocol.pipe_connection_lost(_fd_ , _exc_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessProtocol.pipe_connection_lost "Link to this definition")
+    
+Called when one of the pipes communicating with the child process is closed.
+_fd_ is the integer file descriptor that was closed. 
+
+SubprocessProtocol.process_exited()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessProtocol.process_exited "Link to this definition")
+    
+Called when the child process has exited.
+It can be called before [`pipe_data_received()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessProtocol.pipe_data_received "asyncio.SubprocessProtocol.pipe_data_received") and [`pipe_connection_lost()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessProtocol.pipe_connection_lost "asyncio.SubprocessProtocol.pipe_connection_lost") methods.
+## Examples[¶](https://docs.python.org/3/library/asyncio-protocol.html#examples "Link to this heading")
+### TCP Echo Server[¶](https://docs.python.org/3/library/asyncio-protocol.html#tcp-echo-server "Link to this heading")
+Create a TCP echo server using the [`loop.create_server()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server "asyncio.loop.create_server") method, send back received data, and close the connection:

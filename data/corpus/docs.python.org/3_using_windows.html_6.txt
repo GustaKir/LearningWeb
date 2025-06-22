@@ -1,0 +1,28 @@
+Title: Managing NuGet Packages for Python
+URL: https://docs.python.org/3/using/windows.html
+Summary: Newer versions of NuGet packages should be installed side-by-side as they are not upgradeable. Users can delete the package directory to reinstall. The `build/native` directory contains a `python.props` file for referencing Python in C++ projects, ensuring automatic usage of headers and import libraries. Package information is available for different architectures on nuget.org.
+---
+
+```
+
+In general, nuget packages are not upgradeable, and newer versions should be installed side-by-side and referenced using the full path. Alternatively, delete the package directory manually and install it again. Many CI systems will do this automatically if they do not preserve files between builds.
+Alongside the `tools` directory is a `build\native` directory. This contains a MSBuild properties file `python.props` that can be used in a C++ project to reference the Python install. Including the settings will automatically use the headers and import libraries in your build.
+The package information pages on nuget.org are [www.nuget.org/packages/python](https://www.nuget.org/packages/python) for the 64-bit version, [www.nuget.org/packages/pythonx86](https://www.nuget.org/packages/pythonx86) for the 32-bit version, and [www.nuget.org/packages/pythonarm64](https://www.nuget.org/packages/pythonarm64) for the ARM64 version
+### 4.3.1. Free-threaded packages[¶](https://docs.python.org/3/using/windows.html#free-threaded-packages "Link to this heading")
+Added in version 3.13: (Experimental)
+Note
+Everything described in this section is considered experimental, and should be expected to change in future releases.
+Packages containing free-threaded binaries are named [python-freethreaded](https://www.nuget.org/packages/python-freethreaded) for the 64-bit version, [pythonx86-freethreaded](https://www.nuget.org/packages/pythonx86-freethreaded) for the 32-bit version, and [pythonarm64-freethreaded](https://www.nuget.org/packages/pythonarm64-freethreaded) for the ARM64 version. These packages contain both the `python3.13t.exe` and `python.exe` entry points, both of which run free threaded.
+## 4.4. The embeddable package[¶](https://docs.python.org/3/using/windows.html#the-embeddable-package "Link to this heading")
+Added in version 3.5.
+The embedded distribution is a ZIP file containing a minimal Python environment. It is intended for acting as part of another application, rather than being directly accessed by end-users.
+When extracted, the embedded distribution is (almost) fully isolated from the user’s system, including environment variables, system registry settings, and installed packages. The standard library is included as pre-compiled and optimized `.pyc` files in a ZIP, and `python3.dll`, `python37.dll`, `python.exe` and `pythonw.exe` are all provided. Tcl/tk (including all dependents, such as Idle), pip and the Python documentation are not included.
+Note
+The embedded distribution does not include the [Microsoft C Runtime](https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022) and it is the responsibility of the application installer to provide this. The runtime may have already been installed on a user’s system previously or automatically via Windows Update, and can be detected by finding `ucrtbase.dll` in the system directory.
+Third-party packages should be installed by the application installer alongside the embedded distribution. Using pip to manage dependencies as for a regular Python installation is not supported with this distribution, though with some care it may be possible to include and use pip for automatic updates. In general, third-party packages should be treated as part of the application (“vendoring”) so that the developer can ensure compatibility with newer versions before providing updates to users.
+The two recommended use cases for this distribution are described below.
+### 4.4.1. Python Application[¶](https://docs.python.org/3/using/windows.html#python-application "Link to this heading")
+An application written in Python does not necessarily require users to be aware of that fact. The embedded distribution may be used in this case to include a private version of Python in an install package. Depending on how transparent it should be (or conversely, how professional it should appear), there are two options.
+Using a specialized executable as a launcher requires some coding, but provides the most transparent experience for users. With a customized launcher, there are no obvious indications that the program is running on Python: icons can be customized, company and version information can be specified, and file associations behave properly. In most cases, a custom launcher should simply be able to call `Py_Main` with a hard-coded command line.
+The simpler approach is to provide a batch file or generated shortcut that directly calls the `python.exe` or `pythonw.exe` with the required command-line arguments. In this case, the application will appear to be Python and not its actual name, and users may have trouble distinguishing it from other running Python processes or file associations.
+With the latter approach, packages should be installed as directories alongside the Python executable to ensure they are available on the path. With the specialized launcher, packages can be located in other locations as there is an opportunity to specify the search p

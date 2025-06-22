@@ -1,0 +1,25 @@
+Title: Python 3.12 Changes and Enhancements
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: Key updates in Python 3.12 include the modification of `sys._current_exceptions()` to return a mapping of thread IDs to exception instances, improvements in tar file extraction using `tarfile` and `shutil.unpack_archive()` with the introduction of extraction filters, and enhancements to `tokenize.tokenize()`. Developers are advised to implement locking when accessing cached properties in multi-threaded contexts.
+---
+
+eeded, implement locking within the cached property getter function or around multi-threaded access points.
+  * [`sys._current_exceptions()`](https://docs.python.org/3/library/sys.html#sys._current_exceptions "sys._current_exceptions") now returns a mapping from thread-id to an exception instance, rather than to a `(typ, exc, tb)` tuple. (Contributed by Irit Katriel in [gh-103176](https://github.com/python/cpython/issues/103176).)
+  * When extracting tar files using [`tarfile`](https://docs.python.org/3/library/tarfile.html#module-tarfile "tarfile: Read and write tar-format archive files.") or [`shutil.unpack_archive()`](https://docs.python.org/3/library/shutil.html#shutil.unpack_archive "shutil.unpack_archive"), pass the _filter_ argument to limit features that may be surprising or dangerous. See [Extraction filters](https://docs.python.org/3/library/tarfile.html#tarfile-extraction-filter) for details.
+  * The output of the [`tokenize.tokenize()`](https://docs.python.org/3/library/tokenize.html#tokenize.tokenize "tokenize.tokenize") and [`tokenize.generate_tokens()`](https://docs.python.org/3/library/tokenize.html#tokenize.generate_tokens "tokenize.generate_tokens") functions is now changed due to the changes introduced in [**PEP 701**](https://peps.python.org/pep-0701/). This means that `STRING` tokens are not emitted any more for f-strings and the tokens described in [**PEP 701**](https://peps.python.org/pep-0701/) are now produced instead: `FSTRING_START`, `FSTRING_MIDDLE` and `FSTRING_END` are now emitted for f-string “string” parts in addition to the appropriate tokens for the tokenization in the expression components. For example for the f-string `f"start {1+1} end"` the old version of the tokenizer emitted:
+```
+1,0-1,18:      STRING     'f"start {1+1} end"'
+
+```
+
+while the new version emits:
+```
+1,0-1,2:      FSTRING_START 'f"'
+1,2-1,8:      FSTRING_MIDDLE 'start '
+1,8-1,9:      OP       '{'
+1,9-1,10:      NUMBER     '1'
+1,10-1,11:     OP       '+'
+1,11-1,12:     NUMBER     '1'
+1,12-1,13:     OP       '}'
+1,13-1,17:     FSTRING_MIDDLE ' end'
+1,17-1,18:     FSTRING_END  '"'

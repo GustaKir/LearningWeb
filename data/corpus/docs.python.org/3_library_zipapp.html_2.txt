@@ -1,0 +1,55 @@
+Title: Zip Application Configuration in Python
+URL: https://docs.python.org/3/library/zipapp.html
+Summary: The '_interpreter_' argument specifies the Python interpreter to execute the archive, formatted as a shebang line. Omitting it results in no shebang line. The '_main_' argument defines the main callable for archives sourced from directories without a '__main__.py' file, requiring the format 'pkg.module:callable'. An error occurs if '_main_' is omitted in such cases.
+---
+
+The _interpreter_ argument specifies the name of the Python interpreter with which the archive will be executed. It is written as a “shebang” line at the start of the archive. On POSIX, this will be interpreted by the OS, and on Windows it will be handled by the Python launcher. Omitting the _interpreter_ results in no shebang line being written. If an interpreter is specified, and the target is a filename, the executable bit of the target file will be set.
+The _main_ argument specifies the name of a callable which will be used as the main program for the archive. It can only be specified if the source is a directory, and the source does not already contain a `__main__.py` file. The _main_ argument should take the form “pkg.module:callable” and the archive will be run by importing “pkg.module” and executing the given callable with no arguments. It is an error to omit _main_ if the source is a directory and does not contain a `__main__.py` file, as otherwise the resulting archive would not be executable.
+The optional _filter_ argument specifies a callback function that is passed a Path object representing the path to the file being added (relative to the source directory). It should return `True` if the file is to be added.
+The optional _compressed_ argument determines whether files are compressed. If set to `True`, files in the archive are compressed with the deflate method; otherwise, files are stored uncompressed. This argument has no effect when copying an existing archive.
+If a file object is specified for _source_ or _target_ , it is the caller’s responsibility to close it after calling create_archive.
+When copying an existing archive, file objects supplied only need `read` and `readline`, or `write` methods. When creating an archive from a directory, if the target is a file object it will be passed to the `zipfile.ZipFile` class, and must supply the methods needed by that class.
+Changed in version 3.7: Added the _filter_ and _compressed_ parameters. 
+
+zipapp.get_interpreter(_archive_)[¶](https://docs.python.org/3/library/zipapp.html#zipapp.get_interpreter "Link to this definition")
+    
+Return the interpreter specified in the `#!` line at the start of the archive. If there is no `#!` line, return [`None`](https://docs.python.org/3/library/constants.html#None "None"). The _archive_ argument can be a filename or a file-like object open for reading in bytes mode. It is assumed to be at the start of the archive.
+## Examples[¶](https://docs.python.org/3/library/zipapp.html#examples "Link to this heading")
+Pack up a directory into an archive, and run it.
+```
+$ python-mzipappmyapp
+$ pythonmyapp.pyz
+<output from myapp>
+
+```
+
+The same can be done using the [`create_archive()`](https://docs.python.org/3/library/zipapp.html#zipapp.create_archive "zipapp.create_archive") function:
+>>>```
+>>> importzipapp
+>>> zipapp.create_archive('myapp', 'myapp.pyz')
+
+```
+
+To make the application directly executable on POSIX, specify an interpreter to use.
+```
+$ python-mzipappmyapp-p"/usr/bin/env python"
+$ ./myapp.pyz
+<output from myapp>
+
+```
+
+To replace the shebang line on an existing archive, create a modified archive using the [`create_archive()`](https://docs.python.org/3/library/zipapp.html#zipapp.create_archive "zipapp.create_archive") function:
+>>>```
+>>> importzipapp
+>>> zipapp.create_archive('old_archive.pyz', 'new_archive.pyz', '/usr/bin/python3')
+
+```
+
+To update the file in place, do the replacement in memory using a [`BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO "io.BytesIO") object, and then overwrite the source afterwards. Note that there is a risk when overwriting a file in place that an error will result in the loss of the original file. This code does not protect against such errors, but production code should do so. Also, this method will only work if the archive fits in memory:
+>>>```
+>>> importzipapp
+>>> importio
+>>> temp = io.BytesIO()
+>>> zipapp.create_archive('myapp.pyz', temp, '/usr/bin/python2')
+>>> with open('myapp.pyz', 'wb') as f:
+>>>   f.write(temp.getvalue())

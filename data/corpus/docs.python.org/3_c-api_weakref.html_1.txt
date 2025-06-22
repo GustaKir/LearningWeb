@@ -1,0 +1,35 @@
+Title: Creating Weak Reference Proxy Objects
+URL: https://docs.python.org/3/c-api/weakref.html
+Summary: The `PyWeakref_NewProxy` function creates a weak reference proxy object for a specified PyObject, returning a new reference. It allows for an optional callback that is triggered when the referenced object is garbage collected. The function handles cases where the object is not weakly referenceable or when the callback is not callable.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyWeakref_NewProxy([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*ob, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*callback)[¶](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_NewProxy "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a weak reference proxy object for the object _ob_. This will always return a new reference, but is not guaranteed to create a new object; an existing proxy object may be returned. The second parameter, _callback_ , can be a callable object that receives notification when _ob_ is garbage collected; it should accept a single parameter, which will be the weak reference object itself. _callback_ may also be `None` or `NULL`. If _ob_ is not a weakly referenceable object, or if _callback_ is not callable, `None`, or `NULL`, this will return `NULL` and raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError"). 
+
+intPyWeakref_GetRef([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*ref, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**pobj)[¶](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetRef "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Get a [strong reference](https://docs.python.org/3/glossary.html#term-strong-reference) to the referenced object from a weak reference, _ref_ , into _*pobj_.
+  * On success, set _*pobj_ to a new [strong reference](https://docs.python.org/3/glossary.html#term-strong-reference) to the referenced object and return 1.
+  * If the reference is dead, set _*pobj_ to `NULL` and return 0.
+  * On error, raise an exception and return -1.
+
+
+Added in version 3.13. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyWeakref_GetObject([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*ref)[¶](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetObject "Link to this definition")
+    _Return value: Borrowed reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a [borrowed reference](https://docs.python.org/3/glossary.html#term-borrowed-reference) to the referenced object from a weak reference, _ref_. If the referent is no longer live, returns `Py_None`.
+Note
+This function returns a [borrowed reference](https://docs.python.org/3/glossary.html#term-borrowed-reference) to the referenced object. This means that you should always call [`Py_INCREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_INCREF "Py_INCREF") on the object except when it cannot be destroyed before the last usage of the borrowed reference.
+Deprecated since version 3.13, will be removed in version 3.15: Use [`PyWeakref_GetRef()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetRef "PyWeakref_GetRef") instead. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyWeakref_GET_OBJECT([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*ref)[¶](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GET_OBJECT "Link to this definition")
+    _Return value: Borrowed reference._
+Similar to [`PyWeakref_GetObject()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetObject "PyWeakref_GetObject"), but does no error checking.
+Deprecated since version 3.13, will be removed in version 3.15: Use [`PyWeakref_GetRef()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetRef "PyWeakref_GetRef") instead. 
+
+voidPyObject_ClearWeakRefs([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*object)[¶](https://docs.python.org/3/c-api/weakref.html#c.PyObject_ClearWeakRefs "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This function is called by the [`tp_dealloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_dealloc "PyTypeObject.tp_dealloc") handler to clear weak references.
+This iterates through the weak references for _object_ and calls callbacks for those references which have one. It returns when all callbacks have been attempted.

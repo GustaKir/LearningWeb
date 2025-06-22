@@ -1,0 +1,33 @@
+Title: Task Cancellation in asyncio
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: This section discusses task cancellation in asyncio, highlighting that tasks can be cancelled safely, which raises the `asyncio.CancelledError`. It suggests using `try/finally` blocks for clean-up and recommends propagating the error if it is caught, ensuring robust handling during task cancellation.
+---
+
+```
+
+Added in version 3.7.
+Changed in version 3.8: Added the _name_ parameter.
+Changed in version 3.11: Added the _context_ parameter.
+## [Task Cancellation](https://docs.python.org/3/library/asyncio-task.html#id5)[¶](https://docs.python.org/3/library/asyncio-task.html#task-cancellation "Link to this heading")
+Tasks can easily and safely be cancelled. When a task is cancelled, [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") will be raised in the task at the next opportunity.
+It is recommended that coroutines use `try/finally` blocks to robustly perform clean-up logic. In case [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") is explicitly caught, it should generally be propagated when clean-up is complete. [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") directly subclasses [`BaseException`](https://docs.python.org/3/library/exceptions.html#BaseException "BaseException") so most code will not need to be aware of it.
+The asyncio components that enable structured concurrency, like [`asyncio.TaskGroup`](https://docs.python.org/3/library/asyncio-task.html#asyncio.TaskGroup "asyncio.TaskGroup") and [`asyncio.timeout()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout "asyncio.timeout"), are implemented using cancellation internally and might misbehave if a coroutine swallows [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError"). Similarly, user code should not generally call [`uncancel`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel"). However, in cases when suppressing [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") is truly desired, it is necessary to also call `uncancel()` to completely remove the cancellation state.
+## [Task Groups](https://docs.python.org/3/library/asyncio-task.html#id6)[¶](https://docs.python.org/3/library/asyncio-task.html#task-groups "Link to this heading")
+Task groups combine a task creation API with a convenient and reliable way to wait for all tasks in the group to finish. 
+
+_class_ asyncio.TaskGroup[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.TaskGroup "Link to this definition")
+    
+An [asynchronous context manager](https://docs.python.org/3/reference/datamodel.html#async-context-managers) holding a group of tasks. Tasks can be added to the group using [`create_task()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task "asyncio.create_task"). All tasks are awaited when the context manager exits.
+Added in version 3.11. 
+
+create_task(_coro_ , _*_ , _name =None_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.TaskGroup.create_task "Link to this definition")
+    
+Create a task in this task group. The signature matches that of [`asyncio.create_task()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task "asyncio.create_task"). If the task group is inactive (e.g. not yet entered, already finished, or in the process of shutting down), we will close the given `coro`.
+Changed in version 3.13: Close the given coroutine if the task group is not active.
+Example:
+```
+async defmain():
+  async with asyncio.TaskGroup() as tg:
+    task1 = tg.create_task(some_coro(...))
+    task2 = tg.create_task(another_coro(...))
+  print(f"Both tasks have completed now: {task1.result()}, {task2.result()}")

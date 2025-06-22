@@ -1,0 +1,37 @@
+Title: Getting Started with Streamlit's App Testing Framework
+URL: https://docs.streamlit.io/develop/concepts/app-testing/get-started
+Summary: This section introduces Streamlit's app testing framework, emphasizing that it is flexible and not tied to specific tools, though `pytest` is used for examples. It includes instructions to install `pytest` and an overview of how simple tests are structured and executed.
+---
+
+Streamlit's app testing framework is not tied to any particular testing tool, but we'll use `pytest` for our examples since it is one of the most common Python test frameworks. To try out the examples in this guide, be sure to install `pytest` into your Streamlit development environment before you begin:
+`pip install pytest `
+## [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#a-simple-testing-example-with-pytest)A simple testing example with `pytest`
+This section explains how a simple test is structured and executed with `pytest`. For a comprehensive introduction to `pytest`, check out Real Python's guide to [Effective Python testing with pytest](https://realpython.com/pytest-python-testing/).
+### [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#how-pytest-is-structured)How `pytest` is structured
+`pytest` uses a naming convention for files and functions to execute tests conveniently. Name your test scripts of the form `test_<name>.py` or `<name>_test.py`. For example, you can use `test_myapp.py` or `myapp_test.py`. Within your test scripts, each test is written as a function. Each function is named to begin or end with `test`. We will prefix all our test scripts and test functions with `test_` for our examples in this guide.
+You can write as many tests (functions) within a single test script as you want. When calling `pytest` in a directory, all `test_<name>.py` files within it will be used for testing. This includes files within subdirectories. Each `test_<something>` function within those files will be executed as a test. You can place test files anywhere in your project directory, but it is common to collect tests into a designated `tests/` directory. For other ways to structure and execute tests, check out [How to invoke pytest](https://docs.pytest.org/how-to/usage.html) in the `pytest` docs.
+### [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#example-project-with-app-testing)Example project with app testing
+Consider the following project:
+`myproject/ ├── app.py └── tests/   └── test_app.py `
+Main app file:
+`"""app.py""" import streamlit as st # Initialize st.session_state.beans st.session_state.beans = st.session_state.get("beans", 0) st.title("Bean counter :paw_prints:") addend = st.number_input("Beans to add", 0, 10) if st.button("Add"):   st.session_state.beans += addend st.markdown(f"Beans counted: {st.session_state.beans}") `
+Testing file:
+`"""test_app.py""" from streamlit.testing.v1 import AppTest def test_increment_and_add(): """A user increments the number input, then clicks Add"""   at = AppTest.from_file("app.py").run()   at.number_input[0].increment().run()   at.button[0].click().run() assert at.markdown[0].value == "Beans counted: 1" `
+Let's take a quick look at what's in this app and test before we run it. The main app file (`app.py`) contains four elements when rendered: `st.title`, `st.number_input`, `st.button`, and `st.markdown`. The test script (`test_app.py`) includes a single test (the function named `test_increment_and_add`). We'll cover test syntax in more detail in the latter half of this guide, but here's a brief explanation of what this test does:
+  1. Initialize the simulated app and execute the first script run. 
+`at = AppTest.from_file("app.py").run() `
+  2. Simulate a user clicking the plus icon (_add_) to increment the number input (and the resulting script rerun). 
+`at.number_input[0].increment().run() `
+  3. Simulate a user clicking the "**Add** " button (and the resulting script rerun). 
+`at.button[0].click().run() `
+  4. Check if the correct message is displayed at the end. 
+`assert at.markdown[0].value == "Beans counted: 1" `
+
+
+Assertions are the heart of tests. When the assertion is true, the test passes. When the assertion is false, the test fails. A test can have multiple assertions, but keeping tests tightly focused is good practice. When tests focus on a single behavior, it is easier to understand and respond to failure.
+### [](https://docs.streamlit.io/develop/concepts/app-testing/get-started#try-out-a-simple-test-with-pytest)Try out a simple test with `pytest`
+  1. Copy the files above into a new "myproject" directory.
+  2. Open a terminal and change directory to your project. 
+`cd myproject `
+  3. Execute `pytest`: 
+`pytest `

@@ -1,0 +1,30 @@
+Title: BaseHandler Methods in urllib.request
+URL: https://docs.python.org/3/library/urllib.request.html
+Summary: This section describes the customizable methods in the BaseHandler class of the urllib.request module, including handling specific HTTP error codes and pre-processing requests for certain protocols. Subclasses are encouraged to override these methods to implement specific behaviors.
+---
+
+BaseHandler.http_error_<nnn>(req, fp, code, msg, hdrs)
+    
+_nnn_ should be a three-digit HTTP error code. This method is also not defined in [`BaseHandler`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler "urllib.request.BaseHandler"), but will be called, if it exists, on an instance of a subclass, when an HTTP error with code _nnn_ occurs.
+Subclasses should override this method to handle specific HTTP errors.
+Arguments, return values and exceptions raised should be the same as for [`http_error_default()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler.http_error_default "urllib.request.BaseHandler.http_error_default"). 
+
+BaseHandler.<protocol>_request(req)
+    
+This method is _not_ defined in [`BaseHandler`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler "urllib.request.BaseHandler"), but subclasses should define it if they want to pre-process requests of the given protocol.
+This method, if defined, will be called by the parent [`OpenerDirector`](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector "urllib.request.OpenerDirector"). _req_ will be a [`Request`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request "urllib.request.Request") object. The return value should be a [`Request`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request "urllib.request.Request") object. 
+
+BaseHandler.<protocol>_response(req, response)
+    
+This method is _not_ defined in [`BaseHandler`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler "urllib.request.BaseHandler"), but subclasses should define it if they want to post-process responses of the given protocol.
+This method, if defined, will be called by the parent [`OpenerDirector`](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector "urllib.request.OpenerDirector"). _req_ will be a [`Request`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request "urllib.request.Request") object. _response_ will be an object implementing the same interface as the return value of [`urlopen()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen "urllib.request.urlopen"). The return value should implement the same interface as the return value of [`urlopen()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen "urllib.request.urlopen").
+## HTTPRedirectHandler Objects[¶](https://docs.python.org/3/library/urllib.request.html#httpredirecthandler-objects "Link to this heading")
+Note
+Some HTTP redirections require action from this module’s client code. If this is the case, [`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError") is raised. See [**RFC 2616**](https://datatracker.ietf.org/doc/html/rfc2616.html) for details of the precise meanings of the various redirection codes.
+An [`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError") exception raised as a security consideration if the HTTPRedirectHandler is presented with a redirected URL which is not an HTTP, HTTPS or FTP URL. 
+
+HTTPRedirectHandler.redirect_request(_req_ , _fp_ , _code_ , _msg_ , _hdrs_ , _newurl_)[¶](https://docs.python.org/3/library/urllib.request.html#urllib.request.HTTPRedirectHandler.redirect_request "Link to this definition")
+    
+Return a [`Request`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request "urllib.request.Request") or `None` in response to a redirect. This is called by the default implementations of the `http_error_30*()` methods when a redirection is received from the server. If a redirection should take place, return a new [`Request`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request "urllib.request.Request") to allow `http_error_30*()` to perform the redirect to _newurl_. Otherwise, raise [`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError") if no other handler should try to handle this URL, or return `None` if you can’t but another handler might.
+Note
+The default implementation of this method does not strictly follow [**RFC 2616**](https://datatracker.ietf.org/doc/html/rfc2616.html), which says that 301 and 302 responses to `POST` requests must not be automatically redirected without confirmation by the user. In reality, browsers do allow automatic redirection of these responses, changing the POST to a `GET`, and the default implementation reproduces this behavior.

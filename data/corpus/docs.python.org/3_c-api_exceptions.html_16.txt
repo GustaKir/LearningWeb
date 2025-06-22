@@ -1,0 +1,34 @@
+Title: Unicode Error Handling in Python C API
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: This section covers functions to retrieve the reason for various Unicode-related exceptions in the Python C API, specifically for PyUnicodeDecodeError, PyUnicodeEncodeError, and PyUnicodeTranslateError. Each function returns a new reference to a PyObject containing the specific error reason.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicodeDecodeError_GetReason([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyUnicodeDecodeError_GetReason "Link to this definition")
+
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicodeEncodeError_GetReason([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyUnicodeEncodeError_GetReason "Link to this definition")
+
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicodeTranslateError_GetReason([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyUnicodeTranslateError_GetReason "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return the _reason_ attribute of the given exception object. 
+
+intPyUnicodeDecodeError_SetReason([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc, constchar*reason)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyUnicodeDecodeError_SetReason "Link to this definition")
+
+
+intPyUnicodeEncodeError_SetReason([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc, constchar*reason)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyUnicodeEncodeError_SetReason "Link to this definition")
+
+
+intPyUnicodeTranslateError_SetReason([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc, constchar*reason)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyUnicodeTranslateError_SetReason "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Set the _reason_ attribute of the given exception object to _reason_. Return `0` on success, `-1` on failure.
+## Recursion Control[¶](https://docs.python.org/3/c-api/exceptions.html#recursion-control "Link to this heading")
+These two functions provide a way to perform safe recursive calls at the C level, both in the core and in extension modules. They are needed if the recursive code does not necessarily invoke Python code (which tracks its recursion depth automatically). They are also not needed for _tp_call_ implementations because the [call protocol](https://docs.python.org/3/c-api/call.html#call) takes care of recursion handling. 
+
+intPy_EnterRecursiveCall(constchar*where)[¶](https://docs.python.org/3/c-api/exceptions.html#c.Py_EnterRecursiveCall "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.9._
+Marks a point where a recursive C-level call is about to be performed.
+If `USE_STACKCHECK` is defined, this function checks if the OS stack overflowed using [`PyOS_CheckStack()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_CheckStack "PyOS_CheckStack"). If this is the case, it sets a [`MemoryError`](https://docs.python.org/3/library/exceptions.html#MemoryError "MemoryError") and returns a nonzero value.
+The function then checks if the recursion limit is reached. If this is the case, a [`RecursionError`](https://docs.python.org/3/library/exceptions.html#RecursionError "RecursionError") is set and a nonzero value is returned. Otherwise, zero is returned.
+_where_ should be a UTF-8 encoded string such as `" in instance check"` to be concatenated to the [`RecursionError`](https://docs.python.org/3/library/exceptions.html#RecursionError "RecursionError") message caused by the recursion depth limit.
+Changed in version 3.9: This function is now also available in the [limited API](https://docs.python.org/3/c-api/stable.html#limited-c-api).

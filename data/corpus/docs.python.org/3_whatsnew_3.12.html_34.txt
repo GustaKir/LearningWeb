@@ -1,0 +1,49 @@
+Title: Python 3.12 Changes: Importlib and Imp Module Removal
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: This document outlines the removal of various `imp` functions and attributes in Python 3.12, including undocumented functions and locking mechanisms, shifting the functionality to `importlib`. It also includes example usage for loading a module from a source file.
+---
+
+```
+importimportlib.util
+importimportlib.machinery
+defload_source(modname, filename):
+  loader = importlib.machinery.SourceFileLoader(modname, filename)
+  spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+  module = importlib.util.module_from_spec(spec)
+  # The module is always executed and not cached in sys.modules.
+  # Uncomment the following line to cache the module.
+  # sys.modules[module.__name__] = module
+  loader.exec_module(module)
+  return module
+
+```
+
+  * Remove `imp` functions and attributes with no replacements:
+    * Undocumented functions:
+      * `imp.init_builtin()`
+      * `imp.load_compiled()`
+      * `imp.load_dynamic()`
+      * `imp.load_package()`
+    * `imp.lock_held()`, `imp.acquire_lock()`, `imp.release_lock()`: the locking scheme has changed in Python 3.3 to per-module locks.
+    * `imp.find_module()` constants: `SEARCH_ERROR`, `PY_SOURCE`, `PY_COMPILED`, `C_EXTENSION`, `PY_RESOURCE`, `PKG_DIRECTORY`, `C_BUILTIN`, `PY_FROZEN`, `PY_CODERESOURCE`, `IMP_HOOK`.
+
+
+### io[¶](https://docs.python.org/3/whatsnew/3.12.html#io "Link to this heading")
+  * Remove [`io`](https://docs.python.org/3/library/io.html#module-io "io: Core tools for working with streams.")’s `io.OpenWrapper` and `_pyio.OpenWrapper`, deprecated in Python 3.10: just use [`open()`](https://docs.python.org/3/library/functions.html#open "open") instead. The [`open()`](https://docs.python.org/3/library/functions.html#open "open") ([`io.open()`](https://docs.python.org/3/library/io.html#io.open "io.open")) function is a built-in function. Since Python 3.10, `_pyio.open()` is also a static method. (Contributed by Victor Stinner in [gh-94169](https://github.com/python/cpython/issues/94169).)
+
+
+### locale[¶](https://docs.python.org/3/whatsnew/3.12.html#locale "Link to this heading")
+  * Remove [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.")’s `locale.format()` function, deprecated in Python 3.7: use [`locale.format_string()`](https://docs.python.org/3/library/locale.html#locale.format_string "locale.format_string") instead. (Contributed by Victor Stinner in [gh-94226](https://github.com/python/cpython/issues/94226).)
+
+
+### smtpd[¶](https://docs.python.org/3/whatsnew/3.12.html#smtpd "Link to this heading")
+  * The `smtpd` module has been removed according to the schedule in [**PEP 594**](https://peps.python.org/pep-0594/), having been deprecated in Python 3.4.7 and 3.5.4. Use the [aiosmtpd](https://pypi.org/project/aiosmtpd/) PyPI module or any other [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.")-based server instead. (Contributed by Oleg Iarygin in [gh-93243](https://github.com/python/cpython/issues/93243).)
+
+
+### sqlite3[¶](https://docs.python.org/3/whatsnew/3.12.html#id2 "Link to this heading")
+  * The following undocumented [`sqlite3`](https://docs.python.org/3/library/sqlite3.html#module-sqlite3 "sqlite3: A DB-API 2.0 implementation using SQLite 3.x.") features, deprecated in Python 3.10, are now removed:
+    * `sqlite3.enable_shared_cache()`
+    * `sqlite3.OptimizedUnicode`
+If a shared cache must be used, open the database in URI mode using the `cache=shared` query parameter.
+The `sqlite3.OptimizedUnicode` text factory has been an alias for [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") since Python 3.3. Code that previously set the text factory to `OptimizedUnicode` can either use `str` explicitly, or rely on the default value which is also `str`.
+(Contributed by Erlend E. Aasland in [gh-92548](https://github.com/python/cpython/issues/92548).)

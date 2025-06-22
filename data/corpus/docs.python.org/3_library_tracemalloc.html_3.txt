@@ -1,0 +1,53 @@
+Title: Memory Allocation Statistics in Python's tracemalloc
+URL: https://docs.python.org/3/library/tracemalloc.html
+Summary: This chunk presents the top 10 lines consuming memory in Python's tracemalloc, detailing their locations and allocated sizes. It highlights significant lines from various libraries, including base64 and collections, and summarizes the total allocated size.
+---
+
+```
+Top 10 lines
+#1: Lib/base64.py:414: 419.8 KiB
+  _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
+#2: Lib/base64.py:306: 419.8 KiB
+  _a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
+#3: collections/__init__.py:368: 293.6 KiB
+  exec(class_definition, namespace)
+#4: Lib/abc.py:133: 115.2 KiB
+  cls = super().__new__(mcls, name, bases, namespace)
+#5: unittest/case.py:574: 103.1 KiB
+  testMethod()
+#6: Lib/linecache.py:127: 95.4 KiB
+  lines = fp.readlines()
+#7: urllib/parse.py:476: 71.8 KiB
+  for a in _hexdig for b in _hexdig}
+#8: <string>:5: 62.0 KiB
+#9: Lib/_weakrefset.py:37: 60.0 KiB
+  self.data = set()
+#10: Lib/base64.py:142: 59.8 KiB
+  _b32tab2 = [a + b for a in _b32tab for b in _b32tab]
+6220 other: 3602.8 KiB
+Total allocated size: 5303.1 KiB
+
+```
+
+See [`Snapshot.statistics()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.Snapshot.statistics "tracemalloc.Snapshot.statistics") for more options.
+#### Record the current and peak size of all traced memory blocks[¶](https://docs.python.org/3/library/tracemalloc.html#record-the-current-and-peak-size-of-all-traced-memory-blocks "Link to this heading")
+The following code computes two sums like `0 + 1 + 2 + ...` inefficiently, by creating a list of those numbers. This list consumes a lot of memory temporarily. We can use [`get_traced_memory()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.get_traced_memory "tracemalloc.get_traced_memory") and [`reset_peak()`](https://docs.python.org/3/library/tracemalloc.html#tracemalloc.reset_peak "tracemalloc.reset_peak") to observe the small memory usage after the sum is computed as well as the peak memory usage during the computations:
+```
+importtracemalloc
+tracemalloc.start()
+# Example code: compute a sum with a large temporary list
+large_sum = sum(list(range(100000)))
+first_size, first_peak = tracemalloc.get_traced_memory()
+tracemalloc.reset_peak()
+# Example code: compute a sum with a small temporary list
+small_sum = sum(list(range(1000)))
+second_size, second_peak = tracemalloc.get_traced_memory()
+print(f"{first_size=}, {first_peak=}")
+print(f"{second_size=}, {second_peak=}")
+
+```
+
+Output:
+```
+first_size=664, first_peak=3592984
+second_size=804, second_peak=29704

@@ -1,0 +1,88 @@
+Title: Error Handling in Tarfile
+URL: https://docs.python.org/3/library/tarfile.html
+Summary: This section discusses how errors are managed during file extraction in the tarfile module. It explains that if a filter denies extraction, a subclass of FilterError will be raised, and details the behavior of the errorlevel attribute—for errorlevel 1 or more, extraction is aborted, while errorlevel 0 allows logging of the error and continuation of extraction. It also warns that tarfile is not suitable for extracting untrusted files and suggests users perform additional checks.
+---
+
+Return the modified `TarInfo` member.
+### Filter errors[¶](https://docs.python.org/3/library/tarfile.html#filter-errors "Link to this heading")
+When a filter refuses to extract a file, it will raise an appropriate exception, a subclass of [`FilterError`](https://docs.python.org/3/library/tarfile.html#tarfile.FilterError "tarfile.FilterError"). This will abort the extraction if [`TarFile.errorlevel`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.errorlevel "tarfile.TarFile.errorlevel") is 1 or more. With `errorlevel=0` the error will be logged and the member will be skipped, but extraction will continue.
+### Hints for further verification[¶](https://docs.python.org/3/library/tarfile.html#hints-for-further-verification "Link to this heading")
+Even with `filter='data'`, _tarfile_ is not suited for extracting untrusted files without prior inspection. Among other issues, the pre-defined filters do not prevent denial-of-service attacks. Users should do additional checks.
+Here is an incomplete list of things to consider:
+  * Extract to a [`new temporary directory`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp") to prevent e.g. exploiting pre-existing links, and to make it easier to clean up after a failed extraction.
+  * When working with untrusted data, use external (e.g. OS-level) limits on disk, memory and CPU usage.
+  * Check filenames against an allow-list of characters (to filter out control characters, confusables, foreign path separators, etc.).
+  * Check that filenames have expected extensions (discouraging files that execute when you “click on them”, or extension-less files like Windows special device names).
+  * Limit the number of extracted files, total size of extracted data, filename length (including symlink length), and size of individual files.
+  * Check for files that would be shadowed on case-insensitive filesystems.
+
+
+Also note that:
+  * Tar files may contain multiple versions of the same file. Later ones are expected to overwrite any earlier ones. This feature is crucial to allow updating tape archives, but can be abused maliciously.
+  * _tarfile_ does not protect against issues with “live” data, e.g. an attacker tinkering with the destination (or source) directory while extraction (or archiving) is in progress.
+
+
+### Supporting older Python versions[¶](https://docs.python.org/3/library/tarfile.html#supporting-older-python-versions "Link to this heading")
+Extraction filters were added to Python 3.12, but may be backported to older versions as security updates. To check whether the feature is available, use e.g. `hasattr(tarfile, 'data_filter')` rather than checking the Python version.
+The following examples show how to support Python versions with and without the feature. Note that setting `extraction_filter` will affect any subsequent operations.
+  * Fully trusted archive:
+```
+my_tarfile.extraction_filter = (lambda member, path: member)
+my_tarfile.extractall()
+
+```
+
+  * Use the `'data'` filter if available, but revert to Python 3.11 behavior (`'fully_trusted'`) if this feature is not available:
+```
+my_tarfile.extraction_filter = getattr(tarfile, 'data_filter',
+                    (lambda member, path: member))
+my_tarfile.extractall()
+
+```
+
+  * Use the `'data'` filter; _fail_ if it is not available:
+```
+my_tarfile.extractall(filter=tarfile.data_filter)
+
+```
+
+or:
+```
+my_tarfile.extraction_filter = tarfile.data_filter
+my_tarfile.extractall()
+
+```
+
+  * Use the `'data'` filter; _warn_ if it is not available:
+```
+if hasattr(tarfile, 'data_filter'):
+  my_tarfile.extractall(filter='data')
+else:
+  # remove this when no longer needed
+  warn_the_user('Extracting may be unsafe; consider updating Python')
+  my_tarfile.extractall()
+
+```
+
+
+
+### Stateful extraction filter example[¶](https://docs.python.org/3/library/tarfile.html#stateful-extraction-filter-example "Link to this heading")
+While _tarfile_ ’s extraction methods take a simple _filter_ callable, custom filters may be more complex objects with an internal state. It may be useful to write these as context managers, to be used like this:
+```
+with StatefulFilter() as filter_func:
+  tar.extractall(path, filter=filter_func)
+
+```
+
+Such a filter can be written as, for example:
+```
+classStatefulFilter:
+  def__init__(self):
+    self.file_count = 0
+  def__enter__(self):
+    return self
+  def__call__(self, member, path):
+    self.file_count += 1
+    return member
+  def__exit__(self, *exc_info):
+    print(f'{self.file_count} files extracted')

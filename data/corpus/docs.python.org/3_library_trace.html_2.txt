@@ -1,0 +1,58 @@
+Title: Tracing Execution in Python
+URL: https://docs.python.org/3/library/trace.html
+Summary: This section describes the use of the `--ignore-dir` option to exclude specific directories from Python tracing. It also introduces the programmatic interface of the `trace.Trace` class, which allows for detailed execution tracing with customizable options for counting and observing functions and callers.
+---
+
+--ignore-dir=<dir>[¶](https://docs.python.org/3/library/trace.html#cmdoption-trace-ignore-dir "Link to this definition")
+    
+Ignore all modules and packages in the named directory and subdirectories. The argument can be a list of directories separated by [`os.pathsep`](https://docs.python.org/3/library/os.html#os.pathsep "os.pathsep").
+## Programmatic Interface[¶](https://docs.python.org/3/library/trace.html#programmatic-interface "Link to this heading") 
+
+_class_ trace.Trace(_count =1_, _trace =1_, _countfuncs =0_, _countcallers =0_, _ignoremods =()_, _ignoredirs =()_, _infile =None_, _outfile =None_, _timing =False_)[¶](https://docs.python.org/3/library/trace.html#trace.Trace "Link to this definition")
+    
+Create an object to trace execution of a single statement or expression. All parameters are optional. _count_ enables counting of line numbers. _trace_ enables line execution tracing. _countfuncs_ enables listing of the functions called during the run. _countcallers_ enables call relationship tracking. _ignoremods_ is a list of modules or packages to ignore. _ignoredirs_ is a list of directories whose modules or packages should be ignored. _infile_ is the name of the file from which to read stored count information. _outfile_ is the name of the file in which to write updated count information. _timing_ enables a timestamp relative to when tracing was started to be displayed. 
+
+run(_cmd_)[¶](https://docs.python.org/3/library/trace.html#trace.Trace.run "Link to this definition")
+    
+Execute the command and gather statistics from the execution with the current tracing parameters. _cmd_ must be a string or code object, suitable for passing into [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec"). 
+
+runctx(_cmd_ , _globals =None_, _locals =None_)[¶](https://docs.python.org/3/library/trace.html#trace.Trace.runctx "Link to this definition")
+    
+Execute the command and gather statistics from the execution with the current tracing parameters, in the defined global and local environments. If not defined, _globals_ and _locals_ default to empty dictionaries. 
+
+runfunc(_func_ , _/_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/trace.html#trace.Trace.runfunc "Link to this definition")
+    
+Call _func_ with the given arguments under control of the [`Trace`](https://docs.python.org/3/library/trace.html#trace.Trace "trace.Trace") object with the current tracing parameters. 
+
+results()[¶](https://docs.python.org/3/library/trace.html#trace.Trace.results "Link to this definition")
+    
+Return a [`CoverageResults`](https://docs.python.org/3/library/trace.html#trace.CoverageResults "trace.CoverageResults") object that contains the cumulative results of all previous calls to `run`, `runctx` and `runfunc` for the given [`Trace`](https://docs.python.org/3/library/trace.html#trace.Trace "trace.Trace") instance. Does not reset the accumulated trace results. 
+
+_class_ trace.CoverageResults[¶](https://docs.python.org/3/library/trace.html#trace.CoverageResults "Link to this definition")
+    
+A container for coverage results, created by [`Trace.results()`](https://docs.python.org/3/library/trace.html#trace.Trace.results "trace.Trace.results"). Should not be created directly by the user. 
+
+update(_other_)[¶](https://docs.python.org/3/library/trace.html#trace.CoverageResults.update "Link to this definition")
+    
+Merge in data from another [`CoverageResults`](https://docs.python.org/3/library/trace.html#trace.CoverageResults "trace.CoverageResults") object. 
+
+write_results(_show_missing =True_, _summary =False_, _coverdir =None_, _*_ , _ignore_missing_files =False_)[¶](https://docs.python.org/3/library/trace.html#trace.CoverageResults.write_results "Link to this definition")
+    
+Write coverage results. Set _show_missing_ to show lines that had no hits. Set _summary_ to include in the output the coverage summary per module. _coverdir_ specifies the directory into which the coverage result files will be output. If `None`, the results for each source file are placed in its directory.
+If _ignore_missing_files_ is `True`, coverage counts for files that no longer exist are silently ignored. Otherwise, a missing file will raise a [`FileNotFoundError`](https://docs.python.org/3/library/exceptions.html#FileNotFoundError "FileNotFoundError").
+Changed in version 3.13: Added _ignore_missing_files_ parameter.
+A simple example demonstrating the use of the programmatic interface:
+```
+importsys
+importtrace
+# create a Trace object, telling it what to ignore, and whether to
+# do tracing or line-counting or both.
+tracer = trace.Trace(
+  ignoredirs=[sys.prefix, sys.exec_prefix],
+  trace=0,
+  count=1)
+# run the new command using the given tracer
+tracer.run('main()')
+# make a report, placing output in the current directory
+r = tracer.results()
+r.write_results(show_missing=True, coverdir=".")

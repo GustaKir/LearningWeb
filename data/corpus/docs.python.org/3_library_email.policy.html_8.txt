@@ -1,0 +1,47 @@
+Title: Email Policy Definitions in Python
+URL: https://docs.python.org/3/library/email.policy.html
+Summary: This section describes different email policy classes in Python. The `SMTPUTF8` policy allows for non-ASCII characters in email headers without encoded words, intended for use when such characters are present in addresses. The `HTTP` policy is designed for serializing headers for HTTP traffic, with no limit on line length. The document also suggests that the `smtplib.SMTP.send_message()` method manages these requirements automatically.
+---
+
+email.policy.SMTPUTF8[¶](https://docs.python.org/3/library/email.policy.html#email.policy.SMTPUTF8 "Link to this definition")
+    
+The same as `SMTP` except that [`utf8`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.utf8 "email.policy.EmailPolicy.utf8") is `True`. Useful for serializing messages to a message store without using encoded words in the headers. Should only be used for SMTP transmission if the sender or recipient addresses have non-ASCII characters (the [`smtplib.SMTP.send_message()`](https://docs.python.org/3/library/smtplib.html#smtplib.SMTP.send_message "smtplib.SMTP.send_message") method handles this automatically). 
+
+email.policy.HTTP[¶](https://docs.python.org/3/library/email.policy.html#email.policy.HTTP "Link to this definition")
+    
+Suitable for serializing headers with for use in HTTP traffic. Like `SMTP` except that `max_line_length` is set to `None` (unlimited). 
+
+email.policy.strict[¶](https://docs.python.org/3/library/email.policy.html#email.policy.strict "Link to this definition")
+    
+Convenience instance. The same as `default` except that `raise_on_defect` is set to `True`. This allows any policy to be made strict by writing:
+```
+somepolicy + policy.strict
+
+```
+
+With all of these [`EmailPolicies`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy "email.policy.EmailPolicy"), the effective API of the email package is changed from the Python 3.2 API in the following ways:
+  * Setting a header on a [`Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message") results in that header being parsed and a header object created.
+  * Fetching a header value from a [`Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message") results in that header being parsed and a header object created and returned.
+  * Any header object, or any header that is refolded due to the policy settings, is folded using an algorithm that fully implements the RFC folding algorithms, including knowing where encoded words are required and allowed.
+
+
+From the application view, this means that any header obtained through the [`EmailMessage`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage "email.message.EmailMessage") is a header object with extra attributes, whose string value is the fully decoded unicode value of the header. Likewise, a header may be assigned a new value, or a new header created, using a unicode string, and the policy will take care of converting the unicode string into the correct RFC encoded form.
+The header objects and their attributes are described in [`headerregistry`](https://docs.python.org/3/library/email.headerregistry.html#module-email.headerregistry "email.headerregistry: Automatic Parsing of headers based on the field name"). 
+
+_class_ email.policy.Compat32(_** kw_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.Compat32 "Link to this definition")
+    
+This concrete [`Policy`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy "email.policy.Policy") is the backward compatibility policy. It replicates the behavior of the email package in Python 3.2. The [`policy`](https://docs.python.org/3/library/email.policy.html#module-email.policy "email.policy: Controlling the parsing and generating of messages") module also defines an instance of this class, [`compat32`](https://docs.python.org/3/library/email.policy.html#email.policy.compat32 "email.policy.compat32"), that is used as the default policy. Thus the default behavior of the email package is to maintain compatibility with Python 3.2.
+The following attributes have values that are different from the [`Policy`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy "email.policy.Policy") default: 
+
+mangle_from_[¶](https://docs.python.org/3/library/email.policy.html#email.policy.Compat32.mangle_from_ "Link to this definition")
+    
+The default is `True`.
+The class provides the following concrete implementations of the abstract methods of [`Policy`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy "email.policy.Policy"): 
+
+header_source_parse(_sourcelines_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.Compat32.header_source_parse "Link to this definition")
+    
+The name is parsed as everything up to the ‘`:`’ and returned unmodified. The value is determined by stripping leading whitespace off the remainder of the first line, joining all subsequent lines together, and stripping any trailing carriage return or linefeed characters. 
+
+header_store_parse(_name_ , _value_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.Compat32.header_store_parse "Link to this definition")
+    
+The name and value are returned unmodified.

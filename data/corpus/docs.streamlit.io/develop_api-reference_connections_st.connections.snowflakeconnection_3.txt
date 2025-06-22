@@ -1,0 +1,81 @@
+Title: Snowflake Connection Configuration in Streamlit
+URL: https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowflakeconnection
+Summary: This section describes how to configure a named Snowflake connection using Streamlit secrets in the `secrets.toml` file. It includes an example of setting up a connection and querying a database. Additionally, it addresses what happens when no specific configuration is provided, leading Streamlit to fall back to a default connection.
+---
+
+```
+
+Copy
+**Example 4: Named connection with Streamlit secrets and Snowflake's connection configuration file**
+If you have a Snowflake configuration file with a connection named `my_connection` as in Example 3, you can pass the connection name through `secrets.toml`.
+`.streamlit/secrets.toml`:
+```
+[connections.snowflake]
+connection_name = "my_connection"
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+conn = st.connection("snowflake")
+df = conn.query("SELECT * FROM my_table")
+```
+
+Copy
+**Example 5: Default connection with an environment variable**
+If you don't have a `[connections.snowflake]` dictionary in your `secrets.toml` file and use `st.connection("snowflake")`, Streamlit will use the default connection for the [Snowflake Python Connector](https://docs.snowflake.cn/en/developer-guide/python-connector/python-connector-connect#setting-a-default-connection).
+If you have a Snowflake configuration file with a connection named `my_connection` as in Example 3, you can set an environment variable to declare it as the default Snowflake connection.
+```
+SNOWFLAKE_DEFAULT_CONNECTION_NAME = "my_connection"
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+conn = st.connection("snowflake")
+df = conn.query("SELECT * FROM my_table")
+```
+
+Copy
+**Example 6: Default connection in Snowflake's connection configuration file**
+If you have a Snowflake configuration file that defines your `default` connection, Streamlit will automatically use it if no other connection is declared.
+`~/.snowflake/connections.toml`:
+```
+[default]
+account = "xxx-xxx"
+user = "xxx"
+password = "xxx"
+warehouse = "xxx"
+database = "xxx"
+schema = "xxx"
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+conn = st.connection("snowflake")
+df = conn.query("SELECT * FROM my_table")
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowflakeconnection#snowflakeconnectioncursor)SnowflakeConnection.cursor
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Create a new cursor object from this connection.
+Snowflake Connector cursors implement the Python Database API v2.0 specification (PEP-249). For more information, see the [Snowflake Connector for Python documentation](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-cursor).
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/snowflake_connection.py#L455 "View st.cursor source code on GitHub")  
+---  
+SnowflakeConnection.cursor()  
+Returns  
+(snowflake.connector.cursor.SnowflakeCursor) | A cursor object for the connection.  
+#### Example
+The following example uses a cursor to insert multiple rows into a table. The `qmark` parameter style is specified as an optional keyword argument. Alternatively, the parameter style can be declared in your connection configuration file. For more information, see the [Snowflake Connector for Python documentation](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-example#using-qmark-or-numeric-binding).
+```
+import streamlit as st
+conn = st.connection("snowflake", "paramstyle"="qmark")
+rows_to_insert = [("Mary", "dog"), ("John", "cat"), ("Robert", "bird")]
+conn.cursor().executemany(
+  "INSERT INTO mytable (name, pet) VALUES (?, ?)", rows_to_insert
+)

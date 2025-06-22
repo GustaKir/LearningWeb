@@ -1,0 +1,37 @@
+Title: Caching with st.cache_data in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: The `st.cache_data` method in Streamlit prevents mutation errors by ensuring that mutations affect only a specific copy of an object in the cache, allowing subsequent reruns to access an unmutated version. It is recommended for caching data transformations and computations. The document also introduces potential concurrency issues when multiple users alter cached objects, highlighting the importance of using proper caching methods.
+---
+
+The copying behavior of `st.cache_data` prevents this kind of mutation error. Mutations can only affect a specific copy and not the underlying object in the cache. The next rerun will get its own, unmutated copy of the DataFrame. You can try it yourself, just replace `st.cache_resource` with `st.cache_data` above, and you'll see that everything works.
+Because of this copying behavior, `st.cache_data` is the recommended way to cache data transforms and computations – anything that returns a serializable object.
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#concurrency-issues)Concurrency issues
+Now let's look at what can happen when multiple users concurrently mutate an object in the cache. Let's say you have a function that returns a list. Again, we are using `st.cache_resource` to cache it so that we are not creating a copy:
+`@st.cache_resource def create_list():   l = [1, 2, 3] return l l = create_list() first_list_value = l[0] l[0] = first_list_value + 1 st.write("l[0] is:", l[0]) `
+Let's say user A runs the app. They will see the following output:
+`l[0] is: 2 `
+Let's say another user, B, visits the app right after. In contrast to user A, they will see the following output:
+`l[0] is: 3 `
+Now, user A reruns the app immediately after user B. They will see the following output:
+`l[0] is: 4 `
+What is happening here? Why are all outputs different?
+  * When user A visits the app, `create_list()` is called, and the list `[1, 2, 3]` is stored in the cache. This list is then returned to user A. The first value of the list, `1`, is assigned to `first_list_value` , and `l[0]` is changed to `2`.
+  * When user B visits the app, `create_list()` returns the mutated list from the cache: `[2, 2, 3]`. The first value of the list, `2`, is assigned to `first_list_value` and `l[0]` is changed to `3`.
+  * When user A reruns the app, `create_list()` returns the mutated list again: `[3, 2, 3]`. The first value of the list, `3`, is assigned to `first_list_value,` and `l[0]` is changed to 4.
+
+
+If you think about it, this makes sense. Users A and B use the same list object (the one stored in the cache). And since the list object is mutated, user A's change to the list object is also reflected in user B's app.
+This is why you must be careful about mutating objects cached with `st.cache_resource`, especially when multiple users access the app concurrently. If we had used `st.cache_data` instead of `st.cache_resource`, the app would have copied the list object for each user, and the above example would have worked as expected – users A and B would have both seen:
+`l[0] is: 2 `
+_push_pin_
+#### Note
+This toy example might seem benign. But data corruption can be extremely dangerous! Imagine we had worked with the financial records of a large bank here. You surely don't want to wake up with less money on your account just because someone used the wrong caching decorator 😉
+## [](https://docs.streamlit.io/develop/concepts/architecture/caching#migrating-from-stcache)Migrating from st.cache
+We introduced the caching commands described above in Streamlit 1.18.0. Before that, we had one catch-all command `st.cache`. Using it was often confusing, resulted in weird exceptions, and was slow. That's why we replaced `st.cache` with the new commands in 1.18.0 (read more in this [blog post](https://blog.streamlit.io/introducing-two-new-caching-commands-to-replace-st-cache/)). The new commands provide a more intuitive and efficient way to cache your data and resources and are intended to replace `st.cache` in all new development.
+If your app is still using `st.cache`, don't despair! Here are a few notes on migrating:
+  * Streamlit will show a deprecation warning if your app uses `st.cache`.
+  * We will not remove `st.cache` soon, so you don't need to worry about your 2-year-old app breaking. But we encourage you to try the new commands going forward – they will be way less annoying!
+  * Switching code to the new commands should be easy in most cases. To decide whether to use `st.cache_data` or `st.cache_resource`, read [Deciding which caching decorator to use](https://docs.streamlit.io/develop/concepts/architecture/caching#deciding-which-caching-decorator-to-use). Streamlit will also recognize common use cases and show hints right in the deprecation warnings.
+  * Most parameters from `st.cache` are also present in the new commands, with a few exceptions: 
+    * `allow_output_mutation` does not exist anymore. You can safely delete it. Just make sure you use the right caching command for your use case.
+    * `suppress_st_warning` does not exist anymore. You can safely delete it. Cached functions can now contain Streamlit commands and will replay them. If you want to use widgets inside cached functions, set `experimental_allow_widgets=True`. See [Input widgets](https://docs.streamlit.io/develop/concepts/architecture/caching#input-widgets) for an example.

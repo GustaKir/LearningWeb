@@ -1,0 +1,21 @@
+Title: datetime.astimezone() Method
+URL: https://docs.python.org/3/library/datetime.html
+Summary: The `astimezone()` method returns a new `datetime` object adjusted to a specified timezone (`_tz`), while maintaining the same UTC time as the original object. It requires `_tz` to be a subclass of `tzinfo`, with defined `utcoffset()` and `dst()` methods. If the original datetime is naive, it is treated as being in the system's local timezone.
+---
+
+datetime.astimezone(_tz =None_)[¶](https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone "Link to this definition")
+    
+Return a [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") object with new [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attribute _tz_ , adjusting the date and time data so the result is the same UTC time as _self_ , but in _tz_ ’s local time.
+If provided, _tz_ must be an instance of a [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") subclass, and its [`utcoffset()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.utcoffset "datetime.datetime.utcoffset") and [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.dst "datetime.datetime.dst") methods must not return `None`. If _self_ is naive, it is presumed to represent time in the system time zone.
+If called without arguments (or with `tz=None`) the system local time zone is assumed for the target time zone. The `.tzinfo` attribute of the converted datetime instance will be set to an instance of [`timezone`](https://docs.python.org/3/library/datetime.html#datetime.timezone "datetime.timezone") with the zone name and offset obtained from the OS.
+If `self.tzinfo` is _tz_ , `self.astimezone(tz)` is equal to _self_ : no adjustment of date or time data is performed. Else the result is local time in the time zone _tz_ , representing the same UTC time as _self_ : after `astz = dt.astimezone(tz)`, `astz - astz.utcoffset()` will have the same date and time data as `dt - dt.utcoffset()`.
+If you merely want to attach a [`timezone`](https://docs.python.org/3/library/datetime.html#datetime.timezone "datetime.timezone") object _tz_ to a datetime _dt_ without adjustment of date and time data, use `dt.replace(tzinfo=tz)`. If you merely want to remove the `timezone` object from an aware datetime _dt_ without conversion of date and time data, use `dt.replace(tzinfo=None)`.
+Note that the default [`tzinfo.fromutc()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.fromutc "datetime.tzinfo.fromutc") method can be overridden in a [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") subclass to affect the result returned by [`astimezone()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone "datetime.datetime.astimezone"). Ignoring error cases, [`astimezone()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone "datetime.datetime.astimezone") acts like:
+```
+defastimezone(self, tz):
+  if self.tzinfo is tz:
+    return self
+  # Convert self to UTC, and attach the new timezone object.
+  utc = (self - self.utcoffset()).replace(tzinfo=tz)
+  # Convert from UTC to tz's local time.
+  return tz.fromutc(utc)

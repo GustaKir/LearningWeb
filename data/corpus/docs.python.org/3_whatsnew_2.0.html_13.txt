@@ -1,0 +1,43 @@
+Title: DOM Support in Python
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: The Document Object Model (DOM) provides a tree-based representation of XML documents in Python, allowing users to traverse, modify, and convert XML efficiently. It enables the creation of DOM trees that can be manipulated and output as XML.
+---
+
+```
+
+For more information, consult the Python documentation, or the XML HOWTO at <https://pyxml.sourceforge.net/topics/howto/xml-howto.html>.
+### DOM Support[¶](https://docs.python.org/3/whatsnew/2.0.html#dom-support "Link to this heading")
+The Document Object Model is a tree-based representation for an XML document. A top-level `Document` instance is the root of the tree, and has a single child which is the top-level `Element` instance. This `Element` has children nodes representing character data and any sub-elements, which may have further children of their own, and so forth. Using the DOM you can traverse the resulting tree any way you like, access element and attribute values, insert and delete nodes, and convert the tree back into XML.
+The DOM is useful for modifying XML documents, because you can create a DOM tree, modify it by adding new nodes or rearranging subtrees, and then produce a new XML document as output. You can also construct a DOM tree manually and convert it to XML, which can be a more flexible way of producing XML output than simply writing `<tag1>`…`</tag1>` to a file.
+The DOM implementation included with Python lives in the [`xml.dom.minidom`](https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom "xml.dom.minidom: Minimal Document Object Model \(DOM\) implementation.") module. It’s a lightweight implementation of the Level 1 DOM with support for XML namespaces. The `parse()` and `parseString()` convenience functions are provided for generating a DOM tree:
+```
+fromxml.domimport minidom
+doc = minidom.parse('hamlet.xml')
+
+```
+
+`doc` is a `Document` instance. `Document`, like all the other DOM classes such as `Element` and `Text`, is a subclass of the `Node` base class. All the nodes in a DOM tree therefore support certain common methods, such as `toxml()` which returns a string containing the XML representation of the node and its children. Each class also has special methods of its own; for example, `Element` and `Document` instances have a method to find all child elements with a given tag name. Continuing from the previous 2-line example:
+```
+perslist = doc.getElementsByTagName( 'PERSONA' )
+print perslist[0].toxml()
+print perslist[1].toxml()
+
+```
+
+For the _Hamlet_ XML file, the above few lines output:
+```
+<PERSONA>CLAUDIUS, king of Denmark. </PERSONA>
+<PERSONA>HAMLET, son to the late, and nephew to the present king.</PERSONA>
+
+```
+
+The root element of the document is available as `doc.documentElement`, and its children can be easily modified by deleting, adding, or removing nodes:
+```
+root = doc.documentElement
+# Remove the first child
+root.removeChild( root.childNodes[0] )
+# Move the new first child to the end
+root.appendChild( root.childNodes[0] )
+# Insert the new first child (originally,
+# the third child) before the 20th child.
+root.insertBefore( root.childNodes[0], root.childNodes[20] )

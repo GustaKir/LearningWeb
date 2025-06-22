@@ -1,0 +1,159 @@
+Title: WebSocket Chat Example with FastAPI
+URL: https://fastapi.tiangolo.com/advanced/websockets/
+Summary: This document provides an example of a WebSocket chat application using FastAPI. It includes a simple HTML structure to display chat messages, along with JavaScript to handle WebSocket connections and message sending. The client ID is generated using the current timestamp.
+---
+
+```
+fromfastapiimport FastAPI, WebSocket, WebSocketDisconnect
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <h2>Your ID: <span id="ws-id"></span></h2>
+    <form action="" onsubmit="sendMessage(event)">
+      <input type="text" id="messageText" autocomplete="off"/>
+      <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
+    <script>
+      var client_id = Date.now()
+      document.querySelector("#ws-id").textContent = client_id;
+      var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+      ws.onmessage = function(event) {
+        var messages = document.getElementById('messages')
+        var message = document.createElement('li')
+        var content = document.createTextNode(event.data)
+        message.appendChild(content)
+        messages.appendChild(message)
+      };
+      function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+      }
+    </script>
+  </body>
+</html>
+"""
+classConnectionManager:
+  def__init__(self):
+    self.active_connections: list[WebSocket] = []
+  async defconnect(self, websocket: WebSocket):
+    await websocket.accept()
+    self.active_connections.append(websocket)
+  defdisconnect(self, websocket: WebSocket):
+    self.active_connections.remove(websocket)
+  async defsend_personal_message(self, message: str, websocket: WebSocket):
+    await websocket.send_text(message)
+  async defbroadcast(self, message: str):
+    for connection in self.active_connections:
+      await connection.send_text(message)
+manager = ConnectionManager()
+@app.get("/")
+async defget():
+  return HTMLResponse(html)
+@app.websocket("/ws/{client_id}")
+async defwebsocket_endpoint(websocket: WebSocket, client_id: int):
+  await manager.connect(websocket)
+  try:
+    while True:
+      data = await websocket.receive_text()
+      await manager.send_personal_message(f"You wrote: {data}", websocket)
+      await manager.broadcast(f"Client #{client_id} says: {data}")
+  except WebSocketDisconnect:
+    manager.disconnect(websocket)
+    await manager.broadcast(f"Client #{client_id} left the chat")
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/websockets/#__tabbed_7_1)
+```
+fromtypingimport List
+fromfastapiimport FastAPI, WebSocket, WebSocketDisconnect
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <h2>Your ID: <span id="ws-id"></span></h2>
+    <form action="" onsubmit="sendMessage(event)">
+      <input type="text" id="messageText" autocomplete="off"/>
+      <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
+    <script>
+      var client_id = Date.now()
+      document.querySelector("#ws-id").textContent = client_id;
+      var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+      ws.onmessage = function(event) {
+        var messages = document.getElementById('messages')
+        var message = document.createElement('li')
+        var content = document.createTextNode(event.data)
+        message.appendChild(content)
+        messages.appendChild(message)
+      };
+      function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+      }
+    </script>
+  </body>
+</html>
+"""
+classConnectionManager:
+  def__init__(self):
+    self.active_connections: List[WebSocket] = []
+  async defconnect(self, websocket: WebSocket):
+    await websocket.accept()
+    self.active_connections.append(websocket)
+  defdisconnect(self, websocket: WebSocket):
+    self.active_connections.remove(websocket)
+  async defsend_personal_message(self, message: str, websocket: WebSocket):
+    await websocket.send_text(message)
+  async defbroadcast(self, message: str):
+    for connection in self.active_connections:
+      await connection.send_text(message)
+manager = ConnectionManager()
+@app.get("/")
+async defget():
+  return HTMLResponse(html)
+@app.websocket("/ws/{client_id}")
+async defwebsocket_endpoint(websocket: WebSocket, client_id: int):
+  await manager.connect(websocket)
+  try:
+    while True:
+      data = await websocket.receive_text()
+      await manager.send_personal_message(f"You wrote: {data}", websocket)
+      await manager.broadcast(f"Client #{client_id} says: {data}")
+  except WebSocketDisconnect:
+    manager.disconnect(websocket)
+    await manager.broadcast(f"Client #{client_id} left the chat")
+
+```
+
+To try it out:
+  * Open the app with several browser tabs.
+  * Write messages from them.
+  * Then close one of the tabs.
+
+
+That will raise the `WebSocketDisconnect` exception, and all the other clients will receive a message like:
+```
+Client #1596980209979 left the chat

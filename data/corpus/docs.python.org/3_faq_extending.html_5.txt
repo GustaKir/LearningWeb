@@ -1,0 +1,34 @@
+Title: Compiling Python Modules on Linux: Missing Files and Input Detection
+URL: https://docs.python.org/3/faq/extending.html
+Summary: This section discusses common issues when compiling Python modules on Linux, specifically regarding missing files. It advises installing 'python3-devel' on Red Hat and 'python3-dev' on Debian to resolve these issues. Additionally, it addresses how to differentiate between incomplete and invalid input when emulating the Python interactive interpreter.
+---
+
+```
+
+## [I want to compile a Python module on my Linux system, but some files are missing. Why?](https://docs.python.org/3/faq/extending.html#id16)[¶](https://docs.python.org/3/faq/extending.html#i-want-to-compile-a-python-module-on-my-linux-system-but-some-files-are-missing-why "Link to this heading")
+Most packaged versions of Python omit some files required for compiling Python extensions.
+For Red Hat, install the python3-devel RPM to get the necessary files.
+For Debian, run `apt-get install python3-dev`.
+## [How do I tell “incomplete input” from “invalid input”?](https://docs.python.org/3/faq/extending.html#id17)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-tell-incomplete-input-from-invalid-input "Link to this heading")
+Sometimes you want to emulate the Python interactive interpreter’s behavior, where it gives you a continuation prompt when the input is incomplete (e.g. you typed the start of an “if” statement or you didn’t close your parentheses or triple string quotes), but it gives you a syntax error message immediately when the input is invalid.
+In Python you can use the [`codeop`](https://docs.python.org/3/library/codeop.html#module-codeop "codeop: Compile \(possibly incomplete\) Python code.") module, which approximates the parser’s behavior sufficiently. IDLE uses this, for example.
+The easiest way to do it in C is to call [`PyRun_InteractiveLoop()`](https://docs.python.org/3/c-api/veryhigh.html#c.PyRun_InteractiveLoop "PyRun_InteractiveLoop") (perhaps in a separate thread) and let the Python interpreter handle the input for you. You can also set the [`PyOS_ReadlineFunctionPointer()`](https://docs.python.org/3/c-api/veryhigh.html#c.PyOS_ReadlineFunctionPointer "PyOS_ReadlineFunctionPointer") to point at your custom input function. See `Modules/readline.c` and `Parser/myreadline.c` for more hints.
+## [How do I find undefined g++ symbols __builtin_new or __pure_virtual?](https://docs.python.org/3/faq/extending.html#id18)[¶](https://docs.python.org/3/faq/extending.html#how-do-i-find-undefined-g-symbols-builtin-new-or-pure-virtual "Link to this heading")
+To dynamically load g++ extension modules, you must recompile Python, relink it using g++ (change LINKCC in the Python Modules Makefile), and link your extension module using g++ (e.g., `g++ -shared -o mymodule.so mymodule.o`).
+## [Can I create an object class with some methods implemented in C and others in Python (e.g. through inheritance)?](https://docs.python.org/3/faq/extending.html#id19)[¶](https://docs.python.org/3/faq/extending.html#can-i-create-an-object-class-with-some-methods-implemented-in-c-and-others-in-python-e-g-through-inheritance "Link to this heading")
+Yes, you can inherit from built-in classes such as [`int`](https://docs.python.org/3/library/functions.html#int "int"), [`list`](https://docs.python.org/3/library/stdtypes.html#list "list"), [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict"), etc.
+The Boost Python Library (BPL, <https://www.boost.org/libs/python/doc/index.html>) provides a way of doing this from C++ (i.e. you can inherit from an extension class written in C++ using the BPL).
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Extending/Embedding FAQ](https://docs.python.org/3/faq/extending.html)
+    * [Can I create my own functions in C?](https://docs.python.org/3/faq/extending.html#can-i-create-my-own-functions-in-c)
+    * [Can I create my own functions in C++?](https://docs.python.org/3/faq/extending.html#id1)
+    * [Writing C is hard; are there any alternatives?](https://docs.python.org/3/faq/extending.html#writing-c-is-hard-are-there-any-alternatives)
+    * [How can I execute arbitrary Python statements from C?](https://docs.python.org/3/faq/extending.html#how-can-i-execute-arbitrary-python-statements-from-c)
+    * [How can I evaluate an arbitrary Python expression from C?](https://docs.python.org/3/faq/extending.html#how-can-i-evaluate-an-arbitrary-python-expression-from-c)
+    * [How do I extract C values from a Python object?](https://docs.python.org/3/faq/extending.html#how-do-i-extract-c-values-from-a-python-object)
+    * [How do I use Py_BuildValue() to create a tuple of arbitrary length?](https://docs.python.org/3/faq/extending.html#how-do-i-use-py-buildvalue-to-create-a-tuple-of-arbitrary-length)
+    * [How do I call an object’s method from C?](https://docs.python.org/3/faq/extending.html#how-do-i-call-an-object-s-method-from-c)
+    * [How do I catch the output from PyErr_Print() (or anything that prints to stdout/stderr)?](https://docs.python.org/3/faq/extending.html#how-do-i-catch-the-output-from-pyerr-print-or-anything-that-prints-to-stdout-stderr)
+    * [How do I access a module written in Python from C?](https://docs.python.org/3/faq/extending.html#how-do-i-access-a-module-written-in-python-from-c)
+    * [How do I interface to C++ objects from Python?](https://docs.python.org/3/faq/extending.html#how-do-i-interface-to-c-objects-from-python)
+    * [I ad

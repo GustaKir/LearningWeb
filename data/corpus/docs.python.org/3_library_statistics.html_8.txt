@@ -1,0 +1,78 @@
+Title: Decile Cut Points and Covariance in Statistics Module
+URL: https://docs.python.org/3/library/statistics.html
+Summary: This section provides an example of calculating decile cut points using the `quantiles` function in Python's statistics module with empirically sampled data. It highlights changes made in version 3.8 and 3.13 concerning single data point inputs. Additionally, it introduces the `statistics.covariance` function, which computes the sample covariance between two lists of equal length, measuring their joint variability.
+---
+
+```
+# Decile cut points for empirically sampled data
+>>> data = [105, 129, 87, 86, 111, 111, 89, 81, 108, 92, 110,
+...     100, 75, 105, 103, 109, 76, 119, 99, 91, 103, 129,
+...     106, 101, 84, 111, 74, 87, 86, 103, 103, 106, 86,
+...     111, 75, 87, 102, 121, 111, 88, 89, 101, 106, 95,
+...     103, 107, 101, 81, 109, 104]
+>>> [round(q, 1) for q in quantiles(data, n=10)]
+[81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
+
+```
+
+Added in version 3.8.
+Changed in version 3.13: No longer raises an exception for an input with only a single data point. This allows quantile estimates to be built up one sample point at a time becoming gradually more refined with each new data point. 
+
+statistics.covariance(_x_ , _y_ , _/_)[¶](https://docs.python.org/3/library/statistics.html#statistics.covariance "Link to this definition")
+    
+Return the sample covariance of two inputs _x_ and _y_. Covariance is a measure of the joint variability of two inputs.
+Both inputs must be of the same length (no less than two), otherwise [`StatisticsError`](https://docs.python.org/3/library/statistics.html#statistics.StatisticsError "statistics.StatisticsError") is raised.
+Examples:
+>>>```
+>>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+>>> covariance(x, y)
+0.75
+>>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+>>> covariance(x, z)
+-7.5
+>>> covariance(z, x)
+-7.5
+
+```
+
+Added in version 3.10. 
+
+statistics.correlation(_x_ , _y_ , _/_ , _*_ , _method ='linear'_)[¶](https://docs.python.org/3/library/statistics.html#statistics.correlation "Link to this definition")
+    
+Return the [Pearson’s correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) for two inputs. Pearson’s correlation coefficient _r_ takes values between -1 and +1. It measures the strength and direction of a linear relationship.
+If _method_ is “ranked”, computes [Spearman’s rank correlation coefficient](https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient) for two inputs. The data is replaced by ranks. Ties are averaged so that equal values receive the same rank. The resulting coefficient measures the strength of a monotonic relationship.
+Spearman’s correlation coefficient is appropriate for ordinal data or for continuous data that doesn’t meet the linear proportion requirement for Pearson’s correlation coefficient.
+Both inputs must be of the same length (no less than two), and need not to be constant, otherwise [`StatisticsError`](https://docs.python.org/3/library/statistics.html#statistics.StatisticsError "statistics.StatisticsError") is raised.
+Example with [Kepler’s laws of planetary motion](https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion):
+>>>```
+>>> # Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune
+>>> orbital_period = [88, 225, 365, 687, 4331, 10_756, 30_687, 60_190]  # days
+>>> dist_from_sun = [58, 108, 150, 228, 778, 1_400, 2_900, 4_500] # million km
+>>> # Show that a perfect monotonic relationship exists
+>>> correlation(orbital_period, dist_from_sun, method='ranked')
+1.0
+>>> # Observe that a linear relationship is imperfect
+>>> round(correlation(orbital_period, dist_from_sun), 4)
+0.9882
+>>> # Demonstrate Kepler's third law: There is a linear correlation
+>>> # between the square of the orbital period and the cube of the
+>>> # distance from the sun.
+>>> period_squared = [p * p for p in orbital_period]
+>>> dist_cubed = [d * d * d for d in dist_from_sun]
+>>> round(correlation(period_squared, dist_cubed), 4)
+1.0
+
+```
+
+Added in version 3.10.
+Changed in version 3.12: Added support for Spearman’s rank correlation coefficient. 
+
+statistics.linear_regression(_x_ , _y_ , _/_ , _*_ , _proportional =False_)[¶](https://docs.python.org/3/library/statistics.html#statistics.linear_regression "Link to this definition")
+    
+Return the slope and intercept of [simple linear regression](https://en.wikipedia.org/wiki/Simple_linear_regression) parameters estimated using ordinary least squares. Simple linear regression describes the relationship between an independent variable _x_ and a dependent variable _y_ in terms of this linear function:
+> _y = slope * x + intercept + noise_
+where `slope` and `intercept` are the regression parameters that are estimated, and `noise` represents the variability of the data that was not explained by the linear regression (it is equal to the difference between predicted and actual values of the dependent variable).
+Both inputs must be of the same length (no less than two), and the independent variable _x_ cannot be constant; otherwise a [`StatisticsError`](https://docs.python.org/3/library/statistics.html#statistics.StatisticsError "statistics.StatisticsError") is raised.
+For example, we can use the [release dates of the Monty Python films](https://en.wikipedia.org/wiki/Monty_Python#Films) to predict the cumulative number of Monty Python films that would have been produced by 2019 assuming that they had kept the pace.
+>>>

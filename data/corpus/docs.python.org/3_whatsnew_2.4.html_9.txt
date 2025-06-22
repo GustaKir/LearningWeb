@@ -1,0 +1,42 @@
+Title: Python 2.4 Release Highlights
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: The document discusses PEP 328, which proposes using absolute imports with a leading '.' for relative imports, although this was not implemented in Python 2.4. Additionally, it mentions PEP 331, focusing on locale-independent float and string conversions, ensuring that numeric locales remain unchanged while allowing localization for other aspects.
+---
+
+```
+
+The PEP also proposes that all [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) statements be absolute imports, with a leading `.` character to indicate a relative import. This part of the PEP was not implemented for Python 2.4, but was completed for Python 2.5.
+See also 
+
+[**PEP 328**](https://peps.python.org/pep-0328/) - Imports: Multi-Line and Absolute/Relative
+    
+Written by Aahz. Multi-line imports were implemented by Dima Dorfman.
+## PEP 331: Locale-Independent Float/String Conversions[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-331-locale-independent-float-string-conversions "Link to this heading")
+The [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.") modules lets Python software select various conversions and display conventions that are localized to a particular country or language. However, the module was careful to not change the numeric locale because various functions in Python’s implementation required that the numeric locale remain set to the `'C'` locale. Often this was because the code was using the C library’s `atof()` function.
+Not setting the numeric locale caused trouble for extensions that used third-party C libraries, however, because they wouldn’t have the correct locale set. The motivating example was GTK+, whose user interface widgets weren’t displaying numbers in the current locale.
+The solution described in the PEP is to add three new functions to the Python API that perform ASCII-only conversions, ignoring the locale setting:
+  * `PyOS_ascii_strtod(str, ptr)` and `PyOS_ascii_atof(str, ptr)` both convert a string to a C double.
+  * `PyOS_ascii_formatd(buffer, buf_len, format, d)` converts a double to an ASCII string.
+
+
+The code for these functions came from the GLib library ([https://developer-old.gnome.org/glib/2.26/](http://web.archive.org/web/20210306104320/https://developer.gnome.org/glib/2.26/)), whose developers kindly relicensed the relevant functions and donated them to the Python Software Foundation. The [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.") module can now change the numeric locale, letting extensions such as GTK+ produce the correct results.
+See also 
+
+[**PEP 331**](https://peps.python.org/pep-0331/) - Locale-Independent Float/String Conversions
+    
+Written by Christian R. Reis, and implemented by Gustavo Carneiro.
+## Other Language Changes[¶](https://docs.python.org/3/whatsnew/2.4.html#other-language-changes "Link to this heading")
+Here are all of the changes that Python 2.4 makes to the core Python language.
+  * Decorators for functions and methods were added ([**PEP 318**](https://peps.python.org/pep-0318/)).
+  * Built-in [`set()`](https://docs.python.org/3/library/stdtypes.html#set "set") and [`frozenset()`](https://docs.python.org/3/library/stdtypes.html#frozenset "frozenset") types were added ([**PEP 218**](https://peps.python.org/pep-0218/)). Other new built-ins include the `reversed(seq)` function ([**PEP 322**](https://peps.python.org/pep-0322/)).
+  * Generator expressions were added ([**PEP 289**](https://peps.python.org/pep-0289/)).
+  * Certain numeric expressions no longer return values restricted to 32 or 64 bits ([**PEP 237**](https://peps.python.org/pep-0237/)).
+  * You can now put parentheses around the list of names in a `from module import names` statement ([**PEP 328**](https://peps.python.org/pep-0328/)).
+  * The [`dict.update()`](https://docs.python.org/3/library/stdtypes.html#dict.update "dict.update") method now accepts the same argument forms as the [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") constructor. This includes any mapping, any iterable of key/value pairs, and keyword arguments. (Contributed by Raymond Hettinger.)
+  * The string methods `ljust()`, `rjust()`, and `center()` now take an optional argument for specifying a fill character other than a space. (Contributed by Raymond Hettinger.)
+  * Strings also gained an `rsplit()` method that works like the `split()` method but splits from the end of the string. (Contributed by Sean Reifschneider.)
+>>>```
+>>> 'www.python.org'.split('.', 1)
+['www', 'python.org']
+'www.python.org'.rsplit('.', 1)
+['www.python', 'org']

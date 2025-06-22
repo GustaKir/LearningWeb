@@ -1,0 +1,25 @@
+Title: Python C API Changes and Fixes
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This chunk discusses several updates to the Python C API, including the addition of functions like `PyCode_GetVarnames()`, `PyCode_GetCellvars()`, and `PyCode_GetFreevars()` for accessing various variable types. It also addresses a fix for a `SystemError` related to `PyArg_ParseTupleAndKeywords()`, and mentions that Python reverts to C-style casts with C++ compilation, potentially causing compiler warnings.
+---
+
+thon/issues/94936): Added [`PyCode_GetVarnames()`](https://docs.python.org/3/c-api/code.html#c.PyCode_GetVarnames "PyCode_GetVarnames"), [`PyCode_GetCellvars()`](https://docs.python.org/3/c-api/code.html#c.PyCode_GetCellvars "PyCode_GetCellvars") and [`PyCode_GetFreevars()`](https://docs.python.org/3/c-api/code.html#c.PyCode_GetFreevars "PyCode_GetFreevars") for accessing `co_varnames`, `co_cellvars` and `co_freevars` respectively via the C API.
+  * [gh-94930](https://github.com/python/cpython/issues/94930): Fix `SystemError` raised when [`PyArg_ParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTupleAndKeywords "PyArg_ParseTupleAndKeywords") is used with `#` in `(...)` but without `PY_SSIZE_T_CLEAN` defined.
+  * [gh-94731](https://github.com/python/cpython/issues/94731): Python again uses C-style casts for most casting operations when compiled with C++. This may trigger compiler warnings, if they are enabled with e.g. `-Wold-style-cast` or `-Wzero-as-null-pointer-constant` options for `g++`.
+  * [gh-93937](https://github.com/python/cpython/issues/93937): The following frame functions and type are now directly available with `#include <Python.h>`, it’s no longer needed to add `#include <frameobject.h>`:
+    * [`PyFrame_Check()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_Check "PyFrame_Check")
+    * [`PyFrame_GetBack()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetBack "PyFrame_GetBack")
+    * [`PyFrame_GetBuiltins()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetBuiltins "PyFrame_GetBuiltins")
+    * [`PyFrame_GetGenerator()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetGenerator "PyFrame_GetGenerator")
+    * [`PyFrame_GetGlobals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetGlobals "PyFrame_GetGlobals")
+    * [`PyFrame_GetLasti()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLasti "PyFrame_GetLasti")
+    * [`PyFrame_GetLocals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLocals "PyFrame_GetLocals")
+    * [`PyFrame_Type`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_Type "PyFrame_Type")
+Patch by Victor Stinner.
+  * [gh-91321](https://github.com/python/cpython/issues/91321): Fix the compatibility of the Python C API with C++ older than C++11. Patch by Victor Stinner.
+  * [gh-91731](https://github.com/python/cpython/issues/91731): Avoid defining the `static_assert` when compiling with C++ 11, where this is a keyword and redefining it can lead to undefined behavior. Patch by Pablo Galindo
+  * [gh-89546](https://github.com/python/cpython/issues/89546): [`PyType_FromMetaclass()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromMetaclass "PyType_FromMetaclass") (and other `PyType_From*` functions) now check that offsets and the base class’s [`tp_basicsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_basicsize "PyTypeObject.tp_basicsize") fit in the new class’s `tp_basicsize`.
+  * [gh-93503](https://github.com/python/cpython/issues/93503): Add two new public functions to the public C-API, [`PyEval_SetProfileAllThreads()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetProfileAllThreads "PyEval_SetProfileAllThreads") and [`PyEval_SetTraceAllThreads()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTraceAllThreads "PyEval_SetTraceAllThreads"), that allow to set tracing and profiling functions in all running threads in addition to the calling one. Also, two analogous functions to the [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module ([`threading.setprofile_all_threads()`](https://docs.python.org/3/library/threading.html#threading.setprofile_all_threads "threading.setprofile_all_threads") and [`threading.settrace_all_threads()`](https://docs.python.org/3/library/threading.html#threading.settrace_all_threads "threading.settrace_all_threads")) that allow to do the same from Python. Patch by Pablo Galindo
+  * [gh-93442](https://github.com/python/cpython/issues/93442): Add C++ overloads for _Py_CAST_impl() to handle 0/NULL. This will allow C++ extensions that pass 0 or NULL to macros using _Py_CAST() to continue to compile.
+  * [gh-93466](https://github.com/python/cpython/issues/93466): Slot IDs in PyType_Spec may not be repeated. The documentation was updated to mention this. For some cases of repeated slots, PyType_FromSpec and related functions will now raise an exception.
+  * [gh-92898](https://github.com/python/cpython/issues/92898): Fix C++ compiler warnings when casting function arguments to `PyObject*`.

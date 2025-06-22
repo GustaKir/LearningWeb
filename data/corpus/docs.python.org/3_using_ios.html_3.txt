@@ -1,0 +1,44 @@
+Title: Using Python for iOS Development
+URL: https://docs.python.org/3/using/ios.html
+Summary: This section discusses the provision of shell script stubs for Xcode tools in Python's iOS framework. It emphasizes the importance of including these stubs in the bin folder to facilitate module compilation on iOS, along with a recommendation to use the latest stable release of Xcode for building iOS applications.
+---
+
+To avoid these problems, Python provided stubs for these tools. These stubs are shell script wrappers around the underingly `xcrun` tools, distributed in a `bin` folder distributed alongside the compiled iOS framework. These scripts are relocatable, and will always resolve to the appropriate local system paths. By including these scripts in the bin folder that accompanies a framework, the contents of the `sysconfig` module becomes useful for end-users to compile their own modules. When compiling third-party Python modules for iOS, you should ensure these stub binaries are on your path.
+## 7.2. Installing Python on iOS[¶](https://docs.python.org/3/using/ios.html#installing-python-on-ios "Link to this heading")
+### 7.2.1. Tools for building iOS apps[¶](https://docs.python.org/3/using/ios.html#tools-for-building-ios-apps "Link to this heading")
+Building for iOS requires the use of Apple’s Xcode tooling. It is strongly recommended that you use the most recent stable release of Xcode. This will require the use of the most (or second-most) recently released macOS version, as Apple does not maintain Xcode for older macOS versions. The Xcode Command Line Tools are not sufficient for iOS development; you need a _full_ Xcode install.
+If you want to run your code on the iOS simulator, you’ll also need to install an iOS Simulator Platform. You should be prompted to select an iOS Simulator Platform when you first run Xcode. Alternatively, you can add an iOS Simulator Platform by selecting from the Platforms tab of the Xcode Settings panel.
+### 7.2.2. Adding Python to an iOS project[¶](https://docs.python.org/3/using/ios.html#adding-python-to-an-ios-project "Link to this heading")
+Python can be added to any iOS project, using either Swift or Objective C. The following examples will use Objective C; if you are using Swift, you may find a library like [PythonKit](https://github.com/pvieito/PythonKit) to be helpful.
+To add Python to an iOS Xcode project:
+  1. Build or obtain a Python `XCFramework`. See the instructions in [iOS/README.rst](https://github.com/python/cpython/tree/3.13/iOS/README.rst) (in the CPython source distribution) for details on how to build a Python `XCFramework`. At a minimum, you will need a build that supports `arm64-apple-ios`, plus one of either `arm64-apple-ios-simulator` or `x86_64-apple-ios-simulator`.
+  2. Drag the `XCframework` into your iOS project. In the following instructions, we’ll assume you’ve dropped the `XCframework` into the root of your project; however, you can use any other location that you want by adjusting paths as needed.
+  3. Drag the `iOS/Resources/dylib-Info-template.plist` file into your project, and ensure it is associated with the app target.
+  4. Add your application code as a folder in your Xcode project. In the following instructions, we’ll assume that your user code is in a folder named `app` in the root of your project; you can use any other location by adjusting paths as needed. Ensure that this folder is associated with your app target.
+  5. Select the app target by selecting the root node of your Xcode project, then the target name in the sidebar that appears.
+  6. In the “General” settings, under “Frameworks, Libraries and Embedded Content”, add `Python.xcframework`, with “Embed & Sign” selected.
+  7. In the “Build Settings” tab, modify the following:
+     * Build Options
+       * User Script Sandboxing: No
+       * Enable Testability: Yes
+     * Search Paths
+       * Framework Search Paths: `$(PROJECT_DIR)`
+       * Header Search Paths: `"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers"`
+     * Apple Clang - Warnings - All languages
+       * Quoted Include In Framework Header: No
+  8. Add a build step that copies the Python standard library into your app. In the “Build Phases” tab, add a new “Run Script” build step _before_ the “Embed Frameworks” step, but _after_ the “Copy Bundle Resources” step. Name the step “Install Target Specific Python Standard Library”, disable the “Based on dependency analysis” checkbox, and set the script content to:
+```
+set-e
+mkdir-p"$CODESIGNING_FOLDER_PATH/python/lib"
+if["$EFFECTIVE_PLATFORM_NAME"="-iphonesimulator"];then
+echo"Installing Python modules for iOS Simulator"
+rsync-au--delete"$PROJECT_DIR/Python.xcframework/ios-arm64_x86_64-simulator/lib/""$CODESIGNING_FOLDER_PATH/python/lib/"
+else
+echo"Installing Python modules for iOS Device"
+rsync-au--delete"$PROJECT_DIR/Python.xcframework/ios-arm64/lib/""$CODESIGNING_FOLDER_PATH/python/lib/"
+fi
+
+```
+
+Note that the name of the simulator “slice” in the XCframework may be different, depending the CPU architectures your `XCFramework` supports.
+  9. Add a second build step that processes the binary extension modules in the standard library into “Framework” format. Add a “Run Script” build step _directly after_ the one you added in step 8, named “Prepare Python Binary Modules”. It should also have “Based on dependency analysis” unchecked, with the following script content:

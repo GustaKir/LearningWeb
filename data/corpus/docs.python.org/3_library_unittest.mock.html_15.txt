@@ -1,0 +1,48 @@
+Title: Attaching Mocks as Attributes in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section explains how to attach a mock as an attribute of another mock, creating a relationship where the child mock's calls are recorded in the parent's `method_calls` and `mock_calls` attributes. This setup is useful for configuration and call order assertions.
+---
+
+```
+
+### Attaching Mocks as Attributes[¶](https://docs.python.org/3/library/unittest.mock.html#attaching-mocks-as-attributes "Link to this heading")
+When you attach a mock as an attribute of another mock (or as the return value) it becomes a “child” of that mock. Calls to the child are recorded in the [`method_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.method_calls "unittest.mock.Mock.method_calls") and [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") attributes of the parent. This is useful for configuring child mocks and then attaching them to the parent, or for attaching mocks to a parent that records all calls to the children and allows you to make assertions about the order of calls between mocks:
+>>>```
+>>> parent = MagicMock()
+>>> child1 = MagicMock(return_value=None)
+>>> child2 = MagicMock(return_value=None)
+>>> parent.child1 = child1
+>>> parent.child2 = child2
+>>> child1(1)
+>>> child2(2)
+>>> parent.mock_calls
+[call.child1(1), call.child2(2)]
+
+```
+
+The exception to this is if the mock has a name. This allows you to prevent the “parenting” if for some reason you don’t want it to happen.
+>>>```
+>>> mock = MagicMock()
+>>> not_a_child = MagicMock(name='not-a-child')
+>>> mock.attribute = not_a_child
+>>> mock.attribute()
+<MagicMock name='not-a-child()' id='...'>
+>>> mock.mock_calls
+[]
+
+```
+
+Mocks created for you by [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") are automatically given names. To attach mocks that have names to a parent you use the [`attach_mock()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.attach_mock "unittest.mock.Mock.attach_mock") method:
+>>>```
+>>> thing1 = object()
+>>> thing2 = object()
+>>> parent = MagicMock()
+>>> with patch('__main__.thing1', return_value=None) as child1:
+...   with patch('__main__.thing2', return_value=None) as child2:
+...     parent.attach_mock(child1, 'child1')
+...     parent.attach_mock(child2, 'child2')
+...     child1('one')
+...     child2('two')
+...
+>>> parent.mock_calls
+[call.child1('one'), call.child2('two')]

@@ -1,0 +1,28 @@
+Title: Generator Methods in Python 2.5
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: Python 2.5 introduces new methods for generators: `throw()` to raise exceptions within the generator, and `close()` to terminate iteration by raising a `GeneratorExit` exception. Additionally, the `yield` expression typically returns `None`, so it's important to verify this when using its value.
+---
+
+```
+
+[`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) will usually return [`None`](https://docs.python.org/3/library/constants.html#None "None"), so you should always check for this case. Don’t just use its value in expressions unless you’re sure that the `send()` method will be the only method used to resume your generator function.
+In addition to `send()`, there are two other new methods on generators:
+  * `throw(type, value=None, traceback=None)` is used to raise an exception inside the generator; the exception is raised by the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) expression where the generator’s execution is paused.
+  * `close()` raises a new [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") exception inside the generator to terminate the iteration. On receiving this exception, the generator’s code must either raise [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") or [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"). Catching the [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") exception and returning a value is illegal and will trigger a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError"); if the function raises some other exception, that exception is propagated to the caller. `close()` will also be called by Python’s garbage collector when the generator is garbage-collected.
+If you need to run cleanup code when a [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") occurs, I suggest using a `try: ... finally:` suite instead of catching [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit").
+
+
+The cumulative effect of these changes is to turn generators from one-way producers of information into both producers and consumers.
+Generators also become _coroutines_ , a more generalized form of subroutines. Subroutines are entered at one point and exited at another point (the top of the function, and a [`return`](https://docs.python.org/3/reference/simple_stmts.html#return) statement), but coroutines can be entered, exited, and resumed at many different points (the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) statements). We’ll have to figure out patterns for using coroutines effectively in Python.
+The addition of the `close()` method has one side effect that isn’t obvious. `close()` is called when a generator is garbage-collected, so this means the generator’s code gets one last chance to run before the generator is destroyed. This last chance means that `try...finally` statements in generators can now be guaranteed to work; the [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) clause will now always get a chance to run. The syntactic restriction that you couldn’t mix [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) statements with a `try...finally` suite has therefore been removed. This seems like a minor bit of language trivia, but using generators and `try...finally` is actually necessary in order to implement the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement described by [**PEP 343**](https://peps.python.org/pep-0343/). I’ll look at this new statement in the following section.
+Another even more esoteric effect of this change: previously, the `gi_frame` attribute of a generator was always a frame object. It’s now possible for `gi_frame` to be `None` once the generator has been exhausted.
+See also 
+
+[**PEP 342**](https://peps.python.org/pep-0342/) - Coroutines via Enhanced Generators
+    
+PEP written by Guido van Rossum and Phillip J. Eby; implemented by Phillip J. Eby. Includes examples of some fancier uses of generators as coroutines.
+Earlier versions of these features were proposed in [**PEP 288**](https://peps.python.org/pep-0288/) by Raymond Hettinger and [**PEP 325**](https://peps.python.org/pep-0325/) by Samuele Pedroni. 
+
+<https://en.wikipedia.org/wiki/Coroutine>
+    
+The Wikipedia entry for coroutines.

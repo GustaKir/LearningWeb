@@ -1,0 +1,59 @@
+Title: sys.monitoring.register_callback Function
+URL: https://docs.python.org/3/library/sys.monitoring.html
+Summary: The `register_callback` function registers a callable for a specified event associated with a tool ID. If a previous callback exists for the same tool ID and event, it will be unregistered and returned.
+---
+
+sys.monitoring.register_callback(_tool_id :[int](https://docs.python.org/3/library/functions.html#int "int")_, _event :[int](https://docs.python.org/3/library/functions.html#int "int")_, _func :[Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable "collections.abc.Callable")|[None](https://docs.python.org/3/library/constants.html#None "None")_, _/_) → [Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable "collections.abc.Callable")|[None](https://docs.python.org/3/library/constants.html#None "None")[¶](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.register_callback "Link to this definition")
+    
+Registers the callable _func_ for the _event_ with the given _tool_id_
+If another callback was registered for the given _tool_id_ and _event_ , it is unregistered and returned. Otherwise [`register_callback()`](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.register_callback "sys.monitoring.register_callback") returns `None`.
+Functions can be unregistered by calling `sys.monitoring.register_callback(tool_id, event, None)`.
+Callback functions can be registered and unregistered at any time.
+Registering or unregistering a callback function will generate a [`sys.audit()`](https://docs.python.org/3/library/sys.html#sys.audit "sys.audit") event.
+### Callback function arguments[¶](https://docs.python.org/3/library/sys.monitoring.html#callback-function-arguments "Link to this heading") 
+
+sys.monitoring.MISSING[¶](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.MISSING "Link to this definition")
+    
+A special value that is passed to a callback function to indicate that there are no arguments to the call.
+When an active event occurs, the registered callback function is called. Different events will provide the callback function with different arguments, as follows:
+  * [`PY_START`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_START) and [`PY_RESUME`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_RESUME):
+```
+func(code: CodeType, instruction_offset: int) -> DISABLE | Any
+
+```
+
+  * [`PY_RETURN`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_RETURN) and [`PY_YIELD`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_YIELD):
+```
+func(code: CodeType, instruction_offset: int, retval: object) -> DISABLE | Any
+
+```
+
+  * [`CALL`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-CALL), [`C_RAISE`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-C_RAISE) and [`C_RETURN`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-C_RETURN):
+```
+func(code: CodeType, instruction_offset: int, callable: object, arg0: object | MISSING) -> DISABLE | Any
+
+```
+
+If there are no arguments, _arg0_ is set to [`sys.monitoring.MISSING`](https://docs.python.org/3/library/sys.monitoring.html#sys.monitoring.MISSING "sys.monitoring.MISSING").
+  * [`RAISE`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-RAISE), [`RERAISE`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-RERAISE), [`EXCEPTION_HANDLED`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-EXCEPTION_HANDLED), [`PY_UNWIND`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_UNWIND), [`PY_THROW`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-PY_THROW) and [`STOP_ITERATION`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-STOP_ITERATION):
+```
+func(code: CodeType, instruction_offset: int, exception: BaseException) -> DISABLE | Any
+
+```
+
+  * [`LINE`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-LINE):
+```
+func(code: CodeType, line_number: int) -> DISABLE | Any
+
+```
+
+  * [`BRANCH`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-BRANCH) and [`JUMP`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-JUMP):
+```
+func(code: CodeType, instruction_offset: int, destination_offset: int) -> DISABLE | Any
+
+```
+
+Note that the _destination_offset_ is where the code will next execute. For an untaken branch this will be the offset of the instruction following the branch.
+  * [`INSTRUCTION`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-INSTRUCTION):
+```
+func(code: CodeType, instruction_offset: int) -> DISABLE | Any

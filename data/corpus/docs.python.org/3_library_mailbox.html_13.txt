@@ -1,0 +1,40 @@
+Title: mailbox.Message Class in Python
+URL: https://docs.python.org/3/library/mailbox.html
+Summary: The `mailbox.Message` class is a subclass of the `email.message.Message` module, designed to handle mailbox-specific functionality. When instantiated, it can be initialized with a message or created in an empty state, with support for RFC 2822 formatted input.
+---
+
+_class_ mailbox.Message(_message =None_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Message "Link to this definition")
+    
+A subclass of the [`email.message`](https://docs.python.org/3/library/email.message.html#module-email.message "email.message: The base class representing email messages.") module’s [`Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message"). Subclasses of `mailbox.Message` add mailbox-format-specific state and behavior.
+If _message_ is omitted, the new instance is created in a default, empty state. If _message_ is an [`email.message.Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message") instance, its contents are copied; furthermore, any format-specific information is converted insofar as possible if _message_ is a `Message` instance. If _message_ is a string, a byte string, or a file, it should contain an [**RFC 2822**](https://datatracker.ietf.org/doc/html/rfc2822.html)-compliant message, which is read and parsed. Files should be open in binary mode, but text mode files are accepted for backward compatibility.
+The format-specific state and behaviors offered by subclasses vary, but in general it is only the properties that are not specific to a particular mailbox that are supported (although presumably the properties are specific to a particular mailbox format). For example, file offsets for single-file mailbox formats and file names for directory-based mailbox formats are not retained, because they are only applicable to the original mailbox. But state such as whether a message has been read by the user or marked as important is retained, because it applies to the message itself.
+There is no requirement that `Message` instances be used to represent messages retrieved using [`Mailbox`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "mailbox.Mailbox") instances. In some situations, the time and memory required to generate `Message` representations might not be acceptable. For such situations, `Mailbox` instances also offer string and file-like representations, and a custom message factory may be specified when a `Mailbox` instance is initialized.
+### `MaildirMessage` objects[¶](https://docs.python.org/3/library/mailbox.html#maildirmessage-objects "Link to this heading") 
+
+_class_ mailbox.MaildirMessage(_message =None_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MaildirMessage "Link to this definition")
+    
+A message with Maildir-specific behaviors. Parameter _message_ has the same meaning as with the [`Message`](https://docs.python.org/3/library/mailbox.html#mailbox.Message "mailbox.Message") constructor.
+Typically, a mail user agent application moves all of the messages in the `new` subdirectory to the `cur` subdirectory after the first time the user opens and closes the mailbox, recording that the messages are old whether or not they’ve actually been read. Each message in `cur` has an “info” section added to its file name to store information about its state. (Some mail readers may also add an “info” section to messages in `new`.) The “info” section may take one of two forms: it may contain “2,” followed by a list of standardized flags (e.g., “2,FR”) or it may contain “1,” followed by so-called experimental information. Standard flags for Maildir messages are as follows:
+Flag | Meaning | Explanation  
+---|---|---  
+D | Draft | Under composition  
+F | Flagged | Marked as important  
+P | Passed | Forwarded, resent, or bounced  
+R | Replied | Replied to  
+S | Seen | Read  
+T | Trashed | Marked for subsequent deletion  
+`MaildirMessage` instances offer the following methods: 
+
+get_subdir()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MaildirMessage.get_subdir "Link to this definition")
+    
+Return either “new” (if the message should be stored in the `new` subdirectory) or “cur” (if the message should be stored in the `cur` subdirectory).
+Note
+A message is typically moved from `new` to `cur` after its mailbox has been accessed, whether or not the message has been read. A message `msg` has been read if `"S" in msg.get_flags()` is `True`. 
+
+set_subdir(_subdir_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MaildirMessage.set_subdir "Link to this definition")
+    
+Set the subdirectory the message should be stored in. Parameter _subdir_ must be either “new” or “cur”. 
+
+get_flags()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MaildirMessage.get_flags "Link to this definition")
+    
+Return a string specifying the flags that are currently set. If the message complies with the standard Maildir format, the result is the concatenation in alphabetical order of zero or one occurrence of each of `'D'`, `'F'`, `'P'`, `'R'`, `'S'`, and `'T'`. The empty string is returned if no flags are set or if “info” contains experimental semantics.

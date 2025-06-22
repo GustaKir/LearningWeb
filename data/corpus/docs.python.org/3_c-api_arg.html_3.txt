@@ -1,0 +1,30 @@
+Title: C API Argument Parsing for Bytes and Bytearray
+URL: https://docs.python.org/3/c-api/arg.html
+Summary: This section describes the usage of `S` and `Y` argument parsing in Python's C API. The `S` code requires a `bytes` object, raising a `TypeError` if not, while the `Y` code requires a `bytearray`, also raising a `TypeError` if the object does not match.
+---
+
+`S` ([`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes")) [PyBytesObject *]
+    
+Requires that the Python object is a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object, without attempting any conversion. Raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if the object is not a bytes object. The C variable may also be declared as [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*. 
+
+`Y` ([`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray")) [PyByteArrayObject *]
+    
+Requires that the Python object is a [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") object, without attempting any conversion. Raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if the object is not a [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") object. The C variable may also be declared as [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*. 
+
+`U` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str")) [PyObject *]
+    
+Requires that the Python object is a Unicode object, without attempting any conversion. Raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if the object is not a Unicode object. The C variable may also be declared as [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*. 
+
+`w*` (read-write [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object)) [Py_buffer]
+    
+This format accepts any object which implements the read-write buffer interface. It fills a [`Py_buffer`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer") structure provided by the caller. The buffer may contain embedded null bytes. The caller have to call [`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release") when it is done with the buffer. 
+
+`es` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str")) [const char *encoding, char **buffer]
+    
+This variant on `s` is used for encoding Unicode into a character buffer. It only works for encoded data without embedded NUL bytes.
+This format requires two arguments. The first is only used as input, and must be a constchar* which points to the name of an encoding as a NUL-terminated string, or `NULL`, in which case `'utf-8'` encoding is used. An exception is raised if the named encoding is not known to Python. The second argument must be a char**; the value of the pointer it references will be set to a buffer with the contents of the argument text. The text will be encoded in the encoding specified by the first argument.
+[`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") will allocate a buffer of the needed size, copy the encoded data into this buffer and adjust _*buffer_ to reference the newly allocated storage. The caller is responsible for calling [`PyMem_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Free "PyMem_Free") to free the allocated buffer after use. 
+
+`et` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") or [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray")) [const char *encoding, char **buffer]
+    
+Same as `es` except that byte string objects are passed through without recoding them. Instead, the implementation assumes that the byte string object uses the encoding passed in as parameter.

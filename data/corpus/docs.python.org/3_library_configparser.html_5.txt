@@ -1,0 +1,49 @@
+Title: Behavior of DEFAULTSECT in configparser
+URL: https://docs.python.org/3/library/configparser.html
+Summary: The DEFAULTSECT values in configparser cannot be deleted, meaning that even after calling `.clear()` on a section, default values may still appear. Attempts to delete default values result in KeyError, while the DEFAULTSECT itself cannot be removed from the parser, as trying to delete it raises ValueError. Additionally, the `parser.get()` method's second argument is not a fallback value, ensuring compatibility with both mapping protocol and the classic API.
+---
+
+```
+
+  * All sections include `DEFAULTSECT` values as well which means that `.clear()` on a section may not leave the section visibly empty. This is because default values cannot be deleted from the section (because technically they are not there). If they are overridden in the section, deleting causes the default value to be visible again. Trying to delete a default value causes a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError").
+  * `DEFAULTSECT` cannot be removed from the parser:
+    * trying to delete it raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"),
+    * `parser.clear()` leaves it intact,
+    * `parser.popitem()` never returns it.
+  * `parser.get(section, option, **kwargs)` - the second argument is **not** a fallback value. Note however that the section-level `get()` methods are compatible both with the mapping protocol and the classic configparser API.
+  * `parser.items()` is compatible with the mapping protocol (returns a list of _section_name_ , _section_proxy_ pairs including the DEFAULTSECT). However, this method can also be invoked with arguments: `parser.items(section, raw, vars)`. The latter call returns a list of _option_ , _value_ pairs for a specified `section`, with all interpolations expanded (unless `raw=True` is provided).
+
+
+The mapping protocol is implemented on top of the existing legacy API so that subclasses overriding the original interface still should have mappings working as expected.
+## Customizing Parser Behaviour[¶](https://docs.python.org/3/library/configparser.html#customizing-parser-behaviour "Link to this heading")
+There are nearly as many INI format variants as there are applications using it. [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") goes a long way to provide support for the largest sensible set of INI styles available. The default functionality is mainly dictated by historical background and it’s very likely that you will want to customize some of the features.
+The most common way to change the way a specific config parser works is to use the `__init__()` options:
+  * _defaults_ , default value: `None`
+This option accepts a dictionary of key-value pairs which will be initially put in the `DEFAULT` section. This makes for an elegant way to support concise configuration files that don’t specify values which are the same as the documented default.
+Hint: if you want to specify default values for a specific section, use [`read_dict()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.read_dict "configparser.ConfigParser.read_dict") before you read the actual file.
+  * _dict_type_ , default value: [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict")
+This option has a major impact on how the mapping protocol will behave and how the written configuration files look. With the standard dictionary, every section is stored in the order they were added to the parser. Same goes for options within sections.
+An alternative dictionary type can be used for example to sort sections and options on write-back.
+Please note: there are ways to add a set of key-value pairs in a single operation. When you use a regular dictionary in those operations, the order of the keys will be ordered. For example:
+>>>```
+>>> parser = configparser.ConfigParser()
+>>> parser.read_dict({'section1': {'key1': 'value1',
+...                 'key2': 'value2',
+...                 'key3': 'value3'},
+...          'section2': {'keyA': 'valueA',
+...                 'keyB': 'valueB',
+...                 'keyC': 'valueC'},
+...          'section3': {'foo': 'x',
+...                 'bar': 'y',
+...                 'baz': 'z'}
+... })
+>>> parser.sections()
+['section1', 'section2', 'section3']
+>>> [option for option in parser['section3']]
+['foo', 'bar', 'baz']
+
+```
+
+  * _allow_no_value_ , default value: `False`
+Some configuration files are known to include settings without values, but which otherwise conform to the syntax supported by [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser."). The _allow_no_value_ parameter to the constructor can be used to indicate that such values should be accepted:
+>>>

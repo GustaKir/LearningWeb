@@ -1,0 +1,85 @@
+Title: Understanding 'self' and Object Instance Checking in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section explains the concept of 'self' as the conventional name for the first argument of a method, describing how it is used in method calls. It also discusses how to check if an object is an instance of a specified class or its subclass using the `isinstance()` function.
+---
+
+```
+
+### [What is self?](https://docs.python.org/3/faq/programming.html#id57)[¶](https://docs.python.org/3/faq/programming.html#what-is-self "Link to this heading")
+Self is merely a conventional name for the first argument of a method. A method defined as `meth(self, a, b, c)` should be called as `x.meth(a, b, c)` for some instance `x` of the class in which the definition occurs; the called method will think it is called as `meth(x, a, b, c)`.
+See also [Why must ‘self’ be used explicitly in method definitions and calls?](https://docs.python.org/3/faq/design.html#why-self).
+### [How do I check if an object is an instance of a given class or of a subclass of it?](https://docs.python.org/3/faq/programming.html#id58)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-check-if-an-object-is-an-instance-of-a-given-class-or-of-a-subclass-of-it "Link to this heading")
+Use the built-in function [`isinstance(obj, cls)`](https://docs.python.org/3/library/functions.html#isinstance "isinstance"). You can check if an object is an instance of any of a number of classes by providing a tuple instead of a single class, e.g. `isinstance(obj, (class1, class2, ...))`, and can also check whether an object is one of Python’s built-in types, e.g. `isinstance(obj, str)` or `isinstance(obj, (int, float, complex))`.
+Note that [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") also checks for virtual inheritance from an [abstract base class](https://docs.python.org/3/glossary.html#term-abstract-base-class). So, the test will return `True` for a registered class even if hasn’t directly or indirectly inherited from it. To test for “true inheritance”, scan the [MRO](https://docs.python.org/3/glossary.html#term-MRO) of the class:
+```
+fromcollections.abcimport Mapping
+classP:
+   pass
+classC(P):
+  pass
+Mapping.register(P)
+
+```
+
+>>>```
+>>> c = C()
+>>> isinstance(c, C)    # direct
+True
+>>> isinstance(c, P)    # indirect
+True
+>>> isinstance(c, Mapping) # virtual
+True
+# Actual inheritance chain
+>>> type(c).__mro__
+(<class 'C'>, <class 'P'>, <class 'object'>)
+# Test for "true inheritance"
+>>> Mapping in type(c).__mro__
+False
+
+```
+
+Note that most programs do not use [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") on user-defined classes very often. If you are developing the classes yourself, a more proper object-oriented style is to define methods on the classes that encapsulate a particular behaviour, instead of checking the object’s class and doing a different thing based on what class it is. For example, if you have a function that does something:
+```
+defsearch(obj):
+  if isinstance(obj, Mailbox):
+    ... # code to search a mailbox
+  elif isinstance(obj, Document):
+    ... # code to search a document
+  elif ...
+
+```
+
+A better approach is to define a `search()` method on all the classes and just call it:
+```
+classMailbox:
+  defsearch(self):
+    ... # code to search a mailbox
+classDocument:
+  defsearch(self):
+    ... # code to search a document
+obj.search()
+
+```
+
+### [What is delegation?](https://docs.python.org/3/faq/programming.html#id59)[¶](https://docs.python.org/3/faq/programming.html#what-is-delegation "Link to this heading")
+Delegation is an object oriented technique (also called a design pattern). Let’s say you have an object `x` and want to change the behaviour of just one of its methods. You can create a new class that provides a new implementation of the method you’re interested in changing and delegates all other methods to the corresponding method of `x`.
+Python programmers can easily implement delegation. For example, the following class implements a class that behaves like a file but converts all written data to uppercase:
+```
+classUpperOut:
+  def__init__(self, outfile):
+    self._outfile = outfile
+  defwrite(self, s):
+    self._outfile.write(s.upper())
+  def__getattr__(self, name):
+    return getattr(self._outfile, name)
+
+```
+
+Here the `UpperOut` class redefines the `write()` method to convert the argument string to uppercase before calling the underlying `self._outfile.write()` method. All other methods are delegated to the underlying `self._outfile` object. The delegation is accomplished via the [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") method; consult [the language reference](https://docs.python.org/3/reference/datamodel.html#attribute-access) for more information about controlling attribute access.
+Note that for more general cases delegation can get trickier. When attributes must be set as well as retrieved, the class must define a [`__setattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__setattr__ "object.__setattr__") method too, and it must do so carefully. The basic implementation of `__setattr__()` is roughly equivalent to the following:
+```
+classX:
+  ...
+  def__setattr__(self, name, value):
+    self.__dict__[name] = value
+  ...

@@ -1,0 +1,155 @@
+Title: Body - Multiple Parameters
+URL: https://fastapi.tiangolo.com/tutorial/body-multiple-params/
+Summary: This section of the FastAPI tutorial covers how to use multiple parameters in request bodies. It includes mixing path, query, and body parameters, handling multiple body parameters, and embedding single parameters. Additionally, it provides a recap of key concepts related to body parameter usage.
+---
+
+Table of contents 
+  * [ Mix `Path`, `Query` and body parameters  ](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#mix-path-query-and-body-parameters)
+  * [ Multiple body parameters  ](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#multiple-body-parameters)
+  * [ Singular values in body  ](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#singular-values-in-body)
+  * [ Multiple body params and query  ](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#multiple-body-params-and-query)
+  * [ Embed a single body parameter  ](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#embed-a-single-body-parameter)
+  * [ Recap  ](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#recap)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+
+
+# Body - Multiple Parameters[¶](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#body-multiple-parameters "Permanent link")
+Now that we have seen how to use `Path` and `Query`, let's see more advanced uses of request body declarations.
+## Mix `Path`, `Query` and body parameters[¶](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#mix-path-query-and-body-parameters "Permanent link")
+First, of course, you can mix `Path`, `Query` and request body parameter declarations freely and **FastAPI** will know what to do.
+And you can also declare body parameters as optional, by setting the default to `None`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Path
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
+  q: str | None = None,
+  item: Item | None = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  if item:
+    results.update({"item": item})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_2_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_2_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_2_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Path
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
+  q: Union[str, None] = None,
+  item: Union[Item, None] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  if item:
+    results.update({"item": item})
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Path
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
+  q: Union[str, None] = None,
+  item: Union[Item, None] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  if item:
+    results.update({"item": item})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Path
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int = Path(title="The ID of the item to get", ge=0, le=1000),
+  q: str | None = None,
+  item: Item | None = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  if item:
+    results.update({"item": item})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Path
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int = Path(title="The ID of the item to get", ge=0, le=1000),
+  q: Union[str, None] = None,
+  item: Union[Item, None] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  if item:
+    results.update({"item": item})
+  return results

@@ -1,0 +1,49 @@
+Title: Convenience Functions in xmlrpc.client
+URL: https://docs.python.org/3/library/xmlrpc.client.html
+Summary: The `xmlrpc.client.dumps` function is used to convert parameters into an XML-RPC request or response. It accepts arguments like method name, method response flag, encoding, and a flag to allow None values. If responding, it requires a single value in params. The default encoding is UTF-8.
+---
+
+```
+
+## Convenience Functions[¶](https://docs.python.org/3/library/xmlrpc.client.html#convenience-functions "Link to this heading") 
+
+xmlrpc.client.dumps(_params_ , _methodname =None_, _methodresponse =None_, _encoding =None_, _allow_none =False_)[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.dumps "Link to this definition")
+    
+Convert _params_ into an XML-RPC request. or into a response if _methodresponse_ is true. _params_ can be either a tuple of arguments or an instance of the [`Fault`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "xmlrpc.client.Fault") exception class. If _methodresponse_ is true, only a single value can be returned, meaning that _params_ must be of length 1. _encoding_ , if supplied, is the encoding to use in the generated XML; the default is UTF-8. Python’s [`None`](https://docs.python.org/3/library/constants.html#None "None") value cannot be used in standard XML-RPC; to allow using it via an extension, provide a true value for _allow_none_. 
+
+xmlrpc.client.loads(_data_ , _use_datetime =False_, _use_builtin_types =False_)[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.loads "Link to this definition")
+    
+Convert an XML-RPC request or response into Python objects, a `(params, methodname)`. _params_ is a tuple of argument; _methodname_ is a string, or `None` if no method name is present in the packet. If the XML-RPC packet represents a fault condition, this function will raise a [`Fault`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "xmlrpc.client.Fault") exception. The _use_builtin_types_ flag can be used to cause date/time values to be presented as [`datetime.datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") objects and binary data to be presented as [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") objects; this flag is false by default.
+The obsolete _use_datetime_ flag is similar to _use_builtin_types_ but it applies only to date/time values.
+Changed in version 3.3: The _use_builtin_types_ flag was added.
+## Example of Client Usage[¶](https://docs.python.org/3/library/xmlrpc.client.html#example-of-client-usage "Link to this heading")
+```
+# simple test program (from the XML-RPC specification)
+fromxmlrpc.clientimport ServerProxy, Error
+# server = ServerProxy("http://localhost:8000") # local server
+with ServerProxy("http://betty.userland.com") as proxy:
+  print(proxy)
+  try:
+    print(proxy.examples.getStateName(41))
+  except Error as v:
+    print("ERROR", v)
+
+```
+
+To access an XML-RPC server through a HTTP proxy, you need to define a custom transport. The following example shows how:
+```
+importhttp.client
+importxmlrpc.client
+classProxiedTransport(xmlrpc.client.Transport):
+  defset_proxy(self, host, port=None, headers=None):
+    self.proxy = host, port
+    self.proxy_headers = headers
+  defmake_connection(self, host):
+    connection = http.client.HTTPConnection(*self.proxy)
+    connection.set_tunnel(host, headers=self.proxy_headers)
+    self._connection = host, connection
+    return connection
+transport = ProxiedTransport()
+transport.set_proxy('proxy-server', 8080)
+server = xmlrpc.client.ServerProxy('http://betty.userland.com', transport=transport)
+print(server.examples.getStateName(41))

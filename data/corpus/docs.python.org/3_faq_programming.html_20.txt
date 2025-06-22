@@ -1,0 +1,105 @@
+Title: Understanding Object Identity in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section explains the use of the `id()` function to determine the identity of integer objects in Python. It highlights the importance of ensuring an object's existence when examining its identity. The `is` operator is introduced as a method for testing object identity, emphasizing that it always returns `True` for the same object and is typically faster than equality tests.
+---
+
+```
+
+The two ids belong to different integer objects that are created before, and deleted immediately after execution of the `id()` call. To be sure that objects whose id you want to examine are still alive, create another reference to the object:
+>>>```
+>>> a = 1000; b = 2000
+>>> id(a)
+13901272
+>>> id(b)
+13891296
+
+```
+
+### [When can I rely on identity tests with the _is_ operator?](https://docs.python.org/3/faq/programming.html#id68)[¶](https://docs.python.org/3/faq/programming.html#when-can-i-rely-on-identity-tests-with-the-is-operator "Link to this heading")
+The `is` operator tests for object identity. The test `a is b` is equivalent to `id(a) == id(b)`.
+The most important property of an identity test is that an object is always identical to itself, `a is a` always returns `True`. Identity tests are usually faster than equality tests. And unlike equality tests, identity tests are guaranteed to return a boolean `True` or `False`.
+However, identity tests can _only_ be substituted for equality tests when object identity is assured. Generally, there are three circumstances where identity is guaranteed:
+  1. Assignments create new names but do not change object identity. After the assignment `new = old`, it is guaranteed that `new is old`.
+  2. Putting an object in a container that stores object references does not change object identity. After the list assignment `s[0] = x`, it is guaranteed that `s[0] is x`.
+  3. If an object is a singleton, it means that only one instance of that object can exist. After the assignments `a = None` and `b = None`, it is guaranteed that `a is b` because `None` is a singleton.
+
+
+In most other circumstances, identity tests are inadvisable and equality tests are preferred. In particular, identity tests should not be used to check constants such as [`int`](https://docs.python.org/3/library/functions.html#int "int") and [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") which aren’t guaranteed to be singletons:
+>>>```
+>>> a = 1000
+>>> b = 500
+>>> c = b + 500
+>>> a is c
+False
+>>> a = 'Python'
+>>> b = 'Py'
+>>> c = b + 'thon'
+>>> a is c
+False
+
+```
+
+Likewise, new instances of mutable containers are never identical:
+>>>```
+>>> a = []
+>>> b = []
+>>> a is b
+False
+
+```
+
+In the standard library code, you will see several common patterns for correctly using identity tests:
+  1. As recommended by [**PEP 8**](https://peps.python.org/pep-0008/), an identity test is the preferred way to check for `None`. This reads like plain English in code and avoids confusion with other objects that may have boolean values that evaluate to false.
+  2. Detecting optional arguments can be tricky when `None` is a valid input value. In those situations, you can create a singleton sentinel object guaranteed to be distinct from other objects. For example, here is how to implement a method that behaves like [`dict.pop()`](https://docs.python.org/3/library/stdtypes.html#dict.pop "dict.pop"):
+```
+_sentinel = object()
+defpop(self, key, default=_sentinel):
+  if key in self:
+    value = self[key]
+    del self[key]
+    return value
+  if default is _sentinel:
+    raise KeyError(key)
+  return default
+
+```
+
+  3. Container implementations sometimes need to augment equality tests with identity tests. This prevents the code from being confused by objects such as `float('NaN')` that are not equal to themselves.
+
+
+For example, here is the implementation of `collections.abc.Sequence.__contains__()`:
+```
+def__contains__(self, value):
+  for v in self:
+    if v is value or v == value:
+      return True
+  return False
+
+```
+
+### [How can a subclass control what data is stored in an immutable instance?](https://docs.python.org/3/faq/programming.html#id69)[¶](https://docs.python.org/3/faq/programming.html#how-can-a-subclass-control-what-data-is-stored-in-an-immutable-instance "Link to this heading")
+When subclassing an immutable type, override the [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method instead of the [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") method. The latter only runs _after_ an instance is created, which is too late to alter data in an immutable instance.
+All of these immutable classes have a different signature than their parent class:
+```
+fromdatetimeimport date
+classFirstOfMonthDate(date):
+  "Always choose the first day of the month"
+  def__new__(cls, year, month, day):
+    return super().__new__(cls, year, month, 1)
+classNamedInt(int):
+  "Allow text names for some numbers"
+  xlat = {'zero': 0, 'one': 1, 'ten': 10}
+  def__new__(cls, value):
+    value = cls.xlat.get(value, value)
+    return super().__new__(cls, value)
+classTitleStr(str):
+  "Convert str to name suitable for a URL path"
+  def__new__(cls, s):
+    s = s.lower().replace(' ', '-')
+    s = ''.join([c for c in s if c.isalnum() or c == '-'])
+    return super().__new__(cls, s)
+
+```
+
+The classes can be used like this:
+>>>

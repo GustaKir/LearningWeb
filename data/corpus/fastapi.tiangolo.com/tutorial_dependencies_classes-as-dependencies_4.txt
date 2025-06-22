@@ -1,0 +1,109 @@
+Title: Classes as Dependencies in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/
+Summary: This section of the FastAPI tutorial discusses how to implement classes as dependencies within the framework. It explores what constitutes a dependency, how to utilize classes for dependency injection, the differences between type annotation and the `Depends` function, and provides shortcuts for easier implementation.
+---
+
+Table of contents 
+  * [ A `dict` from the previous example  ](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#a-dict-from-the-previous-example)
+  * [ What makes a dependency  ](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#what-makes-a-dependency)
+  * [ Classes as dependencies  ](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#classes-as-dependencies_1)
+  * [ Use it  ](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#use-it)
+  * [ Type annotation vs `Depends` ](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#type-annotation-vs-depends)
+  * [ Shortcut  ](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#shortcut)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+  4. [ Dependencies  ](https://fastapi.tiangolo.com/tutorial/dependencies/)
+
+
+# Classes as Dependencies[¶](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#classes-as-dependencies "Permanent link")
+Before diving deeper into the **Dependency Injection** system, let's upgrade the previous example.
+## A `dict` from the previous example[¶](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#a-dict-from-the-previous-example "Permanent link")
+In the previous example, we were returning a `dict` from our dependency ("dependable"):
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_2_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_2_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_2_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: dict = Depends(common_parameters)):
+  return commons
+@app.get("/users/")
+async defread_users(commons: dict = Depends(common_parameters)):
+  return commons
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: dict = Depends(common_parameters)):
+  return commons
+@app.get("/users/")
+async defread_users(commons: dict = Depends(common_parameters)):
+  return commons

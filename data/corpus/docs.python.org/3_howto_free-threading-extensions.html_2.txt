@@ -1,0 +1,30 @@
+Title: Borrowed References in C API
+URL: https://docs.python.org/3/howto/free-threading-extensions.html
+Summary: This section explains that some C API functions return borrowed references, which are not thread-safe if the containing object is modified concurrently. It provides examples of borrowed reference APIs, such as `PyList_GetItem()`, and lists their replacements that return strong references, ensuring safer concurrent access.
+---
+
+```
+
+## Borrowed References[¶](https://docs.python.org/3/howto/free-threading-extensions.html#borrowed-references "Link to this heading")
+Some C API functions return [borrowed references](https://docs.python.org/3/glossary.html#term-borrowed-reference). These APIs are not thread-safe if the containing object is modified concurrently. For example, it’s not safe to use [`PyList_GetItem()`](https://docs.python.org/3/c-api/list.html#c.PyList_GetItem "PyList_GetItem") if the list may be modified concurrently.
+The following table lists some borrowed reference APIs and their replacements that return [strong references](https://docs.python.org/3/glossary.html#term-strong-reference).
+Borrowed reference API | Strong reference API  
+---|---  
+[`PyList_GetItem()`](https://docs.python.org/3/c-api/list.html#c.PyList_GetItem "PyList_GetItem") | [`PyList_GetItemRef()`](https://docs.python.org/3/c-api/list.html#c.PyList_GetItemRef "PyList_GetItemRef")  
+[`PyDict_GetItem()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItem "PyDict_GetItem") | [`PyDict_GetItemRef()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItemRef "PyDict_GetItemRef")  
+[`PyDict_GetItemWithError()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItemWithError "PyDict_GetItemWithError") | [`PyDict_GetItemRef()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItemRef "PyDict_GetItemRef")  
+[`PyDict_GetItemString()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItemString "PyDict_GetItemString") | [`PyDict_GetItemStringRef()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItemStringRef "PyDict_GetItemStringRef")  
+[`PyDict_SetDefault()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_SetDefault "PyDict_SetDefault") | [`PyDict_SetDefaultRef()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_SetDefaultRef "PyDict_SetDefaultRef")  
+[`PyDict_Next()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_Next "PyDict_Next") | none (see [PyDict_Next](https://docs.python.org/3/howto/free-threading-extensions.html#pydict-next))  
+[`PyWeakref_GetObject()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetObject "PyWeakref_GetObject") | [`PyWeakref_GetRef()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetRef "PyWeakref_GetRef")  
+[`PyWeakref_GET_OBJECT()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GET_OBJECT "PyWeakref_GET_OBJECT") | [`PyWeakref_GetRef()`](https://docs.python.org/3/c-api/weakref.html#c.PyWeakref_GetRef "PyWeakref_GetRef")  
+[`PyImport_AddModule()`](https://docs.python.org/3/c-api/import.html#c.PyImport_AddModule "PyImport_AddModule") | [`PyImport_AddModuleRef()`](https://docs.python.org/3/c-api/import.html#c.PyImport_AddModuleRef "PyImport_AddModuleRef")  
+Not all APIs that return borrowed references are problematic. For example, [`PyTuple_GetItem()`](https://docs.python.org/3/c-api/tuple.html#c.PyTuple_GetItem "PyTuple_GetItem") is safe because tuples are immutable. Similarly, not all uses of the above APIs are problematic. For example, [`PyDict_GetItem()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItem "PyDict_GetItem") is often used for parsing keyword argument dictionaries in function calls; those keyword argument dictionaries are effectively private (not accessible by other threads), so using borrowed references in that context is safe.
+Some of these functions were added in Python 3.13. You can use the [pythoncapi-compat](https://github.com/python/pythoncapi-compat) package to provide implementations of these functions for older Python versions.
+## Memory Allocation APIs[¶](https://docs.python.org/3/howto/free-threading-extensions.html#memory-allocation-apis "Link to this heading")
+Python’s memory management C API provides functions in three different [allocation domains](https://docs.python.org/3/c-api/memory.html#id1): “raw”, “mem”, and “object”. For thread-safety, the free-threaded build requires that only Python objects are allocated using the object domain, and that all Python object are allocated using that domain. This differs from the prior Python versions, where this was only a best practice and not a hard requirement.
+Note
+Search for uses of [`PyObject_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Malloc "PyObject_Malloc") in your extension and check that the allocated memory is used for Python objects. Use [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc") to allocate buffers instead of [`PyObject_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Malloc "PyObject_Malloc").
+## Thread State and GIL APIs[¶](https://docs.python.org/3/howto/free-threading-extensions.html#thread-state-and-gil-apis "Link to this heading")
+Python provides a set of functions and macros to manage thread state and the GIL, such as:
+  * [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") and [`PyGILState_Release()`](https://do

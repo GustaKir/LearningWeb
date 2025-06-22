@@ -1,0 +1,27 @@
+Title: FAQ on Python 3.11 Enhancements
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: This section addresses common questions regarding Python 3.11, including coding practices for utilizing speed improvements, expectations on memory usage compared to 3.10, and reasons why some workloads may not show performance benefits.
+---
+
+### FAQ[¶](https://docs.python.org/3/whatsnew/3.11.html#faq "Link to this heading")
+#### How should I write my code to utilize these speedups?[¶](https://docs.python.org/3/whatsnew/3.11.html#how-should-i-write-my-code-to-utilize-these-speedups "Link to this heading")
+Write Pythonic code that follows common best practices; you don’t have to change your code. The Faster CPython project optimizes for common code patterns we observe.
+#### Will CPython 3.11 use more memory?[¶](https://docs.python.org/3/whatsnew/3.11.html#will-cpython-3-11-use-more-memory "Link to this heading")
+Maybe not; we don’t expect memory use to exceed 20% higher than 3.10. This is offset by memory optimizations for frame objects and object dictionaries as mentioned above.
+#### I don’t see any speedups in my workload. Why?[¶](https://docs.python.org/3/whatsnew/3.11.html#i-don-t-see-any-speedups-in-my-workload-why "Link to this heading")
+Certain code won’t have noticeable benefits. If your code spends most of its time on I/O operations, or already does most of its computation in a C extension library like NumPy, there won’t be significant speedups. This project currently benefits pure-Python workloads the most.
+Furthermore, the pyperformance figures are a geometric mean. Even within the pyperformance benchmarks, certain benchmarks have slowed down slightly, while others have sped up by nearly 2x!
+#### Is there a JIT compiler?[¶](https://docs.python.org/3/whatsnew/3.11.html#is-there-a-jit-compiler "Link to this heading")
+No. We’re still exploring other optimizations.
+### About[¶](https://docs.python.org/3/whatsnew/3.11.html#about "Link to this heading")
+Faster CPython explores optimizations for [CPython](https://docs.python.org/3/glossary.html#term-CPython). The main team is funded by Microsoft to work on this full-time. Pablo Galindo Salgado is also funded by Bloomberg LP to work on the project part-time. Finally, many contributors are volunteers from the community.
+## CPython bytecode changes[¶](https://docs.python.org/3/whatsnew/3.11.html#cpython-bytecode-changes "Link to this heading")
+The bytecode now contains inline cache entries, which take the form of the newly-added [`CACHE`](https://docs.python.org/3/library/dis.html#opcode-CACHE) instructions. Many opcodes expect to be followed by an exact number of caches, and instruct the interpreter to skip over them at runtime. Populated caches can look like arbitrary instructions, so great care should be taken when reading or modifying raw, adaptive bytecode containing quickened data.
+### New opcodes[¶](https://docs.python.org/3/whatsnew/3.11.html#new-opcodes "Link to this heading")
+  * `ASYNC_GEN_WRAP`, [`RETURN_GENERATOR`](https://docs.python.org/3/library/dis.html#opcode-RETURN_GENERATOR) and [`SEND`](https://docs.python.org/3/library/dis.html#opcode-SEND), used in generators and co-routines.
+  * [`COPY_FREE_VARS`](https://docs.python.org/3/library/dis.html#opcode-COPY_FREE_VARS), which avoids needing special caller-side code for closures.
+  * [`JUMP_BACKWARD_NO_INTERRUPT`](https://docs.python.org/3/library/dis.html#opcode-JUMP_BACKWARD_NO_INTERRUPT), for use in certain loops where handling interrupts is undesirable.
+  * [`MAKE_CELL`](https://docs.python.org/3/library/dis.html#opcode-MAKE_CELL), to create [Cell Objects](https://docs.python.org/3/c-api/cell.html#cell-objects).
+  * [`CHECK_EG_MATCH`](https://docs.python.org/3/library/dis.html#opcode-CHECK_EG_MATCH) and `PREP_RERAISE_STAR`, to handle the [new exception groups and except*](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-pep654) added in [**PEP 654**](https://peps.python.org/pep-0654/).
+  * [`PUSH_EXC_INFO`](https://docs.python.org/3/library/dis.html#opcode-PUSH_EXC_INFO), for use in exception handlers.
+  * [`RESUME`](https://docs.python.org/3/library/dis.html#opcode-RESUME), a no-op, for internal tracing, debugging and optimization checks.

@@ -1,0 +1,64 @@
+Title: Python 3.5 - PEP Updates and Changes
+URL: https://docs.python.org/3/whatsnew/3.5.html
+Summary: This section discusses updates introduced in Python 3.5 including the addition of functions like `signal.sigtimedwait()`, `signal.sigwaitinfo()`, and changes to `time.sleep()`. It references PEP 475 regarding retry mechanisms for system calls and PEP 479, which addresses changes in how `StopIteration` is managed within generators.
+---
+
+to()`](https://docs.python.org/3/library/socket.html#socket.socket.sendto "socket.socket.sendto");
+  * [`signal.sigtimedwait()`](https://docs.python.org/3/library/signal.html#signal.sigtimedwait "signal.sigtimedwait") and [`signal.sigwaitinfo()`](https://docs.python.org/3/library/signal.html#signal.sigwaitinfo "signal.sigwaitinfo");
+  * [`time.sleep()`](https://docs.python.org/3/library/time.html#time.sleep "time.sleep").
+
+
+See also 
+
+[**PEP 475**](https://peps.python.org/pep-0475/) – Retry system calls failing with EINTR
+    
+PEP and implementation written by Charles-François Natali and Victor Stinner, with the help of Antoine Pitrou (the French connection).
+### PEP 479: Change StopIteration handling inside generators[¶](https://docs.python.org/3/whatsnew/3.5.html#pep-479-change-stopiteration-handling-inside-generators "Link to this heading")
+The interaction of generators and [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") in Python 3.4 and earlier was sometimes surprising, and could conceal obscure bugs. Previously, `StopIteration` raised accidentally inside a generator function was interpreted as the end of the iteration by the loop construct driving the generator.
+[**PEP 479**](https://peps.python.org/pep-0479/) changes the behavior of generators: when a `StopIteration` exception is raised inside a generator, it is replaced with a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") before it exits the generator frame. The main goal of this change is to ease debugging in the situation where an unguarded [`next()`](https://docs.python.org/3/library/functions.html#next "next") call raises `StopIteration` and causes the iteration controlled by the generator to terminate silently. This is particularly pernicious in combination with the `yield from` construct.
+This is a backwards incompatible change, so to enable the new behavior, a [__future__](https://docs.python.org/3/glossary.html#term-__future__) import is necessary:
+>>>```
+>>> from__future__import generator_stop
+>>> defgen():
+...   next(iter([]))
+...   yield
+...
+>>> next(gen())
+Traceback (most recent call last):
+ File "<stdin>", line 2, in gen
+StopIteration
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+RuntimeError: generator raised StopIteration
+
+```
+
+Without a `__future__` import, a [`PendingDeprecationWarning`](https://docs.python.org/3/library/exceptions.html#PendingDeprecationWarning "PendingDeprecationWarning") will be raised whenever a [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") exception is raised inside a generator.
+See also 
+
+[**PEP 479**](https://peps.python.org/pep-0479/) – Change StopIteration handling inside generators
+    
+PEP written by Chris Angelico and Guido van Rossum. Implemented by Chris Angelico, Yury Selivanov and Nick Coghlan.
+### PEP 485: A function for testing approximate equality[¶](https://docs.python.org/3/whatsnew/3.5.html#pep-485-a-function-for-testing-approximate-equality "Link to this heading")
+[**PEP 485**](https://peps.python.org/pep-0485/) adds the [`math.isclose()`](https://docs.python.org/3/library/math.html#math.isclose "math.isclose") and [`cmath.isclose()`](https://docs.python.org/3/library/cmath.html#cmath.isclose "cmath.isclose") functions which tell whether two values are approximately equal or “close” to each other. Whether or not two values are considered close is determined according to given absolute and relative tolerances. Relative tolerance is the maximum allowed difference between `isclose` arguments, relative to the larger absolute value:
+>>>```
+>>> importmath
+>>> a = 5.0
+>>> b = 4.99998
+>>> math.isclose(a, b, rel_tol=1e-5)
+True
+>>> math.isclose(a, b, rel_tol=1e-6)
+False
+
+```
+
+It is also possible to compare two values using absolute tolerance, which must be a non-negative value:
+>>>```
+>>> importmath
+>>> a = 5.0
+>>> b = 4.99998
+>>> math.isclose(a, b, abs_tol=0.00003)
+True
+>>> math.isclose(a, b, abs_tol=0.00001)
+False

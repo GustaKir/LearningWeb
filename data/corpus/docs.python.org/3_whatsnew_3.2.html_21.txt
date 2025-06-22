@@ -1,0 +1,61 @@
+Title: New Features in Python 3.2: os Module Enhancements
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces two new functions in the os module, fsencode() and fsdecode(), to handle various encodings for filenames and environment variables across different operating systems.
+---
+
+```
+>>> fromastimport literal_eval
+>>> request = "{'req': 3, 'func': 'pow', 'args': (2, 0.5)}"
+>>> literal_eval(request)
+{'args': (2, 0.5), 'req': 3, 'func': 'pow'}
+>>> request = "os.system('do something harmful')"
+>>> literal_eval(request)
+Traceback (most recent call last):
+...
+ValueError: malformed node or string: <_ast.Call object at 0x101739a10>
+
+```
+
+(Implemented by Benjamin Peterson and Georg Brandl.)
+### os[¶](https://docs.python.org/3/whatsnew/3.2.html#os "Link to this heading")
+Different operating systems use various encodings for filenames and environment variables. The [`os`](https://docs.python.org/3/library/os.html#module-os "os: Miscellaneous operating system interfaces.") module provides two new functions, [`fsencode()`](https://docs.python.org/3/library/os.html#os.fsencode "os.fsencode") and [`fsdecode()`](https://docs.python.org/3/library/os.html#os.fsdecode "os.fsdecode"), for encoding and decoding filenames:
+>>>```
+>>> importos
+>>> filename = 'Sehenswürdigkeiten'
+>>> os.fsencode(filename)
+b'Sehensw\xc3\xbcrdigkeiten'
+
+```
+
+Some operating systems allow direct access to encoded bytes in the environment. If so, the [`os.supports_bytes_environ`](https://docs.python.org/3/library/os.html#os.supports_bytes_environ "os.supports_bytes_environ") constant will be true.
+For direct access to encoded environment variables (if available), use the new [`os.getenvb()`](https://docs.python.org/3/library/os.html#os.getenvb "os.getenvb") function or use [`os.environb`](https://docs.python.org/3/library/os.html#os.environb "os.environb") which is a bytes version of [`os.environ`](https://docs.python.org/3/library/os.html#os.environ "os.environ").
+(Contributed by Victor Stinner.)
+### shutil[¶](https://docs.python.org/3/whatsnew/3.2.html#shutil "Link to this heading")
+The [`shutil.copytree()`](https://docs.python.org/3/library/shutil.html#shutil.copytree "shutil.copytree") function has two new options:
+  * _ignore_dangling_symlinks_ : when `symlinks=False` so that the function copies a file pointed to by a symlink, not the symlink itself. This option will silence the error raised if the file doesn’t exist.
+  * _copy_function_ : is a callable that will be used to copy files. [`shutil.copy2()`](https://docs.python.org/3/library/shutil.html#shutil.copy2 "shutil.copy2") is used by default.
+
+
+(Contributed by Tarek Ziadé.)
+In addition, the [`shutil`](https://docs.python.org/3/library/shutil.html#module-shutil "shutil: High-level file operations, including copying.") module now supports [archiving operations](https://docs.python.org/3/library/shutil.html#archiving-operations) for zipfiles, uncompressed tarfiles, gzipped tarfiles, and bzipped tarfiles. And there are functions for registering additional archiving file formats (such as xz compressed tarfiles or custom formats).
+The principal functions are [`make_archive()`](https://docs.python.org/3/library/shutil.html#shutil.make_archive "shutil.make_archive") and [`unpack_archive()`](https://docs.python.org/3/library/shutil.html#shutil.unpack_archive "shutil.unpack_archive"). By default, both operate on the current directory (which can be set by [`os.chdir()`](https://docs.python.org/3/library/os.html#os.chdir "os.chdir")) and on any sub-directories. The archive filename needs to be specified with a full pathname. The archiving step is non-destructive (the original files are left unchanged).
+>>>```
+>>> importshutil,pprint
+>>> os.chdir('mydata') # change to the source directory
+>>> f = shutil.make_archive('/var/backup/mydata',
+...             'zip')   # archive the current directory
+>>> f                  # show the name of archive
+'/var/backup/mydata.zip'
+>>> os.chdir('tmp')           # change to an unpacking
+>>> shutil.unpack_archive('/var/backup/mydata.zip') # recover the data
+>>> pprint.pprint(shutil.get_archive_formats()) # display known formats
+[('bztar', "bzip2'ed tar-file"),
+ ('gztar', "gzip'ed tar-file"),
+ ('tar', 'uncompressed tar file'),
+ ('zip', 'ZIP file')]
+>>> shutil.register_archive_format(   # register a new archive format
+...   name='xz',
+...   function=xz.compress,      # callable archiving function
+...   extra_args=[('level', 8)],   # arguments to the function
+...   description='xz compression'
+... )

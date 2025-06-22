@@ -1,0 +1,109 @@
+Title: Introduction to SQL Databases in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/sql-databases/
+Summary: FastAPI allows the use of SQL databases but does not require them. An example is provided using SQLModel, which combines SQLAlchemy and Pydantic. SQLModel is designed to work seamlessly with FastAPI applications, supporting any database compatible with SQLAlchemy.
+---
+
+1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+
+
+# SQL (Relational) Databases[¶](https://fastapi.tiangolo.com/tutorial/sql-databases/#sql-relational-databases "Permanent link")
+**FastAPI** doesn't require you to use a SQL (relational) database. But you can use **any database** that you want.
+Here we'll see an example using [SQLModel](https://sqlmodel.tiangolo.com/).
+**SQLModel** is built on top of [SQLAlchemy](https://www.sqlalchemy.org/) and Pydantic. It was made by the same author of **FastAPI** to be the perfect match for FastAPI applications that need to use **SQL databases**.
+Tip
+You could use any other SQL or NoSQL database library you want (in some cases called "ORMs"), FastAPI doesn't force you to use anything. 😎
+As SQLModel is based on SQLAlchemy, you can easily use **any database supported** by SQLAlchemy (which makes them also supported by SQLModel), like:
+  * PostgreSQL
+  * MySQL
+  * SQLite
+  * Oracle
+  * Microsoft SQL Server, etc.
+
+
+In this example, we'll use **SQLite** , because it uses a single file and Python has integrated support. So, you can copy this example and run it as is.
+Later, for your production application, you might want to use a database server like **PostgreSQL**.
+Tip
+There is an official project generator with **FastAPI** and **PostgreSQL** including a frontend and more tools: <https://github.com/fastapi/full-stack-fastapi-template>
+This is a very simple and short tutorial, if you want to learn about databases in general, about SQL, or more advanced features, go to the [SQLModel docs](https://sqlmodel.tiangolo.com/).
+## Install `SQLModel`[¶](https://fastapi.tiangolo.com/tutorial/sql-databases/#install-sqlmodel "Permanent link")
+First, make sure you create your [virtual environment](https://fastapi.tiangolo.com/virtual-environments/), activate it, and then install `sqlmodel`:
+```
+
+fast →[](https://fastapi.tiangolo.com/tutorial/sql-databases/)pip install sqlmodelrestart ↻[](https://fastapi.tiangolo.com/tutorial/sql-databases/)
+
+```
+
+## Create the App with a Single Model[¶](https://fastapi.tiangolo.com/tutorial/sql-databases/#create-the-app-with-a-single-model "Permanent link")
+We'll create the simplest first version of the app with a single **SQLModel** model first.
+Later we'll improve it increasing security and versatility with **multiple models** below. 🤓
+### Create Models[¶](https://fastapi.tiangolo.com/tutorial/sql-databases/#create-models "Permanent link")
+Import `SQLModel` and create a database model:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/sql-databases/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI, HTTPException, Query
+fromsqlmodelimport Field, Session, SQLModel, create_engine, select
+classHero(SQLModel, table=True):
+  id: int | None = Field(default=None, primary_key=True)
+  name: str = Field(index=True)
+  age: int | None = Field(default=None, index=True)
+  secret_name: str
+# Code below omitted 👇
+
+```
+
+👀 Full file preview
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/sql-databases/#__tabbed_2_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI, HTTPException, Query
+fromsqlmodelimport Field, Session, SQLModel, create_engine, select
+classHero(SQLModel, table=True):
+  id: int | None = Field(default=None, primary_key=True)
+  name: str = Field(index=True)
+  age: int | None = Field(default=None, index=True)
+  secret_name: str
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, connect_args=connect_args)
+defcreate_db_and_tables():
+  SQLModel.metadata.create_all(engine)
+defget_session():
+  with Session(engine) as session:
+    yield session
+SessionDep = Annotated[Session, Depends(get_session)]
+app = FastAPI()
+@app.on_event("startup")
+defon_startup():
+  create_db_and_tables()
+@app.post("/heroes/")
+defcreate_hero(hero: Hero, session: SessionDep) -> Hero:
+  session.add(hero)
+  session.commit()
+  session.refresh(hero)
+  return hero
+@app.get("/heroes/")
+defread_heroes(
+  session: SessionDep,
+  offset: int = 0,
+  limit: Annotated[int, Query(le=100)] = 100,
+) -> list[Hero]:
+  heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+  return heroes
+@app.get("/heroes/{hero_id}")
+defread_hero(hero_id: int, session: SessionDep) -> Hero:
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  return hero
+@app.delete("/heroes/{hero_id}")
+defdelete_hero(hero_id: int, session: SessionDep):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  session.delete(hero)
+  session.commit()
+  return {"ok": True}

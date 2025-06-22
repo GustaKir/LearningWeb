@@ -1,0 +1,116 @@
+Title: FastAPI Dependency Injection
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/
+Summary: This section introduces FastAPI's powerful and intuitive Dependency Injection system, designed for simplicity and ease of integration. It explains the concept of 'Dependency Injection', allowing path operation functions to declare their required dependencies, which FastAPI then manages.
+---
+
+1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+  4. [ Dependencies  ](https://fastapi.tiangolo.com/tutorial/dependencies/)
+
+
+# Dependencies[¶](https://fastapi.tiangolo.com/tutorial/dependencies/#dependencies "Permanent link")
+**FastAPI** has a very powerful but intuitive **Dependency Injection** system.
+It is designed to be very simple to use, and to make it very easy for any developer to integrate other components with **FastAPI**.
+## What is "Dependency Injection"[¶](https://fastapi.tiangolo.com/tutorial/dependencies/#what-is-dependency-injection "Permanent link")
+**"Dependency Injection"** means, in programming, that there is a way for your code (in this case, your _path operation functions_) to declare things that it requires to work and use: "dependencies".
+And then, that system (in this case **FastAPI**) will take care of doing whatever is needed to provide your code with those needed dependencies ("inject" the dependencies).
+This is very useful when you need to:
+  * Have shared logic (the same code logic again and again).
+  * Share database connections.
+  * Enforce security, authentication, role requirements, etc.
+  * And many other things...
+
+
+All these, while minimizing code repetition.
+## First Steps[¶](https://fastapi.tiangolo.com/tutorial/dependencies/#first-steps "Permanent link")
+Let's see a very simple example. It will be so simple that it is not very useful, for now.
+But this way we can focus on how the **Dependency Injection** system works.
+### Create a dependency, or "dependable"[¶](https://fastapi.tiangolo.com/tutorial/dependencies/#create-a-dependency-or-dependable "Permanent link")
+Let's first focus on the dependency.
+It is just a function that can take all the same parameters that a _path operation function_ can take:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/dependencies/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/#__tabbed_2_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/#__tabbed_2_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/#__tabbed_2_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: dict = Depends(common_parameters)):
+  return commons
+@app.get("/users/")
+async defread_users(commons: dict = Depends(common_parameters)):
+  return commons
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: dict = Depends(common_parameters)):
+  return commons
+@app.get("/users/")
+async defread_users(commons: dict = Depends(common_parameters)):
+  return commons

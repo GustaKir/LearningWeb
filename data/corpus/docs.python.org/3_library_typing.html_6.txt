@@ -1,0 +1,82 @@
+Title: Inheriting and Using Generic Classes in Python
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section discusses inheritance in generic classes, illustrating how to fix type parameters when inheriting from classes like Sized and Mapping. It explains that using a generic class without specified type parameters defaults to Any, and provides examples of user-defined generic type aliases.
+---
+
+```
+
+Generic classes can also inherit from other classes:
+```
+fromcollections.abcimport Sized
+classLinkedList[T](Sized):
+  ...
+
+```
+
+When inheriting from generic classes, some type parameters could be fixed:
+```
+fromcollections.abcimport Mapping
+classMyDict[T](Mapping[str, T]):
+  ...
+
+```
+
+In this case `MyDict` has a single parameter, `T`.
+Using a generic class without specifying type parameters assumes [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") for each position. In the following example, `MyIterable` is not generic but implicitly inherits from `Iterable[Any]`:
+```
+fromcollections.abcimport Iterable
+classMyIterable(Iterable): # Same as Iterable[Any]
+  ...
+
+```
+
+User-defined generic type aliases are also supported. Examples:
+```
+fromcollections.abcimport Iterable
+type Response[S] = Iterable[S] | int
+# Return type here is same as Iterable[str] | int
+defresponse(query: str) -> Response[str]:
+  ...
+type Vec[T] = Iterable[tuple[T, T]]
+definproduct[T: (int, float, complex)](v: Vec[T]) -> T: # Same as Iterable[tuple[T, T]]
+  return sum(x*y for x, y in v)
+
+```
+
+For backward compatibility, generic type aliases can also be created through a simple assignment:
+```
+fromcollections.abcimport Iterable
+fromtypingimport TypeVar
+S = TypeVar("S")
+Response = Iterable[S] | int
+
+```
+
+Changed in version 3.7: [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic") no longer has a custom metaclass.
+Changed in version 3.12: Syntactic support for generics and type aliases is new in version 3.12. Previously, generic classes had to explicitly inherit from [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic") or contain a type variable in one of their bases.
+User-defined generics for parameter expressions are also supported via parameter specification variables in the form `[**P]`. The behavior is consistent with type variables’ described above as parameter specification variables are treated by the typing module as a specialized type variable. The one exception to this is that a list of types can be used to substitute a [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec"):
+>>>```
+>>> classZ[T, **P]: ... # T is a TypeVar; P is a ParamSpec
+...
+>>> Z[int, [dict, float]]
+__main__.Z[int, [dict, float]]
+
+```
+
+Classes generic over a [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") can also be created using explicit inheritance from [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic"). In this case, `**` is not used:
+```
+fromtypingimport ParamSpec, Generic
+P = ParamSpec('P')
+classZ(Generic[P]):
+  ...
+
+```
+
+Another difference between [`TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") and [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") is that a generic with only one parameter specification variable will accept parameter lists in the forms `X[[Type1, Type2, ...]]` and also `X[Type1, Type2, ...]` for aesthetic reasons. Internally, the latter is converted to the former, so the following are equivalent:
+>>>```
+>>> classX[**P]: ...
+...
+>>> X[int, str]
+__main__.X[[int, str]]
+>>> X[[int, str]]
+__main__.X[[int, str]]

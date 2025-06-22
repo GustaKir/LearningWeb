@@ -1,0 +1,73 @@
+Title: Changes in Typing and Concatenate in Python 3.10
+URL: https://docs.python.org/3/library/typing.html
+Summary: In Python 3.10, the Optional type can be expressed using 'X | None'. The typing.Concatenate special form is introduced for annotating higher-order functions, allowing for the transformation of parameters in callable functions. It can be used with Callable and ParamSpec, and it must be the first argument to Callable.
+---
+
+```
+
+Changed in version 3.10: Optional can now be written as `X | None`. See [union type expressions](https://docs.python.org/3/library/stdtypes.html#types-union). 
+
+typing.Concatenate[¶](https://docs.python.org/3/library/typing.html#typing.Concatenate "Link to this definition")
+    
+Special form for annotating higher-order functions.
+`Concatenate` can be used in conjunction with [Callable](https://docs.python.org/3/library/typing.html#annotating-callables) and [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") to annotate a higher-order callable which adds, removes, or transforms parameters of another callable. Usage is in the form `Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]`. `Concatenate` is currently only valid when used as the first argument to a [Callable](https://docs.python.org/3/library/typing.html#annotating-callables). The last parameter to `Concatenate` must be a [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") or ellipsis (`...`).
+For example, to annotate a decorator `with_lock` which provides a [`threading.Lock`](https://docs.python.org/3/library/threading.html#threading.Lock "threading.Lock") to the decorated function, `Concatenate` can be used to indicate that `with_lock` expects a callable which takes in a `Lock` as the first argument, and returns a callable with a different type signature. In this case, the [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") indicates that the returned callable’s parameter types are dependent on the parameter types of the callable being passed in:
+```
+fromcollections.abcimport Callable
+fromthreadingimport Lock
+fromtypingimport Concatenate
+# Use this lock to ensure that only one thread is executing a function
+# at any time.
+my_lock = Lock()
+defwith_lock[**P, R](f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
+'''A type-safe decorator which provides a lock.'''
+  definner(*args: P.args, **kwargs: P.kwargs) -> R:
+    # Provide the lock as the first argument.
+    return f(my_lock, *args, **kwargs)
+  return inner
+@with_lock
+defsum_threadsafe(lock: Lock, numbers: list[float]) -> float:
+'''Add a list of numbers together in a thread-safe manner.'''
+  with lock:
+    return sum(numbers)
+# We don't need to pass in the lock ourselves thanks to the decorator.
+sum_threadsafe([1.1, 2.2, 3.3])
+
+```
+
+Added in version 3.10.
+See also
+  * [**PEP 612**](https://peps.python.org/pep-0612/) – Parameter Specification Variables (the PEP which introduced `ParamSpec` and `Concatenate`)
+  * [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec")
+  * [Annotating callable objects](https://docs.python.org/3/library/typing.html#annotating-callables)
+
+
+
+typing.Literal[¶](https://docs.python.org/3/library/typing.html#typing.Literal "Link to this definition")
+    
+Special typing form to define “literal types”.
+`Literal` can be used to indicate to type checkers that the annotated object has a value equivalent to one of the provided literals.
+For example:
+```
+defvalidate_simple(data: Any) -> Literal[True]: # always returns True
+  ...
+type Mode = Literal['r', 'rb', 'w', 'wb']
+defopen_helper(file: str, mode: Mode) -> str:
+  ...
+open_helper('/some/path', 'r')   # Passes type check
+open_helper('/other/path', 'typo') # Error in type checker
+
+```
+
+`Literal[...]` cannot be subclassed. At runtime, an arbitrary value is allowed as type argument to `Literal[...]`, but type checkers may impose restrictions. See [**PEP 586**](https://peps.python.org/pep-0586/) for more details about literal types.
+Added in version 3.8.
+Changed in version 3.9.1: `Literal` now de-duplicates parameters. Equality comparisons of `Literal` objects are no longer order dependent. `Literal` objects will now raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception during equality comparisons if one of their parameters are not [hashable](https://docs.python.org/3/glossary.html#term-hashable). 
+
+typing.ClassVar[¶](https://docs.python.org/3/library/typing.html#typing.ClassVar "Link to this definition")
+    
+Special type construct to mark class variables.
+As introduced in [**PEP 526**](https://peps.python.org/pep-0526/), a variable annotation wrapped in ClassVar indicates that a given attribute is intended to be used as a class variable and should not be set on instances of that class. Usage:
+```
+classStarship:
+  stats: ClassVar[dict[str, int]] = {} # class variable
+  damage: int = 10           # instance variable

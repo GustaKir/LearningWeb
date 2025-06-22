@@ -1,0 +1,84 @@
+Title: Testing Websockets in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/testing-websockets/
+Summary: This section covers various aspects of testing websockets in FastAPI, including relevant references and links to documentation on database testing, custom documentation UI, and other essential FastAPI classes and reference materials.
+---
+
+hemas/)
+      * [ Custom Docs UI Static Assets (Self-Hosting)  ](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/)
+      * [ Configure Swagger UI  ](https://fastapi.tiangolo.com/how-to/configure-swagger-ui/)
+      * [ Testing a Database  ](https://fastapi.tiangolo.com/how-to/testing-database/)
+  * [ Reference  ](https://fastapi.tiangolo.com/reference/)
+Reference 
+    * [ `FastAPI` class  ](https://fastapi.tiangolo.com/reference/fastapi/)
+    * [ Request Parameters  ](https://fastapi.tiangolo.com/reference/parameters/)
+    * [ Status Codes  ](https://fastapi.tiangolo.com/reference/status/)
+    * [ `UploadFile` class  ](https://fastapi.tiangolo.com/reference/uploadfile/)
+    * [ Exceptions - `HTTPException` and `WebSocketException` ](https://fastapi.tiangolo.com/reference/exceptions/)
+    * [ Dependencies - `Depends()` and `Security()` ](https://fastapi.tiangolo.com/reference/dependencies/)
+    * [ `APIRouter` class  ](https://fastapi.tiangolo.com/reference/apirouter/)
+    * [ Background Tasks - `BackgroundTasks` ](https://fastapi.tiangolo.com/reference/background/)
+    * [ `Request` class  ](https://fastapi.tiangolo.com/reference/request/)
+    * [ WebSockets  ](https://fastapi.tiangolo.com/reference/websockets/)
+    * [ `HTTPConnection` class  ](https://fastapi.tiangolo.com/reference/httpconnection/)
+    * [ `Response` class  ](https://fastapi.tiangolo.com/reference/response/)
+    * [ Custom Response Classes - File, HTML, Redirect, Streaming, etc.  ](https://fastapi.tiangolo.com/reference/responses/)
+    * [ Middleware  ](https://fastapi.tiangolo.com/reference/middleware/)
+    * [ OpenAPI  ](https://fastapi.tiangolo.com/reference/openapi/)
+OpenAPI 
+      * [ OpenAPI `docs` ](https://fastapi.tiangolo.com/reference/openapi/docs/)
+      * [ OpenAPI `models` ](https://fastapi.tiangolo.com/reference/openapi/models/)
+    * [ Security Tools  ](https://fastapi.tiangolo.com/reference/security/)
+    * [ Encoders - `jsonable_encoder` ](https://fastapi.tiangolo.com/reference/encoders/)
+    * [ Static Files - `StaticFiles` ](https://fastapi.tiangolo.com/reference/staticfiles/)
+    * [ Templating - `Jinja2Templates` ](https://fastapi.tiangolo.com/reference/templating/)
+    * [ Test Client - `TestClient` ](https://fastapi.tiangolo.com/reference/testclient/)
+  * [ FastAPI People  ](https://fastapi.tiangolo.com/fastapi-people/)
+  * [ Resources  ](https://fastapi.tiangolo.com/resources/)
+Resources 
+    * [ Help FastAPI - Get Help  ](https://fastapi.tiangolo.com/help-fastapi/)
+    * [ Development - Contributing  ](https://fastapi.tiangolo.com/contributing/)
+    * [ Full Stack FastAPI Template  ](https://fastapi.tiangolo.com/project-generation/)
+    * [ External Links and Articles  ](https://fastapi.tiangolo.com/external-links/)
+    * [ FastAPI and friends newsletter  ](https://fastapi.tiangolo.com/newsletter/)
+    * [ Repository Management Tasks  ](https://fastapi.tiangolo.com/management-tasks/)
+  * [ About  ](https://fastapi.tiangolo.com/about/)
+About 
+    * [ Alternatives, Inspiration and Comparisons  ](https://fastapi.tiangolo.com/alternatives/)
+    * [ History, Design and Future  ](https://fastapi.tiangolo.com/history-design-future/)
+    * [ Benchmarks  ](https://fastapi.tiangolo.com/benchmarks/)
+    * [ Repository Management  ](https://fastapi.tiangolo.com/management/)
+  * [ Release Notes  ](https://fastapi.tiangolo.com/release-notes/)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Advanced User Guide  ](https://fastapi.tiangolo.com/advanced/)
+
+
+# Testing WebSockets[¶](https://fastapi.tiangolo.com/advanced/testing-websockets/#testing-websockets "Permanent link")
+You can use the same `TestClient` to test WebSockets.
+For this, you use the `TestClient` in a `with` statement, connecting to the WebSocket:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/testing-websockets/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.testclientimport TestClient
+fromfastapi.websocketsimport WebSocket
+app = FastAPI()
+@app.get("/")
+async defread_main():
+  return {"msg": "Hello World"}
+@app.websocket("/ws")
+async defwebsocket(websocket: WebSocket):
+  await websocket.accept()
+  await websocket.send_json({"msg": "Hello WebSocket"})
+  await websocket.close()
+deftest_read_main():
+  client = TestClient(app)
+  response = client.get("/")
+  assert response.status_code == 200
+  assert response.json() == {"msg": "Hello World"}
+deftest_websocket():
+  client = TestClient(app)
+  with client.websocket_connect("/ws") as websocket:
+    data = websocket.receive_json()
+    assert data == {"msg": "Hello WebSocket"}

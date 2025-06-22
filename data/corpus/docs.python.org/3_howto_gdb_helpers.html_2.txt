@@ -1,0 +1,108 @@
+Title: Inspecting Global Variables in GDB
+URL: https://docs.python.org/3/howto/gdb_helpers.html
+Summary: This section demonstrates how to use GDB to inspect global variables in a Python program. It shows the output of the 'p globals' command and the details of the PyDictObject structure, highlighting the reference count and hash table contents of the global dictionary.
+---
+
+```
+(gdb) p globals
+$1 = {'__builtins__': <module at remote 0x7ffff7fb1868>, '__name__':
+'__main__', 'ctypes': <module at remote 0x7ffff7f14360>, '__doc__': None,
+'__package__': None}
+(gdb) p *(PyDictObject*)globals
+$2 = {ob_refcnt = 3, ob_type = 0x3dbdf85820, ma_fill = 5, ma_used = 5,
+ma_mask = 7, ma_table = 0x63d0f8, ma_lookup = 0x3dbdc7ea70
+<lookdict_string>, ma_smalltable = {{me_hash = 7065186196740147912,
+me_key = '__builtins__', me_value = <module at remote 0x7ffff7fb1868>},
+{me_hash = -368181376027291943, me_key = '__name__',
+me_value ='__main__'}, {me_hash = 0, me_key = 0x0, me_value = 0x0},
+{me_hash = 0, me_key = 0x0, me_value = 0x0},
+{me_hash = -9177857982131165996, me_key = 'ctypes',
+me_value = <module at remote 0x7ffff7f14360>},
+{me_hash = -8518757509529533123, me_key = '__doc__', me_value = None},
+{me_hash = 0, me_key = 0x0, me_value = 0x0}, {
+ me_hash = 6614918939584953775, me_key = '__package__', me_value = None}}}
+
+```
+
+Note that the pretty-printers do not actually call `repr()`. For basic types, they try to match its result closely.
+An area that can be confusing is that the custom printer for some types look a lot like GDB’s built-in printer for standard types. For example, the pretty-printer for a Python `int` ([PyLongObject](https://docs.python.org/3/c-api/long.html#c.PyLongObject "PyLongObject")*) gives a representation that is not distinguishable from one of a regular machine-level integer:
+```
+(gdb) p some_machine_integer
+$3 = 42
+(gdb) p some_python_integer
+$4 = 42
+
+```
+
+The internal structure can be revealed with a cast to [PyLongObject](https://docs.python.org/3/c-api/long.html#c.PyLongObject "PyLongObject")*:
+```
+(gdb) p *(PyLongObject*)some_python_integer
+$5 = {ob_base = {ob_base = {ob_refcnt = 8, ob_type = 0x3dad39f5e0}, ob_size = 1},
+ob_digit = {42}}
+
+```
+
+A similar confusion can arise with the `str` type, where the output looks a lot like gdb’s built-in printer for `char *`:
+```
+(gdb) p ptr_to_python_str
+$6 = '__builtins__'
+
+```
+
+The pretty-printer for `str` instances defaults to using single-quotes (as does Python’s `repr` for strings) whereas the standard printer for `char *` values uses double-quotes and contains a hexadecimal address:
+```
+(gdb) p ptr_to_char_star
+$7 = 0x6d72c0 "hello world"
+
+```
+
+Again, the implementation details can be revealed with a cast to [PyUnicodeObject](https://docs.python.org/3/c-api/unicode.html#c.PyUnicodeObject "PyUnicodeObject")*:
+```
+(gdb) p *(PyUnicodeObject*)$6
+$8 = {ob_base = {ob_refcnt = 33, ob_type = 0x3dad3a95a0}, length = 12,
+str = 0x7ffff2128500, hash = 7065186196740147912, state = 1, defenc = 0x0}
+
+```
+
+### `py-list`[¶](https://docs.python.org/3/howto/gdb_helpers.html#py-list "Link to this heading")
+> The extension adds a `py-list` command, which lists the Python source code (if any) for the current frame in the selected thread. The current line is marked with a “>”:
+> ```
+(gdb) py-list
+ 901    if options.profile:
+ 902      options.profile = False
+ 903      profile_me()
+ 904      return
+ 905
+>906    u = UI()
+ 907    if not u.quit:
+ 908      try:
+ 909        gtk.main()
+ 910      except KeyboardInterrupt:
+ 911        # properly quit on a keyboard interrupt...
+
+```
+
+> Use `py-list START` to list at a different line number within the Python source, and `py-list START,END` to list a specific range of lines within the Python source.
+### `py-up` and `py-down`[¶](https://docs.python.org/3/howto/gdb_helpers.html#py-up-and-py-down "Link to this heading")
+> The `py-up` and `py-down` commands are analogous to GDB’s regular `up` and `down` commands, but try to move at the level of CPython frames, rather than C frames.
+> GDB is not always able to read the relevant frame information, depending on the optimization level with which CPython was compiled. Internally, the commands look for C frames that are executing the default frame evaluation function (that is, the core bytecode interpreter loop within CPython) and look up the value of the related `PyFrameObject *`.
+> They emit the frame number (at the C level) within the thread.
+> For example:
+> ```
+(gdb) py-up
+#37 Frame 0x9420b04, for file /usr/lib/python2.6/site-packages/
+gnome_sudoku/main.py, line 906, in start_game ()
+  u = UI()
+(gdb) py-up
+#40 Frame 0x948e82c, for file /usr/lib/python2.6/site-packages/
+gnome_sudoku/gnome_sudoku.py, line 22, in start_game(main=<module at remote 0xb771b7f4>)
+  main.start_game()
+(gdb) py-up
+Unable to find an older python frame
+
+```
+
+> so we’re at the top of the Python stack.
+> The frame numbers correspond to those displayed by GDB’s standard `backtrace` command. The command skips C frames which are not executing Python code.
+> Going back down:
+>

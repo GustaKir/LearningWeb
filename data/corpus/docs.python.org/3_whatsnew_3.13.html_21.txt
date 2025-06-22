@@ -1,0 +1,36 @@
+Title: Improvements to SSL in Python 3.13
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: The `create_default_context()` API in the SSL module now includes `VERIFY_X509_PARTIAL_CHAIN` and `VERIFY_X509_STRICT` as default flags. The `VERIFY_X509_STRICT` option may reject certain certificates, and while it's not recommended to disable it, developers can do so by modifying the context's verify flags.
+---
+
+### ssl[¶](https://docs.python.org/3/whatsnew/3.13.html#ssl "Link to this heading")
+  * The [`create_default_context()`](https://docs.python.org/3/library/ssl.html#ssl.create_default_context "ssl.create_default_context") API now includes [`VERIFY_X509_PARTIAL_CHAIN`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_PARTIAL_CHAIN "ssl.VERIFY_X509_PARTIAL_CHAIN") and [`VERIFY_X509_STRICT`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_STRICT "ssl.VERIFY_X509_STRICT") in its default flags.
+Note
+[`VERIFY_X509_STRICT`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_STRICT "ssl.VERIFY_X509_STRICT") may reject pre-[**RFC 5280**](https://datatracker.ietf.org/doc/html/rfc5280.html) or malformed certificates that the underlying OpenSSL implementation might otherwise accept. Whilst disabling this is not recommended, you can do so using:
+```
+importssl
+ctx = ssl.create_default_context()
+ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+```
+
+(Contributed by William Woodruff in [gh-112389](https://github.com/python/cpython/issues/112389).)
+
+
+### statistics[¶](https://docs.python.org/3/whatsnew/3.13.html#statistics "Link to this heading")
+  * Add [`kde()`](https://docs.python.org/3/library/statistics.html#statistics.kde "statistics.kde") for kernel density estimation. This makes it possible to estimate a continuous probability density function from a fixed number of discrete samples. (Contributed by Raymond Hettinger in [gh-115863](https://github.com/python/cpython/issues/115863).)
+  * Add [`kde_random()`](https://docs.python.org/3/library/statistics.html#statistics.kde_random "statistics.kde_random") for sampling from an estimated probability density function created by [`kde()`](https://docs.python.org/3/library/statistics.html#statistics.kde "statistics.kde"). (Contributed by Raymond Hettinger in [gh-115863](https://github.com/python/cpython/issues/115863).)
+
+
+### subprocess[¶](https://docs.python.org/3/whatsnew/3.13.html#subprocess "Link to this heading")
+  * The [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") module now uses the [`posix_spawn()`](https://docs.python.org/3/library/os.html#os.posix_spawn "os.posix_spawn") function in more situations.
+Notably, when _close_fds_ is `True` (the default), [`posix_spawn()`](https://docs.python.org/3/library/os.html#os.posix_spawn "os.posix_spawn") will be used when the C library provides `posix_spawn_file_actions_addclosefrom_np()`, which includes recent versions of Linux, FreeBSD, and Solaris. On Linux, this should perform similarly to the existing Linux `vfork()` based code.
+A private control knob `subprocess._USE_POSIX_SPAWN` can be set to `False` if you need to force [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") to never use [`posix_spawn()`](https://docs.python.org/3/library/os.html#os.posix_spawn "os.posix_spawn"). Please report your reason and platform details in the [issue tracker](https://docs.python.org/3/bugs.html#using-the-tracker) if you set this so that we can improve our API selection logic for everyone. (Contributed by Jakub Kulik in [gh-113117](https://github.com/python/cpython/issues/113117).)
+
+
+### sys[¶](https://docs.python.org/3/whatsnew/3.13.html#sys "Link to this heading")
+  * Add the [`_is_interned()`](https://docs.python.org/3/library/sys.html#sys._is_interned "sys._is_interned") function to test if a string was interned. This function is not guaranteed to exist in all implementations of Python. (Contributed by Serhiy Storchaka in [gh-78573](https://github.com/python/cpython/issues/78573).)
+
+
+### tempfile[¶](https://docs.python.org/3/whatsnew/3.13.html#tempfile "Link to this heading")
+  * On Windows, the default mode `0o700` used by [`tempfile.mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp") now limits access to the new directory due to changes to [`os.mkdir()`](https://docs.python.org/3/library/os.html#os.mkdir "os.mkdir"). This is a mitigation for [**CVE 2024-4030**](https://www.cve.org/CVERecord?id=CVE-2024-4030). (Contributed by Steve Dower in [gh-118486](https://github.com/python/cpython/issues/118486).)

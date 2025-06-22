@@ -1,0 +1,70 @@
+Title: Efficient Accumulation of Bytes and Conversion Between Sequences
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section discusses efficient methods for accumulating bytes using a `bytearray` with in-place concatenation and explains how to convert between tuples and lists using the `tuple()` constructor.
+---
+
+```
+
+(another reasonably efficient idiom is to use [`io.StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO"))
+To accumulate many [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") objects, the recommended idiom is to extend a [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") object using in-place concatenation (the `+=` operator):
+```
+result = bytearray()
+for b in my_bytes_objects:
+  result += b
+
+```
+
+## [Sequences (Tuples/Lists)](https://docs.python.org/3/faq/programming.html#id42)[¶](https://docs.python.org/3/faq/programming.html#sequences-tuples-lists "Link to this heading")
+### [How do I convert between tuples and lists?](https://docs.python.org/3/faq/programming.html#id43)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-convert-between-tuples-and-lists "Link to this heading")
+The type constructor `tuple(seq)` converts any sequence (actually, any iterable) into a tuple with the same items in the same order.
+For example, `tuple([1, 2, 3])` yields `(1, 2, 3)` and `tuple('abc')` yields `('a', 'b', 'c')`. If the argument is a tuple, it does not make a copy but returns the same object, so it is cheap to call [`tuple()`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") when you aren’t sure that an object is already a tuple.
+The type constructor `list(seq)` converts any sequence or iterable into a list with the same items in the same order. For example, `list((1, 2, 3))` yields `[1, 2, 3]` and `list('abc')` yields `['a', 'b', 'c']`. If the argument is a list, it makes a copy just like `seq[:]` would.
+### [What’s a negative index?](https://docs.python.org/3/faq/programming.html#id44)[¶](https://docs.python.org/3/faq/programming.html#what-s-a-negative-index "Link to this heading")
+Python sequences are indexed with positive numbers and negative numbers. For positive numbers 0 is the first index 1 is the second index and so forth. For negative indices -1 is the last index and -2 is the penultimate (next to last) index and so forth. Think of `seq[-n]` as the same as `seq[len(seq)-n]`.
+Using negative indices can be very convenient. For example `S[:-1]` is all of the string except for its last character, which is useful for removing the trailing newline from a string.
+### [How do I iterate over a sequence in reverse order?](https://docs.python.org/3/faq/programming.html#id45)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-iterate-over-a-sequence-in-reverse-order "Link to this heading")
+Use the [`reversed()`](https://docs.python.org/3/library/functions.html#reversed "reversed") built-in function:
+```
+for x in reversed(sequence):
+  ... # do something with x ...
+
+```
+
+This won’t touch your original sequence, but build a new copy with reversed order to iterate over.
+### [How do you remove duplicates from a list?](https://docs.python.org/3/faq/programming.html#id46)[¶](https://docs.python.org/3/faq/programming.html#how-do-you-remove-duplicates-from-a-list "Link to this heading")
+See the Python Cookbook for a long discussion of many ways to do this:
+> <https://code.activestate.com/recipes/52560/>
+If you don’t mind reordering the list, sort it and then scan from the end of the list, deleting duplicates as you go:
+```
+if mylist:
+  mylist.sort()
+  last = mylist[-1]
+  for i in range(len(mylist)-2, -1, -1):
+    if last == mylist[i]:
+      del mylist[i]
+    else:
+      last = mylist[i]
+
+```
+
+If all elements of the list may be used as set keys (i.e. they are all [hashable](https://docs.python.org/3/glossary.html#term-hashable)) this is often faster
+```
+mylist = list(set(mylist))
+
+```
+
+This converts the list into a set, thereby removing duplicates, and then back into a list.
+### [How do you remove multiple items from a list](https://docs.python.org/3/faq/programming.html#id47)[¶](https://docs.python.org/3/faq/programming.html#how-do-you-remove-multiple-items-from-a-list "Link to this heading")
+As with removing duplicates, explicitly iterating in reverse with a delete condition is one possibility. However, it is easier and faster to use slice replacement with an implicit or explicit forward iteration. Here are three variations.:
+```
+mylist[:] = filter(keep_function, mylist)
+mylist[:] = (x for x in mylist if keep_condition)
+mylist[:] = [x for x in mylist if keep_condition]
+
+```
+
+The list comprehension may be fastest.
+### [How do you make an array in Python?](https://docs.python.org/3/faq/programming.html#id48)[¶](https://docs.python.org/3/faq/programming.html#how-do-you-make-an-array-in-python "Link to this heading")
+Use a list:
+```
+["this", 1, "is", "an", "array"]

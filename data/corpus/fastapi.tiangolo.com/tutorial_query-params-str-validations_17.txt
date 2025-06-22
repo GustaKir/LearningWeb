@@ -1,0 +1,138 @@
+Title: Query Parameters and Validations in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This document outlines how to validate query parameters in FastAPI. It demonstrates defining a FastAPI application, creating a data dictionary for book references, and a validation function to ensure that IDs start with 'isbn-' or 'imdb-'. It includes an endpoint that retrieves either a specific item based on the provided ID or returns a random item if none is specified.
+---
+
+```
+importrandom
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[Union[str, None], AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+#### A Random Item[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#a-random-item "Permanent link")
+With `data.items()` we get an iterable object with tuples containing the key and value for each dictionary item.
+We convert this iterable object into a proper `list` with `list(data.items())`.
+Then with `random.choice()` we can get a **random value** from the list, so, we get a tuple with `(id, name)`. It will be something like `("imdb-tt0371724", "The Hitchhiker's Guide to the Galaxy")`.
+Then we **assign those two values** of the tuple to the variables `id` and `name`.
+So, if the user didn't provide an item ID, they will still receive a random suggestion.
+...we do all this in a **single simple line**. 🤯 Don't you love Python? 🐍
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_45_1)
+```
+# Code above omitted 👆
+@app.get("/items/")
+async defread_items(
+  id: Annotated[str | None, AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+👀 Full file preview
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_46_1)
+```
+importrandom
+fromtypingimport Annotated
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[str | None, AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_47_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_47_2)
+```
+importrandom
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[Union[str, None], AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+```
+importrandom
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[Union[str, None], AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}

@@ -1,0 +1,59 @@
+Title: Integer Division and Modulus in Programming
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section discusses how integer division and modulus operations are handled in programming languages like Python and C, emphasizing the significance of the signs of operands. It highlights the utility of non-negative modulus results when the divisor is positive and addresses common pitfalls, such as a `SyntaxError` when attempting to access an integer literal attribute.
+---
+
+```
+
+then integer division has to return the floor. C also requires that identity to hold, and then compilers that truncate `i // j` need to make `i % j` have the same sign as `i`.
+There are few real use cases for `i % j` when `j` is negative. When `j` is positive, there are many, and in virtually all of them it’s more useful for `i % j` to be `>= 0`. If the clock says 10 now, what did it say 200 hours ago? `-190 % 12 == 2` is useful; `-190 % 12 == -10` is a bug waiting to bite.
+### [How do I get int literal attribute instead of SyntaxError?](https://docs.python.org/3/faq/programming.html#id30)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-get-int-literal-attribute-instead-of-syntaxerror "Link to this heading")
+Trying to lookup an `int` literal attribute in the normal manner gives a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") because the period is seen as a decimal point:
+>>>```
+>>> 1.__class__
+ File "<stdin>", line 1
+ 1.__class__
+  ^
+SyntaxError: invalid decimal literal
+
+```
+
+The solution is to separate the literal from the period with either a space or parentheses.
+>>>```
+>>> 1 .__class__
+<class 'int'>
+>>> (1).__class__
+<class 'int'>
+
+```
+
+### [How do I convert a string to a number?](https://docs.python.org/3/faq/programming.html#id31)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-convert-a-string-to-a-number "Link to this heading")
+For integers, use the built-in [`int()`](https://docs.python.org/3/library/functions.html#int "int") type constructor, e.g. `int('144') == 144`. Similarly, [`float()`](https://docs.python.org/3/library/functions.html#float "float") converts to a floating-point number, e.g. `float('144') == 144.0`.
+By default, these interpret the number as decimal, so that `int('0144') == 144` holds true, and `int('0x144')` raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"). `int(string, base)` takes the base to convert from as a second optional argument, so `int( '0x144', 16) == 324`. If the base is specified as 0, the number is interpreted using Python’s rules: a leading ‘0o’ indicates octal, and ‘0x’ indicates a hex number.
+Do not use the built-in function [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") if all you need is to convert strings to numbers. [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") will be significantly slower and it presents a security risk: someone could pass you a Python expression that might have unwanted side effects. For example, someone could pass `__import__('os').system("rm -rf $HOME")` which would erase your home directory.
+[`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") also has the effect of interpreting numbers as Python expressions, so that e.g. `eval('09')` gives a syntax error because Python does not allow leading ‘0’ in a decimal number (except ‘0’).
+### [How do I convert a number to a string?](https://docs.python.org/3/faq/programming.html#id32)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-convert-a-number-to-a-string "Link to this heading")
+To convert, e.g., the number `144` to the string `'144'`, use the built-in type constructor [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str"). If you want a hexadecimal or octal representation, use the built-in functions [`hex()`](https://docs.python.org/3/library/functions.html#hex "hex") or [`oct()`](https://docs.python.org/3/library/functions.html#oct "oct"). For fancy formatting, see the [f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings) and [Format String Syntax](https://docs.python.org/3/library/string.html#formatstrings) sections, e.g. `"{:04d}".format(144)` yields `'0144'` and `"{:.3f}".format(1.0/3.0)` yields `'0.333'`.
+### [How do I modify a string in place?](https://docs.python.org/3/faq/programming.html#id33)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-modify-a-string-in-place "Link to this heading")
+You can’t, because strings are immutable. In most situations, you should simply construct a new string from the various parts you want to assemble it from. However, if you need an object with the ability to modify in-place unicode data, try using an [`io.StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") object or the [`array`](https://docs.python.org/3/library/array.html#module-array "array: Space efficient arrays of uniformly typed numeric values.") module:
+>>>```
+>>> importio
+>>> s = "Hello, world"
+>>> sio = io.StringIO(s)
+>>> sio.getvalue()
+'Hello, world'
+>>> sio.seek(7)
+7
+>>> sio.write("there!")
+6
+>>> sio.getvalue()
+'Hello, there!'
+>>> importarray
+>>> a = array.array('w', s)
+>>> print(a)
+array('w', 'Hello, world')
+>>> a[0] = 'y'
+>>> print(a)
+array('w', 'yello, world')
+>>> a.tounicode()
+'yello, world'

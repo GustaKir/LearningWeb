@@ -1,0 +1,52 @@
+Title: Windows Registry Constants and Handle Objects
+URL: https://docs.python.org/3/library/winreg.html
+Summary: This section describes various Windows Registry constants such as REG_FULL_RESOURCE_DESCRIPTOR, REG_RESOURCE_REQUIREMENTS_LIST, and REG_SZ, along with the Registry Handle Objects that wrap Windows HKEY objects for automatic resource management. It emphasizes the importance of proper resource cleanup using Close() or CloseKey().
+---
+
+winreg.REG_FULL_RESOURCE_DESCRIPTOR[¶](https://docs.python.org/3/library/winreg.html#winreg.REG_FULL_RESOURCE_DESCRIPTOR "Link to this definition")
+    
+A hardware setting. 
+
+winreg.REG_RESOURCE_REQUIREMENTS_LIST[¶](https://docs.python.org/3/library/winreg.html#winreg.REG_RESOURCE_REQUIREMENTS_LIST "Link to this definition")
+    
+A hardware resource list. 
+
+winreg.REG_SZ[¶](https://docs.python.org/3/library/winreg.html#winreg.REG_SZ "Link to this definition")
+    
+A null-terminated string.
+## Registry Handle Objects[¶](https://docs.python.org/3/library/winreg.html#registry-handle-objects "Link to this heading")
+This object wraps a Windows HKEY object, automatically closing it when the object is destroyed. To guarantee cleanup, you can call either the [`Close()`](https://docs.python.org/3/library/winreg.html#winreg.PyHKEY.Close "winreg.PyHKEY.Close") method on the object, or the [`CloseKey()`](https://docs.python.org/3/library/winreg.html#winreg.CloseKey "winreg.CloseKey") function.
+All registry functions in this module return one of these objects.
+All registry functions in this module which accept a handle object also accept an integer, however, use of the handle object is encouraged.
+Handle objects provide semantics for [`__bool__()`](https://docs.python.org/3/reference/datamodel.html#object.__bool__ "object.__bool__") – thus
+```
+if handle:
+  print("Yes")
+
+```
+
+will print `Yes` if the handle is currently valid (has not been closed or detached).
+The object also support comparison semantics, so handle objects will compare true if they both reference the same underlying Windows handle value.
+Handle objects can be converted to an integer (e.g., using the built-in [`int()`](https://docs.python.org/3/library/functions.html#int "int") function), in which case the underlying Windows handle value is returned. You can also use the [`Detach()`](https://docs.python.org/3/library/winreg.html#winreg.PyHKEY.Detach "winreg.PyHKEY.Detach") method to return the integer handle, and also disconnect the Windows handle from the handle object. 
+
+PyHKEY.Close()[¶](https://docs.python.org/3/library/winreg.html#winreg.PyHKEY.Close "Link to this definition")
+    
+Closes the underlying Windows handle.
+If the handle is already closed, no error is raised. 
+
+PyHKEY.Detach()[¶](https://docs.python.org/3/library/winreg.html#winreg.PyHKEY.Detach "Link to this definition")
+    
+Detaches the Windows handle from the handle object.
+The result is an integer that holds the value of the handle before it is detached. If the handle is already detached or closed, this will return zero.
+After calling this function, the handle is effectively invalidated, but the handle is not closed. You would call this function when you need the underlying Win32 handle to exist beyond the lifetime of the handle object.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `winreg.PyHKEY.Detach` with argument `key`. 
+
+PyHKEY.__enter__()[¶](https://docs.python.org/3/library/winreg.html#winreg.PyHKEY.__enter__ "Link to this definition")
+
+
+PyHKEY.__exit__(_* exc_info_)[¶](https://docs.python.org/3/library/winreg.html#winreg.PyHKEY.__exit__ "Link to this definition")
+    
+The HKEY object implements [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") and [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") and thus supports the context protocol for the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement:
+```
+with OpenKey(HKEY_LOCAL_MACHINE, "foo") as key:
+  ... # work with key

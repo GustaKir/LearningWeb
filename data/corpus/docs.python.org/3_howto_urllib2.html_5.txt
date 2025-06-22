@@ -1,0 +1,34 @@
+Title: Response Methods in urllib
+URL: https://docs.python.org/3/howto/urllib2.html
+Summary: This section discusses two important methods of the response returned by urlopen: `geturl()` and `info()`. The `geturl()` method retrieves the actual URL of the fetched page, which may differ from the requested URL due to redirects. The `info()` method returns a dictionary-like object detailing the fetched page, particularly the headers sent by the server.
+---
+
+```
+
+## info and geturl[¶](https://docs.python.org/3/howto/urllib2.html#info-and-geturl "Link to this heading")
+The response returned by urlopen (or the [`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError") instance) has two useful methods `info()` and `geturl()` and is defined in the module [`urllib.response`](https://docs.python.org/3/library/urllib.request.html#module-urllib.response "urllib.response: Response classes used by urllib.").
+  * **geturl** - this returns the real URL of the page fetched. This is useful because `urlopen` (or the opener object used) may have followed a redirect. The URL of the page fetched may not be the same as the URL requested.
+  * **info** - this returns a dictionary-like object that describes the page fetched, particularly the headers sent by the server. It is currently an [`http.client.HTTPMessage`](https://docs.python.org/3/library/http.client.html#http.client.HTTPMessage "http.client.HTTPMessage") instance.
+
+
+Typical headers include ‘Content-length’, ‘Content-type’, and so on. See the [Quick Reference to HTTP Headers](https://jkorpela.fi/http.html) for a useful listing of HTTP headers with brief explanations of their meaning and use.
+## Openers and Handlers[¶](https://docs.python.org/3/howto/urllib2.html#openers-and-handlers "Link to this heading")
+When you fetch a URL you use an opener (an instance of the perhaps confusingly named [`urllib.request.OpenerDirector`](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector "urllib.request.OpenerDirector")). Normally we have been using the default opener - via `urlopen` - but you can create custom openers. Openers use handlers. All the “heavy lifting” is done by the handlers. Each handler knows how to open URLs for a particular URL scheme (http, ftp, etc.), or how to handle an aspect of URL opening, for example HTTP redirections or HTTP cookies.
+You will want to create openers if you want to fetch URLs with specific handlers installed, for example to get an opener that handles cookies, or to get an opener that does not handle redirections.
+To create an opener, instantiate an `OpenerDirector`, and then call `.add_handler(some_handler_instance)` repeatedly.
+Alternatively, you can use `build_opener`, which is a convenience function for creating opener objects with a single function call. `build_opener` adds several handlers by default, but provides a quick way to add more and/or override the default handlers.
+Other sorts of handlers you might want to can handle proxies, authentication, and other common but slightly specialised situations.
+`install_opener` can be used to make an `opener` object the (global) default opener. This means that calls to `urlopen` will use the opener you have installed.
+Opener objects have an `open` method, which can be called directly to fetch urls in the same way as the `urlopen` function: there’s no need to call `install_opener`, except as a convenience.
+## Basic Authentication[¶](https://docs.python.org/3/howto/urllib2.html#id5 "Link to this heading")
+To illustrate creating and installing a handler we will use the `HTTPBasicAuthHandler`. For a more detailed discussion of this subject – including an explanation of how Basic Authentication works - see the [Basic Authentication Tutorial](https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml).
+When authentication is required, the server sends a header (as well as the 401 error code) requesting authentication. This specifies the authentication scheme and a ‘realm’. The header looks like: `WWW-Authenticate: SCHEME realm="REALM"`.
+e.g.
+```
+WWW-Authenticate: Basic realm="cPanel Users"
+
+```
+
+The client should then retry the request with the appropriate name and password for the realm included as a header in the request. This is ‘basic authentication’. In order to simplify this process we can create an instance of `HTTPBasicAuthHandler` and an opener to use this handler.
+The `HTTPBasicAuthHandler` uses an object called a password manager to handle the mapping of URLs and realms to passwords and usernames. If you know what the realm is (from the authentication header sent by the server), then you can use a `HTTPPasswordMgr`. Frequently one doesn’t care what the realm is. In that case, it is convenient to use `HTTPPasswordMgrWithDefaultRealm`. This allows you to specify a default username and password for a URL. This will be supplied in the absence of you providing an alternative combination for a specific realm. We indicate this by providing `None` as the realm argument to the `add_password` method.
+The top-level URL is the first URL that requires authentication. URLs “deeper” than the URL you pass to .add_password() will also match.

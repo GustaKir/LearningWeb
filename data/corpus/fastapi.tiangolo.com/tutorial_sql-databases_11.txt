@@ -1,0 +1,128 @@
+Title: FastAPI Tutorial: SQL Databases
+URL: https://fastapi.tiangolo.com/tutorial/sql-databases/
+Summary: This section illustrates how to integrate SQL databases with FastAPI using the SQLModel. It includes defining a SQLModel class for a 'Hero' with fields such as id, name, age, and secret_name, and shows how to create a SQLite database and establish a connection. The tutorial explains the setup of the FastAPI app, including creating database tables on startup and providing endpoints to create and read hero records.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI, HTTPException, Query
+fromsqlmodelimport Field, Session, SQLModel, create_engine, select
+classHero(SQLModel, table=True):
+  id: Union[int, None] = Field(default=None, primary_key=True)
+  name: str = Field(index=True)
+  age: Union[int, None] = Field(default=None, index=True)
+  secret_name: str
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, connect_args=connect_args)
+defcreate_db_and_tables():
+  SQLModel.metadata.create_all(engine)
+defget_session():
+  with Session(engine) as session:
+    yield session
+app = FastAPI()
+@app.on_event("startup")
+defon_startup():
+  create_db_and_tables()
+@app.post("/heroes/")
+defcreate_hero(hero: Hero, session: Session = Depends(get_session)) -> Hero:
+  session.add(hero)
+  session.commit()
+  session.refresh(hero)
+  return hero
+@app.get("/heroes/")
+defread_heroes(
+  session: Session = Depends(get_session),
+  offset: int = 0,
+  limit: int = Query(default=100, le=100),
+) -> list[Hero]:
+  heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+  return heroes
+@app.get("/heroes/{hero_id}")
+defread_hero(hero_id: int, session: Session = Depends(get_session)) -> Hero:
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  return hero
+@app.delete("/heroes/{hero_id}")
+defdelete_hero(hero_id: int, session: Session = Depends(get_session)):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  session.delete(hero)
+  session.commit()
+  return {"ok": True}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport List, Union
+fromfastapiimport Depends, FastAPI, HTTPException, Query
+fromsqlmodelimport Field, Session, SQLModel, create_engine, select
+classHero(SQLModel, table=True):
+  id: Union[int, None] = Field(default=None, primary_key=True)
+  name: str = Field(index=True)
+  age: Union[int, None] = Field(default=None, index=True)
+  secret_name: str
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, connect_args=connect_args)
+defcreate_db_and_tables():
+  SQLModel.metadata.create_all(engine)
+defget_session():
+  with Session(engine) as session:
+    yield session
+app = FastAPI()
+@app.on_event("startup")
+defon_startup():
+  create_db_and_tables()
+@app.post("/heroes/")
+defcreate_hero(hero: Hero, session: Session = Depends(get_session)) -> Hero:
+  session.add(hero)
+  session.commit()
+  session.refresh(hero)
+  return hero
+@app.get("/heroes/")
+defread_heroes(
+  session: Session = Depends(get_session),
+  offset: int = 0,
+  limit: int = Query(default=100, le=100),
+) -> List[Hero]:
+  heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+  return heroes
+@app.get("/heroes/{hero_id}")
+defread_hero(hero_id: int, session: Session = Depends(get_session)) -> Hero:
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  return hero
+@app.delete("/heroes/{hero_id}")
+defdelete_hero(hero_id: int, session: Session = Depends(get_session)):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  session.delete(hero)
+  session.commit()
+  return {"ok": True}
+
+```
+
+Using `check_same_thread=False` allows FastAPI to use the same SQLite database in different threads. This is necessary as **one single request** could use **more than one thread** (for example in dependencies).
+Don't worry, with the way the code is structured, we'll make sure we use **a single SQLModel _session_ per request** later, this is actually what the `check_same_thread` is trying to achieve.
+### Create the Tables[¶](https://fastapi.tiangolo.com/tutorial/sql-databases/#create-the-tables "Permanent link")
+We then add a function that uses `SQLModel.metadata.create_all(engine)` to **create the tables** for all the _table models_.
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/sql-databases/#__tabbed_7_1)
+```
+# Code above omitted 👆
+defcreate_db_and_tables():
+  SQLModel.metadata.create_all(engine)
+# Code below omitted 👇
+
+```
+
+👀 Full file preview
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/sql-databases/#__tabbed_8_1)

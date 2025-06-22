@@ -1,0 +1,52 @@
+Title: Understanding I/O Events in Python's Selectors Module
+URL: https://docs.python.org/3/library/selectors.html
+Summary: The chunk discusses the bitwise mask representing I/O events to monitor on file objects in Python's selectors module. It outlines constants such as EVENT_READ for monitoring read availability and EVENT_WRITE for write availability. Additionally, it introduces the SelectorKey class, which pairs a file object with its file descriptor, event mask, and related information.
+---
+
+```
+
+In the following, _events_ is a bitwise mask indicating which I/O events should be waited for on a given file object. It can be a combination of the modules constants below:
+> Constant | Meaning  
+> ---|--- 
+
+selectors.EVENT_READ[¶](https://docs.python.org/3/library/selectors.html#selectors.EVENT_READ "Link to this definition")
+| Available for read 
+
+selectors.EVENT_WRITE[¶](https://docs.python.org/3/library/selectors.html#selectors.EVENT_WRITE "Link to this definition")
+| Available for write 
+
+_class_ selectors.SelectorKey[¶](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "Link to this definition")
+      
+A [`SelectorKey`](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "selectors.SelectorKey") is a [`namedtuple`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple") used to associate a file object to its underlying file descriptor, selected event mask and attached data. It is returned by several [`BaseSelector`](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector "selectors.BaseSelector") methods. 
+
+fileobj[¶](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey.fileobj "Link to this definition")
+    
+File object registered. 
+
+fd[¶](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey.fd "Link to this definition")
+    
+Underlying file descriptor. 
+
+events[¶](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey.events "Link to this definition")
+    
+Events that must be waited for on this file object. 
+
+data[¶](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey.data "Link to this definition")
+    
+Optional opaque data associated to this file object: for example, this could be used to store a per-client session ID. 
+
+_class_ selectors.BaseSelector[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector "Link to this definition")
+    
+A [`BaseSelector`](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector "selectors.BaseSelector") is used to wait for I/O event readiness on multiple file objects. It supports file stream registration, unregistration, and a method to wait for I/O events on those streams, with an optional timeout. It’s an abstract base class, so cannot be instantiated. Use [`DefaultSelector`](https://docs.python.org/3/library/selectors.html#selectors.DefaultSelector "selectors.DefaultSelector") instead, or one of [`SelectSelector`](https://docs.python.org/3/library/selectors.html#selectors.SelectSelector "selectors.SelectSelector"), [`KqueueSelector`](https://docs.python.org/3/library/selectors.html#selectors.KqueueSelector "selectors.KqueueSelector") etc. if you want to specifically use an implementation, and your platform supports it. [`BaseSelector`](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector "selectors.BaseSelector") and its concrete implementations support the [context manager](https://docs.python.org/3/glossary.html#term-context-manager) protocol. 
+
+_abstractmethod_ register(_fileobj_ , _events_ , _data =None_)[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector.register "Link to this definition")
+    
+Register a file object for selection, monitoring it for I/O events.
+_fileobj_ is the file object to monitor. It may either be an integer file descriptor or an object with a `fileno()` method. _events_ is a bitwise mask of events to monitor. _data_ is an opaque object.
+This returns a new [`SelectorKey`](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "selectors.SelectorKey") instance, or raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") in case of invalid event mask or file descriptor, or [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") if the file object is already registered. 
+
+_abstractmethod_ unregister(_fileobj_)[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector.unregister "Link to this definition")
+    
+Unregister a file object from selection, removing it from monitoring. A file object shall be unregistered prior to being closed.
+_fileobj_ must be a file object previously registered.
+This returns the associated [`SelectorKey`](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "selectors.SelectorKey") instance, or raises a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") if _fileobj_ is not registered. It will raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if _fileobj_ is invalid (e.g. it has no `fileno()` method or its `fileno()` method has an invalid return value).

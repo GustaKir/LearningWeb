@@ -1,0 +1,158 @@
+Title: Using PurePath in Python's pathlib
+URL: https://docs.python.org/3/library/pathlib.html
+Summary: This chunk illustrates the creation and manipulation of PurePath objects in Python's pathlib module, demonstrating how to construct paths, use them with os functions, and obtain their string representation. Additionally, it shows compatibility with both POSIX and Windows paths.
+---
+
+```
+>>> p = PurePath('/etc')
+>>> p
+PurePosixPath('/etc')
+>>> p / 'init.d' / 'apache2'
+PurePosixPath('/etc/init.d/apache2')
+>>> q = PurePath('bin')
+>>> '/usr' / q
+PurePosixPath('/usr/bin')
+>>> p / '/an_absolute_path'
+PurePosixPath('/an_absolute_path')
+>>> PureWindowsPath('c:/Windows', '/Program Files')
+PureWindowsPath('c:/Program Files')
+
+```
+
+A path object can be used anywhere an object implementing [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike "os.PathLike") is accepted:
+>>>```
+>>> importos
+>>> p = PurePath('/etc')
+>>> os.fspath(p)
+'/etc'
+
+```
+
+The string representation of a path is the raw filesystem path itself (in native form, e.g. with backslashes under Windows), which you can pass to any function taking a file path as a string:
+>>>```
+>>> p = PurePath('/etc')
+>>> str(p)
+'/etc'
+>>> p = PureWindowsPath('c:/Program Files')
+>>> str(p)
+'c:\\Program Files'
+
+```
+
+Similarly, calling [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") on a path gives the raw filesystem path as a bytes object, as encoded by [`os.fsencode()`](https://docs.python.org/3/library/os.html#os.fsencode "os.fsencode"):
+>>>```
+>>> bytes(p)
+b'/etc'
+
+```
+
+Note
+Calling [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") is only recommended under Unix. Under Windows, the unicode form is the canonical representation of filesystem paths.
+### Accessing individual parts[¶](https://docs.python.org/3/library/pathlib.html#accessing-individual-parts "Link to this heading")
+To access the individual “parts” (components) of a path, use the following property: 
+
+PurePath.parts[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.parts "Link to this definition")
+    
+A tuple giving access to the path’s various components:
+>>>```
+>>> p = PurePath('/usr/bin/python3')
+>>> p.parts
+('/', 'usr', 'bin', 'python3')
+>>> p = PureWindowsPath('c:/Program Files/PSF')
+>>> p.parts
+('c:\\', 'Program Files', 'PSF')
+
+```
+
+(note how the drive and local root are regrouped in a single part)
+### Methods and properties[¶](https://docs.python.org/3/library/pathlib.html#methods-and-properties "Link to this heading")
+Pure paths provide the following methods and properties: 
+
+PurePath.parser[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.parser "Link to this definition")
+    
+The implementation of the [`os.path`](https://docs.python.org/3/library/os.path.html#module-os.path "os.path: Operations on pathnames.") module used for low-level path parsing and joining: either `posixpath` or `ntpath`.
+Added in version 3.13. 
+
+PurePath.drive[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.drive "Link to this definition")
+    
+A string representing the drive letter or name, if any:
+>>>```
+>>> PureWindowsPath('c:/Program Files/').drive
+'c:'
+>>> PureWindowsPath('/Program Files/').drive
+''
+>>> PurePosixPath('/etc').drive
+''
+
+```
+
+UNC shares are also considered drives:
+>>>```
+>>> PureWindowsPath('//host/share/foo.txt').drive
+'\\\\host\\share'
+
+```
+
+
+PurePath.root[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.root "Link to this definition")
+    
+A string representing the (local or global) root, if any:
+>>>```
+>>> PureWindowsPath('c:/Program Files/').root
+'\\'
+>>> PureWindowsPath('c:Program Files/').root
+''
+>>> PurePosixPath('/etc').root
+'/'
+
+```
+
+UNC shares always have a root:
+>>>```
+>>> PureWindowsPath('//host/share').root
+'\\'
+
+```
+
+If the path starts with more than two successive slashes, [`PurePosixPath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePosixPath "pathlib.PurePosixPath") collapses them:
+>>>```
+>>> PurePosixPath('//etc').root
+'//'
+>>> PurePosixPath('///etc').root
+'/'
+>>> PurePosixPath('////etc').root
+'/'
+
+```
+
+Note
+This behavior conforms to _The Open Group Base Specifications Issue 6_ , paragraph [4.11 Pathname Resolution](https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11):
+_“A pathname that begins with two successive slashes may be interpreted in an implementation-defined manner, although more than two leading slashes shall be treated as a single slash.”_ 
+
+PurePath.anchor[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.anchor "Link to this definition")
+    
+The concatenation of the drive and root:
+>>>```
+>>> PureWindowsPath('c:/Program Files/').anchor
+'c:\\'
+>>> PureWindowsPath('c:Program Files/').anchor
+'c:'
+>>> PurePosixPath('/etc').anchor
+'/'
+>>> PureWindowsPath('//host/share').anchor
+'\\\\host\\share\\'
+
+```
+
+
+PurePath.parents[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.parents "Link to this definition")
+    
+An immutable sequence providing access to the logical ancestors of the path:
+>>>```
+>>> p = PureWindowsPath('c:/foo/bar/setup.py')
+>>> p.parents[0]
+PureWindowsPath('c:/foo/bar')
+>>> p.parents[1]
+PureWindowsPath('c:/foo')
+>>> p.parents[2]
+PureWindowsPath('c:/')

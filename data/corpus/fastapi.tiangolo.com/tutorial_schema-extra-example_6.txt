@@ -1,0 +1,198 @@
+Title: Using Examples in FastAPI Schema
+URL: https://fastapi.tiangolo.com/tutorial/schema-extra-example/
+Summary: This section discusses how to add example values to FastAPI models using Pydantic's `Field` class. It explains how to define a model with a `put` endpoint that returns item details, showcasing various types of fields, including optional and example-holding fields. Additionally, it highlights the ability to declare groups of examples for various FastAPI request types.
+---
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_8_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, Field
+app = FastAPI()
+classItem(BaseModel):
+  name: str = Field(examples=["Foo"])
+  description: Union[str, None] = Field(default=None, examples=["A very nice Item"])
+  price: float = Field(examples=[35.4])
+  tax: Union[float, None] = Field(default=None, examples=[3.2])
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+## `examples` in JSON Schema - OpenAPI[¶](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#examples-in-json-schema-openapi "Permanent link")
+When using any of:
+  * `Path()`
+  * `Query()`
+  * `Header()`
+  * `Cookie()`
+  * `Body()`
+  * `Form()`
+  * `File()`
+
+
+you can also declare a group of `examples` with additional information that will be added to their **JSON Schemas** inside of **OpenAPI**.
+### `Body` with `examples`[¶](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#body-with-examples "Permanent link")
+Here we pass `examples` containing one example of the data expected in `Body()`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_9_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int,
+  item: Annotated[
+    Item,
+    Body(
+      examples=[
+        {
+          "name": "Foo",
+          "description": "A very nice Item",
+          "price": 35.4,
+          "tax": 3.2,
+        }
+      ],
+    ),
+  ],
+):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_10_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_10_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_10_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_10_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int,
+  item: Annotated[
+    Item,
+    Body(
+      examples=[
+        {
+          "name": "Foo",
+          "description": "A very nice Item",
+          "price": 35.4,
+          "tax": 3.2,
+        }
+      ],
+    ),
+  ],
+):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int,
+  item: Annotated[
+    Item,
+    Body(
+      examples=[
+        {
+          "name": "Foo",
+          "description": "A very nice Item",
+          "price": 35.4,
+          "tax": 3.2,
+        }
+      ],
+    ),
+  ],
+):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int,
+  item: Item = Body(
+    examples=[
+      {
+        "name": "Foo",
+        "description": "A very nice Item",
+        "price": 35.4,
+        "tax": 3.2,
+      }
+    ],
+  ),
+):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int,
+  item: Item = Body(
+    examples=[
+      {
+        "name": "Foo",
+        "description": "A very nice Item",
+        "price": 35.4,
+        "tax": 3.2,
+      }
+    ],
+  ),
+):
+  results = {"item_id": item_id, "item": item}
+  return results

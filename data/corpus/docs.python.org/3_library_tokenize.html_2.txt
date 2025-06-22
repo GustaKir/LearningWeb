@@ -1,0 +1,100 @@
+Title: Detecting Encoding in Python Source Files
+URL: https://docs.python.org/3/library/tokenize.html
+Summary: The `detect_encoding()` function identifies the encoding for decoding Python source files. It reads from a provided `readline` function, returning the encoding as a string and any undecoded lines. It detects encoding via a UTF-8 BOM or an encoding cookie per PEP 263, raising a `SyntaxError` if both disagree.
+---
+
+tokenize.detect_encoding(_readline_)[¶](https://docs.python.org/3/library/tokenize.html#tokenize.detect_encoding "Link to this definition")
+    
+The [`detect_encoding()`](https://docs.python.org/3/library/tokenize.html#tokenize.detect_encoding "tokenize.detect_encoding") function is used to detect the encoding that should be used to decode a Python source file. It requires one argument, readline, in the same way as the [`tokenize()`](https://docs.python.org/3/library/tokenize.html#tokenize.tokenize "tokenize.tokenize") generator.
+It will call readline a maximum of twice, and return the encoding used (as a string) and a list of any lines (not decoded from bytes) it has read in.
+It detects the encoding from the presence of a UTF-8 BOM or an encoding cookie as specified in [**PEP 263**](https://peps.python.org/pep-0263/). If both a BOM and a cookie are present, but disagree, a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") will be raised. Note that if the BOM is found, `'utf-8-sig'` will be returned as an encoding.
+If no encoding is specified, then the default of `'utf-8'` will be returned.
+Use [`open()`](https://docs.python.org/3/library/tokenize.html#tokenize.open "tokenize.open") to open Python source files: it uses [`detect_encoding()`](https://docs.python.org/3/library/tokenize.html#tokenize.detect_encoding "tokenize.detect_encoding") to detect the file encoding. 
+
+tokenize.open(_filename_)[¶](https://docs.python.org/3/library/tokenize.html#tokenize.open "Link to this definition")
+    
+Open a file in read only mode using the encoding detected by [`detect_encoding()`](https://docs.python.org/3/library/tokenize.html#tokenize.detect_encoding "tokenize.detect_encoding").
+Added in version 3.2. 
+
+_exception_ tokenize.TokenError[¶](https://docs.python.org/3/library/tokenize.html#tokenize.TokenError "Link to this definition")
+    
+Raised when either a docstring or expression that may be split over several lines is not completed anywhere in the file, for example:
+```
+"""Beginning of
+docstring
+
+```
+
+or:
+```
+[1,
+ 2,
+ 3
+
+```
+
+## Command-Line Usage[¶](https://docs.python.org/3/library/tokenize.html#command-line-usage "Link to this heading")
+Added in version 3.3.
+The [`tokenize`](https://docs.python.org/3/library/tokenize.html#module-tokenize "tokenize: Lexical scanner for Python source code.") module can be executed as a script from the command line. It is as simple as:
+```
+python-mtokenize[-e][filename.py]
+
+```
+
+The following options are accepted: 
+
+-h, --help[¶](https://docs.python.org/3/library/tokenize.html#cmdoption-tokenize-h "Link to this definition")
+    
+show this help message and exit 
+
+-e, --exact[¶](https://docs.python.org/3/library/tokenize.html#cmdoption-tokenize-e "Link to this definition")
+    
+display token names using the exact type
+If `filename.py` is specified its contents are tokenized to stdout. Otherwise, tokenization is performed on stdin.
+## Examples[¶](https://docs.python.org/3/library/tokenize.html#examples "Link to this heading")
+Example of a script rewriter that transforms float literals into Decimal objects:
+```
+fromtokenizeimport tokenize, untokenize, NUMBER, STRING, NAME, OP
+fromioimport BytesIO
+defdecistmt(s):
+"""Substitute Decimals for floats in a string of statements.
+  >>> from decimal import Decimal
+  >>> s = 'print(+21.3e-5*-.1234/81.7)'
+  >>> decistmt(s)
+  "print (+Decimal ('21.3e-5')*-Decimal ('.1234')/Decimal ('81.7'))"
+  The format of the exponent is inherited from the platform C library.
+  Known cases are "e-007" (Windows) and "e-07" (not Windows). Since
+  we're only showing 12 digits, and the 13th isn't close to 5, the
+  rest of the output should be platform-independent.
+  >>> exec(s) #doctest: +ELLIPSIS
+  -3.21716034272e-0...7
+  Output from calculations with Decimal should be identical across all
+  platforms.
+  >>> exec(decistmt(s))
+  -3.217160342717258261933904529E-7
+  """
+  result = []
+  g = tokenize(BytesIO(s.encode('utf-8')).readline) # tokenize the string
+  for toknum, tokval, _, _, _ in g:
+    if toknum == NUMBER and '.' in tokval: # replace NUMBER tokens
+      result.extend([
+        (NAME, 'Decimal'),
+        (OP, '('),
+        (STRING, repr(tokval)),
+        (OP, ')')
+      ])
+    else:
+      result.append((toknum, tokval))
+  return untokenize(result).decode('utf-8')
+
+```
+
+Example of tokenizing from the command line. The script:
+```
+defsay_hello():
+  print("Hello, World!")
+say_hello()
+
+```
+
+will be tokenized to the following output where the first column is the range of the line/column coordinates where the token is found, the second column is the name of the token, and the final column is the value of the token (if any)

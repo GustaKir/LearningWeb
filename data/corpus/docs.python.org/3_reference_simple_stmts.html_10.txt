@@ -1,0 +1,36 @@
+Title: Basic Import Statement in Python
+URL: https://docs.python.org/3/reference/simple_stmts.html
+Summary: The basic import statement in Python executes in two steps: it finds a module and initializes it if necessary, then defines names in the local namespace. For multiple import clauses, these steps are executed separately for each. Additional details on the import process can be found in the section on the import system.
+---
+
+```
+
+The basic import statement (no [`from`](https://docs.python.org/3/reference/simple_stmts.html#from) clause) is executed in two steps:
+  1. find a module, loading and initializing it if necessary
+  2. define a name or names in the local namespace for the scope where the [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) statement occurs.
+
+
+When the statement contains multiple clauses (separated by commas) the two steps are carried out separately for each clause, just as though the clauses had been separated out into individual import statements.
+The details of the first step, finding and loading modules, are described in greater detail in the section on the [import system](https://docs.python.org/3/reference/import.html#importsystem), which also describes the various types of packages and modules that can be imported, as well as all the hooks that can be used to customize the import system. Note that failures in this step may indicate either that the module could not be located, _or_ that an error occurred while initializing the module, which includes execution of the module’s code.
+If the requested module is retrieved successfully, it will be made available in the local namespace in one of three ways:
+  * If the module name is followed by `as`, then the name following `as` is bound directly to the imported module.
+  * If no other name is specified, and the module being imported is a top level module, the module’s name is bound in the local namespace as a reference to the imported module
+  * If the module being imported is _not_ a top level module, then the name of the top level package that contains the module is bound in the local namespace as a reference to the top level package. The imported module must be accessed using its full qualified name rather than directly
+
+
+The [`from`](https://docs.python.org/3/reference/simple_stmts.html#from) form uses a slightly more complex process:
+  1. find the module specified in the [`from`](https://docs.python.org/3/reference/simple_stmts.html#from) clause, loading and initializing it if necessary;
+  2. for each of the identifiers specified in the [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) clauses:
+    1. check if the imported module has an attribute by that name
+    2. if not, attempt to import a submodule with that name and then check the imported module again for that attribute
+    3. if the attribute is not found, [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") is raised.
+    4. otherwise, a reference to that value is stored in the local namespace, using the name in the `as` clause if it is present, otherwise using the attribute name
+
+
+Examples:
+```
+importfoo         # foo imported and bound locally
+importfoo.bar.baz     # foo, foo.bar, and foo.bar.baz imported, foo bound locally
+importfoo.bar.bazasfbb # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as fbb
+fromfoo.barimport baz  # foo, foo.bar, and foo.bar.baz imported, foo.bar.baz bound as baz
+fromfooimport attr    # foo imported and foo.attr bound as attr

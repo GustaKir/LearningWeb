@@ -1,0 +1,34 @@
+Title: Advanced Topics in Python for macOS
+URL: https://docs.python.org/3/using/mac.html
+Summary: This section discusses the experimental feature of installing free-threaded binaries in Python 3.13 for macOS. It notes that this feature, which allows running without the global interpreter lock enabled, is subject to change in future releases and emphasizes checking the release page for updates.
+---
+
+## 5.5. Advanced Topics[¶](https://docs.python.org/3/using/mac.html#advanced-topics "Link to this heading")
+### 5.5.1. Installing Free-threaded Binaries[¶](https://docs.python.org/3/using/mac.html#installing-free-threaded-binaries "Link to this heading")
+Added in version 3.13: (Experimental)
+Note
+Everything described in this section is considered experimental, and should be expected to change in future releases.
+The `python.org` [Python for macOS](https://docs.python.org/3/using/mac.html#getting-and-installing-macpython) installer package can optionally install an additional build of Python 3.13 that supports [**PEP 703**](https://peps.python.org/pep-0703/), the experimental free-threading feature (running with the [global interpreter lock](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) disabled). Check the release page on `python.org` for possible updated information.
+Because this feature is still considered experimental, the support for it is not installed by default. It is packaged as a separate install option, available by clicking the **Customize** button on the **Installation Type** step of the installer as described above.
+![../_images/mac_installer_09_custom_install_free_threaded.png](https://docs.python.org/3/_images/mac_installer_09_custom_install_free_threaded.png)
+If the box next to the **Free-threaded Python** package name is checked, a separate `PythonT.framework` will also be installed alongside the normal `Python.framework` in `/Library/Frameworks`. This configuration allows a free-threaded Python 3.13 build to co-exist on your system with a traditional (GIL only) Python 3.13 build with minimal risk while installing or testing. This installation layout is itself experimental and is subject to change in future releases.
+Known cautions and limitations:
+  * The **UNIX command-line tools** package, which is selected by default, will install links in `/usr/local/bin` for `python3.13t`, the free-threaded interpreter, and `python3.13t-config`, a configuration utility which may be useful for package builders. Since `/usr/local/bin` is typically included in your shell `PATH`, in most cases no changes to your `PATH` environment variables should be needed to use `python3.13t`.
+  * For this release, the **Shell profile updater** package and the `Update Shell Profile.command` in `/Applications/Python 3.13/` do not support the free-threaded package.
+  * The free-threaded build and the traditional build have separate search paths and separate `site-packages` directories so, by default, if you need a package available in both builds, it may need to be installed in both. The free-threaded package will install a separate instance of **pip** for use with `python3.13t`.
+    * To install a package using **pip** without a **venv** :
+> `python3.13t` `-m pip install <package_name>`
+  * When working with multiple Python environments, it is usually safest and easiest to [create and use virtual environments](https://docs.python.org/3/tutorial/venv.html#tut-venv). This can avoid possible command name conflicts and confusion about which Python is in use:
+> `python3.13t` `-m venv <venv_name>`
+then **activate**.
+  * To run a free-threaded version of IDLE:
+> `python3.13t` `-m idlelib`
+  * The interpreters in both builds respond to the same [PYTHON environment variables](https://docs.python.org/3/using/cmdline.html#using-on-envvars) which may have unexpected results, for example, if you have `PYTHONPATH` set in a shell profile. If necessary, there are [command line options](https://docs.python.org/3/using/cmdline.html#using-on-interface-options) like `-E` to ignore these environment variables.
+  * The free-threaded build links to the third-party shared libraries, such as `OpenSSL` and `Tk`, installed in the traditional framework. This means that both builds also share one set of trust certificates as installed by the **Install Certificates.command** script, thus it only needs to be run once.
+  * If you cannot depend on the link in `/usr/local/bin` pointing to the `python.org` free-threaded `python3.13t` (for example, if you want to install your own version there or some other distribution does), you can explicitly set your shell `PATH` environment variable to include the `PythonT` framework `bin` directory:
+```
+exportPATH="/Library/Frameworks/PythonT.framework/Versions/3.13/bin":"$PATH"
+
+```
+
+The traditional framework installation by default does something similar, except for `Python.framework`. Be aware that having both framework `bin` directories in `PATH` can lead to confusion if there are duplicate names like `python3.13` in both; which one is actually used depends on the order they appear in `PATH`. The `which python3.x` or `which python3.xt` commands can show which path is being used. Using virtual environments can help avoid such ambiguities. Another option might be to create a shell **alias** to the desired interpreter, like:

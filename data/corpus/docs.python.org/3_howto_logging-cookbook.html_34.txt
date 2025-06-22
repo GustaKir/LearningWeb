@@ -1,0 +1,126 @@
+Title: BufferingSMTPHandler Class Implementation
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This chunk introduces the 'BufferingSMTPHandler' class, which extends 'BufferingHandler' from the logging library. It initializes with parameters for SMTP settings and includes a method to flush buffered logs by sending them via email using SMTP authentication.
+---
+
+```
+importlogging
+importlogging.handlers
+importsmtplib
+classBufferingSMTPHandler(logging.handlers.BufferingHandler):
+  def__init__(self, mailhost, port, username, password, fromaddr, toaddrs,
+         subject, capacity):
+    logging.handlers.BufferingHandler.__init__(self, capacity)
+    self.mailhost = mailhost
+    self.mailport = port
+    self.username = username
+    self.password = password
+    self.fromaddr = fromaddr
+    if isinstance(toaddrs, str):
+      toaddrs = [toaddrs]
+    self.toaddrs = toaddrs
+    self.subject = subject
+    self.setFormatter(logging.Formatter("%(asctime)s%(levelname)-5s%(message)s"))
+  defflush(self):
+    if len(self.buffer) > 0:
+      try:
+        smtp = smtplib.SMTP(self.mailhost, self.mailport)
+        smtp.starttls()
+        smtp.login(self.username, self.password)
+        msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (self.fromaddr, ','.join(self.toaddrs), self.subject)
+        for record in self.buffer:
+          s = self.format(record)
+          msg = msg + s + "\r\n"
+        smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+        smtp.quit()
+      except Exception:
+        if logging.raiseExceptions:
+          raise
+      self.buffer = []
+if __name__ == '__main__':
+  importargparse
+  ap = argparse.ArgumentParser()
+  aa = ap.add_argument
+  aa('host', metavar='HOST', help='SMTP server')
+  aa('--port', '-p', type=int, default=587, help='SMTP port')
+  aa('user', metavar='USER', help='SMTP username')
+  aa('password', metavar='PASSWORD', help='SMTP password')
+  aa('to', metavar='TO', help='Addressee for emails')
+  aa('sender', metavar='SENDER', help='Sender email address')
+  aa('--subject', '-s',
+    default='Test Logging email from Python logging module (buffering)',
+    help='Subject of email')
+  options = ap.parse_args()
+  logger = logging.getLogger()
+  logger.setLevel(logging.DEBUG)
+  h = BufferingSMTPHandler(options.host, options.port, options.user,
+               options.password, options.sender,
+               options.to, options.subject, 10)
+  logger.addHandler(h)
+  for i in range(102):
+    logger.info("Info index = %d", i)
+  h.flush()
+  h.close()
+
+```
+
+If you run this script and your SMTP server is correctly set up, you should find that it sends eleven emails to the addressee you specify. The first ten emails will each have ten log messages, and the eleventh will have two messages. That makes up 102 messages as specified in the script.
+## Formatting times using UTC (GMT) via configuration[¶](https://docs.python.org/3/howto/logging-cookbook.html#formatting-times-using-utc-gmt-via-configuration "Link to this heading")
+Sometimes you want to format times using UTC, which can be done using a class such as `UTCFormatter`, shown below:
+```
+importlogging
+importtime
+classUTCFormatter(logging.Formatter):
+  converter = time.gmtime
+
+```
+
+and you can then use the `UTCFormatter` in your code instead of [`Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter"). If you want to do that via configuration, you can use the [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig") API with an approach illustrated by the following complete example:
+```
+importlogging
+importlogging.config
+importtime
+classUTCFormatter(logging.Formatter):
+  converter = time.gmtime
+LOGGING = {
+  'version': 1,
+  'disable_existing_loggers': False,
+  'formatters': {
+    'utc': {
+      '()': UTCFormatter,
+      'format': '%(asctime)s%(message)s',
+    },
+    'local': {
+      'format': '%(asctime)s%(message)s',
+    }
+  },
+  'handlers': {
+    'console1': {
+      'class': 'logging.StreamHandler',
+      'formatter': 'utc',
+    },
+    'console2': {
+      'class': 'logging.StreamHandler',
+      'formatter': 'local',
+    },
+  },
+  'root': {
+    'handlers': ['console1', 'console2'],
+  }
+}
+if __name__ == '__main__':
+  logging.config.dictConfig(LOGGING)
+  logging.warning('The local time is %s', time.asctime())
+
+```
+
+When this script is run, it should print something like:
+```
+2015-10-17 12:53:29,501 The local time is Sat Oct 17 13:53:29 2015
+2015-10-17 13:53:29,501 The local time is Sat Oct 17 13:53:29 2015
+
+```
+
+showing how the time is formatted both as local time and UTC, one for each handler.
+## Using a context manager for selective logging[¶](https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging "Link to this heading")
+There are times when it would be useful to temporarily change the logging configuration and revert it back after doing something. For this, a context manager is the most obvious way of saving and restoring the logging context. Here is a simple example of such a context manager, which allows you to optionally change the logging level and add a logging handler purely in the scope of the context manager:

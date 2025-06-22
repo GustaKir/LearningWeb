@@ -1,0 +1,28 @@
+Title: Python Bug Fixes and Improvements
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: Recent updates include enhancements such as improved error reporting for non-ASCII characters, visibility of iteration variables in comprehensions for debugging tools, and fixes for crashes related to code instrumentation and optimization errors. Notable issues addressed include caret placement errors and definition of deallocation methods.
+---
+
+It now points on the invalid non-ASCII character, not on the valid numerical literal.
+  * [gh-108976](https://github.com/python/cpython/issues/108976): Fix crash that occurs after de-instrumenting a code object in a monitoring callback.
+  * [gh-108732](https://github.com/python/cpython/issues/108732): Make iteration variables of module- and class-scoped comprehensions visible to pdb and other tools that use `frame.f_locals` again.
+  * [gh-108959](https://github.com/python/cpython/issues/108959): Fix caret placement for error locations for subscript and binary operations that involve non-semantic parentheses and spaces. Patch by Pablo Galindo
+  * [gh-104584](https://github.com/python/cpython/issues/104584): Fix a crash when running with `PYTHONUOPS` or [`-X uops`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) enabled and an error occurs during optimization.
+  * [gh-108727](https://github.com/python/cpython/issues/108727): Define `tp_dealloc` for `CounterOptimizer_Type`. This fixes a segfault on deallocation.
+  * [gh-108520](https://github.com/python/cpython/issues/108520): Fix `multiprocessing.synchronize.SemLock.__setstate__()` to properly initialize `multiprocessing.synchronize.SemLock._is_fork_ctx`. This fixes a regression when passing a SemLock across nested processes.
+Rename `multiprocessing.synchronize.SemLock.is_fork_ctx` to `multiprocessing.synchronize.SemLock._is_fork_ctx` to avoid exposing it as public API.
+  * [gh-108654](https://github.com/python/cpython/issues/108654): Restore locals shadowed by an inlined comprehension if the comprehension raises an exception.
+  * [gh-108488](https://github.com/python/cpython/issues/108488): Change the initialization of inline cache entries so that the cache entry for `JUMP_BACKWARD` is initialized to zero, instead of the `adaptive_counter_warmup()` value used for all other instructions. This counter, unique among instructions, counts up from zero.
+  * [gh-108716](https://github.com/python/cpython/issues/108716): Turn off deep-freezing of code objects. Modules are still frozen, so that a file system search is not needed for common modules.
+  * [gh-108614](https://github.com/python/cpython/issues/108614): Add RESUME_CHECK instruction, to avoid having to handle instrumentation, signals, and contexts switches in the tier 2 execution engine.
+  * [gh-108487](https://github.com/python/cpython/issues/108487): Move an assert that would cause a spurious crash in a devious case that should only trigger deoptimization.
+  * [gh-106176](https://github.com/python/cpython/issues/106176): Use a `WeakValueDictionary` to track the lists containing the modules each thread is currently importing. This helps avoid a reference leak from keeping the list around longer than necessary. Weakrefs are used as GC can’t interrupt the cleanup.
+  * [gh-105481](https://github.com/python/cpython/issues/105481): The regen-opcode build stage was removed and its work is now done in regen-cases.
+  * [gh-107901](https://github.com/python/cpython/issues/107901): Fix missing line number on [`JUMP_BACKWARD`](https://docs.python.org/3/library/dis.html#opcode-JUMP_BACKWARD) at the end of a for loop.
+  * [gh-108113](https://github.com/python/cpython/issues/108113): The [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile") built-in can now accept a new flag, `ast.PyCF_OPTIMIZED_AST`, which is similar to `ast.PyCF_ONLY_AST` except that the returned `AST` is optimized according to the value of the `optimize` argument.
+[`ast.parse()`](https://docs.python.org/3/library/ast.html#ast.parse "ast.parse") now accepts an optional argument `optimize` which is passed on to the [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile") built-in. This makes it possible to obtain an optimized `AST`.
+  * [gh-107971](https://github.com/python/cpython/issues/107971): Opcode IDs are generated from bytecodes.c instead of being hard coded in opcode.py.
+  * [gh-107944](https://github.com/python/cpython/issues/107944): Improve error message for function calls with bad keyword arguments. Patch by Pablo Galindo
+  * [gh-108390](https://github.com/python/cpython/issues/108390): Raise an exception when setting a non-local event (`RAISE`, `EXCEPTION_HANDLED`, etc.) in `sys.monitoring.set_local_events`.
+Fixes crash when tracing in recursive calls to Python classes.
+  * [gh-108035](https://github.com/python/cpython/issues/108035): Remove the `_PyCFrame` struct, moving the pointer to the current interpreter frame back to the threadstate, as it was for 3.10 and earlier. The `_PyCFrame` existed as a performance optimization for tracing.

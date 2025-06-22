@@ -1,0 +1,51 @@
+Title: URL Components in Python's urllib.parse
+URL: https://docs.python.org/3/library/urllib.parse.html
+Summary: This section outlines the return value of a function in Python's urllib.parse, which is a named tuple with items representing various components of a URL. These components include scheme, netloc, path, query, fragment, username, password, hostname, and port, each accessible by index or name. It also notes the default values for these components when not present.
+---
+
+```
+
+The return value is a [named tuple](https://docs.python.org/3/glossary.html#term-named-tuple), its items can be accessed by index or as named attributes:
+Attribute | Index | Value | Value if not present  
+---|---|---|---  
+`scheme` | 0 | URL scheme specifier | _scheme_ parameter  
+`netloc` | 1 | Network location part | empty string  
+`path` | 2 | Hierarchical path | empty string  
+`query` | 3 | Query component | empty string  
+`fragment` | 4 | Fragment identifier | empty string  
+`username` |  | User name | [`None`](https://docs.python.org/3/library/constants.html#None "None")  
+`password` |  | Password | [`None`](https://docs.python.org/3/library/constants.html#None "None")  
+`hostname` |  | Host name (lower case) | [`None`](https://docs.python.org/3/library/constants.html#None "None")  
+`port` |  | Port number as integer, if present | [`None`](https://docs.python.org/3/library/constants.html#None "None")  
+Reading the `port` attribute will raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if an invalid port is specified in the URL. See section [Structured Parse Results](https://docs.python.org/3/library/urllib.parse.html#urlparse-result-object) for more information on the result object.
+Unmatched square brackets in the `netloc` attribute will raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError").
+Characters in the `netloc` attribute that decompose under NFKC normalization (as used by the IDNA encoding) into any of `/`, `?`, `#`, `@`, or `:` will raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"). If the URL is decomposed before parsing, no error will be raised.
+Following some of the [WHATWG spec](https://url.spec.whatwg.org/#concept-basic-url-parser) that updates RFC 3986, leading C0 control and space characters are stripped from the URL. `\n`, `\r` and tab `\t` characters are removed from the URL at any position.
+Warning
+[`urlsplit()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlsplit "urllib.parse.urlsplit") does not perform validation. See [URL parsing security](https://docs.python.org/3/library/urllib.parse.html#url-parsing-security) for details.
+Changed in version 3.6: Out-of-range port numbers now raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"), instead of returning [`None`](https://docs.python.org/3/library/constants.html#None "None").
+Changed in version 3.8: Characters that affect netloc parsing under NFKC normalization will now raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError").
+Changed in version 3.10: ASCII newline and tab characters are stripped from the URL.
+Changed in version 3.12: Leading WHATWG C0 control and space characters are stripped from the URL. 
+
+urllib.parse.urlunsplit(_parts_)[¶](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlunsplit "Link to this definition")
+    
+Combine the elements of a tuple as returned by [`urlsplit()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlsplit "urllib.parse.urlsplit") into a complete URL as a string. The _parts_ argument can be any five-item iterable. This may result in a slightly different, but equivalent URL, if the URL that was parsed originally had unnecessary delimiters (for example, a ? with an empty query; the RFC states that these are equivalent). 
+
+urllib.parse.urljoin(_base_ , _url_ , _allow_fragments =True_)[¶](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urljoin "Link to this definition")
+    
+Construct a full (“absolute”) URL by combining a “base URL” (_base_) with another URL (_url_). Informally, this uses components of the base URL, in particular the addressing scheme, the network location and (part of) the path, to provide missing components in the relative URL. For example:
+>>>```
+>>> fromurllib.parseimport urljoin
+>>> urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
+'http://www.cwi.nl/%7Eguido/FAQ.html'
+
+```
+
+The _allow_fragments_ argument has the same meaning and default as for [`urlparse()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlparse "urllib.parse.urlparse").
+Note
+If _url_ is an absolute URL (that is, it starts with `//` or `scheme://`), the _url_ ’s hostname and/or scheme will be present in the result. For example:
+>>>```
+>>> urljoin('http://www.cwi.nl/%7Eguido/Python.html',
+...     '//www.python.org/%7Eguido')
+'http://www.python.org/%7Eguido'

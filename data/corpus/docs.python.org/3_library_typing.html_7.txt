@@ -1,0 +1,60 @@
+Title: Generics and ParamSpec in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: The section discusses the behavior of generics with ParamSpec, noting potential issues with __parameters__ after substitution due to their focus on static type checking. It highlights changes in version 3.10, which allows Generic to be parameterized over parameter expressions, and mentions that user-defined generic classes can include ABCs without metaclass conflicts. Additionally, it states that the outcomes of parameterizing generics are cached, and most types in the typing module are hashable and comparable.
+---
+
+```
+
+Note that generics with [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") may not have correct `__parameters__` after substitution in some cases because they are intended primarily for static type checking.
+Changed in version 3.10: [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic") can now be parameterized over parameter expressions. See [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec") and [**PEP 612**](https://peps.python.org/pep-0612/) for more details.
+A user-defined generic class can have ABCs as base classes without a metaclass conflict. Generic metaclasses are not supported. The outcome of parameterizing generics is cached, and most types in the typing module are [hashable](https://docs.python.org/3/glossary.html#term-hashable) and comparable for equality.
+## The [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") type[¶](https://docs.python.org/3/library/typing.html#the-any-type "Link to this heading")
+A special kind of type is [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any"). A static type checker will treat every type as being compatible with [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") and [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") as being compatible with every type.
+This means that it is possible to perform any operation or method call on a value of type [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") and assign it to any variable:
+```
+fromtypingimport Any
+a: Any = None
+a = []     # OK
+a = 2      # OK
+s: str = ''
+s = a      # OK
+deffoo(item: Any) -> int:
+  # Passes type checking; 'item' could be any type,
+  # and that type might have a 'bar' method
+  item.bar()
+  ...
+
+```
+
+Notice that no type checking is performed when assigning a value of type [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") to a more precise type. For example, the static type checker did not report an error when assigning `a` to `s` even though `s` was declared to be of type [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") and receives an [`int`](https://docs.python.org/3/library/functions.html#int "int") value at runtime!
+Furthermore, all functions without a return type or parameter types will implicitly default to using [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any"):
+```
+deflegacy_parser(text):
+  ...
+  return data
+# A static type checker will treat the above
+# as having the same signature as:
+deflegacy_parser(text: Any) -> Any:
+  ...
+  return data
+
+```
+
+This behavior allows [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") to be used as an _escape hatch_ when you need to mix dynamically and statically typed code.
+Contrast the behavior of [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") with the behavior of [`object`](https://docs.python.org/3/library/functions.html#object "object"). Similar to [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any"), every type is a subtype of [`object`](https://docs.python.org/3/library/functions.html#object "object"). However, unlike [`Any`](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any"), the reverse is not true: [`object`](https://docs.python.org/3/library/functions.html#object "object") is _not_ a subtype of every other type.
+That means when the type of a value is [`object`](https://docs.python.org/3/library/functions.html#object "object"), a type checker will reject almost all operations on it, and assigning it to a variable (or using it as a return value) of a more specialized type is a type error. For example:
+```
+defhash_a(item: object) -> int:
+  # Fails type checking; an object does not have a 'magic' method.
+  item.magic()
+  ...
+defhash_b(item: Any) -> int:
+  # Passes type checking
+  item.magic()
+  ...
+# Passes type checking, since ints and strs are subclasses of object
+hash_a(42)
+hash_a("foo")
+# Passes type checking, since Any is compatible with all types
+hash_b(42)
+hash_b("foo")

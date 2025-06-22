@@ -1,0 +1,44 @@
+Title: Naive Bayesian Classifier in Normal Distributions
+URL: https://docs.python.org/3/library/statistics.html
+Summary: This section discusses the Naive Bayesian Classifier, emphasizing its application in predicting gender based on normally distributed features such as height and weight. It introduces the use of the `NormalDist` class for summarizing normally distributed data from a training dataset.
+---
+
+```
+
+### Naive bayesian classifier[¶](https://docs.python.org/3/library/statistics.html#naive-bayesian-classifier "Link to this heading")
+Normal distributions commonly arise in machine learning problems.
+Wikipedia has a [nice example of a Naive Bayesian Classifier](https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Person_classification). The challenge is to predict a person’s gender from measurements of normally distributed features including height, weight, and foot size.
+We’re given a training dataset with measurements for eight people. The measurements are assumed to be normally distributed, so we summarize the data with [`NormalDist`](https://docs.python.org/3/library/statistics.html#statistics.NormalDist "statistics.NormalDist"):
+>>>```
+>>> height_male = NormalDist.from_samples([6, 5.92, 5.58, 5.92])
+>>> height_female = NormalDist.from_samples([5, 5.5, 5.42, 5.75])
+>>> weight_male = NormalDist.from_samples([180, 190, 170, 165])
+>>> weight_female = NormalDist.from_samples([100, 150, 130, 150])
+>>> foot_size_male = NormalDist.from_samples([12, 11, 12, 10])
+>>> foot_size_female = NormalDist.from_samples([6, 8, 7, 9])
+
+```
+
+Next, we encounter a new person whose feature measurements are known but whose gender is unknown:
+>>>```
+>>> ht = 6.0    # height
+>>> wt = 130    # weight
+>>> fs = 8     # foot size
+
+```
+
+Starting with a 50% [prior probability](https://en.wikipedia.org/wiki/Prior_probability) of being male or female, we compute the posterior as the prior times the product of likelihoods for the feature measurements given the gender:
+>>>```
+>>> prior_male = 0.5
+>>> prior_female = 0.5
+>>> posterior_male = (prior_male * height_male.pdf(ht) *
+...          weight_male.pdf(wt) * foot_size_male.pdf(fs))
+>>> posterior_female = (prior_female * height_female.pdf(ht) *
+...           weight_female.pdf(wt) * foot_size_female.pdf(fs))
+
+```
+
+The final prediction goes to the largest posterior. This is known as the [maximum a posteriori](https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation) or MAP:
+>>>```
+>>> 'male' if posterior_male > posterior_female else 'female'
+'female'

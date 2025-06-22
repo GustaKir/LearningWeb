@@ -1,0 +1,39 @@
+Title: WriteTransport Methods in asyncio
+URL: https://docs.python.org/3/library/asyncio-protocol.html
+Summary: This section discusses the methods of the WriteTransport class in asyncio. 'abort()' closes the transport immediately, losing buffered data and triggering the protocol's 'connection_lost()' method. 'can_write_eof()' checks if the transport can support the 'write_eof()' method.
+---
+
+WriteTransport.abort()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.abort "Link to this definition")
+    
+Close the transport immediately, without waiting for pending operations to complete. Buffered data will be lost. No more data will be received. The protocol’s [`protocol.connection_lost()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.connection_lost "asyncio.BaseProtocol.connection_lost") method will eventually be called with [`None`](https://docs.python.org/3/library/constants.html#None "None") as its argument. 
+
+WriteTransport.can_write_eof()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.can_write_eof "Link to this definition")
+    
+Return [`True`](https://docs.python.org/3/library/constants.html#True "True") if the transport supports [`write_eof()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.write_eof "asyncio.WriteTransport.write_eof"), [`False`](https://docs.python.org/3/library/constants.html#False "False") if not. 
+
+WriteTransport.get_write_buffer_size()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.get_write_buffer_size "Link to this definition")
+    
+Return the current size of the output buffer used by the transport. 
+
+WriteTransport.get_write_buffer_limits()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.get_write_buffer_limits "Link to this definition")
+    
+Get the _high_ and _low_ watermarks for write flow control. Return a tuple `(low, high)` where _low_ and _high_ are positive number of bytes.
+Use [`set_write_buffer_limits()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.set_write_buffer_limits "asyncio.WriteTransport.set_write_buffer_limits") to set the limits.
+Added in version 3.4.2. 
+
+WriteTransport.set_write_buffer_limits(_high =None_, _low =None_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.set_write_buffer_limits "Link to this definition")
+    
+Set the _high_ and _low_ watermarks for write flow control.
+These two values (measured in number of bytes) control when the protocol’s [`protocol.pause_writing()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.pause_writing "asyncio.BaseProtocol.pause_writing") and [`protocol.resume_writing()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.resume_writing "asyncio.BaseProtocol.resume_writing") methods are called. If specified, the low watermark must be less than or equal to the high watermark. Neither _high_ nor _low_ can be negative.
+[`pause_writing()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.pause_writing "asyncio.BaseProtocol.pause_writing") is called when the buffer size becomes greater than or equal to the _high_ value. If writing has been paused, [`resume_writing()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.resume_writing "asyncio.BaseProtocol.resume_writing") is called when the buffer size becomes less than or equal to the _low_ value.
+The defaults are implementation-specific. If only the high watermark is given, the low watermark defaults to an implementation-specific value less than or equal to the high watermark. Setting _high_ to zero forces _low_ to zero as well, and causes [`pause_writing()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.pause_writing "asyncio.BaseProtocol.pause_writing") to be called whenever the buffer becomes non-empty. Setting _low_ to zero causes [`resume_writing()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.resume_writing "asyncio.BaseProtocol.resume_writing") to be called only once the buffer is empty. Use of zero for either limit is generally sub-optimal as it reduces opportunities for doing I/O and computation concurrently.
+Use [`get_write_buffer_limits()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.get_write_buffer_limits "asyncio.WriteTransport.get_write_buffer_limits") to get the limits. 
+
+WriteTransport.write(_data_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.write "Link to this definition")
+    
+Write some _data_ bytes to the transport.
+This method does not block; it buffers the data and arranges for it to be sent out asynchronously. 
+
+WriteTransport.writelines(_list_of_data_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.writelines "Link to this definition")
+    
+Write a list (or any iterable) of data bytes to the transport. This is functionally equivalent to calling [`write()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.write "asyncio.WriteTransport.write") on each element yielded by the iterable, but may be implemented more efficiently.

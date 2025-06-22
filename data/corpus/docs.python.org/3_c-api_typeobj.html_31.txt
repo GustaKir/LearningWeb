@@ -1,0 +1,36 @@
+Title: Understanding tp_init in Python C API
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section explains the role of the `tp_init` function in the Python C API, which is invoked during the initialization of a new instance after the `tp_new` function has created it. It highlights the parameters used in `tp_init`, including the `self` instance and any positional or keyword arguments. Furthermore, it notes that if `tp_new` returns an instance of a different type, `tp_init` is not called.
+---
+
+```
+
+The self argument is the instance to be initialized; the _args_ and _kwds_ arguments represent positional and keyword arguments of the call to [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__").
+The [`tp_init`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_init "PyTypeObject.tp_init") function, if not `NULL`, is called when an instance is created normally by calling its type, after the type’s [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") function has returned an instance of the type. If the [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") function returns an instance of some other type that is not a subtype of the original type, no [`tp_init`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_init "PyTypeObject.tp_init") function is called; if [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") returns an instance of a subtype of the original type, the subtype’s [`tp_init`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_init "PyTypeObject.tp_init") is called.
+Returns `0` on success, `-1` and sets an exception on error.
+**Inheritance:**
+This field is inherited by subtypes.
+**Default:**
+For [static types](https://docs.python.org/3/c-api/typeobj.html#static-types) this field does not have a default. 
+
+[allocfunc](https://docs.python.org/3/c-api/typeobj.html#c.allocfunc "allocfunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_alloc[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_alloc "Link to this definition")
+    
+An optional pointer to an instance allocation function.
+The function signature is:
+```
+PyObject*tp_alloc(PyTypeObject*self,Py_ssize_tnitems);
+
+```
+
+**Inheritance:**
+This field is inherited by static subtypes, but not by dynamic subtypes (subtypes created by a class statement).
+**Default:**
+For dynamic subtypes, this field is always set to [`PyType_GenericAlloc()`](https://docs.python.org/3/c-api/type.html#c.PyType_GenericAlloc "PyType_GenericAlloc"), to force a standard heap allocation strategy.
+For static subtypes, [`PyBaseObject_Type`](https://docs.python.org/3/c-api/structures.html#c.PyBaseObject_Type "PyBaseObject_Type") uses [`PyType_GenericAlloc()`](https://docs.python.org/3/c-api/type.html#c.PyType_GenericAlloc "PyType_GenericAlloc"). That is the recommended value for all statically defined types. 
+
+[newfunc](https://docs.python.org/3/c-api/typeobj.html#c.newfunc "newfunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_new[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "Link to this definition")
+    
+An optional pointer to an instance creation function.
+The function signature is:
+```
+PyObject*tp_new(PyTypeObject*subtype,PyObject*args,PyObject*kwds);

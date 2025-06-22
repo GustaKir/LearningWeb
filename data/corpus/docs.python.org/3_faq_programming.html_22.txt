@@ -1,0 +1,52 @@
+Title: Creating .pyc Files in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: When a module is imported for the first time or if the source file has changed, a .pyc file is created in a __pycache__ subdirectory. The .pyc file is named after the .py file, with an additional component related to the specific Python binary. Issues like directory permissions may prevent .pyc file creation.
+---
+
+```
+
+## [Modules](https://docs.python.org/3/faq/programming.html#id71)[¶](https://docs.python.org/3/faq/programming.html#modules "Link to this heading")
+### [How do I create a .pyc file?](https://docs.python.org/3/faq/programming.html#id72)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-create-a-pyc-file "Link to this heading")
+When a module is imported for the first time (or when the source file has changed since the current compiled file was created) a `.pyc` file containing the compiled code should be created in a `__pycache__` subdirectory of the directory containing the `.py` file. The `.pyc` file will have a filename that starts with the same name as the `.py` file, and ends with `.pyc`, with a middle component that depends on the particular `python` binary that created it. (See [**PEP 3147**](https://peps.python.org/pep-3147/) for details.)
+One reason that a `.pyc` file may not be created is a permissions problem with the directory containing the source file, meaning that the `__pycache__` subdirectory cannot be created. This can happen, for example, if you develop as one user but run as another, such as if you are testing with a web server.
+Unless the [`PYTHONDONTWRITEBYTECODE`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONDONTWRITEBYTECODE) environment variable is set, creation of a .pyc file is automatic if you’re importing a module and Python has the ability (permissions, free space, etc…) to create a `__pycache__` subdirectory and write the compiled module to that subdirectory.
+Running Python on a top level script is not considered an import and no `.pyc` will be created. For example, if you have a top-level module `foo.py` that imports another module `xyz.py`, when you run `foo` (by typing `python foo.py` as a shell command), a `.pyc` will be created for `xyz` because `xyz` is imported, but no `.pyc` file will be created for `foo` since `foo.py` isn’t being imported.
+If you need to create a `.pyc` file for `foo` – that is, to create a `.pyc` file for a module that is not imported – you can, using the [`py_compile`](https://docs.python.org/3/library/py_compile.html#module-py_compile "py_compile: Generate byte-code files from Python source files.") and [`compileall`](https://docs.python.org/3/library/compileall.html#module-compileall "compileall: Tools for byte-compiling all Python source files in a directory tree.") modules.
+The [`py_compile`](https://docs.python.org/3/library/py_compile.html#module-py_compile "py_compile: Generate byte-code files from Python source files.") module can manually compile any module. One way is to use the `compile()` function in that module interactively:
+>>>```
+>>> importpy_compile
+>>> py_compile.compile('foo.py')
+
+```
+
+This will write the `.pyc` to a `__pycache__` subdirectory in the same location as `foo.py` (or you can override that with the optional parameter `cfile`).
+You can also automatically compile all files in a directory or directories using the [`compileall`](https://docs.python.org/3/library/compileall.html#module-compileall "compileall: Tools for byte-compiling all Python source files in a directory tree.") module. You can do it from the shell prompt by running `compileall.py` and providing the path of a directory containing Python files to compile:
+```
+python -m compileall .
+
+```
+
+### [How do I find the current module name?](https://docs.python.org/3/faq/programming.html#id73)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-find-the-current-module-name "Link to this heading")
+A module can find out its own module name by looking at the predefined global variable `__name__`. If this has the value `'__main__'`, the program is running as a script. Many modules that are usually used by importing them also provide a command-line interface or a self-test, and only execute this code after checking `__name__`:
+```
+defmain():
+  print('Running test...')
+  ...
+if __name__ == '__main__':
+  main()
+
+```
+
+### [How can I have modules that mutually import each other?](https://docs.python.org/3/faq/programming.html#id74)[¶](https://docs.python.org/3/faq/programming.html#how-can-i-have-modules-that-mutually-import-each-other "Link to this heading")
+Suppose you have the following modules:
+`foo.py`:
+```
+frombarimport bar_var
+foo_var = 1
+
+```
+
+`bar.py`:
+```
+fromfooimport foo_var
+bar_var = 2

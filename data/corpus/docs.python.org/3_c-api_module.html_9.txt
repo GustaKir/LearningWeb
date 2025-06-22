@@ -1,0 +1,28 @@
+Title: PyModule_AddObject Function
+URL: https://docs.python.org/3/c-api/module.html
+Summary: Introduced in version 3.13, the `PyModule_AddObject` function adds an object to a module and steals its reference on success. It is part of the Stable ABI and is similar to `PyModule_AddObjectRef`, but usage of `PyModule_Add` or `PyModule_AddObjectRef` is recommended to avoid reference leaks.
+---
+
+```
+
+Added in version 3.13. 
+
+intPyModule_AddObject([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, constchar*name, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObject "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Similar to [`PyModule_AddObjectRef()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "PyModule_AddObjectRef"), but steals a reference to _value_ on success (if it returns `0`).
+The new [`PyModule_Add()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Add "PyModule_Add") or [`PyModule_AddObjectRef()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "PyModule_AddObjectRef") functions are recommended, since it is easy to introduce reference leaks by misusing the [`PyModule_AddObject()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObject "PyModule_AddObject") function.
+Note
+Unlike other functions that steal references, `PyModule_AddObject()` only releases the reference to _value_ **on success**.
+This means that its return value must be checked, and calling code must [`Py_XDECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_XDECREF "Py_XDECREF") _value_ manually on error.
+Example usage:
+```
+PyObject*obj=PyBytes_FromString(value);
+if(PyModule_AddObject(module,"spam",obj)<0){
+// If 'obj' is not NULL and PyModule_AddObject() failed,
+// 'obj' strong reference must be deleted with Py_XDECREF().
+// If 'obj' is NULL, Py_XDECREF() does nothing.
+Py_XDECREF(obj);
+gotoerror;
+}
+// PyModule_AddObject() stole a reference to obj:
+// Py_XDECREF(obj) is not needed here.

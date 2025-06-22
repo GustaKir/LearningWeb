@@ -1,0 +1,59 @@
+Title: Introduction to the ipaddress Module
+URL: https://docs.python.org/3/howto/ipaddress.html
+Summary: This document provides a gentle introduction to the ipaddress module in Python, aimed at users unfamiliar with IP networking terminology, and offers an overview for network engineers on how the module handles IP network addressing concepts.
+---
+
+author:
+    
+Nick Coghlan
+Overview
+This document aims to provide a gentle introduction to the [`ipaddress`](https://docs.python.org/3/library/ipaddress.html#module-ipaddress "ipaddress: IPv4/IPv6 manipulation library.") module. It is aimed primarily at users that aren’t already familiar with IP networking terminology, but may also be useful to network engineers wanting an overview of how [`ipaddress`](https://docs.python.org/3/library/ipaddress.html#module-ipaddress "ipaddress: IPv4/IPv6 manipulation library.") represents IP network addressing concepts.
+## Creating Address/Network/Interface objects[¶](https://docs.python.org/3/howto/ipaddress.html#creating-address-network-interface-objects "Link to this heading")
+Since [`ipaddress`](https://docs.python.org/3/library/ipaddress.html#module-ipaddress "ipaddress: IPv4/IPv6 manipulation library.") is a module for inspecting and manipulating IP addresses, the first thing you’ll want to do is create some objects. You can use [`ipaddress`](https://docs.python.org/3/library/ipaddress.html#module-ipaddress "ipaddress: IPv4/IPv6 manipulation library.") to create objects from strings and integers.
+### A Note on IP Versions[¶](https://docs.python.org/3/howto/ipaddress.html#a-note-on-ip-versions "Link to this heading")
+For readers that aren’t particularly familiar with IP addressing, it’s important to know that the Internet Protocol (IP) is currently in the process of moving from version 4 of the protocol to version 6. This transition is occurring largely because version 4 of the protocol doesn’t provide enough addresses to handle the needs of the whole world, especially given the increasing number of devices with direct connections to the internet.
+Explaining the details of the differences between the two versions of the protocol is beyond the scope of this introduction, but readers need to at least be aware that these two versions exist, and it will sometimes be necessary to force the use of one version or the other.
+### IP Host Addresses[¶](https://docs.python.org/3/howto/ipaddress.html#ip-host-addresses "Link to this heading")
+Addresses, often referred to as “host addresses” are the most basic unit when working with IP addressing. The simplest way to create addresses is to use the [`ipaddress.ip_address()`](https://docs.python.org/3/library/ipaddress.html#ipaddress.ip_address "ipaddress.ip_address") factory function, which automatically determines whether to create an IPv4 or IPv6 address based on the passed in value:
+>>>```
+>>> ipaddress.ip_address('192.0.2.1')
+IPv4Address('192.0.2.1')
+>>> ipaddress.ip_address('2001:DB8::1')
+IPv6Address('2001:db8::1')
+
+```
+
+Addresses can also be created directly from integers. Values that will fit within 32 bits are assumed to be IPv4 addresses:
+>>>```
+>>> ipaddress.ip_address(3221225985)
+IPv4Address('192.0.2.1')
+>>> ipaddress.ip_address(42540766411282592856903984951653826561)
+IPv6Address('2001:db8::1')
+
+```
+
+To force the use of IPv4 or IPv6 addresses, the relevant classes can be invoked directly. This is particularly useful to force creation of IPv6 addresses for small integers:
+>>>```
+>>> ipaddress.ip_address(1)
+IPv4Address('0.0.0.1')
+>>> ipaddress.IPv4Address(1)
+IPv4Address('0.0.0.1')
+>>> ipaddress.IPv6Address(1)
+IPv6Address('::1')
+
+```
+
+### Defining Networks[¶](https://docs.python.org/3/howto/ipaddress.html#defining-networks "Link to this heading")
+Host addresses are usually grouped together into IP networks, so [`ipaddress`](https://docs.python.org/3/library/ipaddress.html#module-ipaddress "ipaddress: IPv4/IPv6 manipulation library.") provides a way to create, inspect and manipulate network definitions. IP network objects are constructed from strings that define the range of host addresses that are part of that network. The simplest form for that information is a “network address/network prefix” pair, where the prefix defines the number of leading bits that are compared to determine whether or not an address is part of the network and the network address defines the expected value of those bits.
+As for addresses, a factory function is provided that determines the correct IP version automatically:
+>>>```
+>>> ipaddress.ip_network('192.0.2.0/24')
+IPv4Network('192.0.2.0/24')
+>>> ipaddress.ip_network('2001:db8::0/96')
+IPv6Network('2001:db8::/96')
+
+```
+
+Network objects cannot have any host bits set. The practical effect of this is that `192.0.2.1/24` does not describe a network. Such definitions are referred to as interface objects since the ip-on-a-network notation is commonly used to describe network interfaces of a computer on a given network and are described further in the next section.
+By default, attempting to create a network object with host bits set will result in [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") being raised. To request that the additional bits instead be coerced to zero, the flag `strict=False` can be passed to the constructor:
+>>>

@@ -1,0 +1,42 @@
+Title: Using skip_file_prefixes in Python Warnings
+URL: https://docs.python.org/3/library/warnings.html
+Summary: This section explains how the _skip_file_prefixes_ keyword argument helps manage warning attribution by ignoring specific stack frames. It ensures that warnings refer to a caller's location instead of the source of a deprecated API, enhancing clarity in warning messages.
+---
+
+```
+
+This makes the warning refer to `deprecated_api`’s caller, rather than to the source of `deprecated_api` itself (since the latter would defeat the purpose of the warning message).
+The _skip_file_prefixes_ keyword argument can be used to indicate which stack frames are ignored when counting stack levels. This can be useful when you want the warning to always appear at call sites outside of a package when a constant _stacklevel_ does not fit all call paths or is otherwise challenging to maintain. If supplied, it must be a tuple of strings. When prefixes are supplied, stacklevel is implicitly overridden to be `max(2, stacklevel)`. To cause a warning to be attributed to the caller from outside of the current package you might write:
+```
+# example/lower.py
+_warn_skips = (os.path.dirname(__file__),)
+defone_way(r_luxury_yacht=None, t_wobbler_mangrove=None):
+  if r_luxury_yacht:
+    warnings.warn("Please migrate to t_wobbler_mangrove=.",
+           skip_file_prefixes=_warn_skips)
+# example/higher.py
+from.import lower
+defanother_way(**kw):
+  lower.one_way(**kw)
+
+```
+
+This makes the warning refer to both the `example.lower.one_way()` and `package.higher.another_way()` call sites only from calling code living outside of `example` package.
+_source_ , if supplied, is the destroyed object which emitted a [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning").
+Changed in version 3.6: Added _source_ parameter.
+Changed in version 3.12: Added _skip_file_prefixes_. 
+
+warnings.warn_explicit(_message_ , _category_ , _filename_ , _lineno_ , _module =None_, _registry =None_, _module_globals =None_, _source =None_)[¶](https://docs.python.org/3/library/warnings.html#warnings.warn_explicit "Link to this definition")
+    
+This is a low-level interface to the functionality of [`warn()`](https://docs.python.org/3/library/warnings.html#warnings.warn "warnings.warn"), passing in explicitly the message, category, filename and line number, and optionally the module name and the registry (which should be the `__warningregistry__` dictionary of the module). The module name defaults to the filename with `.py` stripped; if no registry is passed, the warning is never suppressed. _message_ must be a string and _category_ a subclass of [`Warning`](https://docs.python.org/3/library/exceptions.html#Warning "Warning") or _message_ may be a [`Warning`](https://docs.python.org/3/library/exceptions.html#Warning "Warning") instance, in which case _category_ will be ignored.
+_module_globals_ , if supplied, should be the global namespace in use by the code for which the warning is issued. (This argument is used to support displaying source for modules found in zipfiles or other non-filesystem import sources).
+_source_ , if supplied, is the destroyed object which emitted a [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning").
+Changed in version 3.6: Add the _source_ parameter. 
+
+warnings.showwarning(_message_ , _category_ , _filename_ , _lineno_ , _file =None_, _line =None_)[¶](https://docs.python.org/3/library/warnings.html#warnings.showwarning "Link to this definition")
+    
+Write a warning to a file. The default implementation calls `formatwarning(message, category, filename, lineno, line)` and writes the resulting string to _file_ , which defaults to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr"). You may replace this function with any callable by assigning to `warnings.showwarning`. _line_ is a line of source code to be included in the warning message; if _line_ is not supplied, [`showwarning()`](https://docs.python.org/3/library/warnings.html#warnings.showwarning "warnings.showwarning") will try to read the line specified by _filename_ and _lineno_. 
+
+warnings.formatwarning(_message_ , _category_ , _filename_ , _lineno_ , _line =None_)[¶](https://docs.python.org/3/library/warnings.html#warnings.formatwarning "Link to this definition")
+    
+Format a warning the standard way. This returns a string which may contain embedded newlines and ends in a newline. _line_ is a line of source code to be included in the warning message; if _line_ is not supplied, [`formatwarning()`](https://docs.python.org/3/library/warnings.html#warnings.formatwarning "warnings.formatwarning") will try to read the line specified by _filename_ and _lineno_.

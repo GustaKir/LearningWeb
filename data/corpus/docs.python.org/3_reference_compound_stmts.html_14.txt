@@ -1,0 +1,59 @@
+Title: Class Pattern Matching in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section outlines the rules for matching class patterns to subject values in Python. It describes the conditions that lead to a TypeError, the use of `isinstance()` for type checks, and the handling of pattern arguments, including positional and keyword patterns for built-in types.
+---
+
+```
+
+The same keyword should not be repeated in class patterns.
+The following is the logical flow for matching a class pattern against a subject value:
+  1. If `name_or_attr` is not an instance of the builtin [`type`](https://docs.python.org/3/library/functions.html#type "type") , raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError").
+  2. If the subject value is not an instance of `name_or_attr` (tested via [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance")), the class pattern fails.
+  3. If no pattern arguments are present, the pattern succeeds. Otherwise, the subsequent steps depend on whether keyword or positional argument patterns are present.
+For a number of built-in types (specified below), a single positional subpattern is accepted which will match the entire subject; for these types keyword patterns also work as for other types.
+If only keyword patterns are present, they are processed as follows, one by one:
+I. The keyword is looked up as an attribute on the subject.
+>      * If this raises an exception other than [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"), the exception bubbles up.
+>      * If this raises [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"), the class pattern has failed.
+>      * Else, the subpattern associated with the keyword pattern is matched against the subject’s attribute value. If this fails, the class pattern fails; if this succeeds, the match proceeds to the next keyword.
+II. If all keyword patterns succeed, the class pattern succeeds.
+If any positional patterns are present, they are converted to keyword patterns using the [`__match_args__`](https://docs.python.org/3/reference/datamodel.html#object.__match_args__ "object.__match_args__") attribute on the class `name_or_attr` before matching:
+I. The equivalent of `getattr(cls, "__match_args__", ())` is called.
+>      * If this raises an exception, the exception bubbles up.
+>      * If the returned value is not a tuple, the conversion fails and [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") is raised.
+>      * If there are more positional patterns than `len(cls.__match_args__)`, [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") is raised.
+>      * Otherwise, positional pattern `i` is converted to a keyword pattern using `__match_args__[i]` as the keyword. `__match_args__[i]` must be a string; if not [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") is raised.
+>      * If there are duplicate keywords, [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") is raised.
+> See also
+> [Customizing positional arguments in class pattern matching](https://docs.python.org/3/reference/datamodel.html#class-pattern-matching) 
+
+II. Once all positional patterns have been converted to keyword patterns,
+    
+the match proceeds as if there were only keyword patterns.
+For the following built-in types the handling of positional subpatterns is different:
+     * [`bool`](https://docs.python.org/3/library/functions.html#bool "bool")
+     * [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray")
+     * [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes")
+     * [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict")
+     * [`float`](https://docs.python.org/3/library/functions.html#float "float")
+     * [`frozenset`](https://docs.python.org/3/library/stdtypes.html#frozenset "frozenset")
+     * [`int`](https://docs.python.org/3/library/functions.html#int "int")
+     * [`list`](https://docs.python.org/3/library/stdtypes.html#list "list")
+     * [`set`](https://docs.python.org/3/library/stdtypes.html#set "set")
+     * [`str`](https://docs.python.org/3/library/stdtypes.html#str "str")
+     * [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple")
+These classes accept a single positional argument, and the pattern there is matched against the whole object rather than an attribute. For example `int(0|1)` matches the value `0`, but not the value `0.0`.
+
+
+In simple terms `CLS(P1, attr=P2)` matches only if the following happens:
+  * `isinstance(<subject>, CLS)`
+  * convert `P1` to a keyword pattern using `CLS.__match_args__`
+  * For each keyword argument `attr=P2`:
+    * `hasattr(<subject>, "attr")`
+    * `P2` matches `<subject>.attr`
+  * … and so on for the corresponding keyword argument/pattern pair.
+
+
+See also
+  * [**PEP 634**](https://peps.python.org/pep-0634/) – Structural Pattern Matching: Specification
+  * [**PEP 636**](https://peps.python.org/pep-0636/) – Structural Pattern Matching: Tutorial

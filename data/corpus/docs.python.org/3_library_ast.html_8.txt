@@ -1,0 +1,104 @@
+Title: Abstract Syntax Trees in Python
+URL: https://docs.python.org/3/library/ast.html
+Summary: This documentation chunk provides an example of using Python's Abstract Syntax Tree (AST) library to parse and dump an expression involving a function call with various argument types. It also introduces classes for keyword arguments (`ast.keyword`) and conditional expressions (`ast.IfExp`), detailing their structure and purpose.
+---
+
+```
+>>> print(ast.dump(ast.parse('func(a, b=c, *d, **e)', mode='eval'), indent=4))
+Expression(
+  body=Call(
+    func=Name(id='func', ctx=Load()),
+    args=[
+      Name(id='a', ctx=Load()),
+      Starred(
+        value=Name(id='d', ctx=Load()),
+        ctx=Load())],
+    keywords=[
+      keyword(
+        arg='b',
+        value=Name(id='c', ctx=Load())),
+      keyword(
+        value=Name(id='e', ctx=Load()))]))
+
+```
+
+
+_class_ ast.keyword(_arg_ , _value_)[¶](https://docs.python.org/3/library/ast.html#ast.keyword "Link to this definition")
+    
+A keyword argument to a function call or class definition. `arg` is a raw string of the parameter name, `value` is a node to pass in. 
+
+_class_ ast.IfExp(_test_ , _body_ , _orelse_)[¶](https://docs.python.org/3/library/ast.html#ast.IfExp "Link to this definition")
+    
+An expression such as `a if b else c`. Each field holds a single node, so in the following example, all three are [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name") nodes.
+>>>```
+>>> print(ast.dump(ast.parse('a if b else c', mode='eval'), indent=4))
+Expression(
+  body=IfExp(
+    test=Name(id='b', ctx=Load()),
+    body=Name(id='a', ctx=Load()),
+    orelse=Name(id='c', ctx=Load())))
+
+```
+
+
+_class_ ast.Attribute(_value_ , _attr_ , _ctx_)[¶](https://docs.python.org/3/library/ast.html#ast.Attribute "Link to this definition")
+    
+Attribute access, e.g. `d.keys`. `value` is a node, typically a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name"). `attr` is a bare string giving the name of the attribute, and `ctx` is [`Load`](https://docs.python.org/3/library/ast.html#ast.Load "ast.Load"), [`Store`](https://docs.python.org/3/library/ast.html#ast.Store "ast.Store") or [`Del`](https://docs.python.org/3/library/ast.html#ast.Del "ast.Del") according to how the attribute is acted on.
+>>>```
+>>> print(ast.dump(ast.parse('snake.colour', mode='eval'), indent=4))
+Expression(
+  body=Attribute(
+    value=Name(id='snake', ctx=Load()),
+    attr='colour',
+    ctx=Load()))
+
+```
+
+
+_class_ ast.NamedExpr(_target_ , _value_)[¶](https://docs.python.org/3/library/ast.html#ast.NamedExpr "Link to this definition")
+    
+A named expression. This AST node is produced by the assignment expressions operator (also known as the walrus operator). As opposed to the [`Assign`](https://docs.python.org/3/library/ast.html#ast.Assign "ast.Assign") node in which the first argument can be multiple nodes, in this case both `target` and `value` must be single nodes.
+>>>```
+>>> print(ast.dump(ast.parse('(x := 4)', mode='eval'), indent=4))
+Expression(
+  body=NamedExpr(
+    target=Name(id='x', ctx=Store()),
+    value=Constant(value=4)))
+
+```
+
+Added in version 3.8.
+#### Subscripting[¶](https://docs.python.org/3/library/ast.html#subscripting "Link to this heading") 
+
+_class_ ast.Subscript(_value_ , _slice_ , _ctx_)[¶](https://docs.python.org/3/library/ast.html#ast.Subscript "Link to this definition")
+    
+A subscript, such as `l[1]`. `value` is the subscripted object (usually sequence or mapping). `slice` is an index, slice or key. It can be a [`Tuple`](https://docs.python.org/3/library/ast.html#ast.Tuple "ast.Tuple") and contain a [`Slice`](https://docs.python.org/3/library/ast.html#ast.Slice "ast.Slice"). `ctx` is [`Load`](https://docs.python.org/3/library/ast.html#ast.Load "ast.Load"), [`Store`](https://docs.python.org/3/library/ast.html#ast.Store "ast.Store") or [`Del`](https://docs.python.org/3/library/ast.html#ast.Del "ast.Del") according to the action performed with the subscript.
+>>>```
+>>> print(ast.dump(ast.parse('l[1:2, 3]', mode='eval'), indent=4))
+Expression(
+  body=Subscript(
+    value=Name(id='l', ctx=Load()),
+    slice=Tuple(
+      elts=[
+        Slice(
+          lower=Constant(value=1),
+          upper=Constant(value=2)),
+        Constant(value=3)],
+      ctx=Load()),
+    ctx=Load()))
+
+```
+
+
+_class_ ast.Slice(_lower_ , _upper_ , _step_)[¶](https://docs.python.org/3/library/ast.html#ast.Slice "Link to this definition")
+    
+Regular slicing (on the form `lower:upper` or `lower:upper:step`). Can occur only inside the _slice_ field of [`Subscript`](https://docs.python.org/3/library/ast.html#ast.Subscript "ast.Subscript"), either directly or as an element of [`Tuple`](https://docs.python.org/3/library/ast.html#ast.Tuple "ast.Tuple").
+>>>```
+>>> print(ast.dump(ast.parse('l[1:2]', mode='eval'), indent=4))
+Expression(
+  body=Subscript(
+    value=Name(id='l', ctx=Load()),
+    slice=Slice(
+      lower=Constant(value=1),
+      upper=Constant(value=2)),
+    ctx=Load()))

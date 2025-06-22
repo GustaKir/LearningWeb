@@ -1,0 +1,46 @@
+Title: Changes in Exception Handling and Background Tasks in FastAPI 0.106.0
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: FastAPI 0.106.0 introduces changes to how exceptions are raised after `yield` in dependencies. Previously, exit codes were executed after responses, complicating resource management during background tasks. The update now allows for independent handling of resources for background tasks, improving efficiency and resource usage.
+---
+
+```
+
+Before FastAPI 0.106.0, raising exceptions after `yield` was not possible, the exit code in dependencies with `yield` was executed _after_ the response was sent, so [Exception Handlers](https://fastapi.tiangolo.com/tutorial/handling-errors/#install-custom-exception-handlers) would have already run.
+This was designed this way mainly to allow using the same objects "yielded" by dependencies inside of background tasks, because the exit code would be executed after the background tasks were finished.
+Nevertheless, as this would mean waiting for the response to travel through the network while unnecessarily holding a resource in a dependency with yield (for example a database connection), this was changed in FastAPI 0.106.0.
+Additionally, a background task is normally an independent set of logic that should be handled separately, with its own resources (e.g. its own database connection).
+If you used to rely on this behavior, now you should create the resources for background tasks inside the background task itself, and use internally only data that doesn't depend on the resources of dependencies with `yield`.
+For example, instead of using the same database session, you would create a new database session inside of the background task, and you would obtain the objects from the database using this new session. And then instead of passing the object from the database as a parameter to the background task function, you would pass the ID of that object and then obtain the object again inside the background task function.
+The sequence of execution before FastAPI 0.106.0 was like this diagram:
+Time flows from top to bottom. And each column is one of the parts interacting or executing code.
+The new execution flow can be found in the docs: [Execution of dependencies with `yield`](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#execution-of-dependencies-with-yield).
+### Features[¶](https://fastapi.tiangolo.com/release-notes/#features_6 "Permanent link")
+  * ✨ Add support for raising exceptions (including `HTTPException`) in dependencies with `yield` in the exit code, do not support them in background tasks. PR [#10831](https://github.com/tiangolo/fastapi/pull/10831) by [@tiangolo](https://github.com/tiangolo).
+
+
+### Internal[¶](https://fastapi.tiangolo.com/release-notes/#internal_28 "Permanent link")
+  * 👥 Update FastAPI People. PR [#10567](https://github.com/tiangolo/fastapi/pull/10567) by [@tiangolo](https://github.com/tiangolo).
+
+
+## 0.105.0[¶](https://fastapi.tiangolo.com/release-notes/#01050 "Permanent link")
+### Features[¶](https://fastapi.tiangolo.com/release-notes/#features_7 "Permanent link")
+  * ✨ Add support for multiple Annotated annotations, e.g. `Annotated[str, Field(), Query()]`. PR [#10773](https://github.com/tiangolo/fastapi/pull/10773) by [@tiangolo](https://github.com/tiangolo).
+
+
+### Refactors[¶](https://fastapi.tiangolo.com/release-notes/#refactors_15 "Permanent link")
+  * 🔥 Remove unused NoneType. PR [#10774](https://github.com/tiangolo/fastapi/pull/10774) by [@tiangolo](https://github.com/tiangolo).
+
+
+### Docs[¶](https://fastapi.tiangolo.com/release-notes/#docs_24 "Permanent link")
+  * 📝 Tweak default suggested configs for generating clients. PR [#10736](https://github.com/tiangolo/fastapi/pull/10736) by [@tiangolo](https://github.com/tiangolo).
+
+
+### Internal[¶](https://fastapi.tiangolo.com/release-notes/#internal_29 "Permanent link")
+  * 🔧 Update sponsors, add Scalar. PR [#10728](https://github.com/tiangolo/fastapi/pull/10728) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update sponsors, add PropelAuth. PR [#10760](https://github.com/tiangolo/fastapi/pull/10760) by [@tiangolo](https://github.com/tiangolo).
+  * 👷 Update build docs, verify README on CI. PR [#10750](https://github.com/tiangolo/fastapi/pull/10750) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update sponsors, remove Fern. PR [#10729](https://github.com/tiangolo/fastapi/pull/10729) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update sponsors, add Codacy. PR [#10677](https://github.com/tiangolo/fastapi/pull/10677) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update sponsors, add Reflex. PR [#10676](https://github.com/tiangolo/fastapi/pull/10676) by [@tiangolo](https://github.com/tiangolo).
+  * 📝 Update release notes, move and check latest-changes. PR [#10588](https://github.com/tiangolo/fastapi/pull/10588) by [@tiangolo](https://github.com/tiangolo).
+  * 👷 Upgrade latest-changes GitHub Action. PR [#10587](https://github.com/tiangolo/fastapi/pull/10587) by [@tiangolo](https://github.com/tiangolo).

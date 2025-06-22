@@ -1,0 +1,102 @@
+Title: Python Performance Profiling
+URL: https://docs.python.org/3/howto/perf_profiling.html
+Summary: This section details the output format of the perfreport command used for performance profiling in Python, illustrating how call stacks are represented, highlighting the time spent in various functions from the execution start to PyEval_EvalCode.
+---
+
+```
+$ perfreport--stdio-n-g
+# ChildrenSelfSamplesCommandSharedObjectSymbol
+# ..................................................................................................
+#
+  91.08%   0.00%       0 python.exe python.exe     [.] _start
+      |
+      ---_start
+      |
+        --90.71%--__libc_start_main
+            Py_BytesMain
+            |
+            |--56.88%--pymain_run_python.constprop.0
+            |     |
+            |     |--56.13%--_PyRun_AnyFileObject
+            |     |     _PyRun_SimpleFileObject
+            |     |     |
+            |     |     |--55.02%--run_mod
+            |     |     |     |
+            |     |     |      --54.65%--PyEval_EvalCode
+            |     |     |           _PyEval_EvalFrameDefault
+            |     |     |           PyObject_Vectorcall
+            |     |     |           _PyEval_Vector
+            |     |     |           _PyEval_EvalFrameDefault
+            |     |     |           PyObject_Vectorcall
+            |     |     |           _PyEval_Vector
+            |     |     |           _PyEval_EvalFrameDefault
+            |     |     |           PyObject_Vectorcall
+            |     |     |           _PyEval_Vector
+            |     |     |           |
+            |     |     |           |--51.67%--_PyEval_EvalFrameDefault
+            |     |     |           |     |
+            |     |     |           |     |--11.52%--_PyLong_Add
+            |     |     |           |     |     |
+            |     |     |           |     |     |--2.97%--_PyObject_Malloc
+...
+
+```
+
+As you can see, the Python functions are not shown in the output, only `_PyEval_EvalFrameDefault` (the function that evaluates the Python bytecode) shows up. Unfortunately that’s not very useful because all Python functions use the same C function to evaluate bytecode so we cannot know which Python function corresponds to which bytecode-evaluating function.
+Instead, if we run the same experiment with `perf` support enabled we get:
+```
+$ perfreport--stdio-n-g
+# ChildrenSelfSamplesCommandSharedObjectSymbol
+# .............................................................................................................................
+#
+  90.58%   0.36%       1 python.exe python.exe     [.] _start
+      |
+      ---_start
+      |
+        --89.86%--__libc_start_main
+            Py_BytesMain
+            |
+            |--55.43%--pymain_run_python.constprop.0
+            |     |
+            |     |--54.71%--_PyRun_AnyFileObject
+            |     |     _PyRun_SimpleFileObject
+            |     |     |
+            |     |     |--53.62%--run_mod
+            |     |     |     |
+            |     |     |      --53.26%--PyEval_EvalCode
+            |     |     |           py::<module>:/src/script.py
+            |     |     |           _PyEval_EvalFrameDefault
+            |     |     |           PyObject_Vectorcall
+            |     |     |           _PyEval_Vector
+            |     |     |           py::baz:/src/script.py
+            |     |     |           _PyEval_EvalFrameDefault
+            |     |     |           PyObject_Vectorcall
+            |     |     |           _PyEval_Vector
+            |     |     |           py::bar:/src/script.py
+            |     |     |           _PyEval_EvalFrameDefault
+            |     |     |           PyObject_Vectorcall
+            |     |     |           _PyEval_Vector
+            |     |     |           py::foo:/src/script.py
+            |     |     |           |
+            |     |     |           |--51.81%--_PyEval_EvalFrameDefault
+            |     |     |           |     |
+            |     |     |           |     |--13.77%--_PyLong_Add
+            |     |     |           |     |     |
+            |     |     |           |     |     |--3.26%--_PyObject_Malloc
+
+```
+
+## How to enable `perf` profiling support[¶](https://docs.python.org/3/howto/perf_profiling.html#how-to-enable-perf-profiling-support "Link to this heading")
+`perf` profiling support can be enabled either from the start using the environment variable [`PYTHONPERFSUPPORT`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPERFSUPPORT) or the [`-X perf`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) option, or dynamically using [`sys.activate_stack_trampoline()`](https://docs.python.org/3/library/sys.html#sys.activate_stack_trampoline "sys.activate_stack_trampoline") and [`sys.deactivate_stack_trampoline()`](https://docs.python.org/3/library/sys.html#sys.deactivate_stack_trampoline "sys.deactivate_stack_trampoline").
+The `sys` functions take precedence over the `-X` option, the `-X` option takes precedence over the environment variable.
+Example, using the environment variable:
+```
+$ PYTHONPERFSUPPORT=1perfrecord-F9999-g-operf.datapythonmy_script.py
+$ perfreport-g-iperf.data
+
+```
+
+Example, using the `-X` option:
+```
+$ perfrecord-F9999-g-operf.datapython-Xperfmy_script.py
+$ perfreport-g-iperf.data

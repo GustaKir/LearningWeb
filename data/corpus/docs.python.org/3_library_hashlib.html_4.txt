@@ -1,0 +1,69 @@
+Title: hashlib Module Functions
+URL: https://docs.python.org/3/library/hashlib.html
+Summary: The hashlib module provides functions for creating hash objects, including 'hexdigest()' which returns a hexadecimal string of the hash digest, and 'copy()' which creates a clone of the hash object for efficient digest calculations. It also introduces SHAKE functions for variable-length digests.
+---
+
+hash.hexdigest()[¶](https://docs.python.org/3/library/hashlib.html#hashlib.hash.hexdigest "Link to this definition")
+    
+Like [`digest()`](https://docs.python.org/3/library/hashlib.html#hashlib.hash.digest "hashlib.hash.digest") except the digest is returned as a string object of double length, containing only hexadecimal digits. This may be used to exchange the value safely in email or other non-binary environments. 
+
+hash.copy()[¶](https://docs.python.org/3/library/hashlib.html#hashlib.hash.copy "Link to this definition")
+    
+Return a copy (“clone”) of the hash object. This can be used to efficiently compute the digests of data sharing a common initial substring.
+## SHAKE variable length digests[¶](https://docs.python.org/3/library/hashlib.html#shake-variable-length-digests "Link to this heading") 
+
+hashlib.shake_128([_data_ , ]_*_ , _usedforsecurity=True_)[¶](https://docs.python.org/3/library/hashlib.html#hashlib.shake_128 "Link to this definition")
+
+
+hashlib.shake_256([_data_ , ]_*_ , _usedforsecurity=True_)[¶](https://docs.python.org/3/library/hashlib.html#hashlib.shake_256 "Link to this definition")
+
+The [`shake_128()`](https://docs.python.org/3/library/hashlib.html#hashlib.shake_128 "hashlib.shake_128") and [`shake_256()`](https://docs.python.org/3/library/hashlib.html#hashlib.shake_256 "hashlib.shake_256") algorithms provide variable length digests with length_in_bits//2 up to 128 or 256 bits of security. As such, their digest methods require a length. Maximum length is not limited by the SHAKE algorithm. 
+
+shake.digest(_length_)[¶](https://docs.python.org/3/library/hashlib.html#hashlib.shake.digest "Link to this definition")
+    
+Return the digest of the data passed to the [`update()`](https://docs.python.org/3/library/hashlib.html#hashlib.hash.update "hashlib.hash.update") method so far. This is a bytes object of size _length_ which may contain bytes in the whole range from 0 to 255. 
+
+shake.hexdigest(_length_)[¶](https://docs.python.org/3/library/hashlib.html#hashlib.shake.hexdigest "Link to this definition")
+    
+Like [`digest()`](https://docs.python.org/3/library/hashlib.html#hashlib.shake.digest "hashlib.shake.digest") except the digest is returned as a string object of double length, containing only hexadecimal digits. This may be used to exchange the value in email or other non-binary environments.
+Example use:
+>>>```
+>>> h = hashlib.shake_256(b'Nobody inspects the spammish repetition')
+>>> h.hexdigest(20)
+'44709d6fcb83d92a76dcb0b668c98e1b1d3dafe7'
+
+```
+
+## File hashing[¶](https://docs.python.org/3/library/hashlib.html#file-hashing "Link to this heading")
+The hashlib module provides a helper function for efficient hashing of a file or file-like object. 
+
+hashlib.file_digest(_fileobj_ , _digest_ , _/_)[¶](https://docs.python.org/3/library/hashlib.html#hashlib.file_digest "Link to this definition")
+    
+Return a digest object that has been updated with contents of file object.
+_fileobj_ must be a file-like object opened for reading in binary mode. It accepts file objects from builtin [`open()`](https://docs.python.org/3/library/functions.html#open "open"), [`BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO "io.BytesIO") instances, SocketIO objects from [`socket.socket.makefile()`](https://docs.python.org/3/library/socket.html#socket.socket.makefile "socket.socket.makefile"), and similar. _fileobj_ must be opened in blocking mode, otherwise a [`BlockingIOError`](https://docs.python.org/3/library/exceptions.html#BlockingIOError "BlockingIOError") may be raised.
+The function may bypass Python’s I/O and use the file descriptor from [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") directly. _fileobj_ must be assumed to be in an unknown state after this function returns or raises. It is up to the caller to close _fileobj_.
+_digest_ must either be a hash algorithm name as a _str_ , a hash constructor, or a callable that returns a hash object.
+Example:
+>>>```
+>>> importio,hashlib,hmac
+>>> with open(hashlib.__file__, "rb") as f:
+...   digest = hashlib.file_digest(f, "sha256")
+...
+>>> digest.hexdigest()
+'...'
+
+```
+
+>>>```
+>>> buf = io.BytesIO(b"somedata")
+>>> mac1 = hmac.HMAC(b"key", digestmod=hashlib.sha512)
+>>> digest = hashlib.file_digest(buf, lambda: mac1)
+
+```
+
+>>>```
+>>> digest is mac1
+True
+>>> mac2 = hmac.HMAC(b"key", b"somedata", digestmod=hashlib.sha512)
+>>> mac1.digest() == mac2.digest()
+True

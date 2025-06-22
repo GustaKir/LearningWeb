@@ -1,0 +1,62 @@
+Title: Using ctypes in Python: Safety and Parameter Types
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: The `ctypes` library can lead to crashes in Python, necessitating caution. The `faulthandler` module is useful for debugging issues such as segmentation faults from incorrect C library calls. Native Python objects like `None`, integers, bytes, and strings can be used as parameters in function calls, each having specific representations in C.
+---
+
+```
+
+There are, however, enough ways to crash Python with [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python."), so you should be careful anyway. The [`faulthandler`](https://docs.python.org/3/library/faulthandler.html#module-faulthandler "faulthandler: Dump the Python traceback.") module can be helpful in debugging crashes (e.g. from segmentation faults produced by erroneous C library calls).
+`None`, integers, bytes objects and (unicode) strings are the only native Python objects that can directly be used as parameters in these function calls. `None` is passed as a C `NULL` pointer, bytes objects and strings are passed as pointer to the memory block that contains their data (char* or wchar_t*). Python integers are passed as the platform’s default C int type, their value is masked to fit into the C type.
+Before we move on calling functions with other parameter types, we have to learn more about [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") data types.
+### Fundamental data types[¶](https://docs.python.org/3/library/ctypes.html#fundamental-data-types "Link to this heading")
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") defines a number of primitive C compatible data types:
+ctypes type | C type | Python type  
+---|---|---  
+[`c_bool`](https://docs.python.org/3/library/ctypes.html#ctypes.c_bool "ctypes.c_bool") | _Bool | bool (1)  
+[`c_char`](https://docs.python.org/3/library/ctypes.html#ctypes.c_char "ctypes.c_char") | char | 1-character bytes object  
+[`c_wchar`](https://docs.python.org/3/library/ctypes.html#ctypes.c_wchar "ctypes.c_wchar") | `wchar_t` | 1-character string  
+[`c_byte`](https://docs.python.org/3/library/ctypes.html#ctypes.c_byte "ctypes.c_byte") | char | int  
+[`c_ubyte`](https://docs.python.org/3/library/ctypes.html#ctypes.c_ubyte "ctypes.c_ubyte") | unsignedchar | int  
+[`c_short`](https://docs.python.org/3/library/ctypes.html#ctypes.c_short "ctypes.c_short") | short | int  
+[`c_ushort`](https://docs.python.org/3/library/ctypes.html#ctypes.c_ushort "ctypes.c_ushort") | unsignedshort | int  
+[`c_int`](https://docs.python.org/3/library/ctypes.html#ctypes.c_int "ctypes.c_int") | int | int  
+[`c_uint`](https://docs.python.org/3/library/ctypes.html#ctypes.c_uint "ctypes.c_uint") | unsignedint | int  
+[`c_long`](https://docs.python.org/3/library/ctypes.html#ctypes.c_long "ctypes.c_long") | long | int  
+[`c_ulong`](https://docs.python.org/3/library/ctypes.html#ctypes.c_ulong "ctypes.c_ulong") | unsignedlong | int  
+[`c_longlong`](https://docs.python.org/3/library/ctypes.html#ctypes.c_longlong "ctypes.c_longlong") | __int64 or longlong | int  
+[`c_ulonglong`](https://docs.python.org/3/library/ctypes.html#ctypes.c_ulonglong "ctypes.c_ulonglong") | unsigned__int64 or unsignedlonglong | int  
+[`c_size_t`](https://docs.python.org/3/library/ctypes.html#ctypes.c_size_t "ctypes.c_size_t") | `size_t` | int  
+[`c_ssize_t`](https://docs.python.org/3/library/ctypes.html#ctypes.c_ssize_t "ctypes.c_ssize_t") | `ssize_t` or [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") | int  
+[`c_time_t`](https://docs.python.org/3/library/ctypes.html#ctypes.c_time_t "ctypes.c_time_t") | `time_t` | int  
+[`c_float`](https://docs.python.org/3/library/ctypes.html#ctypes.c_float "ctypes.c_float") | float | float  
+[`c_double`](https://docs.python.org/3/library/ctypes.html#ctypes.c_double "ctypes.c_double") | double | float  
+[`c_longdouble`](https://docs.python.org/3/library/ctypes.html#ctypes.c_longdouble "ctypes.c_longdouble") | longdouble | float  
+[`c_char_p`](https://docs.python.org/3/library/ctypes.html#ctypes.c_char_p "ctypes.c_char_p") | char* (NUL terminated) | bytes object or `None`  
+[`c_wchar_p`](https://docs.python.org/3/library/ctypes.html#ctypes.c_wchar_p "ctypes.c_wchar_p") | wchar_t* (NUL terminated) | string or `None`  
+[`c_void_p`](https://docs.python.org/3/library/ctypes.html#ctypes.c_void_p "ctypes.c_void_p") | void* | int or `None`  
+  1. The constructor accepts any object with a truth value.
+
+
+All these types can be created by calling them with an optional initializer of the correct type and value:
+>>>```
+>>> c_int()
+c_long(0)
+>>> c_wchar_p("Hello, World")
+c_wchar_p(140018365411392)
+>>> c_ushort(-3)
+c_ushort(65533)
+>>>
+
+```
+
+Since these types are mutable, their value can also be changed afterwards:
+>>>```
+>>> i = c_int(42)
+>>> print(i)
+c_long(42)
+>>> print(i.value)
+42
+>>> i.value = -99
+>>> print(i.value)
+-99
+>>>

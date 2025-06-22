@@ -1,0 +1,61 @@
+Title: Understanding ClassVar in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: The ClassVar type hint in Python's typing module is designed to be used with class-level variables, accepting only types and not further subscriptions. It should not be utilized with isinstance() or issubclass() as it does not alter runtime behaviors, but is useful for type checkers. An example demonstrates proper assignment to class variables.
+---
+
+```
+
+[`ClassVar`](https://docs.python.org/3/library/typing.html#typing.ClassVar "typing.ClassVar") accepts only types and cannot be further subscribed.
+[`ClassVar`](https://docs.python.org/3/library/typing.html#typing.ClassVar "typing.ClassVar") is not a class itself, and should not be used with [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") or [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass"). [`ClassVar`](https://docs.python.org/3/library/typing.html#typing.ClassVar "typing.ClassVar") does not change Python runtime behavior, but it can be used by third-party type checkers. For example, a type checker might flag the following code as an error:
+```
+enterprise_d = Starship(3000)
+enterprise_d.stats = {} # Error, setting class variable on instance
+Starship.stats = {}   # This is OK
+
+```
+
+Added in version 3.5.3.
+Changed in version 3.13: [`ClassVar`](https://docs.python.org/3/library/typing.html#typing.ClassVar "typing.ClassVar") can now be nested in [`Final`](https://docs.python.org/3/library/typing.html#typing.Final "typing.Final") and vice versa. 
+
+typing.Final[¶](https://docs.python.org/3/library/typing.html#typing.Final "Link to this definition")
+    
+Special typing construct to indicate final names to type checkers.
+Final names cannot be reassigned in any scope. Final names declared in class scopes cannot be overridden in subclasses.
+For example:
+```
+MAX_SIZE: Final = 9000
+MAX_SIZE += 1 # Error reported by type checker
+classConnection:
+  TIMEOUT: Final[int] = 10
+classFastConnector(Connection):
+  TIMEOUT = 1 # Error reported by type checker
+
+```
+
+There is no runtime checking of these properties. See [**PEP 591**](https://peps.python.org/pep-0591/) for more details.
+Added in version 3.8.
+Changed in version 3.13: [`Final`](https://docs.python.org/3/library/typing.html#typing.Final "typing.Final") can now be nested in [`ClassVar`](https://docs.python.org/3/library/typing.html#typing.ClassVar "typing.ClassVar") and vice versa. 
+
+typing.Required[¶](https://docs.python.org/3/library/typing.html#typing.Required "Link to this definition")
+    
+Special typing construct to mark a [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict") key as required.
+This is mainly useful for `total=False` TypedDicts. See [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict") and [**PEP 655**](https://peps.python.org/pep-0655/) for more details.
+Added in version 3.11. 
+
+typing.NotRequired[¶](https://docs.python.org/3/library/typing.html#typing.NotRequired "Link to this definition")
+    
+Special typing construct to mark a [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict") key as potentially missing.
+See [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict") and [**PEP 655**](https://peps.python.org/pep-0655/) for more details.
+Added in version 3.11. 
+
+typing.ReadOnly[¶](https://docs.python.org/3/library/typing.html#typing.ReadOnly "Link to this definition")
+    
+A special typing construct to mark an item of a [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict") as read-only.
+For example:
+```
+classMovie(TypedDict):
+  title: ReadOnly[str]
+  year: int
+defmutate_movie(m: Movie) -> None:
+  m["year"] = 1999 # allowed
+  m["title"] = "The Matrix" # typechecker error

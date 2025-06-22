@@ -1,0 +1,35 @@
+Title: Logging in Asynchronous Code
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: The document discusses the implications of logging in asynchronous code, highlighting potential issues with network and file handlers that can block the event loop. It suggests using a logging approach with a `QueueListener` thread to avoid these problems. Additionally, it notes changes in behavior regarding message handling in `QueueListener` starting from Python version 3.5.
+---
+
+```
+
+Note
+Although the earlier discussion wasn’t specifically talking about async code, but rather about slow logging handlers, it should be noted that when logging from async code, network and even file handlers could lead to problems (blocking the event loop) because some logging is done from [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") internals. It might be best, if any async code is used in an application, to use the above approach for logging, so that any blocking code runs only in the `QueueListener` thread.
+Changed in version 3.5: Prior to Python 3.5, the [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") always passed every message received from the queue to every handler it was initialized with. (This was because it was assumed that level filtering was all done on the other side, where the queue is filled.) From 3.5 onwards, this behaviour can be changed by passing a keyword argument `respect_handler_level=True` to the listener’s constructor. When this is done, the listener compares the level of each message with the handler’s level, and only passes a message to a handler if it’s appropriate to do so.
+## Sending and receiving logging events across a network[¶](https://docs.python.org/3/howto/logging-cookbook.html#sending-and-receiving-logging-events-across-a-network "Link to this heading")
+Let’s say you want to send logging events across a network, and handle them at the receiving end. A simple way of doing this is attaching a [`SocketHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler "logging.handlers.SocketHandler") instance to the root logger at the sending end:
+```
+importlogging,logging.handlers
+rootLogger = logging.getLogger('')
+rootLogger.setLevel(logging.DEBUG)
+socketHandler = logging.handlers.SocketHandler('localhost',
+          logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+# don't bother with a formatter, since a socket handler sends the event as
+# an unformatted pickle
+rootLogger.addHandler(socketHandler)
+# Now, we can log to the root logger, or any other logger. First the root...
+logging.info('Jackdaws love my big sphinx of quartz.')
+# Now, define a couple of other loggers which might represent areas in your
+# application:
+logger1 = logging.getLogger('myapp.area1')
+logger2 = logging.getLogger('myapp.area2')
+logger1.debug('Quick zephyrs blow, vexing daft Jim.')
+logger1.info('How quickly daft jumping zebras vex.')
+logger2.warning('Jail zesty vixen who grabbed pay from quack.')
+logger2.error('The five boxing wizards jump quickly.')
+
+```
+
+At the receiving end, you can set up a receiver using the [`socketserver`](https://docs.python.org/3/library/socketserver.html#module-socketserver "socketserver: A framework for network servers.") module. Here is a basic working example:

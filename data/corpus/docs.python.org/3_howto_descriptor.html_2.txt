@@ -1,0 +1,100 @@
+Title: Understanding Descriptors in Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section explains the difference between normal attribute lookup and descriptor lookup using an example with class A. It demonstrates how normal attribute lookups retrieve values directly from the class or instance dictionary, while descriptor lookups utilize the descriptor's `__get__` method to compute a value on demand. The example shows that descriptors can be less practical for constant retrieval compared to regular attributes.
+---
+
+```
+classA:
+  x = 5            # Regular class attribute
+  y = Ten()          # Descriptor instance
+
+```
+
+An interactive session shows the difference between normal attribute lookup and descriptor lookup:
+>>>```
+>>> a = A()           # Make an instance of class A
+>>> a.x             # Normal attribute lookup
+5
+>>> a.y             # Descriptor lookup
+10
+
+```
+
+In the `a.x` attribute lookup, the dot operator finds `'x': 5` in the class dictionary. In the `a.y` lookup, the dot operator finds a descriptor instance, recognized by its `__get__` method. Calling that method returns `10`.
+Note that the value `10` is not stored in either the class dictionary or the instance dictionary. Instead, the value `10` is computed on demand.
+This example shows how a simple descriptor works, but it isn’t very useful. For retrieving constants, normal attribute lookup would be better.
+In the next section, we’ll create something more useful, a dynamic lookup.
+### [Dynamic lookups](https://docs.python.org/3/howto/descriptor.html#id4)[¶](https://docs.python.org/3/howto/descriptor.html#dynamic-lookups "Link to this heading")
+Interesting descriptors typically run computations instead of returning constants:
+```
+importos
+classDirectorySize:
+  def__get__(self, obj, objtype=None):
+    return len(os.listdir(obj.dirname))
+classDirectory:
+  size = DirectorySize()       # Descriptor instance
+  def__init__(self, dirname):
+    self.dirname = dirname     # Regular instance attribute
+
+```
+
+An interactive session shows that the lookup is dynamic — it computes different, updated answers each time:
+>>>```
+>>> s = Directory('songs')
+>>> g = Directory('games')
+>>> s.size               # The songs directory has twenty files
+20
+>>> g.size               # The games directory has three files
+3
+>>> os.remove('games/chess')      # Delete a game
+>>> g.size               # File count is automatically updated
+2
+
+```
+
+Besides showing how descriptors can run computations, this example also reveals the purpose of the parameters to [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__"). The _self_ parameter is _size_ , an instance of _DirectorySize_. The _obj_ parameter is either _g_ or _s_ , an instance of _Directory_. It is the _obj_ parameter that lets the [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") method learn the target directory. The _objtype_ parameter is the class _Directory_.
+### [Managed attributes](https://docs.python.org/3/howto/descriptor.html#id5)[¶](https://docs.python.org/3/howto/descriptor.html#managed-attributes "Link to this heading")
+A popular use for descriptors is managing access to instance data. The descriptor is assigned to a public attribute in the class dictionary while the actual data is stored as a private attribute in the instance dictionary. The descriptor’s [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") and [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__") methods are triggered when the public attribute is accessed.
+In the following example, _age_ is the public attribute and __age_ is the private attribute. When the public attribute is accessed, the descriptor logs the lookup or update:
+```
+importlogging
+logging.basicConfig(level=logging.INFO)
+classLoggedAgeAccess:
+  def__get__(self, obj, objtype=None):
+    value = obj._age
+    logging.info('Accessing %r giving %r', 'age', value)
+    return value
+  def__set__(self, obj, value):
+    logging.info('Updating %r to %r', 'age', value)
+    obj._age = value
+classPerson:
+  age = LoggedAgeAccess()       # Descriptor instance
+  def__init__(self, name, age):
+    self.name = name        # Regular instance attribute
+    self.age = age         # Calls __set__()
+  defbirthday(self):
+    self.age += 1          # Calls both __get__() and __set__()
+
+```
+
+An interactive session shows that all access to the managed attribute _age_ is logged, but that the regular attribute _name_ is not logged:
+>>>```
+>>> mary = Person('Mary M', 30)     # The initial age update is logged
+INFO:root:Updating 'age' to 30
+>>> dave = Person('David D', 40)
+INFO:root:Updating 'age' to 40
+>>> vars(mary)             # The actual data is in a private attribute
+{'name': 'Mary M', '_age': 30}
+>>> vars(dave)
+{'name': 'David D', '_age': 40}
+>>> mary.age              # Access the data and log the lookup
+INFO:root:Accessing 'age' giving 30
+30
+>>> mary.birthday()           # Updates are logged as well
+INFO:root:Accessing 'age' giving 30
+INFO:root:Updating 'age' to 31
+>>> dave.name              # Regular attribute lookup isn't logged
+'David D'
+>>> dave.age              # Only the managed attribute is logged
+INFO:root:Accessing 'age' giving 40
+40

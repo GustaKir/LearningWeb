@@ -1,0 +1,95 @@
+Title: Logger Configuration in Python Logging Cookbook
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section outlines the necessary configuration for a logger in a POSIX environment, including the logging version, formatter details, and handler settings for both console and file outputs.
+---
+
+This is needed on POSIX because the logger will
+  # be there in the child following a fork().
+  config_listener = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+      'detailed': {
+        'class': 'logging.Formatter',
+        'format': '%(asctime)s%(name)-15s%(levelname)-8s%(processName)-10s%(message)s'
+      },
+      'simple': {
+        'class': 'logging.Formatter',
+        'format': '%(name)-15s%(levelname)-8s%(processName)-10s%(message)s'
+      }
+    },
+    'handlers': {
+      'console': {
+        'class': 'logging.StreamHandler',
+        'formatter': 'simple',
+        'level': 'INFO'
+      },
+      'file': {
+        'class': 'logging.FileHandler',
+        'filename': 'mplog.log',
+        'mode': 'w',
+        'formatter': 'detailed'
+      },
+      'foofile': {
+        'class': 'logging.FileHandler',
+        'filename': 'mplog-foo.log',
+        'mode': 'w',
+        'formatter': 'detailed'
+      },
+      'errors': {
+        'class': 'logging.FileHandler',
+        'filename': 'mplog-errors.log',
+        'mode': 'w',
+        'formatter': 'detailed',
+        'level': 'ERROR'
+      }
+    },
+    'loggers': {
+      'foo': {
+        'handlers': ['foofile']
+      }
+    },
+    'root': {
+      'handlers': ['console', 'file', 'errors'],
+      'level': 'DEBUG'
+    }
+  }
+  # Log some initial events, just to show that logging in the parent works
+  # normally.
+  logging.config.dictConfig(config_initial)
+  logger = logging.getLogger('setup')
+  logger.info('About to create workers ...')
+  workers = []
+  for i in range(5):
+    wp = Process(target=worker_process, name='worker %d' % (i + 1),
+           args=(config_worker,))
+    workers.append(wp)
+    wp.start()
+    logger.info('Started worker: %s', wp.name)
+  logger.info('About to create listener ...')
+  stop_event = Event()
+  lp = Process(target=listener_process, name='listener',
+         args=(q, stop_event, config_listener))
+  lp.start()
+  logger.info('Started listener')
+  # We now hang around for the workers to finish their work.
+  for wp in workers:
+    wp.join()
+  # Workers all done, listening can now stop.
+  # Logging in the parent still works normally.
+  logger.info('Telling listener to stop ...')
+  stop_event.set()
+  lp.join()
+  logger.info('All done.')
+if __name__ == '__main__':
+  main()
+
+```
+
+## Inserting a BOM into messages sent to a SysLogHandler[¶](https://docs.python.org/3/howto/logging-cookbook.html#inserting-a-bom-into-messages-sent-to-a-sysloghandler "Link to this heading")
+[**RFC 5424**](https://datatracker.ietf.org/doc/html/rfc5424.html) requires that a Unicode message be sent to a syslog daemon as a set of bytes which have the following structure: an optional pure-ASCII component, followed by a UTF-8 Byte Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the [**relevant section of the specification**](https://datatracker.ietf.org/doc/html/rfc5424.html#section-6).)
+In Python 3.1, code was added to [`SysLogHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SysLogHandler "logging.handlers.SysLogHandler") to insert a BOM into the message, but unfortunately, it was implemented incorrectly, with the BOM appearing at the beginning of the message and hence not allowing any pure-ASCII component to appear before it.
+As this behaviour is broken, the incorrect BOM insertion code is being removed from Python 3.2.4 and later. However, it is not being replaced, and if you want to produce [**RFC 5424**](https://datatracker.ietf.org/doc/html/rfc5424.html)-compliant messages which include a BOM, an optional pure-ASCII sequence before it and arbitrary Unicode after it, encoded using UTF-8, then you need to do the following:
+  1. Attach a [`Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter") instance to your [`SysLogHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SysLogHandler "logging.handlers.SysLogHandler") instance, with a format string such as:
+```
+'ASCII section\ufeffUnicode section'

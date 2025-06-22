@@ -1,0 +1,74 @@
+Title: Logging Module Functions and Changes
+URL: https://docs.python.org/3/library/logging.html
+Summary: This section details updates in the logging module, including the introduction of the _force_, _encoding_, and _errors_ arguments in version 3.9. It explains the purpose of logging.shutdown() for orderly shutdown and handling cleanup at application exit, as well as logging.setLoggerClass() for specifying logger instantiation classes.
+---
+
+: The _force_ argument was added.
+Changed in version 3.9: The _encoding_ and _errors_ arguments were added. 
+
+logging.shutdown()[¶](https://docs.python.org/3/library/logging.html#logging.shutdown "Link to this definition")
+    
+Informs the logging system to perform an orderly shutdown by flushing and closing all handlers. This should be called at application exit and no further use of the logging system should be made after this call.
+When the logging module is imported, it registers this function as an exit handler (see [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions.")), so normally there’s no need to do that manually. 
+
+logging.setLoggerClass(_klass_)[¶](https://docs.python.org/3/library/logging.html#logging.setLoggerClass "Link to this definition")
+    
+Tells the logging system to use the class _klass_ when instantiating a logger. The class should define `__init__()` such that only a name argument is required, and the `__init__()` should call `Logger.__init__()`. This function is typically called before any loggers are instantiated by applications which need to use custom logger behavior. After this call, as at any other time, do not instantiate loggers directly using the subclass: continue to use the [`logging.getLogger()`](https://docs.python.org/3/library/logging.html#logging.getLogger "logging.getLogger") API to get your loggers. 
+
+logging.setLogRecordFactory(_factory_)[¶](https://docs.python.org/3/library/logging.html#logging.setLogRecordFactory "Link to this definition")
+    
+Set a callable which is used to create a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord"). 
+
+Parameters:
+    
+**factory** – The factory callable to be used to instantiate a log record.
+Added in version 3.2: This function has been provided, along with [`getLogRecordFactory()`](https://docs.python.org/3/library/logging.html#logging.getLogRecordFactory "logging.getLogRecordFactory"), to allow developers more control over how the [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") representing a logging event is constructed.
+The factory has the following signature:
+`factory(name, level, fn, lno, msg, args, exc_info, func=None, sinfo=None, **kwargs)`
+> 
+
+name:
+    
+> The logger name. 
+
+level:
+    
+> The logging level (numeric). 
+
+fn:
+    
+> The full pathname of the file where the logging call was made. 
+
+lno:
+    
+> The line number in the file where the logging call was made. 
+
+msg:
+    
+> The logging message. 
+
+args:
+    
+> The arguments for the logging message. 
+
+exc_info:
+    
+> An exception tuple, or `None`. 
+
+func:
+    
+> The name of the function or method which invoked the logging call. 
+
+sinfo:
+    
+> A stack traceback such as is provided by [`traceback.print_stack()`](https://docs.python.org/3/library/traceback.html#traceback.print_stack "traceback.print_stack"), showing the call hierarchy. 
+
+kwargs:
+    
+> Additional keyword arguments.
+## Module-Level Attributes[¶](https://docs.python.org/3/library/logging.html#module-level-attributes "Link to this heading") 
+
+logging.lastResort[¶](https://docs.python.org/3/library/logging.html#logging.lastResort "Link to this definition")
+    
+A “handler of last resort” is available through this attribute. This is a [`StreamHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.StreamHandler "logging.StreamHandler") writing to `sys.stderr` with a level of `WARNING`, and is used to handle logging events in the absence of any logging configuration. The end result is to just print the message to `sys.stderr`. This replaces the earlier error message saying that “no handlers could be found for logger XYZ”. If you need the earlier behaviour for some reason, `lastResort` can be set to `None`.
+Added in version 3.2.

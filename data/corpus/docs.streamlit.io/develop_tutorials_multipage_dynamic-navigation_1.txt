@@ -1,0 +1,41 @@
+Title: Creating a Dynamic Navigation Menu in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation
+Summary: This section introduces `st.navigation` for building dynamic navigation menus in Streamlit applications. It emphasizes the ability to modify the page set passed to `st.navigation` during runtime, enabling custom, role-based menus. The tutorial references the use of `st.navigation` and `st.Page` introduced in version 1.36.0, and suggests an alternative method for earlier versions.
+---
+
+# [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#create-a-dynamic-navigation-menu)Create a dynamic navigation menu
+`st.navigation` makes it easy to build dynamic navigation menus. You can change the set of pages passed to `st.navigation` with each rerun, which changes the navigation menu to match. This is a convenient feature for creating custom, role-based navigation menus.
+This tutorial uses `st.navigation` and `st.Page`, which were introduced in Streamlit version 1.36.0. For an older workaround using the `pages/` directory and `st.page_link`, see [Build a custom navigation menu with `st.page_link`](https://docs.streamlit.io/develop/tutorials/multipage/st.page_link-nav).
+## [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#applied-concepts)Applied concepts
+  * Use `st.navigation` and `st.Page` to define a multipage app.
+  * Create a dynamic, role-based navigation menu.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#prerequisites)Prerequisites
+  * This tutorial requires the following version of Streamlit:
+`streamlit>=1.36.0 `
+  * You should have a clean working directory called `your-repository`.
+  * You should have a basic understanding of `st.navigation` and `st.Page`.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#summary)Summary
+In this example, we'll build a dynamic navigation menu for a multipage app that depends on the current user's role. You'll abstract away the use of username and credentials to simplify the example. Instead, you'll use a selectbox to let users choose a role and log in.
+The entrypoint file, `streamlit_app.py` will handle user authentication. The other pages will be stubs representing account management (`settings.py`) and specific pages associated to three roles: Requester, Responder, and Admin. Requesters can access the account and request pages. Responders can access the account and respond pages. Admins can access all pages.
+Here's a look at what we'll build:
+Complete code _expand_more_
+**Directory structure:**
+`your-repository/ ├── admin │  ├── admin_1.py │  └── admin_2.py ├── images │  ├── horizontal_blue.png │  └── icon_blue.png ├── request │  ├── request_1.py │  └── request_2.py ├── respond │  ├── respond_1.py │  └── respond_2.py ├── settings.py └── streamlit_app.py `
+**`streamlit_app.py`:**
+`import streamlit as st if "role" not in st.session_state:   st.session_state.role = None ROLES = [None, "Requester", "Responder", "Admin"] def login():   st.header("Log in")   role = st.selectbox("Choose your role", ROLES) if st.button("Log in"):     st.session_state.role = role     st.rerun() def logout():   st.session_state.role = None   st.rerun()  role = st.session_state.role logout_page = st.Page(logout, title="Log out", icon=":material/logout:") settings = st.Page("settings.py", title="Settings", icon=":material/settings:") request_1 = st.Page( "request/request_1.py",   title="Request 1",   icon=":material/help:",   default=(role == "Requester"), ) request_2 = st.Page( "request/request_2.py", title="Request 2", icon=":material/bug_report:" ) respond_1 = st.Page( "respond/respond_1.py",   title="Respond 1",   icon=":material/healing:",   default=(role == "Responder"), ) respond_2 = st.Page( "respond/respond_2.py", title="Respond 2", icon=":material/handyman:" ) admin_1 = st.Page( "admin/admin_1.py",   title="Admin 1",   icon=":material/person_add:",   default=(role == "Admin"), ) admin_2 = st.Page("admin/admin_2.py", title="Admin 2", icon=":material/security:") account_pages = [logout_page, settings] request_pages = [request_1, request_2] respond_pages = [respond_1, respond_2] admin_pages = [admin_1, admin_2] st.title("Request manager") st.logo("images/horizontal_blue.png", icon_image="images/icon_blue.png") page_dict = {} if st.session_state.role in ["Requester", "Admin"]:   page_dict["Request"] = request_pages if st.session_state.role in ["Responder", "Admin"]:   page_dict["Respond"] = respond_pages if st.session_state.role == "Admin":   page_dict["Admin"] = admin_pages if len(page_dict) > 0:   pg = st.navigation({"Account": account_pages} | page_dict) else:   pg = st.navigation([st.Page(login)]) pg.run() `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-dynamic-navigation.streamlit.app/?utm_medium=oembed)
+## [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#build-the-example)Build the example
+### [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#initialize-your-app)Initialize your app
+  1. In `your_repository`, create a file named `streamlit_app.py`.
+  2. In a terminal, change directories to `your_repository`, and start your app:
+`streamlit run streamlit_app.py `
+Your app will be blank because you still need to add code.
+  3. In `streamlit_app.py`, write the following:
+`import streamlit as st `
+  4. Save your `streamlit_app.py` file, and view your running app.
+  5.

@@ -1,0 +1,40 @@
+Title: Python 3.5 New Features Summary
+URL: https://docs.python.org/3/whatsnew/3.5.html
+Summary: Python 3.5 introduces updates to the `os` module, including the `urandom()` function, which now utilizes `getrandom()` on newer Linux and `getentropy()` on OpenBSD to avoid issues with file descriptor exhaustion. Additionally, new `get_blocking()` and `set_blocking()` functions have been added to manage file descriptor blocking modes.
+---
+
+dom()`](https://docs.python.org/3/library/os.html#os.urandom "os.urandom") function now uses the `getrandom()` syscall on Linux 3.17 or newer, and `getentropy()` on OpenBSD 5.6 and newer, removing the need to use `/dev/urandom` and avoiding failures due to potential file descriptor exhaustion. (Contributed by Victor Stinner in [bpo-22181](https://bugs.python.org/issue?@action=redirect&bpo=22181).)
+New [`get_blocking()`](https://docs.python.org/3/library/os.html#os.get_blocking "os.get_blocking") and [`set_blocking()`](https://docs.python.org/3/library/os.html#os.set_blocking "os.set_blocking") functions allow getting and setting a file descriptor’s blocking mode ([`O_NONBLOCK`](https://docs.python.org/3/library/os.html#os.O_NONBLOCK "os.O_NONBLOCK").) (Contributed by Victor Stinner in [bpo-22054](https://bugs.python.org/issue?@action=redirect&bpo=22054).)
+The [`truncate()`](https://docs.python.org/3/library/os.html#os.truncate "os.truncate") and [`ftruncate()`](https://docs.python.org/3/library/os.html#os.ftruncate "os.ftruncate") functions are now supported on Windows. (Contributed by Steve Dower in [bpo-23668](https://bugs.python.org/issue?@action=redirect&bpo=23668).)
+There is a new [`os.path.commonpath()`](https://docs.python.org/3/library/os.path.html#os.path.commonpath "os.path.commonpath") function returning the longest common sub-path of each passed pathname. Unlike the [`os.path.commonprefix()`](https://docs.python.org/3/library/os.path.html#os.path.commonprefix "os.path.commonprefix") function, it always returns a valid path:
+>>>```
+>>> os.path.commonprefix(['/usr/lib', '/usr/local/lib'])
+'/usr/l'
+>>> os.path.commonpath(['/usr/lib', '/usr/local/lib'])
+'/usr'
+
+```
+
+(Contributed by Rafik Draoui and Serhiy Storchaka in [bpo-10395](https://bugs.python.org/issue?@action=redirect&bpo=10395).)
+### pathlib[¶](https://docs.python.org/3/whatsnew/3.5.html#pathlib "Link to this heading")
+The new [`Path.samefile()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.samefile "pathlib.Path.samefile") method can be used to check whether the path points to the same file as another path, which can be either another [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") object, or a string:
+>>>```
+>>> importpathlib
+>>> p1 = pathlib.Path('/etc/hosts')
+>>> p2 = pathlib.Path('/etc/../etc/hosts')
+>>> p1.samefile(p2)
+True
+
+```
+
+(Contributed by Vajrasky Kok and Antoine Pitrou in [bpo-19775](https://bugs.python.org/issue?@action=redirect&bpo=19775).)
+The [`Path.mkdir()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.mkdir "pathlib.Path.mkdir") method now accepts a new optional _exist_ok_ argument to match `mkdir -p` and [`os.makedirs()`](https://docs.python.org/3/library/os.html#os.makedirs "os.makedirs") functionality. (Contributed by Berker Peksag in [bpo-21539](https://bugs.python.org/issue?@action=redirect&bpo=21539).)
+There is a new [`Path.expanduser()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.expanduser "pathlib.Path.expanduser") method to expand `~` and `~user` prefixes. (Contributed by Serhiy Storchaka and Claudiu Popa in [bpo-19776](https://bugs.python.org/issue?@action=redirect&bpo=19776).)
+A new [`Path.home()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.home "pathlib.Path.home") class method can be used to get a [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") instance representing the user’s home directory. (Contributed by Victor Salgado and Mayank Tripathi in [bpo-19777](https://bugs.python.org/issue?@action=redirect&bpo=19777).)
+New [`Path.write_text()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.write_text "pathlib.Path.write_text"), [`Path.read_text()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.read_text "pathlib.Path.read_text"), [`Path.write_bytes()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.write_bytes "pathlib.Path.write_bytes"), [`Path.read_bytes()`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.read_bytes "pathlib.Path.read_bytes") methods to simplify read/write operations on files.
+The following code snippet will create or rewrite existing file `~/spam42`:
+>>>```
+>>> importpathlib
+>>> p = pathlib.Path('~/spam42')
+>>> p.expanduser().write_text('ham')
+3

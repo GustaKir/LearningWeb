@@ -1,0 +1,130 @@
+Title: FastAPI Metadata Tutorial
+URL: https://fastapi.tiangolo.com/tutorial/metadata/
+Summary: This documentation chunk introduces the FastAPI framework, demonstrating how to create an API with metadata for the ChimichangApp, including descriptions, contact details, and licensing information. It also outlines the basic functionality for reading items and provides a brief overview of how to add metadata for tags.
+---
+
+```
+fromfastapiimport FastAPI
+description = """
+ChimichangApp API helps you do awesome stuff. 🚀
+## Items
+You can **read items**.
+## Users
+You will be able to:
+* **Create users** (_not implemented_).
+* **Read users** (_not implemented_).
+"""
+app = FastAPI(
+  title="ChimichangApp",
+  description=description,
+  summary="Deadpool's favorite app. Nuff said.",
+  version="0.0.1",
+  terms_of_service="http://example.com/terms/",
+  contact={
+    "name": "Deadpoolio the Amazing",
+    "url": "http://x-force.example.com/contact/",
+    "email": "dp@x-force.example.com",
+  },
+  license_info={
+    "name": "Apache 2.0",
+    "identifier": "MIT",
+  },
+)
+@app.get("/items/")
+async defread_items():
+  return [{"name": "Katana"}]
+
+```
+
+## Metadata for tags[¶](https://fastapi.tiangolo.com/tutorial/metadata/#metadata-for-tags "Permanent link")
+You can also add additional metadata for the different tags used to group your path operations with the parameter `openapi_tags`.
+It takes a list containing one dictionary for each tag.
+Each dictionary can contain:
+  * `name` (**required**): a `str` with the same tag name you use in the `tags` parameter in your _path operations_ and `APIRouter`s.
+  * `description`: a `str` with a short description for the tag. It can have Markdown and will be shown in the docs UI.
+  * `externalDocs`: a `dict` describing external documentation with:
+    * `description`: a `str` with a short description for the external docs.
+    * `url` (**required**): a `str` with the URL for the external documentation.
+
+
+### Create metadata for tags[¶](https://fastapi.tiangolo.com/tutorial/metadata/#create-metadata-for-tags "Permanent link")
+Let's try that in an example with tags for `users` and `items`.
+Create metadata for your tags and pass it to the `openapi_tags` parameter:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/metadata/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+tags_metadata = [
+  {
+    "name": "users",
+    "description": "Operations with users. The **login** logic is also here.",
+  },
+  {
+    "name": "items",
+    "description": "Manage items. So _fancy_ they have their own docs.",
+    "externalDocs": {
+      "description": "Items external docs",
+      "url": "https://fastapi.tiangolo.com/",
+    },
+  },
+]
+app = FastAPI(openapi_tags=tags_metadata)
+@app.get("/users/", tags=["users"])
+async defget_users():
+  return [{"name": "Harry"}, {"name": "Ron"}]
+@app.get("/items/", tags=["items"])
+async defget_items():
+  return [{"name": "wand"}, {"name": "flying broom"}]
+
+```
+
+Notice that you can use Markdown inside of the descriptions, for example "login" will be shown in bold (**login**) and "fancy" will be shown in italics (_fancy_).
+Tip
+You don't have to add metadata for all the tags that you use.
+### Use your tags[¶](https://fastapi.tiangolo.com/tutorial/metadata/#use-your-tags "Permanent link")
+Use the `tags` parameter with your _path operations_ (and `APIRouter`s) to assign them to different tags:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/metadata/#__tabbed_4_1)
+```
+fromfastapiimport FastAPI
+tags_metadata = [
+  {
+    "name": "users",
+    "description": "Operations with users. The **login** logic is also here.",
+  },
+  {
+    "name": "items",
+    "description": "Manage items. So _fancy_ they have their own docs.",
+    "externalDocs": {
+      "description": "Items external docs",
+      "url": "https://fastapi.tiangolo.com/",
+    },
+  },
+]
+app = FastAPI(openapi_tags=tags_metadata)
+@app.get("/users/", tags=["users"])
+async defget_users():
+  return [{"name": "Harry"}, {"name": "Ron"}]
+@app.get("/items/", tags=["items"])
+async defget_items():
+  return [{"name": "wand"}, {"name": "flying broom"}]
+
+```
+
+Info
+Read more about tags in [Path Operation Configuration](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#tags).
+### Check the docs[¶](https://fastapi.tiangolo.com/tutorial/metadata/#check-the-docs "Permanent link")
+Now, if you check the docs, they will show all the additional metadata:
+![](https://fastapi.tiangolo.com/img/tutorial/metadata/image02.png)
+### Order of tags[¶](https://fastapi.tiangolo.com/tutorial/metadata/#order-of-tags "Permanent link")
+The order of each tag metadata dictionary also defines the order shown in the docs UI.
+For example, even though `users` would go after `items` in alphabetical order, it is shown before them, because we added their metadata as the first dictionary in the list.
+## OpenAPI URL[¶](https://fastapi.tiangolo.com/tutorial/metadata/#openapi-url "Permanent link")
+By default, the OpenAPI schema is served at `/openapi.json`.
+But you can configure it with the parameter `openapi_url`.
+For example, to set it to be served at `/api/v1/openapi.json`:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/metadata/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI(openapi_url="/api/v1/openapi.json")
+@app.get("/items/")
+async defread_items():
+  return [{"name": "Foo"}]

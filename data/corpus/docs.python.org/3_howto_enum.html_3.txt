@@ -1,0 +1,145 @@
+Title: Using Automatic Values in Enums
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section explains how to use the `auto()` function from the Enum class to automatically generate values for enum members. It demonstrates the usage of `auto()` for naming colors and shows how to override the `_generate_next_value_()` method to customize value generation, such as assigning names as their values.
+---
+
+```
+
+## Using automatic values[¶](https://docs.python.org/3/howto/enum.html#using-automatic-values "Link to this heading")
+If the exact value is unimportant you can use [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto"):
+>>>```
+>>> fromenumimport Enum, auto
+>>> classColor(Enum):
+...   RED = auto()
+...   BLUE = auto()
+...   GREEN = auto()
+...
+>>> [member.value for member in Color]
+[1, 2, 3]
+
+```
+
+The values are chosen by [`_generate_next_value_()`](https://docs.python.org/3/library/enum.html#enum.Enum._generate_next_value_ "enum.Enum._generate_next_value_"), which can be overridden:
+>>>```
+>>> classAutoName(Enum):
+...   @staticmethod
+...   def_generate_next_value_(name, start, count, last_values):
+...     return name
+...
+>>> classOrdinal(AutoName):
+...   NORTH = auto()
+...   SOUTH = auto()
+...   EAST = auto()
+...   WEST = auto()
+...
+>>> [member.value for member in Ordinal]
+['NORTH', 'SOUTH', 'EAST', 'WEST']
+
+```
+
+Note
+The [`_generate_next_value_()`](https://docs.python.org/3/library/enum.html#enum.Enum._generate_next_value_ "enum.Enum._generate_next_value_") method must be defined before any members.
+## Iteration[¶](https://docs.python.org/3/howto/enum.html#iteration "Link to this heading")
+Iterating over the members of an enum does not provide the aliases:
+>>>```
+>>> list(Shape)
+[<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
+>>> list(Weekday)
+[<Weekday.MONDAY: 1>, <Weekday.TUESDAY: 2>, <Weekday.WEDNESDAY: 4>, <Weekday.THURSDAY: 8>, <Weekday.FRIDAY: 16>, <Weekday.SATURDAY: 32>, <Weekday.SUNDAY: 64>]
+
+```
+
+Note that the aliases `Shape.ALIAS_FOR_SQUARE` and `Weekday.WEEKEND` aren’t shown.
+The special attribute `__members__` is a read-only ordered mapping of names to members. It includes all names defined in the enumeration, including the aliases:
+>>>```
+>>> for name, member in Shape.__members__.items():
+...   name, member
+...
+('SQUARE', <Shape.SQUARE: 2>)
+('DIAMOND', <Shape.DIAMOND: 1>)
+('CIRCLE', <Shape.CIRCLE: 3>)
+('ALIAS_FOR_SQUARE', <Shape.SQUARE: 2>)
+
+```
+
+The `__members__` attribute can be used for detailed programmatic access to the enumeration members. For example, finding all the aliases:
+>>>```
+>>> [name for name, member in Shape.__members__.items() if member.name != name]
+['ALIAS_FOR_SQUARE']
+
+```
+
+Note
+Aliases for flags include values with multiple flags set, such as `3`, and no flags set, i.e. `0`.
+## Comparisons[¶](https://docs.python.org/3/howto/enum.html#comparisons "Link to this heading")
+Enumeration members are compared by identity:
+>>>```
+>>> Color.RED is Color.RED
+True
+>>> Color.RED is Color.BLUE
+False
+>>> Color.RED is not Color.BLUE
+True
+
+```
+
+Ordered comparisons between enumeration values are _not_ supported. Enum members are not integers (but see [IntEnum](https://docs.python.org/3/howto/enum.html#intenum) below):
+>>>```
+>>> Color.RED < Color.BLUE
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: '<' not supported between instances of 'Color' and 'Color'
+
+```
+
+Equality comparisons are defined though:
+>>>```
+>>> Color.BLUE == Color.RED
+False
+>>> Color.BLUE != Color.RED
+True
+>>> Color.BLUE == Color.BLUE
+True
+
+```
+
+Comparisons against non-enumeration values will always compare not equal (again, [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") was explicitly designed to behave differently, see below):
+>>>```
+>>> Color.BLUE == 2
+False
+
+```
+
+Warning
+It is possible to reload modules – if a reloaded module contains enums, they will be recreated, and the new members may not compare identical/equal to the original members.
+## Allowed members and attributes of enumerations[¶](https://docs.python.org/3/howto/enum.html#allowed-members-and-attributes-of-enumerations "Link to this heading")
+Most of the examples above use integers for enumeration values. Using integers is short and handy (and provided by default by the [Functional API](https://docs.python.org/3/howto/enum.html#functional-api)), but not strictly enforced. In the vast majority of use-cases, one doesn’t care what the actual value of an enumeration is. But if the value _is_ important, enumerations can have arbitrary values.
+Enumerations are Python classes, and can have methods and special methods as usual. If we have this enumeration:
+>>>```
+>>> classMood(Enum):
+...   FUNKY = 1
+...   HAPPY = 3
+...
+...   defdescribe(self):
+...     # self is the member here
+...     return self.name, self.value
+...
+...   def__str__(self):
+...     return 'my custom str! {0}'.format(self.value)
+...
+...   @classmethod
+...   deffavorite_mood(cls):
+...     # cls here is the enumeration
+...     return cls.HAPPY
+...
+
+```
+
+Then:
+>>>```
+>>> Mood.favorite_mood()
+<Mood.HAPPY: 3>
+>>> Mood.HAPPY.describe()
+('HAPPY', 3)
+>>> str(Mood.FUNKY)
+'my custom str! 1'

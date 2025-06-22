@@ -1,0 +1,32 @@
+Title: WSGI Handler Methods
+URL: https://docs.python.org/3/library/wsgiref.html
+Summary: This section describes two methods from the WSGI handler: `get_scheme()`, which determines the URL scheme ('http' or 'https') based on the current request's environment variables, and `setup_environ()`, which populates the WSGI environment by utilizing multiple attributes and methods.
+---
+
+get_scheme()[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.get_scheme "Link to this definition")
+    
+Return the URL scheme being used for the current request. The default implementation uses the `guess_scheme()` function from [`wsgiref.util`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.util "wsgiref.util: WSGI environment utilities.") to guess whether the scheme should be “http” or “https”, based on the current request’s `environ` variables. 
+
+setup_environ()[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.setup_environ "Link to this definition")
+    
+Set the `environ` attribute to a fully populated WSGI environment. The default implementation uses all of the above methods and attributes, plus the [`get_stdin()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.get_stdin "wsgiref.handlers.BaseHandler.get_stdin"), [`get_stderr()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.get_stderr "wsgiref.handlers.BaseHandler.get_stderr"), and [`add_cgi_vars()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.add_cgi_vars "wsgiref.handlers.BaseHandler.add_cgi_vars") methods and the [`wsgi_file_wrapper`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.wsgi_file_wrapper "wsgiref.handlers.BaseHandler.wsgi_file_wrapper") attribute. It also inserts a `SERVER_SOFTWARE` key if not present, as long as the [`origin_server`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.origin_server "wsgiref.handlers.BaseHandler.origin_server") attribute is a true value and the [`server_software`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.server_software "wsgiref.handlers.BaseHandler.server_software") attribute is set.
+Methods and attributes for customizing exception handling: 
+
+log_exception(_exc_info_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.log_exception "Link to this definition")
+    
+Log the _exc_info_ tuple in the server log. _exc_info_ is a `(type, value, traceback)` tuple. The default implementation simply writes the traceback to the request’s `wsgi.errors` stream and flushes it. Subclasses can override this method to change the format or retarget the output, mail the traceback to an administrator, or whatever other action may be deemed suitable. 
+
+traceback_limit[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.traceback_limit "Link to this definition")
+    
+The maximum number of frames to include in tracebacks output by the default [`log_exception()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.log_exception "wsgiref.handlers.BaseHandler.log_exception") method. If `None`, all frames are included. 
+
+error_output(_environ_ , _start_response_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.error_output "Link to this definition")
+    
+This method is a WSGI application to generate an error page for the user. It is only invoked if an error occurs before headers are sent to the client.
+This method can access the current error using `sys.exception()`, and should pass that information to _start_response_ when calling it (as described in the “Error Handling” section of [**PEP 3333**](https://peps.python.org/pep-3333/)). In particular, the _start_response_ callable should follow the [`StartResponse`](https://docs.python.org/3/library/wsgiref.html#wsgiref.types.StartResponse "wsgiref.types.StartResponse") protocol.
+The default implementation just uses the [`error_status`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.error_status "wsgiref.handlers.BaseHandler.error_status"), [`error_headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.error_headers "wsgiref.handlers.BaseHandler.error_headers"), and [`error_body`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.error_body "wsgiref.handlers.BaseHandler.error_body") attributes to generate an output page. Subclasses can override this to produce more dynamic error output.
+Note, however, that it’s not recommended from a security perspective to spit out diagnostics to any old user; ideally, you should have to do something special to enable diagnostic output, which is why the default implementation doesn’t include any. 
+
+error_status[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.error_status "Link to this definition")
+    
+The HTTP status used for error responses. This should be a status string as defined in [**PEP 3333**](https://peps.python.org/pep-3333/); it defaults to a 500 code and message.

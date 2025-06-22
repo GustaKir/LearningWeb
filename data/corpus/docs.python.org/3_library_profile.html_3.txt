@@ -1,0 +1,57 @@
+Title: Profile and cProfile Modules Overview
+URL: https://docs.python.org/3/library/profile.html
+Summary: The `pstats` module serves as a statistics browser for reading and examining profile dumps, featuring a simple command interface and interactive help. Both `profile` and `cProfile` modules offer functionality for profiling Python source code, with various available methods for performance analysis.
+---
+
+```
+
+Invoked as a script, the [`pstats`](https://docs.python.org/3/library/profile.html#module-pstats "pstats: Statistics object for use with the profiler.") module is a statistics browser for reading and examining profile dumps. It has a simple line-oriented interface (implemented using [`cmd`](https://docs.python.org/3/library/cmd.html#module-cmd "cmd: Build line-oriented command interpreters.")) and interactive help.
+## [`profile`](https://docs.python.org/3/library/profile.html#module-profile "profile: Python source profiler.") and [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile "cProfile") Module Reference[¶](https://docs.python.org/3/library/profile.html#module-cProfile "Link to this heading")
+Both the [`profile`](https://docs.python.org/3/library/profile.html#module-profile "profile: Python source profiler.") and [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile "cProfile") modules provide the following functions: 
+
+profile.run(_command_ , _filename =None_, _sort =-1_)[¶](https://docs.python.org/3/library/profile.html#profile.run "Link to this definition")
+    
+This function takes a single argument that can be passed to the [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec") function, and an optional file name. In all cases this routine executes:
+```
+exec(command, __main__.__dict__, __main__.__dict__)
+
+```
+
+and gathers profiling statistics from the execution. If no file name is present, then this function automatically creates a [`Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") instance and prints a simple profiling report. If the sort value is specified, it is passed to this [`Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") instance to control how the results are sorted. 
+
+profile.runctx(_command_ , _globals_ , _locals_ , _filename =None_, _sort =-1_)[¶](https://docs.python.org/3/library/profile.html#profile.runctx "Link to this definition")
+    
+This function is similar to [`run()`](https://docs.python.org/3/library/profile.html#profile.run "profile.run"), with added arguments to supply the globals and locals mappings for the _command_ string. This routine executes:
+```
+exec(command, globals, locals)
+
+```
+
+and gathers profiling statistics as in the [`run()`](https://docs.python.org/3/library/profile.html#profile.run "profile.run") function above. 
+
+_class_ profile.Profile(_timer =None_, _timeunit =0.0_, _subcalls =True_, _builtins =True_)[¶](https://docs.python.org/3/library/profile.html#profile.Profile "Link to this definition")
+    
+This class is normally only used if more precise control over profiling is needed than what the `cProfile.run()` function provides.
+A custom timer can be supplied for measuring how long code takes to run via the _timer_ argument. This must be a function that returns a single number representing the current time. If the number is an integer, the _timeunit_ specifies a multiplier that specifies the duration of each unit of time. For example, if the timer returns times measured in thousands of seconds, the time unit would be `.001`.
+Directly using the [`Profile`](https://docs.python.org/3/library/profile.html#profile.Profile "profile.Profile") class allows formatting profile results without writing the profile data to a file:
+```
+importcProfile,pstats,io
+frompstatsimport SortKey
+pr = cProfile.Profile()
+pr.enable()
+# ... do something ...
+pr.disable()
+s = io.StringIO()
+sortby = SortKey.CUMULATIVE
+ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+ps.print_stats()
+print(s.getvalue())
+
+```
+
+The [`Profile`](https://docs.python.org/3/library/profile.html#profile.Profile "profile.Profile") class can also be used as a context manager (supported only in [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile "cProfile") module. see [Context Manager Types](https://docs.python.org/3/library/stdtypes.html#typecontextmanager)):
+```
+importcProfile
+with cProfile.Profile() as pr:
+  # ... do something ...
+  pr.print_stats()

@@ -1,0 +1,44 @@
+Title: TopologicalSorter.done Method
+URL: https://docs.python.org/3/library/graphlib.html
+Summary: The `done()` method in `TopologicalSorter` marks nodes as processed after they have been retrieved via `get_ready()`. It raises a `ValueError` if called without prior invocation of `prepare()` or if any specified node has already been processed.
+---
+
+```
+
+Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if called without calling [`prepare()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.prepare "graphlib.TopologicalSorter.prepare") previously. 
+
+done(_* nodes_)[¶](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.done "Link to this definition")
+    
+Marks a set of nodes returned by [`TopologicalSorter.get_ready()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.get_ready "graphlib.TopologicalSorter.get_ready") as processed, unblocking any successor of each node in _nodes_ for being returned in the future by a call to [`TopologicalSorter.get_ready()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.get_ready "graphlib.TopologicalSorter.get_ready").
+Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if any node in _nodes_ has already been marked as processed by a previous call to this method or if a node was not added to the graph by using [`TopologicalSorter.add()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.add "graphlib.TopologicalSorter.add"), if called without calling [`prepare()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.prepare "graphlib.TopologicalSorter.prepare") or if node has not yet been returned by [`get_ready()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.get_ready "graphlib.TopologicalSorter.get_ready"). 
+
+get_ready()[¶](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.get_ready "Link to this definition")
+    
+Returns a `tuple` with all the nodes that are ready. Initially it returns all nodes with no predecessors, and once those are marked as processed by calling [`TopologicalSorter.done()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.done "graphlib.TopologicalSorter.done"), further calls will return all new nodes that have all their predecessors already processed. Once no more progress can be made, empty tuples are returned.
+Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if called without calling [`prepare()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.prepare "graphlib.TopologicalSorter.prepare") previously. 
+
+static_order()[¶](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.static_order "Link to this definition")
+    
+Returns an iterator object which will iterate over nodes in a topological order. When using this method, [`prepare()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.prepare "graphlib.TopologicalSorter.prepare") and [`done()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.done "graphlib.TopologicalSorter.done") should not be called. This method is equivalent to:
+```
+defstatic_order(self):
+  self.prepare()
+  while self.is_active():
+    node_group = self.get_ready()
+    yield from node_group
+    self.done(*node_group)
+
+```
+
+The particular order that is returned may depend on the specific order in which the items were inserted in the graph. For example:
+>>>```
+>>> ts = TopologicalSorter()
+>>> ts.add(3, 2, 1)
+>>> ts.add(1, 0)
+>>> print([*ts.static_order()])
+[2, 0, 1, 3]
+>>> ts2 = TopologicalSorter()
+>>> ts2.add(1, 0)
+>>> ts2.add(3, 2, 1)
+>>> print([*ts2.static_order()])
+[0, 2, 1, 3]

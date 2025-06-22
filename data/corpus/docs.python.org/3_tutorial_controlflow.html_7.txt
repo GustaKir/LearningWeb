@@ -1,0 +1,91 @@
+Title: Keyword Arguments in Function Calls
+URL: https://docs.python.org/3/tutorial/controlflow.html
+Summary: In Python, keyword arguments must follow positional arguments and must match the function's accepted arguments. An argument cannot be assigned more than once. When using the final formal parameter `**name`, it collects excess keyword arguments into a dictionary. Additionally, this can be combined with the `*name` parameter.
+---
+
+```
+
+In a function call, keyword arguments must follow positional arguments. All the keyword arguments passed must match one of the arguments accepted by the function (e.g. `actor` is not a valid argument for the `parrot` function), and their order is not important. This also includes non-optional arguments (e.g. `parrot(voltage=1000)` is valid too). No argument may receive a value more than once. Here’s an example that fails due to this restriction:
+>>>```
+>>> deffunction(a):
+...   pass
+...
+>>> function(0, a=0)
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: function() got multiple values for argument 'a'
+
+```
+
+When a final formal parameter of the form `**name` is present, it receives a dictionary (see [Mapping Types — dict](https://docs.python.org/3/library/stdtypes.html#typesmapping)) containing all keyword arguments except for those corresponding to a formal parameter. This may be combined with a formal parameter of the form `*name` (described in the next subsection) which receives a [tuple](https://docs.python.org/3/tutorial/datastructures.html#tut-tuples) containing the positional arguments beyond the formal parameter list. (`*name` must occur before `**name`.) For example, if we define a function like this:
+```
+defcheeseshop(kind, *arguments, **keywords):
+  print("-- Do you have any", kind, "?")
+  print("-- I'm sorry, we're all out of", kind)
+  for arg in arguments:
+    print(arg)
+  print("-" * 40)
+  for kw in keywords:
+    print(kw, ":", keywords[kw])
+
+```
+
+It could be called like this:
+```
+cheeseshop("Limburger", "It's very runny, sir.",
+      "It's really very, VERY runny, sir.",
+      shopkeeper="Michael Palin",
+      client="John Cleese",
+      sketch="Cheese Shop Sketch")
+
+```
+
+and of course it would print:
+```
+-- Do you have any Limburger ?
+-- I'm sorry, we're all out of Limburger
+It's very runny, sir.
+It's really very, VERY runny, sir.
+----------------------------------------
+shopkeeper : Michael Palin
+client : John Cleese
+sketch : Cheese Shop Sketch
+
+```
+
+Note that the order in which the keyword arguments are printed is guaranteed to match the order in which they were provided in the function call.
+### 4.9.3. Special parameters[¶](https://docs.python.org/3/tutorial/controlflow.html#special-parameters "Link to this heading")
+By default, arguments may be passed to a Python function either by position or explicitly by keyword. For readability and performance, it makes sense to restrict the way arguments can be passed so that a developer need only look at the function definition to determine if items are passed by position, by position or keyword, or by keyword.
+A function definition may look like:
+```
+def f(pos1, pos2, /, pos_or_kwd, *, kwd1, kwd2):
+   -----------  ----------   ----------
+    |       |         |
+    |    Positional or keyword  |
+    |                - Keyword only
+     -- Positional only
+
+```
+
+where `/` and `*` are optional. If used, these symbols indicate the kind of parameter by how the arguments may be passed to the function: positional-only, positional-or-keyword, and keyword-only. Keyword parameters are also referred to as named parameters.
+#### 4.9.3.1. Positional-or-Keyword Arguments[¶](https://docs.python.org/3/tutorial/controlflow.html#positional-or-keyword-arguments "Link to this heading")
+If `/` and `*` are not present in the function definition, arguments may be passed to a function by position or by keyword.
+#### 4.9.3.2. Positional-Only Parameters[¶](https://docs.python.org/3/tutorial/controlflow.html#positional-only-parameters "Link to this heading")
+Looking at this in a bit more detail, it is possible to mark certain parameters as _positional-only_. If _positional-only_ , the parameters’ order matters, and the parameters cannot be passed by keyword. Positional-only parameters are placed before a `/` (forward-slash). The `/` is used to logically separate the positional-only parameters from the rest of the parameters. If there is no `/` in the function definition, there are no positional-only parameters.
+Parameters following the `/` may be _positional-or-keyword_ or _keyword-only_.
+#### 4.9.3.3. Keyword-Only Arguments[¶](https://docs.python.org/3/tutorial/controlflow.html#keyword-only-arguments "Link to this heading")
+To mark parameters as _keyword-only_ , indicating the parameters must be passed by keyword argument, place an `*` in the arguments list just before the first _keyword-only_ parameter.
+#### 4.9.3.4. Function Examples[¶](https://docs.python.org/3/tutorial/controlflow.html#function-examples "Link to this heading")
+Consider the following example function definitions paying close attention to the markers `/` and `*`:
+>>>```
+>>> defstandard_arg(arg):
+...   print(arg)
+...
+>>> defpos_only_arg(arg, /):
+...   print(arg)
+...
+>>> defkwd_only_arg(*, arg):
+...   print(arg)
+...
+>>> defcombined_example(pos_only, /, standard, *, kwd_only):
+...   print(pos_only, standard, kwd_only)

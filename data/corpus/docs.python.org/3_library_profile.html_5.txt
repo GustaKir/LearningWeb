@@ -1,0 +1,42 @@
+Title: strip_dirs Method in pstats.Stats Class
+URL: https://docs.python.org/3/library/profile.html
+Summary: The strip_dirs() method in the pstats.Stats class removes leading path information from file names, helping fit printouts within 80 columns. This modification results in the loss of original path information and may lead to accumulation of statistics for indistinguishable function names.
+---
+
+strip_dirs()[¶](https://docs.python.org/3/library/profile.html#pstats.Stats.strip_dirs "Link to this definition")
+    
+This method for the [`Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") class removes all leading path information from file names. It is very useful in reducing the size of the printout to fit within (close to) 80 columns. This method modifies the object, and the stripped information is lost. After performing a strip operation, the object is considered to have its entries in a “random” order, as it was just after object initialization and loading. If [`strip_dirs()`](https://docs.python.org/3/library/profile.html#pstats.Stats.strip_dirs "pstats.Stats.strip_dirs") causes two function names to be indistinguishable (they are on the same line of the same filename, and have the same function name), then the statistics for these two entries are accumulated into a single entry. 
+
+add(_* filenames_)[¶](https://docs.python.org/3/library/profile.html#pstats.Stats.add "Link to this definition")
+    
+This method of the [`Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") class accumulates additional profiling information into the current profiling object. Its arguments should refer to filenames created by the corresponding version of [`profile.run()`](https://docs.python.org/3/library/profile.html#profile.run "profile.run") or `cProfile.run()`. Statistics for identically named (re: file, line, name) functions are automatically accumulated into single function statistics. 
+
+dump_stats(_filename_)[¶](https://docs.python.org/3/library/profile.html#pstats.Stats.dump_stats "Link to this definition")
+    
+Save the data loaded into the [`Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") object to a file named _filename_. The file is created if it does not exist, and is overwritten if it already exists. This is equivalent to the method of the same name on the [`profile.Profile`](https://docs.python.org/3/library/profile.html#profile.Profile "profile.Profile") and `cProfile.Profile` classes. 
+
+sort_stats(_* keys_)[¶](https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats "Link to this definition")
+    
+This method modifies the [`Stats`](https://docs.python.org/3/library/profile.html#pstats.Stats "pstats.Stats") object by sorting it according to the supplied criteria. The argument can be either a string or a SortKey enum identifying the basis of a sort (example: `'time'`, `'name'`, `SortKey.TIME` or `SortKey.NAME`). The SortKey enums argument have advantage over the string argument in that it is more robust and less error prone.
+When more than one key is provided, then additional keys are used as secondary criteria when there is equality in all keys selected before them. For example, `sort_stats(SortKey.NAME, SortKey.FILE)` will sort all the entries according to their function name, and resolve all ties (identical function names) by sorting by file name.
+For the string argument, abbreviations can be used for any key names, as long as the abbreviation is unambiguous.
+The following are the valid string and SortKey:
+Valid String Arg | Valid enum Arg | Meaning  
+---|---|---  
+`'calls'` | SortKey.CALLS | call count  
+`'cumulative'` | SortKey.CUMULATIVE | cumulative time  
+`'cumtime'` | N/A | cumulative time  
+`'file'` | N/A | file name  
+`'filename'` | SortKey.FILENAME | file name  
+`'module'` | N/A | file name  
+`'ncalls'` | N/A | call count  
+`'pcalls'` | SortKey.PCALLS | primitive call count  
+`'line'` | SortKey.LINE | line number  
+`'name'` | SortKey.NAME | function name  
+`'nfl'` | SortKey.NFL | name/file/line  
+`'stdname'` | SortKey.STDNAME | standard name  
+`'time'` | SortKey.TIME | internal time  
+`'tottime'` | N/A | internal time  
+Note that all sorts on statistics are in descending order (placing most time consuming items first), where as name, file, and line number searches are in ascending order (alphabetical). The subtle distinction between `SortKey.NFL` and `SortKey.STDNAME` is that the standard name is a sort of the name as printed, which means that the embedded line numbers get compared in an odd way. For example, lines 3, 20, and 40 would (if the file names were the same) appear in the string order 20, 3 and 40. In contrast, `SortKey.NFL` does a numeric compare of the line numbers. In fact, `sort_stats(SortKey.NFL)` is the same as `sort_stats(SortKey.NAME, SortKey.FILENAME, SortKey.LINE)`.
+For backward-compatibility reasons, the numeric arguments `-1`, `0`, `1`, and `2` are permitted. They are interpreted as `'stdname'`, `'calls'`, `'time'`, and `'cumulative'` respectively. If this old style format (numeric) is used, only one sort key (the numeric key) will be used, and additional arguments will be silently ignored.
+Added in version 3.7: Added the SortKey enum.

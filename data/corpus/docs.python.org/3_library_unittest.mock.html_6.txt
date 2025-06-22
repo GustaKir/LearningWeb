@@ -1,0 +1,116 @@
+Title: Using Mock and reset_mock in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section illustrates how to use the Mock object with a side effect that raises a ValueError and demonstrates the reset_mock method. It clarifies that reset_mock does not clear return_value or side_effect by default and notes that child mocks are also reset. It also mentions a change introduced in version 3.6 regarding keyword-only arguments for reset_mock.
+---
+
+```
+>>> mock = Mock(side_effect=ValueError)
+>>> mock('hello')
+Traceback (most recent call last):
+...
+ValueError
+>>> mock.reset_mock(side_effect=True)
+>>> mock('hello')
+<Mock name='mock()' id='...'>
+
+```
+
+Note that [`reset_mock()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.reset_mock "unittest.mock.Mock.reset_mock") _doesn’t_ clear the [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value"), [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") or any child attributes you have set using normal assignment by default.
+Child mocks are reset as well.
+Changed in version 3.6: Added two keyword-only arguments to the reset_mock function. 
+
+mock_add_spec(_spec_ , _spec_set =False_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_add_spec "Link to this definition")
+    
+Add a spec to a mock. _spec_ can either be an object or a list of strings. Only attributes on the _spec_ can be fetched as attributes from the mock.
+If _spec_set_ is true then only attributes on the spec can be set. 
+
+attach_mock(_mock_ , _attribute_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.attach_mock "Link to this definition")
+    
+Attach a mock as an attribute of this one, replacing its name and parent. Calls to the attached mock will be recorded in the [`method_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.method_calls "unittest.mock.Mock.method_calls") and [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") attributes of this one. 
+
+configure_mock(_** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.configure_mock "Link to this definition")
+    
+Set attributes on the mock through keyword arguments.
+Attributes plus return values and side effects can be set on child mocks using standard dot notation and unpacking a dictionary in the method call:
+>>>```
+>>> mock = Mock()
+>>> attrs = {'method.return_value': 3, 'other.side_effect': KeyError}
+>>> mock.configure_mock(**attrs)
+>>> mock.method()
+3
+>>> mock.other()
+Traceback (most recent call last):
+...
+KeyError
+
+```
+
+The same thing can be achieved in the constructor call to mocks:
+>>>```
+>>> attrs = {'method.return_value': 3, 'other.side_effect': KeyError}
+>>> mock = Mock(some_attribute='eggs', **attrs)
+>>> mock.some_attribute
+'eggs'
+>>> mock.method()
+3
+>>> mock.other()
+Traceback (most recent call last):
+...
+KeyError
+
+```
+
+[`configure_mock()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.configure_mock "unittest.mock.Mock.configure_mock") exists to make it easier to do configuration after the mock has been created. 
+
+__dir__()[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.__dir__ "Link to this definition")
+    
+[`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") objects limit the results of `dir(some_mock)` to useful results. For mocks with a _spec_ this includes all the permitted attributes for the mock.
+See [`FILTER_DIR`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.FILTER_DIR "unittest.mock.FILTER_DIR") for what this filtering does, and how to switch it off. 
+
+_get_child_mock(_** kw_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock._get_child_mock "Link to this definition")
+    
+Create the child mocks for attributes and return value. By default child mocks will be the same type as the parent. Subclasses of Mock may want to override this to customize the way child mocks are made.
+For non-callable mocks the callable variant will be used (rather than any custom subclass). 
+
+called[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.called "Link to this definition")
+    
+A boolean representing whether or not the mock object has been called:
+>>>```
+>>> mock = Mock(return_value=None)
+>>> mock.called
+False
+>>> mock()
+>>> mock.called
+True
+
+```
+
+
+call_count[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_count "Link to this definition")
+    
+An integer telling you how many times the mock object has been called:
+>>>```
+>>> mock = Mock(return_value=None)
+>>> mock.call_count
+0
+>>> mock()
+>>> mock()
+>>> mock.call_count
+2
+
+```
+
+
+return_value[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "Link to this definition")
+    
+Set this to configure the value returned by calling the mock:
+>>>```
+>>> mock = Mock()
+>>> mock.return_value = 'fish'
+>>> mock()
+'fish'
+
+```
+
+The default return value is a mock object and you can configure it in the normal way:
+>>>

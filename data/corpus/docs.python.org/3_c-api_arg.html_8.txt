@@ -1,0 +1,30 @@
+Title: PyArg_UnpackTuple Function
+URL: https://docs.python.org/3/c-api/arg.html
+Summary: The PyArg_UnpackTuple function simplifies parameter retrieval in C API by allowing functions to access arguments without a format string. It validates that the provided tuple of arguments meets specified minimum and maximum length requirements and is intended for functions declared with METH_VARARGS.
+---
+
+```
+
+
+intPyArg_UnpackTuple([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*args, constchar*name, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")min, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")max, ...)[¶](https://docs.python.org/3/c-api/arg.html#c.PyArg_UnpackTuple "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+A simpler form of parameter retrieval which does not use a format string to specify the types of the arguments. Functions which use this method to retrieve their parameters should be declared as [`METH_VARARGS`](https://docs.python.org/3/c-api/structures.html#c.METH_VARARGS "METH_VARARGS") in function or method tables. The tuple containing the actual parameters should be passed as _args_ ; it must actually be a tuple. The length of the tuple must be at least _min_ and no more than _max_ ; _min_ and _max_ may be equal. Additional arguments must be passed to the function, each of which should be a pointer to a [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* variable; these will be filled in with the values from _args_ ; they will contain [borrowed references](https://docs.python.org/3/glossary.html#term-borrowed-reference). The variables which correspond to optional parameters not given by _args_ will not be filled in; these should be initialized by the caller. This function returns true on success and false if _args_ is not a tuple or contains the wrong number of elements; an exception will be set if there was a failure.
+This is an example of the use of this function, taken from the sources for the `_weakref` helper module for weak references:
+```
+staticPyObject*
+weakref_ref(PyObject*self,PyObject*args)
+{
+PyObject*object;
+PyObject*callback=NULL;
+PyObject*result=NULL;
+if(PyArg_UnpackTuple(args,"ref",1,2,&object,&callback)){
+result=PyWeakref_NewRef(object,callback);
+}
+returnresult;
+}
+
+```
+
+The call to [`PyArg_UnpackTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_UnpackTuple "PyArg_UnpackTuple") in this example is entirely equivalent to this call to [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"):
+```
+PyArg_ParseTuple(args,"O|O:ref",&object,&callback)

@@ -1,0 +1,88 @@
+Title: Using assertRaises as a Context Manager in unittest
+URL: https://docs.python.org/3/library/unittest.html
+Summary: The `assertRaises()` method in the `unittest` module can be used as a context manager, which allows the storage of the caught exception in its `exception` attribute for additional checks. Updates in versions 3.1 added context management capability, 3.2 introduced the `exception` attribute, and 3.3 included the `_msg_` keyword argument.
+---
+
+```
+
+When used as a context manager, [`assertRaises()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertRaises "unittest.TestCase.assertRaises") accepts the additional keyword argument _msg_.
+The context manager will store the caught exception object in its `exception` attribute. This can be useful if the intention is to perform additional checks on the exception raised:
+```
+with self.assertRaises(SomeException) as cm:
+  do_something()
+the_exception = cm.exception
+self.assertEqual(the_exception.error_code, 3)
+
+```
+
+Changed in version 3.1: Added the ability to use [`assertRaises()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertRaises "unittest.TestCase.assertRaises") as a context manager.
+Changed in version 3.2: Added the `exception` attribute.
+Changed in version 3.3: Added the _msg_ keyword argument when used as a context manager. 
+
+assertRaisesRegex(_exception_ , _regex_ , _callable_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertRaisesRegex "Link to this definition")
+
+
+assertRaisesRegex(_exception_ , _regex_ , _*_ , _msg =None_)
+    
+Like [`assertRaises()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertRaises "unittest.TestCase.assertRaises") but also tests that _regex_ matches on the string representation of the raised exception. _regex_ may be a regular expression object or a string containing a regular expression suitable for use by [`re.search()`](https://docs.python.org/3/library/re.html#re.search "re.search"). Examples:
+```
+self.assertRaisesRegex(ValueError, "invalid literal for.*XYZ'$",
+            int, 'XYZ')
+
+```
+
+or:
+```
+with self.assertRaisesRegex(ValueError, 'literal'):
+  int('XYZ')
+
+```
+
+Added in version 3.1: Added under the name `assertRaisesRegexp`.
+Changed in version 3.2: Renamed to [`assertRaisesRegex()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertRaisesRegex "unittest.TestCase.assertRaisesRegex").
+Changed in version 3.3: Added the _msg_ keyword argument when used as a context manager. 
+
+assertWarns(_warning_ , _callable_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertWarns "Link to this definition")
+
+
+assertWarns(_warning_ , _*_ , _msg =None_)
+    
+Test that a warning is triggered when _callable_ is called with any positional or keyword arguments that are also passed to [`assertWarns()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertWarns "unittest.TestCase.assertWarns"). The test passes if _warning_ is triggered and fails if it isn’t. Any exception is an error. To catch any of a group of warnings, a tuple containing the warning classes may be passed as _warnings_.
+If only the _warning_ and possibly the _msg_ arguments are given, return a context manager so that the code under test can be written inline rather than as a function:
+```
+with self.assertWarns(SomeWarning):
+  do_something()
+
+```
+
+When used as a context manager, [`assertWarns()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertWarns "unittest.TestCase.assertWarns") accepts the additional keyword argument _msg_.
+The context manager will store the caught warning object in its `warning` attribute, and the source line which triggered the warnings in the `filename` and `lineno` attributes. This can be useful if the intention is to perform additional checks on the warning caught:
+```
+with self.assertWarns(SomeWarning) as cm:
+  do_something()
+self.assertIn('myfile.py', cm.filename)
+self.assertEqual(320, cm.lineno)
+
+```
+
+This method works regardless of the warning filters in place when it is called.
+Added in version 3.2.
+Changed in version 3.3: Added the _msg_ keyword argument when used as a context manager. 
+
+assertWarnsRegex(_warning_ , _regex_ , _callable_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertWarnsRegex "Link to this definition")
+
+
+assertWarnsRegex(_warning_ , _regex_ , _*_ , _msg =None_)
+    
+Like [`assertWarns()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertWarns "unittest.TestCase.assertWarns") but also tests that _regex_ matches on the message of the triggered warning. _regex_ may be a regular expression object or a string containing a regular expression suitable for use by [`re.search()`](https://docs.python.org/3/library/re.html#re.search "re.search"). Example:
+```
+self.assertWarnsRegex(DeprecationWarning,
+           r'legacy_function\(\) is deprecated',
+           legacy_function, 'XYZ')
+
+```
+
+or:
+```
+with self.assertWarnsRegex(RuntimeWarning, 'unsafe frobnicating'):
+  frobnicate('/etc/passwd')

@@ -1,0 +1,53 @@
+Title: Python Method vs. Function Usage
+URL: https://docs.python.org/3/faq/design.html
+Summary: Guido van Rossum explains why Python uses methods for certain functionalities, like list.index(), while opting for functions, such as len(list). He notes that prefix notation often improves readability, drawing from mathematical traditions, and clarifies that a function like len(x) immediately conveys the expected output type and input nature.
+---
+
+```
+
+See [**PEP 572**](https://peps.python.org/pep-0572/) for more information.
+## [Why does Python use methods for some functionality (e.g. list.index()) but functions for other (e.g. len(list))?](https://docs.python.org/3/faq/design.html#id9)[¶](https://docs.python.org/3/faq/design.html#why-does-python-use-methods-for-some-functionality-e-g-list-index-but-functions-for-other-e-g-len-list "Link to this heading")
+As Guido said:
+> (a) For some operations, prefix notation just reads better than postfix – prefix (and infix!) operations have a long tradition in mathematics which likes notations where the visuals help the mathematician thinking about a problem. Compare the easy with which we rewrite a formula like x*(a+b) into x*a + x*b to the clumsiness of doing the same thing using a raw OO notation.
+> (b) When I read code that says len(x) I _know_ that it is asking for the length of something. This tells me two things: the result is an integer, and the argument is some kind of container. To the contrary, when I read x.len(), I have to already know that x is some kind of container implementing an interface or inheriting from a class that has a standard len(). Witness the confusion we occasionally have when a class that is not implementing a mapping has a get() or keys() method, or something that isn’t a file has a write() method.
+> —<https://mail.python.org/pipermail/python-3000/2006-November/004643.html>
+## [Why is join() a string method instead of a list or tuple method?](https://docs.python.org/3/faq/design.html#id10)[¶](https://docs.python.org/3/faq/design.html#why-is-join-a-string-method-instead-of-a-list-or-tuple-method "Link to this heading")
+Strings became much more like other standard types starting in Python 1.6, when methods were added which give the same functionality that has always been available using the functions of the string module. Most of these new methods have been widely accepted, but the one which appears to make some programmers feel uncomfortable is:
+```
+", ".join(['1', '2', '4', '8', '16'])
+
+```
+
+which gives the result:
+```
+"1, 2, 4, 8, 16"
+
+```
+
+There are two common arguments against this usage.
+The first runs along the lines of: “It looks really ugly using a method of a string literal (string constant)”, to which the answer is that it might, but a string literal is just a fixed value. If the methods are to be allowed on names bound to strings there is no logical reason to make them unavailable on literals.
+The second objection is typically cast as: “I am really telling a sequence to join its members together with a string constant”. Sadly, you aren’t. For some reason there seems to be much less difficulty with having [`split()`](https://docs.python.org/3/library/stdtypes.html#str.split "str.split") as a string method, since in that case it is easy to see that
+```
+"1, 2, 4, 8, 16".split(", ")
+
+```
+
+is an instruction to a string literal to return the substrings delimited by the given separator (or, by default, arbitrary runs of white space).
+[`join()`](https://docs.python.org/3/library/stdtypes.html#str.join "str.join") is a string method because in using it you are telling the separator string to iterate over a sequence of strings and insert itself between adjacent elements. This method can be used with any argument which obeys the rules for sequence objects, including any new classes you might define yourself. Similar methods exist for bytes and bytearray objects.
+## [How fast are exceptions?](https://docs.python.org/3/faq/design.html#id11)[¶](https://docs.python.org/3/faq/design.html#how-fast-are-exceptions "Link to this heading")
+A [`try`](https://docs.python.org/3/reference/compound_stmts.html#try)/[`except`](https://docs.python.org/3/reference/compound_stmts.html#except) block is extremely efficient if no exceptions are raised. Actually catching an exception is expensive. In versions of Python prior to 2.0 it was common to use this idiom:
+```
+try:
+  value = mydict[key]
+except KeyError:
+  mydict[key] = getvalue(key)
+  value = mydict[key]
+
+```
+
+This only made sense when you expected the dict to have the key almost all the time. If that wasn’t the case, you coded it like this:
+```
+if key in mydict:
+  value = mydict[key]
+else:
+  value = mydict[key] = getvalue(key)

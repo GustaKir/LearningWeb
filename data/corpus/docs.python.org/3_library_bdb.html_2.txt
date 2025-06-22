@@ -1,0 +1,42 @@
+Title: Bdb Module Functions Overview
+URL: https://docs.python.org/3/library/bdb.html
+Summary: This chunk describes several functions in the Bdb module: `canonic` for returning the canonical form of a filename, `reset` for initializing debugging attributes, and `trace_dispatch`, which manages event dispatching during debugging.
+---
+
+canonic(_filename_)[¶](https://docs.python.org/3/library/bdb.html#bdb.Bdb.canonic "Link to this definition")
+    
+Return canonical form of _filename_.
+For real file names, the canonical form is an operating-system-dependent, [`case-normalized`](https://docs.python.org/3/library/os.path.html#os.path.normcase "os.path.normcase") [`absolute path`](https://docs.python.org/3/library/os.path.html#os.path.abspath "os.path.abspath"). A _filename_ with angle brackets, such as `"<stdin>"` generated in interactive mode, is returned unchanged. 
+
+reset()[¶](https://docs.python.org/3/library/bdb.html#bdb.Bdb.reset "Link to this definition")
+    
+Set the `botframe`, `stopframe`, `returnframe` and [`quitting`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.set_quit "bdb.Bdb.set_quit") attributes with values ready to start debugging. 
+
+trace_dispatch(_frame_ , _event_ , _arg_)[¶](https://docs.python.org/3/library/bdb.html#bdb.Bdb.trace_dispatch "Link to this definition")
+    
+This function is installed as the trace function of debugged frames. Its return value is the new trace function (in most cases, that is, itself).
+The default implementation decides how to dispatch a frame, depending on the type of event (passed as a string) that is about to be executed. _event_ can be one of the following:
+  * `"line"`: A new line of code is going to be executed.
+  * `"call"`: A function is about to be called, or another code block entered.
+  * `"return"`: A function or other code block is about to return.
+  * `"exception"`: An exception has occurred.
+  * `"c_call"`: A C function is about to be called.
+  * `"c_return"`: A C function has returned.
+  * `"c_exception"`: A C function has raised an exception.
+
+
+For the Python events, specialized functions (see below) are called. For the C events, no action is taken.
+The _arg_ parameter depends on the previous event.
+See the documentation for [`sys.settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace") for more information on the trace function. For more information on code and frame objects, refer to [The standard type hierarchy](https://docs.python.org/3/reference/datamodel.html#types). 
+
+dispatch_line(_frame_)[¶](https://docs.python.org/3/library/bdb.html#bdb.Bdb.dispatch_line "Link to this definition")
+    
+If the debugger should stop on the current line, invoke the [`user_line()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.user_line "bdb.Bdb.user_line") method (which should be overridden in subclasses). Raise a [`BdbQuit`](https://docs.python.org/3/library/bdb.html#bdb.BdbQuit "bdb.BdbQuit") exception if the [`quitting`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.set_quit "bdb.Bdb.set_quit") flag is set (which can be set from [`user_line()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.user_line "bdb.Bdb.user_line")). Return a reference to the [`trace_dispatch()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.trace_dispatch "bdb.Bdb.trace_dispatch") method for further tracing in that scope. 
+
+dispatch_call(_frame_ , _arg_)[¶](https://docs.python.org/3/library/bdb.html#bdb.Bdb.dispatch_call "Link to this definition")
+    
+If the debugger should stop on this function call, invoke the [`user_call()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.user_call "bdb.Bdb.user_call") method (which should be overridden in subclasses). Raise a [`BdbQuit`](https://docs.python.org/3/library/bdb.html#bdb.BdbQuit "bdb.BdbQuit") exception if the [`quitting`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.set_quit "bdb.Bdb.set_quit") flag is set (which can be set from [`user_call()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.user_call "bdb.Bdb.user_call")). Return a reference to the [`trace_dispatch()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.trace_dispatch "bdb.Bdb.trace_dispatch") method for further tracing in that scope. 
+
+dispatch_return(_frame_ , _arg_)[¶](https://docs.python.org/3/library/bdb.html#bdb.Bdb.dispatch_return "Link to this definition")
+    
+If the debugger should stop on this function return, invoke the [`user_return()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.user_return "bdb.Bdb.user_return") method (which should be overridden in subclasses). Raise a [`BdbQuit`](https://docs.python.org/3/library/bdb.html#bdb.BdbQuit "bdb.BdbQuit") exception if the [`quitting`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.set_quit "bdb.Bdb.set_quit") flag is set (which can be set from [`user_return()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.user_return "bdb.Bdb.user_return")). Return a reference to the [`trace_dispatch()`](https://docs.python.org/3/library/bdb.html#bdb.Bdb.trace_dispatch "bdb.Bdb.trace_dispatch") method for further tracing in that scope.

@@ -1,0 +1,35 @@
+Title: epoll.poll() Method
+URL: https://docs.python.org/3/library/select.html
+Summary: The `epoll.poll()` method waits for events with a specified timeout and can now handle interruptions due to signals by retrying with a recomputed timeout (introduced in version 3.5). The section explains the scalability advantages of the `poll()` system call over `select()`, particularly for network servers managing many clients.
+---
+
+epoll.poll(_timeout =None_, _maxevents =-1_)[¶](https://docs.python.org/3/library/select.html#select.epoll.poll "Link to this definition")
+    
+Wait for events. timeout in seconds (float)
+Changed in version 3.5: The function is now retried with a recomputed timeout when interrupted by a signal, except if the signal handler raises an exception (see [**PEP 475**](https://peps.python.org/pep-0475/) for the rationale), instead of raising [`InterruptedError`](https://docs.python.org/3/library/exceptions.html#InterruptedError "InterruptedError").
+## Polling Objects[¶](https://docs.python.org/3/library/select.html#polling-objects "Link to this heading")
+The `poll()` system call, supported on most Unix systems, provides better scalability for network servers that service many, many clients at the same time. `poll()` scales better because the system call only requires listing the file descriptors of interest, while `select()` builds a bitmap, turns on bits for the fds of interest, and then afterward the whole bitmap has to be linearly scanned again. `select()` is _O_(_highest file descriptor_), while `poll()` is _O_(_number of file descriptors_). 
+
+poll.register(_fd_[, _eventmask_])[¶](https://docs.python.org/3/library/select.html#select.poll.register "Link to this definition")
+    
+Register a file descriptor with the polling object. Future calls to the [`poll()`](https://docs.python.org/3/library/select.html#select.poll "select.poll") method will then check whether the file descriptor has any pending I/O events. _fd_ can be either an integer, or an object with a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method that returns an integer. File objects implement `fileno()`, so they can also be used as the argument.
+_eventmask_ is an optional bitmask describing the type of events you want to check for, and can be a combination of the constants `POLLIN`, `POLLPRI`, and `POLLOUT`, described in the table below. If not specified, the default value used will check for all 3 types of events.
+Constant | Meaning  
+---|---  
+`POLLIN` | There is data to read  
+`POLLPRI` | There is urgent data to read  
+`POLLOUT` | Ready for output: writing will not block  
+`POLLERR` | Error condition of some sort  
+`POLLHUP` | Hung up  
+`POLLRDHUP` | Stream socket peer closed connection, or shut down writing half of connection  
+`POLLNVAL` | Invalid request: descriptor not open  
+Registering a file descriptor that’s already registered is not an error, and has the same effect as registering the descriptor exactly once. 
+
+poll.modify(_fd_ , _eventmask_)[¶](https://docs.python.org/3/library/select.html#select.poll.modify "Link to this definition")
+    
+Modifies an already registered fd. This has the same effect as `register(fd, eventmask)`. Attempting to modify a file descriptor that was never registered causes an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") exception with errno `ENOENT` to be raised. 
+
+poll.unregister(_fd_)[¶](https://docs.python.org/3/library/select.html#select.poll.unregister "Link to this definition")
+    
+Remove a file descriptor being tracked by a polling object. Just like the [`register()`](https://docs.python.org/3/library/select.html#select.poll.register "select.poll.register") method, _fd_ can be an integer or an object with a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method that returns an integer.
+Attempting to remove a file descriptor that was never registered causes a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") exception to be raised.

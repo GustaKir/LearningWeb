@@ -1,0 +1,30 @@
+Title: Data Class Field Parameters
+URL: https://docs.python.org/3/library/dataclasses.html
+Summary: This section describes the `MISSING` sentinel object used in Python's dataclasses to differentiate between provided and non-provided parameters. It outlines the parameters for the `field()` function, including `_default_`, `_default_factory_`, and `_init_`, emphasizing that both `_default_` and `_default_factory_` cannot be specified simultaneously.
+---
+
+```
+
+As shown above, the [`MISSING`](https://docs.python.org/3/library/dataclasses.html#dataclasses.MISSING "dataclasses.MISSING") value is a sentinel object used to detect if some parameters are provided by the user. This sentinel is used because `None` is a valid value for some parameters with a distinct meaning. No code should directly use the [`MISSING`](https://docs.python.org/3/library/dataclasses.html#dataclasses.MISSING "dataclasses.MISSING") value.
+The parameters to `field()` are:
+  * _default_ : If provided, this will be the default value for this field. This is needed because the `field()` call itself replaces the normal position of the default value.
+  * _default_factory_ : If provided, it must be a zero-argument callable that will be called when a default value is needed for this field. Among other purposes, this can be used to specify fields with mutable default values, as discussed below. It is an error to specify both _default_ and _default_factory_.
+  * _init_ : If true (the default), this field is included as a parameter to the generated [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") method.
+  * _repr_ : If true (the default), this field is included in the string returned by the generated [`__repr__()`](https://docs.python.org/3/reference/datamodel.html#object.__repr__ "object.__repr__") method.
+  * _hash_ : This can be a bool or `None`. If true, this field is included in the generated [`__hash__()`](https://docs.python.org/3/reference/datamodel.html#object.__hash__ "object.__hash__") method. If false, this field is excluded from the generated [`__hash__()`](https://docs.python.org/3/reference/datamodel.html#object.__hash__ "object.__hash__"). If `None` (the default), use the value of _compare_ : this would normally be the expected behavior, since a field should be included in the hash if it’s used for comparisons. Setting this value to anything other than `None` is discouraged.
+One possible reason to set `hash=False` but `compare=True` would be if a field is expensive to compute a hash value for, that field is needed for equality testing, and there are other fields that contribute to the type’s hash value. Even if a field is excluded from the hash, it will still be used for comparisons.
+  * _compare_ : If true (the default), this field is included in the generated equality and comparison methods ([`__eq__()`](https://docs.python.org/3/reference/datamodel.html#object.__eq__ "object.__eq__"), [`__gt__()`](https://docs.python.org/3/reference/datamodel.html#object.__gt__ "object.__gt__"), et al.).
+  * _metadata_ : This can be a mapping or `None`. `None` is treated as an empty dict. This value is wrapped in [`MappingProxyType()`](https://docs.python.org/3/library/types.html#types.MappingProxyType "types.MappingProxyType") to make it read-only, and exposed on the [`Field`](https://docs.python.org/3/library/dataclasses.html#dataclasses.Field "dataclasses.Field") object. It is not used at all by Data Classes, and is provided as a third-party extension mechanism. Multiple third-parties can each have their own key, to use as a namespace in the metadata.
+  * _kw_only_ : If true, this field will be marked as keyword-only. This is used when the generated [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") method’s parameters are computed.
+Keyword-only fields are also not included in `__match_args__`.
+
+
+> Added in version 3.10.
+If the default value of a field is specified by a call to `field()`, then the class attribute for this field will be replaced by the specified _default_ value. If _default_ is not provided, then the class attribute will be deleted. The intent is that after the [`@dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass") decorator runs, the class attributes will all contain the default values for the fields, just as if the default value itself were specified. For example, after:
+```
+@dataclass
+classC:
+  x: int
+  y: int = field(repr=False)
+  z: int = field(repr=False, default=10)
+  t: int = 20

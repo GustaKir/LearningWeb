@@ -1,0 +1,86 @@
+Title: Using autospec in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: The section discusses the use of `autospec=True` with `patch()` to avoid errors related to typos and API changes. It also introduces the `create_autospec()` function for directly creating autospecced mocks, while noting that there are limitations to this approach due to the introspection needed to determine available attributes on the spec object.
+---
+
+```
+
+In many cases you will just be able to add `autospec=True` to your existing [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") calls and then be protected against bugs due to typos and api changes.
+As well as using _autospec_ through [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") there is a [`create_autospec()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.create_autospec "unittest.mock.create_autospec") for creating autospecced mocks directly:
+>>>```
+>>> fromurllibimport request
+>>> mock_request = create_autospec(request)
+>>> mock_request.Request('foo', 'bar')
+<NonCallableMagicMock name='mock.Request()' spec='Request' id='...'>
+
+```
+
+This isn’t without caveats and limitations however, which is why it is not the default behaviour. In order to know what attributes are available on the spec object, autospec has to introspect (access attributes) the spec. As you traverse attributes on the mock a corresponding traversal of the original object is happening under the hood. If any of your specced objects have properties or descriptors that can trigger code execution then you may not be able to use autospec. On the other hand it is much better to design your objects so that introspection is safe [[4]](https://docs.python.org/3/library/unittest.mock.html#id12).
+A more serious problem is that it is common for instance attributes to be created in the [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") method and not to exist on the class at all. _autospec_ can’t know about any dynamically created attributes and restricts the api to visible attributes.
+>>>```
+>>> classSomething:
+...  def__init__(self):
+...   self.a = 33
+...
+>>> with patch('__main__.Something', autospec=True):
+...  thing = Something()
+...  thing.a
+...
+Traceback (most recent call last):
+...
+AttributeError: Mock object has no attribute 'a'
+
+```
+
+There are a few different ways of resolving this problem. The easiest, but not necessarily the least annoying, way is to simply set the required attributes on the mock after creation. Just because _autospec_ doesn’t allow you to fetch attributes that don’t exist on the spec it doesn’t prevent you setting them:
+>>>```
+>>> with patch('__main__.Something', autospec=True):
+...  thing = Something()
+...  thing.a = 33
+...
+
+```
+
+There is a more aggressive version of both _spec_ and _autospec_ that _does_ prevent you setting non-existent attributes. This is useful if you want to ensure your code only _sets_ valid attributes too, but obviously it prevents this particular scenario:
+>>>```
+>>> with patch('__main__.Something', autospec=True, spec_set=True):
+...  thing = Something()
+...  thing.a = 33
+...
+Traceback (most recent call last):
+...
+AttributeError: Mock object has no attribute 'a'
+
+```
+
+Probably the best way of solving the problem is to add class attributes as default values for instance members initialised in [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__"). Note that if you are only setting default attributes in `__init__()` then providing them via class attributes (shared between instances of course) is faster too. e.g.
+```
+classSomething:
+  a = 33
+
+```
+
+This brings up another issue. It is relatively common to provide a default value of `None` for members that will later be an object of a different type. `None` would be useless as a spec because it wouldn’t let you access _any_ attributes or methods on it. As `None` is _never_ going to be useful as a spec, and probably indicates a member that will normally of some other type, autospec doesn’t use a spec for members that are set to `None`. These will just be ordinary mocks (well - MagicMocks):
+>>>```
+>>> classSomething:
+...   member = None
+...
+>>> mock = create_autospec(Something)
+>>> mock.member.foo.bar.baz()
+<MagicMock name='mock.member.foo.bar.baz()' id='...'>
+
+```
+
+If modifying your production classes to add defaults isn’t to your liking then there are more options. One of these is simply to use an instance as the spec rather than the class. The other is to create a subclass of the production class and add the defaults to the subclass without affecting the production class. Both of these require you to use an alternative object as the spec. Thankfully [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") supports this - you can simply pass the alternative object as the _autospec_ argument:
+>>>```
+>>> classSomething:
+...  def__init__(self):
+...   self.a = 33
+...
+>>> classSomethingForTest(Something):
+...  a = 33
+...
+>>> p = patch('__main__.Something', autospec=SomethingForTest)
+>>> mock = p.start()
+>>> mock.a
+<NonCallableMagicMock name='Something.a' spec='int' id='...'>

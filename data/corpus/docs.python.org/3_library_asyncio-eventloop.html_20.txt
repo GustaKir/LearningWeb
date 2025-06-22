@@ -1,0 +1,33 @@
+Title: Using subprocess_exec in asyncio
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: The content explains how to use the `subprocess_exec` function, detailing that the first string is the program executable and the subsequent strings are its arguments, forming the program's `argv`. It draws a comparison to the `subprocess.Popen` class, noting distinctions in argument handling. Additionally, it specifies that the `_protocol_factory` must be a callable returning a subclass of `asyncio.SubprocessProtocol`, and outlines what the `_stdin_` parameter can accept, including file-like objects and file descriptors.
+---
+
+The first string specifies the program executable, and the remaining strings specify the arguments. Together, string arguments form the `argv` of the program.
+This is similar to the standard library [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") class called with `shell=False` and the list of strings passed as the first argument; however, where [`Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") takes a single argument which is list of strings, _subprocess_exec_ takes multiple string arguments.
+The _protocol_factory_ must be a callable returning a subclass of the [`asyncio.SubprocessProtocol`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessProtocol "asyncio.SubprocessProtocol") class.
+Other parameters:
+  * _stdin_ can be any of these:
+    * a file-like object
+    * an existing file descriptor (a positive integer), for example those created with [`os.pipe()`](https://docs.python.org/3/library/os.html#os.pipe "os.pipe")
+    * the [`subprocess.PIPE`](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE "subprocess.PIPE") constant (default) which will create a new pipe and connect it,
+    * the value `None` which will make the subprocess inherit the file descriptor from this process
+    * the [`subprocess.DEVNULL`](https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL "subprocess.DEVNULL") constant which indicates that the special [`os.devnull`](https://docs.python.org/3/library/os.html#os.devnull "os.devnull") file will be used
+  * _stdout_ can be any of these:
+    * a file-like object
+    * the [`subprocess.PIPE`](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE "subprocess.PIPE") constant (default) which will create a new pipe and connect it,
+    * the value `None` which will make the subprocess inherit the file descriptor from this process
+    * the [`subprocess.DEVNULL`](https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL "subprocess.DEVNULL") constant which indicates that the special [`os.devnull`](https://docs.python.org/3/library/os.html#os.devnull "os.devnull") file will be used
+  * _stderr_ can be any of these:
+    * a file-like object
+    * the [`subprocess.PIPE`](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE "subprocess.PIPE") constant (default) which will create a new pipe and connect it,
+    * the value `None` which will make the subprocess inherit the file descriptor from this process
+    * the [`subprocess.DEVNULL`](https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL "subprocess.DEVNULL") constant which indicates that the special [`os.devnull`](https://docs.python.org/3/library/os.html#os.devnull "os.devnull") file will be used
+    * the [`subprocess.STDOUT`](https://docs.python.org/3/library/subprocess.html#subprocess.STDOUT "subprocess.STDOUT") constant which will connect the standard error stream to the process’ standard output stream
+  * All other keyword arguments are passed to [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") without interpretation, except for _bufsize_ , _universal_newlines_ , _shell_ , _text_ , _encoding_ and _errors_ , which should not be specified at all.
+The `asyncio` subprocess API does not support decoding the streams as text. [`bytes.decode()`](https://docs.python.org/3/library/stdtypes.html#bytes.decode "bytes.decode") can be used to convert the bytes returned from the stream to text.
+
+
+If a file-like object passed as _stdin_ , _stdout_ or _stderr_ represents a pipe, then the other side of this pipe should be registered with [`connect_write_pipe()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.connect_write_pipe "asyncio.loop.connect_write_pipe") or [`connect_read_pipe()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.connect_read_pipe "asyncio.loop.connect_read_pipe") for use with the event loop.
+See the constructor of the [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") class for documentation on other arguments.
+Returns a pair of `(transport, protocol)`, where _transport_ conforms to the [`asyncio.SubprocessTransport`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport "asyncio.SubprocessTransport") base class and _protocol_ is an object instantiated by the _protocol_factory_.

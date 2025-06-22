@@ -1,0 +1,46 @@
+Title: Python 3.12 Changes: tempfile and threading Modules
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: The tempfile module introduces a new optional parameter _delete_on_close_ for `NamedTemporaryFile`, and `mkdtemp()` now returns absolute paths. The threading module adds `settrace_all_threads()` and `setprofile_all_threads()` functions.
+---
+
+### tempfile[¶](https://docs.python.org/3/whatsnew/3.12.html#tempfile "Link to this heading")
+  * The [`tempfile.NamedTemporaryFile`](https://docs.python.org/3/library/tempfile.html#tempfile.NamedTemporaryFile "tempfile.NamedTemporaryFile") function has a new optional parameter _delete_on_close_ (Contributed by Evgeny Zorin in [gh-58451](https://github.com/python/cpython/issues/58451).)
+  * [`tempfile.mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp") now always returns an absolute path, even if the argument provided to the _dir_ parameter is a relative path.
+
+
+### threading[¶](https://docs.python.org/3/whatsnew/3.12.html#threading "Link to this heading")
+  * Add [`threading.settrace_all_threads()`](https://docs.python.org/3/library/threading.html#threading.settrace_all_threads "threading.settrace_all_threads") and [`threading.setprofile_all_threads()`](https://docs.python.org/3/library/threading.html#threading.setprofile_all_threads "threading.setprofile_all_threads") that allow to set tracing and profiling functions in all running threads in addition to the calling one. (Contributed by Pablo Galindo in [gh-93503](https://github.com/python/cpython/issues/93503).)
+
+
+### tkinter[¶](https://docs.python.org/3/whatsnew/3.12.html#tkinter "Link to this heading")
+  * `tkinter.Canvas.coords()` now flattens its arguments. It now accepts not only coordinates as separate arguments (`x1, y1, x2, y2, ...`) and a sequence of coordinates (`[x1, y1, x2, y2, ...]`), but also coordinates grouped in pairs (`(x1, y1), (x2, y2), ...` and `[(x1, y1), (x2, y2), ...]`), like `create_*()` methods. (Contributed by Serhiy Storchaka in [gh-94473](https://github.com/python/cpython/issues/94473).)
+
+
+### tokenize[¶](https://docs.python.org/3/whatsnew/3.12.html#tokenize "Link to this heading")
+  * The [`tokenize`](https://docs.python.org/3/library/tokenize.html#module-tokenize "tokenize: Lexical scanner for Python source code.") module includes the changes introduced in [**PEP 701**](https://peps.python.org/pep-0701/). (Contributed by Marta Gómez Macías and Pablo Galindo in [gh-102856](https://github.com/python/cpython/issues/102856).) See [Porting to Python 3.12](https://docs.python.org/3/whatsnew/3.12.html#whatsnew312-porting-to-python312) for more information on the changes to the [`tokenize`](https://docs.python.org/3/library/tokenize.html#module-tokenize "tokenize: Lexical scanner for Python source code.") module.
+
+
+### types[¶](https://docs.python.org/3/whatsnew/3.12.html#types "Link to this heading")
+  * Add [`types.get_original_bases()`](https://docs.python.org/3/library/types.html#types.get_original_bases "types.get_original_bases") to allow for further introspection of [User-defined generic types](https://docs.python.org/3/library/typing.html#user-defined-generics) when subclassed. (Contributed by James Hilton-Balfe and Alex Waygood in [gh-101827](https://github.com/python/cpython/issues/101827).)
+
+
+### typing[¶](https://docs.python.org/3/whatsnew/3.12.html#typing "Link to this heading")
+  * [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") checks against [`runtime-checkable protocols`](https://docs.python.org/3/library/typing.html#typing.runtime_checkable "typing.runtime_checkable") now use [`inspect.getattr_static()`](https://docs.python.org/3/library/inspect.html#inspect.getattr_static "inspect.getattr_static") rather than [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") to lookup whether attributes exist. This means that descriptors and [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") methods are no longer unexpectedly evaluated during `isinstance()` checks against runtime-checkable protocols. However, it may also mean that some objects which used to be considered instances of a runtime-checkable protocol may no longer be considered instances of that protocol on Python 3.12+, and vice versa. Most users are unlikely to be affected by this change. (Contributed by Alex Waygood in [gh-102433](https://github.com/python/cpython/issues/102433).)
+  * The members of a runtime-checkable protocol are now considered “frozen” at runtime as soon as the class has been created. Monkey-patching attributes onto a runtime-checkable protocol will still work, but will have no impact on [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") checks comparing objects to the protocol. For example:
+>>>```
+>>> fromtypingimport Protocol, runtime_checkable
+>>> @runtime_checkable
+... classHasX(Protocol):
+...   x = 1
+...
+>>> classFoo: ...
+...
+>>> f = Foo()
+>>> isinstance(f, HasX)
+False
+>>> f.x = 1
+>>> isinstance(f, HasX)
+True
+>>> HasX.y = 2
+>>> isinstance(f, HasX) # unchanged, even though HasX now also has a "y" attribute
+True

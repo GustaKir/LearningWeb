@@ -1,0 +1,46 @@
+Title: Differences Between popen2 and subprocess.Popen
+URL: https://docs.python.org/3/library/subprocess.html
+Summary: The `popen2.Popen3` and `popen2.Popen4` functions operate similarly to `subprocess.Popen`, but have notable differences, including exception handling, argument specifications, and file descriptor management.
+---
+
+```
+
+`popen2.Popen3` and `popen2.Popen4` basically work as [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen"), except that:
+  * [`Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") raises an exception if the execution fails.
+  * The _capturestderr_ argument is replaced with the _stderr_ argument.
+  * `stdin=PIPE` and `stdout=PIPE` must be specified.
+  * popen2 closes all file descriptors by default, but you have to specify `close_fds=True` with [`Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") to guarantee this behavior on all platforms or past Python versions.
+
+
+## Legacy Shell Invocation Functions[¶](https://docs.python.org/3/library/subprocess.html#legacy-shell-invocation-functions "Link to this heading")
+This module also provides the following legacy functions from the 2.x `commands` module. These operations implicitly invoke the system shell and none of the guarantees described above regarding security and exception handling consistency are valid for these functions. 
+
+subprocess.getstatusoutput(_cmd_ , _*_ , _encoding =None_, _errors =None_)[¶](https://docs.python.org/3/library/subprocess.html#subprocess.getstatusoutput "Link to this definition")
+    
+Return `(exitcode, output)` of executing _cmd_ in a shell.
+Execute the string _cmd_ in a shell with `Popen.check_output()` and return a 2-tuple `(exitcode, output)`. _encoding_ and _errors_ are used to decode output; see the notes on [Frequently Used Arguments](https://docs.python.org/3/library/subprocess.html#frequently-used-arguments) for more details.
+A trailing newline is stripped from the output. The exit code for the command can be interpreted as the return code of subprocess. Example:
+>>>```
+>>> subprocess.getstatusoutput('ls /bin/ls')
+(0, '/bin/ls')
+>>> subprocess.getstatusoutput('cat /bin/junk')
+(1, 'cat: /bin/junk: No such file or directory')
+>>> subprocess.getstatusoutput('/bin/junk')
+(127, 'sh: /bin/junk: not found')
+>>> subprocess.getstatusoutput('/bin/kill $$')
+(-15, '')
+
+```
+
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, Windows.
+Changed in version 3.3.4: Windows support was added.
+The function now returns (exitcode, output) instead of (status, output) as it did in Python 3.3.3 and earlier. exitcode has the same value as [`returncode`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.returncode "subprocess.Popen.returncode").
+Changed in version 3.11: Added the _encoding_ and _errors_ parameters. 
+
+subprocess.getoutput(_cmd_ , _*_ , _encoding =None_, _errors =None_)[¶](https://docs.python.org/3/library/subprocess.html#subprocess.getoutput "Link to this definition")
+    
+Return output (stdout and stderr) of executing _cmd_ in a shell.
+Like [`getstatusoutput()`](https://docs.python.org/3/library/subprocess.html#subprocess.getstatusoutput "subprocess.getstatusoutput"), except the exit code is ignored and the return value is a string containing the command’s output. Example:
+>>>```
+>>> subprocess.getoutput('ls /bin/ls')
+'/bin/ls'

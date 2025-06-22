@@ -1,0 +1,129 @@
+Title: Excluding Default Values in FastAPI Response Models
+URL: https://fastapi.tiangolo.com/tutorial/response-model/
+Summary: This section discusses omitting default values from FastAPI response models to reduce JSON response size, particularly when using optional attributes in models connected to NoSQL databases. It introduces the `response_model_exclude_unset` parameter to exclude unset attributes during response generation.
+---
+
+```
+
+  * `description: Union[str, None] = None` (or `str | None = None` in Python 3.10) has a default of `None`.
+  * `tax: float = 10.5` has a default of `10.5`.
+  * `tags: List[str] = []` has a default of an empty list: `[]`.
+
+
+but you might want to omit them from the result if they were not actually stored.
+For example, if you have models with many optional attributes in a NoSQL database, but you don't want to send very long JSON responses full of default values.
+### Use the `response_model_exclude_unset` parameter[¶](https://fastapi.tiangolo.com/tutorial/response-model/#use-the-response_model_exclude_unset-parameter "Permanent link")
+You can set the _path operation decorator_ parameter `response_model_exclude_unset=True`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_25_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+async defread_item(item_id: str):
+  return items[item_id]
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_26_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_26_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+async defread_item(item_id: str):
+  return items[item_id]
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: float = 10.5
+  tags: List[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+async defread_item(item_id: str):
+  return items[item_id]
+
+```
+
+and those default values won't be included in the response, only the values actually set.
+So, if you send a request to that _path operation_ for the item with ID `foo`, the response (not including default values) will be:
+```
+{
+"name":"Foo",
+"price":50.2
+}
+
+```
+
+Info
+In Pydantic v1 the method was called `.dict()`, it was deprecated (but still supported) in Pydantic v2, and renamed to `.model_dump()`.
+The examples here use `.dict()` for compatibility with Pydantic v1, but you should use `.model_dump()` instead if you can use Pydantic v2.
+Info
+FastAPI uses Pydantic model's `.dict()` with [its `exclude_unset` parameter](https://docs.pydantic.dev/1.10/usage/exporting_models/#modeldict) to achieve this.
+Info
+You can also use:
+  * `response_model_exclude_defaults=True`
+  * `response_model_exclude_none=True`
+
+
+as described in [the Pydantic docs](https://docs.pydantic.dev/1.10/usage/exporting_models/#modeldict) for `exclude_defaults` and `exclude_none`.
+#### Data with values for fields with defaults[¶](https://fastapi.tiangolo.com/tutorial/response-model/#data-with-values-for-fields-with-defaults "Permanent link")
+But if your data has values for the model's fields with default values, like the item with ID `bar`:
+```
+{
+  "name": "Bar",
+  "description": "The bartenders",
+  "price": 62,
+  "tax": 20.2
+}
+
+```
+
+they will be included in the response.
+#### Data with the same values as the defaults[¶](https://fastapi.tiangolo.com/tutorial/response-model/#data-with-the-same-values-as-the-defaults "Permanent link")
+If the data has the same values as the default ones, like the item with ID `baz`:
+```
+{
+  "name": "Baz",
+  "description": None,
+  "price": 50.2,
+  "tax": 10.5,
+  "tags": []
+}

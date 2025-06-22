@@ -1,0 +1,54 @@
+Title: Using Microsoft Entra for User Authentication
+URL: https://docs.streamlit.io/develop/tutorials/authentication/microsoft
+Summary: This tutorial guides you through the process of using Microsoft Entra to authenticate users in your applications. It outlines prerequisites such as required Python libraries and a Microsoft Azure account, and details the integration of personal, work, and school accounts for user login.
+---
+
+# [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#use-microsoft-entra-to-authenticate-users)Use Microsoft Entra to authenticate users
+[Microsoft Identity Platform](https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview) is a service within Microsoft Entra that lets you build applications to authenticate users. Your applications can use personal, work, and school accounts managed by Microsoft.
+## [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#prerequisites)Prerequisites
+  * This tutorial requires the following Python libraries:
+`streamlit>=1.42.0 Authlib>=1.3.2 `
+  * You should have a clean working directory called `your-repository`.
+  * You must have a Microsoft Azure account, which includes Microsoft Entra ID.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#summary)Summary
+In this tutorial, you'll build an app that users can log in to with their personal Microsoft accounts. When they log in, they'll see a personalized greeting with their name and have the option to log out.
+Here's a look at what you'll build:
+Complete code _expand_more_
+`.streamlit/secrets.toml`
+`[auth] redirect_uri = "http://localhost:8501/oauth2callback" cookie_secret = "xxx" client_id = "xxx" client_secret = "xxx" server_metadata_url = "https://login.microsoftonline.com/consumers/v2.0/.well-known/openid-configuration" `
+`app.py`
+`import streamlit as st def login_screen():   st.header("This app is private.")   st.subheader("Please log in.")   st.button("Log in with Microsoft", on_click=st.login) if not st.experimental_user.is_logged_in:   login_screen() else:   st.header(f"Welcome, {st.experimental_user.name}!")   st.button("Log out", on_click=st.logout) `
+## [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#create-a-web-application-in-microsoft-entra-id)Create a web application in Microsoft Entra ID
+Within Microsoft Entra ID in Azure, you'll need to register a new application and generate a secret needed to configure your app. In this example, your application will only accept personal Microsoft accounts, but you can optionally accept work and school accounts or restrict the application to your personal tenant. Microsoft Entra also lets you connect other, external identity providers.
+### [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#register-a-new-application)Register a new application
+  1. Go to [Microsoft Azure](https://portal.azure.com/#home), and sign in to Microsoft.
+  2. At the top of the page among the services, select "**Microsoft Entra ID**."
+  3. In the left navigation, select "**Manage** " → "**App registrations**."
+  4. At the top of the screen, select "**New registration**."
+  5. Fill in a name for your application.
+The application name will be visible to your users within the authentication flow presented by Microsoft.
+  6. Under "Supported account types," select "**Personal Microsoft accounts only**."
+  7. Under "Redirect URI," select a "**Web** " platform, and enter your app's URL with the pathname `oauth2callback`.
+For example, if you are developing locally, enter `http://localhost:8501/oauth2callback`. If you are using a different port, change `8501` to match your port.
+  8. At the bottom of the screen, select "**Register**."
+Microsoft will redirect you to your new application, a resource within Azure.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/authentication/microsoft#gather-your-applications-details)Gather your application's details
+  1. To store your app information to use in later steps, open a text editor, or (even better) create a new item in a password locker.
+Always handle your app secrets securely. Remember to label the values as you paste them so you don't mix them up.
+  2. Under "Essentials," copy the "Application (client) ID" into your text editor.
+This is your `client_id`.
+  3. At the top of the page, select "**Endpoints**."
+  4. Copy the "OpenID Connect metadata document" into your text editor.
+This is your `server_metadata_url`.
+  5. In the left navigation, select "**Manage** " → "**Certificates & secrets**."
+  6. Near the top, select "**New client secret**."
+  7. Enter a description, and select an expiration time.
+The description is only used internally. You will use the generated secret to configure your Streamlit app, so choose a description that helps you remember where you use the secret.
+  8. At the bottom of the dialog, select "**Add**."
+It may take a few seconds for Azure to generate your secret.
+  9. Copy the "Value" into your text editor.
+This is your `client_secret`. Microsoft will hide the value after you leave Azure, so ensure that you securely store it somewhere now. If you lose your secret, you'll need to delete it from your configuration and generate a new one.

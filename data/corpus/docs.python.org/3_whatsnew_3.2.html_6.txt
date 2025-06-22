@@ -1,0 +1,46 @@
+Title: New Features in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces access to configuration tags via the `sysconfig` module, such as obtaining version and filename extension tags. Additionally, it references PEP 3149 regarding ABI version tagged .so files and PEP 3333, which clarifies string handling in the WSGI protocol.
+---
+
+```
+
+In Python itself, the tags are accessible from functions in the [`sysconfig`](https://docs.python.org/3/library/sysconfig.html#module-sysconfig "sysconfig: Python's configuration information") module:
+>>>```
+>>> importsysconfig
+>>> sysconfig.get_config_var('SOABI')    # find the version tag
+'cpython-32mu'
+>>> sysconfig.get_config_var('EXT_SUFFIX') # find the full filename extension
+'.cpython-32mu.so'
+
+```
+
+See also 
+
+[**PEP 3149**](https://peps.python.org/pep-3149/) - ABI Version Tagged .so Files
+    
+PEP written by Barry Warsaw.
+## PEP 3333: Python Web Server Gateway Interface v1.0.1[¶](https://docs.python.org/3/whatsnew/3.2.html#pep-3333-python-web-server-gateway-interface-v1-0-1 "Link to this heading")
+This informational PEP clarifies how bytes/text issues are to be handled by the WSGI protocol. The challenge is that string handling in Python 3 is most conveniently handled with the [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") type even though the HTTP protocol is itself bytes oriented.
+The PEP differentiates so-called _native strings_ that are used for request/response headers and metadata versus _byte strings_ which are used for the bodies of requests and responses.
+The _native strings_ are always of type [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") but are restricted to code points between _U+0000_ through _U+00FF_ which are translatable to bytes using _Latin-1_ encoding. These strings are used for the keys and values in the environment dictionary and for response headers and statuses in the `start_response()` function. They must follow [**RFC 2616**](https://datatracker.ietf.org/doc/html/rfc2616.html) with respect to encoding. That is, they must either be _ISO-8859-1_ characters or use [**RFC 2047**](https://datatracker.ietf.org/doc/html/rfc2047.html) MIME encoding.
+For developers porting WSGI applications from Python 2, here are the salient points:
+  * If the app already used strings for headers in Python 2, no change is needed.
+  * If instead, the app encoded output headers or decoded input headers, then the headers will need to be re-encoded to Latin-1. For example, an output header encoded in utf-8 was using `h.encode('utf-8')` now needs to convert from bytes to native strings using `h.encode('utf-8').decode('latin-1')`.
+  * Values yielded by an application or sent using the `write()` method must be byte strings. The `start_response()` function and environ must use native strings. The two cannot be mixed.
+
+
+For server implementers writing CGI-to-WSGI pathways or other CGI-style protocols, the users must to be able access the environment using native strings even though the underlying platform may have a different convention. To bridge this gap, the [`wsgiref`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref "wsgiref: WSGI Utilities and Reference Implementation.") module has a new function, [`wsgiref.handlers.read_environ()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.read_environ "wsgiref.handlers.read_environ") for transcoding CGI variables from [`os.environ`](https://docs.python.org/3/library/os.html#os.environ "os.environ") into native strings and returning a new dictionary.
+See also 
+
+[**PEP 3333**](https://peps.python.org/pep-3333/) - Python Web Server Gateway Interface v1.0.1
+    
+PEP written by Phillip Eby.
+## Other Language Changes[¶](https://docs.python.org/3/whatsnew/3.2.html#other-language-changes "Link to this heading")
+Some smaller changes made to the core Python language are:
+  * String formatting for [`format()`](https://docs.python.org/3/library/functions.html#format "format") and [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format") gained new capabilities for the format character **#**. Previously, for integers in binary, octal, or hexadecimal, it caused the output to be prefixed with ‘0b’, ‘0o’, or ‘0x’ respectively. Now it can also handle floats, complex, and Decimal, causing the output to always have a decimal point even when no digits follow it.
+>>>```
+>>> format(20, '#o')
+'0o24'
+>>> format(12.34, '#5.0f')
+' 12.'

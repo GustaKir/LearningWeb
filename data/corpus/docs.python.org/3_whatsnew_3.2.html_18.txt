@@ -1,0 +1,55 @@
+Title: Python 3.2: Context Managers and Numeric Hashing
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: This section discusses the limitations of combining context managers with decorators, highlighting the inability of context managers to return usable arguments for enclosed statements. It also introduces a solution by Mark Dickinson for ensuring consistent hash values across different numeric data types like Fraction and Decimal.
+---
+
+```
+
+Trying to fulfill two roles at once places some limitations on the technique. Context managers normally have the flexibility to return an argument usable by a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, but there is no parallel for function decorators.
+In the above example, there is not a clean way for the _track_entry_and_exit_ context manager to return a logging instance for use in the body of enclosed statements.
+(Contributed by Michael Foord in [bpo-9110](https://bugs.python.org/issue?@action=redirect&bpo=9110).)
+### decimal and fractions[¶](https://docs.python.org/3/whatsnew/3.2.html#decimal-and-fractions "Link to this heading")
+Mark Dickinson crafted an elegant and efficient scheme for assuring that different numeric datatypes will have the same hash value whenever their actual values are equal ([bpo-8188](https://bugs.python.org/issue?@action=redirect&bpo=8188)):
+```
+assert hash(Fraction(3, 2)) == hash(1.5) == \
+    hash(Decimal("1.5")) == hash(complex(1.5, 0))
+
+```
+
+Some of the hashing details are exposed through a new attribute, [`sys.hash_info`](https://docs.python.org/3/library/sys.html#sys.hash_info "sys.hash_info"), which describes the bit width of the hash value, the prime modulus, the hash values for _infinity_ and _nan_ , and the multiplier used for the imaginary part of a number:
+>>>```
+>>> sys.hash_info
+sys.hash_info(width=64, modulus=2305843009213693951, inf=314159, nan=0, imag=1000003)
+
+```
+
+An early decision to limit the interoperability of various numeric types has been relaxed. It is still unsupported (and ill-advised) to have implicit mixing in arithmetic expressions such as `Decimal('1.1') + float('1.1')` because the latter loses information in the process of constructing the binary float. However, since existing floating-point value can be converted losslessly to either a decimal or rational representation, it makes sense to add them to the constructor and to support mixed-type comparisons.
+  * The [`decimal.Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") constructor now accepts [`float`](https://docs.python.org/3/library/functions.html#float "float") objects directly so there in no longer a need to use the [`from_float()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.from_float "decimal.Decimal.from_float") method ([bpo-8257](https://bugs.python.org/issue?@action=redirect&bpo=8257)).
+  * Mixed type comparisons are now fully supported so that [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") objects can be directly compared with [`float`](https://docs.python.org/3/library/functions.html#float "float") and [`fractions.Fraction`](https://docs.python.org/3/library/fractions.html#fractions.Fraction "fractions.Fraction") ([bpo-2531](https://bugs.python.org/issue?@action=redirect&bpo=2531) and [bpo-8188](https://bugs.python.org/issue?@action=redirect&bpo=8188)).
+
+
+Similar changes were made to [`fractions.Fraction`](https://docs.python.org/3/library/fractions.html#fractions.Fraction "fractions.Fraction") so that the [`from_float()`](https://docs.python.org/3/library/fractions.html#fractions.Fraction.from_float "fractions.Fraction.from_float") and [`from_decimal()`](https://docs.python.org/3/library/fractions.html#fractions.Fraction.from_decimal "fractions.Fraction.from_decimal") methods are no longer needed ([bpo-8294](https://bugs.python.org/issue?@action=redirect&bpo=8294)):
+>>>```
+>>> fromdecimalimport Decimal
+>>> fromfractionsimport Fraction
+>>> Decimal(1.1)
+Decimal('1.100000000000000088817841970012523233890533447265625')
+>>> Fraction(1.1)
+Fraction(2476979795053773, 2251799813685248)
+
+```
+
+Another useful change for the [`decimal`](https://docs.python.org/3/library/decimal.html#module-decimal "decimal: Implementation of the General Decimal Arithmetic Specification.") module is that the `Context.clamp` attribute is now public. This is useful in creating contexts that correspond to the decimal interchange formats specified in IEEE 754 (see [bpo-8540](https://bugs.python.org/issue?@action=redirect&bpo=8540)).
+(Contributed by Mark Dickinson and Raymond Hettinger.)
+### ftp[¶](https://docs.python.org/3/whatsnew/3.2.html#ftp "Link to this heading")
+The [`ftplib.FTP`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP "ftplib.FTP") class now supports the context management protocol to unconditionally consume [`socket.error`](https://docs.python.org/3/library/socket.html#socket.error "socket.error") exceptions and to close the FTP connection when done:
+>>>```
+>>> fromftplibimport FTP
+>>> with FTP("ftp1.at.proftpd.org") as ftp:
+    ftp.login()
+    ftp.dir()
+'230 Anonymous login ok, restrictions apply.'
+dr-xr-xr-x  9 ftp   ftp      154 May 6 10:43 .
+dr-xr-xr-x  9 ftp   ftp      154 May 6 10:43 ..
+dr-xr-xr-x  5 ftp   ftp     4096 May 6 10:43 CentOS
+dr-xr-xr-x  3 ftp   ftp      18 Jul 10 2008 Fedora

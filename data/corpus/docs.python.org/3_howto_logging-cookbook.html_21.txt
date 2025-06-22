@@ -1,0 +1,23 @@
+Title: Customizing LogRecord in Python Logging
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section explains the creation and role of the LogRecord instance in Python's logging module. It details how LogRecords capture event information and are processed by handlers, with a historical note on their creation method prior to Python 3.2.
+---
+
+```
+
+The above script should log the message `Hello, world!` when run with Python 3.8 or later.
+## Customizing `LogRecord`[¶](https://docs.python.org/3/howto/logging-cookbook.html#customizing-logrecord "Link to this heading")
+Every logging event is represented by a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") instance. When an event is logged and not filtered out by a logger’s level, a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") is created, populated with information about the event and then passed to the handlers for that logger (and its ancestors, up to and including the logger where further propagation up the hierarchy is disabled). Before Python 3.2, there were only two places where this creation was done:
+  * [`Logger.makeRecord()`](https://docs.python.org/3/library/logging.html#logging.Logger.makeRecord "logging.Logger.makeRecord"), which is called in the normal process of logging an event. This invoked [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") directly to create an instance.
+  * [`makeLogRecord()`](https://docs.python.org/3/library/logging.html#logging.makeLogRecord "logging.makeLogRecord"), which is called with a dictionary containing attributes to be added to the LogRecord. This is typically invoked when a suitable dictionary has been received over the network (e.g. in pickle form via a [`SocketHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler "logging.handlers.SocketHandler"), or in JSON form via an [`HTTPHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.HTTPHandler "logging.handlers.HTTPHandler")).
+
+
+This has usually meant that if you need to do anything special with a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord"), you’ve had to do one of the following.
+  * Create your own [`Logger`](https://docs.python.org/3/library/logging.html#logging.Logger "logging.Logger") subclass, which overrides [`Logger.makeRecord()`](https://docs.python.org/3/library/logging.html#logging.Logger.makeRecord "logging.Logger.makeRecord"), and set it using [`setLoggerClass()`](https://docs.python.org/3/library/logging.html#logging.setLoggerClass "logging.setLoggerClass") before any loggers that you care about are instantiated.
+  * Add a [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") to a logger or handler, which does the necessary special manipulation you need when its [`filter()`](https://docs.python.org/3/library/logging.html#logging.Filter.filter "logging.Filter.filter") method is called.
+
+
+The first approach would be a little unwieldy in the scenario where (say) several different libraries wanted to do different things. Each would attempt to set its own [`Logger`](https://docs.python.org/3/library/logging.html#logging.Logger "logging.Logger") subclass, and the one which did this last would win.
+The second approach works reasonably well for many cases, but does not allow you to e.g. use a specialized subclass of [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord"). Library developers can set a suitable filter on their loggers, but they would have to remember to do this every time they introduced a new logger (which they would do simply by adding new packages or modules and doing
+```
+logger = logging.getLogger(__name__)

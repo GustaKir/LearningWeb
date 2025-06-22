@@ -1,0 +1,27 @@
+Title: Curses Coordinate System and Screen Size
+URL: https://docs.python.org/3/howto/curses.html
+Summary: The curses library uses an unusual coordinate system where coordinates are defined as _y,x_, with the top-left corner being (0,0). This differs from the conventional _x,y_ system. The size of the screen can be determined using `curses.LINES` and `curses.COLS`, with legal coordinates ranging from (0,0) to (curses.LINES - 1, curses.COLS - 1). Changes to display or erase text do not appear immediately; a refresh is required to update the display.
+---
+
+```
+
+Note that the coordinate system used in curses is unusual. Coordinates are always passed in the order _y,x_ , and the top-left corner of a window is coordinate (0,0). This breaks the normal convention for handling coordinates where the _x_ coordinate comes first. This is an unfortunate difference from most other computer applications, but it’s been part of curses since it was first written, and it’s too late to change things now.
+Your application can determine the size of the screen by using the [`curses.LINES`](https://docs.python.org/3/library/curses.html#curses.LINES "curses.LINES") and [`curses.COLS`](https://docs.python.org/3/library/curses.html#curses.COLS "curses.COLS") variables to obtain the _y_ and _x_ sizes. Legal coordinates will then extend from `(0,0)` to `(curses.LINES - 1, curses.COLS - 1)`.
+When you call a method to display or erase text, the effect doesn’t immediately show up on the display. Instead you must call the [`refresh()`](https://docs.python.org/3/library/curses.html#curses.window.refresh "curses.window.refresh") method of window objects to update the screen.
+This is because curses was originally written with slow 300-baud terminal connections in mind; with these terminals, minimizing the time required to redraw the screen was very important. Instead curses accumulates changes to the screen and displays them in the most efficient manner when you call `refresh()`. For example, if your program displays some text in a window and then clears the window, there’s no need to send the original text because they’re never visible.
+In practice, explicitly telling curses to redraw a window doesn’t really complicate programming with curses much. Most programs go into a flurry of activity, and then pause waiting for a keypress or some other action on the part of the user. All you have to do is to be sure that the screen has been redrawn before pausing to wait for user input, by first calling `stdscr.refresh()` or the `refresh()` method of some other relevant window.
+A pad is a special case of a window; it can be larger than the actual display screen, and only a portion of the pad displayed at a time. Creating a pad requires the pad’s height and width, while refreshing a pad requires giving the coordinates of the on-screen area where a subsection of the pad will be displayed.
+```
+pad = curses.newpad(100, 100)
+# These loops fill the pad with letters; addch() is
+# explained in the next section
+for y in range(0, 99):
+  for x in range(0, 99):
+    pad.addch(y,x, ord('a') + (x*x+y*y) % 26)
+# Displays a section of the pad in the middle of the screen.
+# (0,0) : coordinate of upper-left corner of pad area to display.
+# (5,5) : coordinate of upper-left corner of window area to be filled
+#     with pad content.
+# (20, 75) : coordinate of lower-right corner of window area to be
+#     : filled with pad content.
+pad.refresh( 0,0, 5,5, 20,75)

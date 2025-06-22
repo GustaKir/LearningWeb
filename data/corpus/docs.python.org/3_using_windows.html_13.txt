@@ -1,0 +1,34 @@
+Title: Python Windows Launcher Diagnostics and Dry Run
+URL: https://docs.python.org/3/using/windows.html
+Summary: This section covers two features of the Python launcher on Windows: diagnostics and dry run. Setting the `PYLAUNCHER_DEBUG` environment variable enables verbose diagnostic output about Python versions and command-line executions, useful for debugging. Setting `PYLAUNCHER_DRYRUN` allows users to see the command that would be executed without actually launching Python, which can benefit tools interacting with the launcher.
+---
+
+```
+
+### 4.8.5. Diagnostics[¶](https://docs.python.org/3/using/windows.html#diagnostics "Link to this heading")
+If an environment variable `PYLAUNCHER_DEBUG` is set (to any value), the launcher will print diagnostic information to stderr (i.e. to the console). While this information manages to be simultaneously verbose _and_ terse, it should allow you to see what versions of Python were located, why a particular version was chosen and the exact command-line used to execute the target Python. It is primarily intended for testing and debugging.
+### 4.8.6. Dry Run[¶](https://docs.python.org/3/using/windows.html#dry-run "Link to this heading")
+If an environment variable `PYLAUNCHER_DRYRUN` is set (to any value), the launcher will output the command it would have run, but will not actually launch Python. This may be useful for tools that want to use the launcher to detect and then launch Python directly. Note that the command written to standard output is always encoded using UTF-8, and may not render correctly in the console.
+### 4.8.7. Install on demand[¶](https://docs.python.org/3/using/windows.html#install-on-demand "Link to this heading")
+If an environment variable `PYLAUNCHER_ALLOW_INSTALL` is set (to any value), and the requested Python version is not installed but is available on the Microsoft Store, the launcher will attempt to install it. This may require user interaction to complete, and you may need to run the command again.
+An additional `PYLAUNCHER_ALWAYS_INSTALL` variable causes the launcher to always try to install Python, even if it is detected. This is mainly intended for testing (and should be used with `PYLAUNCHER_DRYRUN`).
+### 4.8.8. Return codes[¶](https://docs.python.org/3/using/windows.html#return-codes "Link to this heading")
+The following exit codes may be returned by the Python launcher. Unfortunately, there is no way to distinguish these from the exit code of Python itself.
+The names of codes are as used in the sources, and are only for reference. There is no way to access or resolve them apart from reading this page. Entries are listed in alphabetical order of names.
+Name | Value | Description  
+---|---|---  
+RC_BAD_VENV_CFG | 107 | A `pyvenv.cfg` was found but is corrupt.  
+RC_CREATE_PROCESS | 101 | Failed to launch Python.  
+RC_INSTALLING | 111 | An install was started, but the command will need to be re-run after it completes.  
+RC_INTERNAL_ERROR | 109 | Unexpected error. Please report a bug.  
+RC_NO_COMMANDLINE | 108 | Unable to obtain command line from the operating system.  
+RC_NO_PYTHON | 103 | Unable to locate the requested version.  
+RC_NO_VENV_CFG | 106 | A `pyvenv.cfg` was required but not found.  
+## 4.9. Finding modules[¶](https://docs.python.org/3/using/windows.html#finding-modules "Link to this heading")
+These notes supplement the description at [The initialization of the sys.path module search path](https://docs.python.org/3/library/sys_path_init.html#sys-path-init) with detailed Windows notes.
+When no `._pth` file is found, this is how [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") is populated on Windows:
+  * An empty entry is added at the start, which corresponds to the current directory.
+  * If the environment variable [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) exists, as described in [Environment variables](https://docs.python.org/3/using/cmdline.html#using-on-envvars), its entries are added next. Note that on Windows, paths in this variable must be separated by semicolons, to distinguish them from the colon used in drive identifiers (`C:\` etc.).
+  * Additional “application paths” can be added in the registry as subkeys of `\SOFTWARE\Python\PythonCore{version}\PythonPath` under both the `HKEY_CURRENT_USER` and `HKEY_LOCAL_MACHINE` hives. Subkeys which have semicolon-delimited path strings as their default value will cause each path to be added to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"). (Note that all known installers only use HKLM, so HKCU is typically empty.)
+  * If the environment variable [`PYTHONHOME`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHOME) is set, it is assumed as “Python Home”. Otherwise, the path of the main Python executable is used to locate a “landmark file” (either `Lib\os.py` or `pythonXY.zip`) to deduce the “Python Home”. If a Python home is found, the relevant sub-directories added to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") (`Lib`, `plat-win`, etc) are based on that folder. Otherwise, the core Python path is constructed from the PythonPath stored in the registry.
+  * If the Python Home cannot be located, no [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) is specified in the environment, and no registry entries can be found, a default path with relative entries is used (e.g. `.\Lib;.\plat-win`, etc).

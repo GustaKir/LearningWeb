@@ -1,0 +1,86 @@
+Title: Understanding Bound Methods and Descriptor Behavior in Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section discusses the behavior of bound methods in Python, explaining how the dotted access from an instance triggers the `__get__()` method, returning a bound method object. It highlights how the bound method stores the underlying function and the instance, thereby illustrating the origin of `self` in regular methods and `cls` in class methods.
+---
+
+```
+
+The interesting behavior occurs during dotted access from an instance. The dotted lookup calls [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") which returns a bound method object:
+>>>```
+>>> d = D()
+>>> d.f
+<bound method D.f of <__main__.D object at 0x00B18C90>>
+
+```
+
+Internally, the bound method stores the underlying function and the bound instance:
+>>>```
+>>> d.f.__func__
+<function D.f at 0x00C45070>
+>>> d.f.__self__
+<__main__.D object at 0x00B18C90>
+
+```
+
+If you have ever wondered where _self_ comes from in regular methods or where _cls_ comes from in class methods, this is it!
+### [Kinds of methods](https://docs.python.org/3/howto/descriptor.html#id26)[¶](https://docs.python.org/3/howto/descriptor.html#kinds-of-methods "Link to this heading")
+Non-data descriptors provide a simple mechanism for variations on the usual patterns of binding functions into methods.
+To recap, functions have a [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") method so that they can be converted to a method when accessed as attributes. The non-data descriptor transforms an `obj.f(*args)` call into `f(obj, *args)`. Calling `cls.f(*args)` becomes `f(*args)`.
+This chart summarizes the binding and its two most useful variants:
+> Transformation | Called from an object | Called from a class  
+> ---|---|---  
+> function | f(obj, *args) | f(*args)  
+> staticmethod | f(*args) | f(*args)  
+> classmethod | f(type(obj), *args) | f(cls, *args)  
+### [Static methods](https://docs.python.org/3/howto/descriptor.html#id27)[¶](https://docs.python.org/3/howto/descriptor.html#static-methods "Link to this heading")
+Static methods return the underlying function without changes. Calling either `c.f` or `C.f` is the equivalent of a direct lookup into `object.__getattribute__(c, "f")` or `object.__getattribute__(C, "f")`. As a result, the function becomes identically accessible from either an object or a class.
+Good candidates for static methods are methods that do not reference the `self` variable.
+For instance, a statistics package may include a container class for experimental data. The class provides normal methods for computing the average, mean, median, and other descriptive statistics that depend on the data. However, there may be useful functions which are conceptually related but do not depend on the data. For instance, `erf(x)` is handy conversion routine that comes up in statistical work but does not directly depend on a particular dataset. It can be called either from an object or the class: `s.erf(1.5) --> 0.9332` or `Sample.erf(1.5) --> 0.9332`.
+Since static methods return the underlying function with no changes, the example calls are unexciting:
+```
+classE:
+  @staticmethod
+  deff(x):
+    return x * 10
+
+```
+
+>>>```
+>>> E.f(3)
+30
+>>> E().f(3)
+30
+
+```
+
+Using the non-data descriptor protocol, a pure Python version of [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod") would look like this:
+```
+importfunctools
+classStaticMethod:
+  "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
+  def__init__(self, f):
+    self.f = f
+    functools.update_wrapper(self, f)
+  def__get__(self, obj, objtype=None):
+    return self.f
+  def__call__(self, *args, **kwds):
+    return self.f(*args, **kwds)
+
+```
+
+The [`functools.update_wrapper()`](https://docs.python.org/3/library/functools.html#functools.update_wrapper "functools.update_wrapper") call adds a `__wrapped__` attribute that refers to the underlying function. Also it carries forward the attributes necessary to make the wrapper look like the wrapped function: [`__name__`](https://docs.python.org/3/reference/datamodel.html#function.__name__ "function.__name__"), [`__qualname__`](https://docs.python.org/3/reference/datamodel.html#function.__qualname__ "function.__qualname__"), [`__doc__`](https://docs.python.org/3/reference/datamodel.html#function.__doc__ "function.__doc__"), and [`__annotations__`](https://docs.python.org/3/reference/datamodel.html#function.__annotations__ "function.__annotations__").
+### [Class methods](https://docs.python.org/3/howto/descriptor.html#id28)[¶](https://docs.python.org/3/howto/descriptor.html#class-methods "Link to this heading")
+Unlike static methods, class methods prepend the class reference to the argument list before calling the function. This format is the same for whether the caller is an object or a class:
+```
+classF:
+  @classmethod
+  deff(cls, x):
+    return cls.__name__, x
+
+```
+
+>>>```
+>>> F.f(3)
+('F', 3)
+>>> F().f(3)
+('F', 3)

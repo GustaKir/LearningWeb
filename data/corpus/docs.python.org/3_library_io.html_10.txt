@@ -1,0 +1,39 @@
+Title: File I/O Modes in Python
+URL: https://docs.python.org/3/library/io.html
+Summary: This section outlines the various file modes in Python's I/O library, including reading ('r'), writing ('w'), exclusive creation ('x'), and appending ('a'). It explains the behavior of these modes, such as file creation and truncation, as well as the implications of adding a '+' to allow simultaneous read/write operations. It also briefly mentions methods like `read()`, `readinto()`, and `write()`, which perform single system calls for efficiency.
+---
+
+The _mode_ can be `'r'`, `'w'`, `'x'` or `'a'` for reading (default), writing, exclusive creation or appending. The file will be created if it doesn’t exist when opened for writing or appending; it will be truncated when opened for writing. [`FileExistsError`](https://docs.python.org/3/library/exceptions.html#FileExistsError "FileExistsError") will be raised if it already exists when opened for creating. Opening a file for creating implies writing, so this mode behaves in a similar way to `'w'`. Add a `'+'` to the mode to allow simultaneous reading and writing.
+The [`read()`](https://docs.python.org/3/library/io.html#io.RawIOBase.read "io.RawIOBase.read") (when called with a positive argument), [`readinto()`](https://docs.python.org/3/library/io.html#io.RawIOBase.readinto "io.RawIOBase.readinto") and [`write()`](https://docs.python.org/3/library/io.html#io.RawIOBase.write "io.RawIOBase.write") methods on this class will only make one system call.
+A custom opener can be used by passing a callable as _opener_. The underlying file descriptor for the file object is then obtained by calling _opener_ with (_name_ , _flags_). _opener_ must return an open file descriptor (passing [`os.open`](https://docs.python.org/3/library/os.html#os.open "os.open") as _opener_ results in functionality similar to passing `None`).
+The newly created file is [non-inheritable](https://docs.python.org/3/library/os.html#fd-inheritance).
+See the [`open()`](https://docs.python.org/3/library/functions.html#open "open") built-in function for examples on using the _opener_ parameter.
+Changed in version 3.3: The _opener_ parameter was added. The `'x'` mode was added.
+Changed in version 3.4: The file is now non-inheritable.
+[`FileIO`](https://docs.python.org/3/library/io.html#io.FileIO "io.FileIO") provides these data attributes in addition to those from [`RawIOBase`](https://docs.python.org/3/library/io.html#io.RawIOBase "io.RawIOBase") and [`IOBase`](https://docs.python.org/3/library/io.html#io.IOBase "io.IOBase"): 
+
+mode[¶](https://docs.python.org/3/library/io.html#io.FileIO.mode "Link to this definition")
+    
+The mode as given in the constructor. 
+
+name[¶](https://docs.python.org/3/library/io.html#io.FileIO.name "Link to this definition")
+    
+The file name. This is the file descriptor of the file when no name is given in the constructor.
+### Buffered Streams[¶](https://docs.python.org/3/library/io.html#buffered-streams "Link to this heading")
+Buffered I/O streams provide a higher-level interface to an I/O device than raw I/O does. 
+
+_class_ io.BytesIO(_initial_bytes =b''_)[¶](https://docs.python.org/3/library/io.html#io.BytesIO "Link to this definition")
+    
+A binary stream using an in-memory bytes buffer. It inherits from [`BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase"). The buffer is discarded when the [`close()`](https://docs.python.org/3/library/io.html#io.IOBase.close "io.IOBase.close") method is called.
+The optional argument _initial_bytes_ is a [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object) that contains initial data.
+[`BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO "io.BytesIO") provides or overrides these methods in addition to those from [`BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") and [`IOBase`](https://docs.python.org/3/library/io.html#io.IOBase "io.IOBase"): 
+
+getbuffer()[¶](https://docs.python.org/3/library/io.html#io.BytesIO.getbuffer "Link to this definition")
+    
+Return a readable and writable view over the contents of the buffer without copying them. Also, mutating the view will transparently update the contents of the buffer:
+>>>```
+>>> b = io.BytesIO(b"abcdef")
+>>> view = b.getbuffer()
+>>> view[2:4] = b"56"
+>>> b.getvalue()
+b'ab56ef'

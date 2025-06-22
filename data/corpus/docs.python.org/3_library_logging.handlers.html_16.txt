@@ -1,0 +1,26 @@
+Title: QueueHandler Listener and QueueListener in Python Logging
+URL: https://docs.python.org/3/library/logging.handlers.html
+Summary: This section explains the 'listener' attribute of the QueueHandler in Python's logging library, which holds a QueueListener instance when configured with dictConfig. It notes that this feature was added in version 3.12, while the QueueListener class itself has been available since version 3.2.
+---
+
+listener[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler.listener "Link to this definition")
+    
+When created via configuration using [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig"), this attribute will contain a [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") instance for use with this handler. Otherwise, it will be `None`.
+Added in version 3.12.
+## QueueListener[¶](https://docs.python.org/3/library/logging.handlers.html#queuelistener "Link to this heading")
+Added in version 3.2.
+The [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") class, located in the [`logging.handlers`](https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers "logging.handlers: Handlers for the logging module.") module, supports receiving logging messages from a queue, such as those implemented in the [`queue`](https://docs.python.org/3/library/queue.html#module-queue "queue: A synchronized queue class.") or [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") modules. The messages are received from a queue in an internal thread and passed, on the same thread, to one or more handlers for processing. While [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") is not itself a handler, it is documented here because it works hand-in-hand with [`QueueHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler "logging.handlers.QueueHandler").
+Along with the [`QueueHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueHandler "logging.handlers.QueueHandler") class, [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") can be used to let handlers do their work on a separate thread from the one which does the logging. This is important in web applications and also other service applications where threads servicing clients need to respond as quickly as possible, while any potentially slow operations (such as sending an email via [`SMTPHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SMTPHandler "logging.handlers.SMTPHandler")) are done on a separate thread. 
+
+_class_ logging.handlers.QueueListener(_queue_ , _* handlers_, _respect_handler_level =False_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "Link to this definition")
+    
+Returns a new instance of the [`QueueListener`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener "logging.handlers.QueueListener") class. The instance is initialized with the queue to send messages to and a list of handlers which will handle entries placed on the queue. The queue can be any queue-like object; it’s passed as-is to the [`dequeue()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener.dequeue "logging.handlers.QueueListener.dequeue") method, which needs to know how to get messages from it. The queue is not _required_ to have the task tracking API (though it’s used if available), which means that you can use [`SimpleQueue`](https://docs.python.org/3/library/queue.html#queue.SimpleQueue "queue.SimpleQueue") instances for _queue_.
+Note
+If you are using [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism."), you should avoid using [`SimpleQueue`](https://docs.python.org/3/library/queue.html#queue.SimpleQueue "queue.SimpleQueue") and instead use [`multiprocessing.Queue`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue "multiprocessing.Queue").
+If `respect_handler_level` is `True`, a handler’s level is respected (compared with the level for the message) when deciding whether to pass messages to that handler; otherwise, the behaviour is as in previous Python versions - to always pass each message to each handler.
+Changed in version 3.5: The `respect_handler_level` argument was added. 
+
+dequeue(_block_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.QueueListener.dequeue "Link to this definition")
+    
+Dequeues a record and return it, optionally blocking.
+The base implementation uses `get()`. You may want to override this method if you want to use timeouts or work with custom queue implementations.

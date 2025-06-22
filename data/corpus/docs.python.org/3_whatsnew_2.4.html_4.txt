@@ -1,0 +1,65 @@
+Title: Decorator Functions and PEP 318
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: This section discusses PEP 318, which introduces a method for creating decorator functions that can accept arguments. It explains how such decorators are structured and highlights a related change that allows the `func_name` attribute of functions to be writable, enabling decorators to modify the function's name in tracebacks.
+---
+
+```
+
+An example in [**PEP 318**](https://peps.python.org/pep-0318/) contains a fancier version of this idea that lets you both specify the required type and check the returned type.
+Decorator functions can take arguments. If arguments are supplied, your decorator function is called with only those arguments and must return a new decorator function; this function must take a single function and return a function, as previously described. In other words, `@A @B @C(args)` becomes:
+```
+deff(): ...
+_deco = C(args)
+f = A(B(_deco(f)))
+
+```
+
+Getting this right can be slightly brain-bending, but it’s not too difficult.
+A small related change makes the [`func_name`](https://docs.python.org/3/reference/datamodel.html#function.__name__ "function.__name__") attribute of functions writable. This attribute is used to display function names in tracebacks, so decorators should change the name of any new function that’s constructed and returned.
+See also 
+
+[**PEP 318**](https://peps.python.org/pep-0318/) - Decorators for Functions, Methods and Classes
+    
+Written by Kevin D. Smith, Jim Jewett, and Skip Montanaro. Several people wrote patches implementing function decorators, but the one that was actually checked in was patch #979728, written by Mark Russell. 
+
+<https://wiki.python.org/moin/PythonDecoratorLibrary>
+    
+This Wiki page contains several examples of decorators.
+## PEP 322: Reverse Iteration[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-322-reverse-iteration "Link to this heading")
+A new built-in function, `reversed(seq)`, takes a sequence and returns an iterator that loops over the elements of the sequence in reverse order.
+>>>```
+>>> for i in reversed(xrange(1,4)):
+...   print i
+...
+3
+2
+1
+
+```
+
+Compared to extended slicing, such as `range(1,4)[::-1]`, [`reversed()`](https://docs.python.org/3/library/functions.html#reversed "reversed") is easier to read, runs faster, and uses substantially less memory.
+Note that [`reversed()`](https://docs.python.org/3/library/functions.html#reversed "reversed") only accepts sequences, not arbitrary iterators. If you want to reverse an iterator, first convert it to a list with [`list()`](https://docs.python.org/3/library/stdtypes.html#list "list").
+>>>```
+>>> input = open('/etc/passwd', 'r')
+>>> for line in reversed(list(input)):
+...  print line
+...
+root:*:0:0:System Administrator:/var/root:/bin/tcsh
+ ...
+
+```
+
+See also 
+
+[**PEP 322**](https://peps.python.org/pep-0322/) - Reverse Iteration
+    
+Written and implemented by Raymond Hettinger.
+## PEP 324: New subprocess Module[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-324-new-subprocess-module "Link to this heading")
+The standard library provides a number of ways to execute a subprocess, offering different features and different levels of complexity. `os.system(command)` is easy to use, but slow (it runs a shell process which executes the command) and dangerous (you have to be careful about escaping the shell’s metacharacters). The `popen2` module offers classes that can capture standard output and standard error from the subprocess, but the naming is confusing. The [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") module cleans this up, providing a unified interface that offers all the features you might need.
+Instead of `popen2`’s collection of classes, [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") contains a single class called [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") whose constructor supports a number of different keyword arguments.
+```
+classPopen(args, bufsize=0, executable=None,
+      stdin=None, stdout=None, stderr=None,
+      preexec_fn=None, close_fds=False, shell=False,
+      cwd=None, env=None, universal_newlines=False,
+      startupinfo=None, creationflags=0):

@@ -1,0 +1,68 @@
+Title: Cookie Class Attributes in http.cookiejar
+URL: https://docs.python.org/3/library/http.cookiejar.html
+Summary: This section describes specific attributes of the Cookie class in the http.cookiejar module, including 'rfc2109', which indicates if the cookie was received as an RFC 2109 cookie, and 'port_specified', which indicates if a port was explicitly specified by the server.
+---
+
+Cookie.rfc2109[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.rfc2109 "Link to this definition")
+    
+`True` if this cookie was received as an [**RFC 2109**](https://datatracker.ietf.org/doc/html/rfc2109.html) cookie (ie. the cookie arrived in a _Set-Cookie_ header, and the value of the Version cookie-attribute in that header was 1). This attribute is provided because [`http.cookiejar`](https://docs.python.org/3/library/http.cookiejar.html#module-http.cookiejar "http.cookiejar: Classes for automatic handling of HTTP cookies.") may ‘downgrade’ RFC 2109 cookies to Netscape cookies, in which case [`version`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.version "http.cookiejar.Cookie.version") is 0. 
+
+Cookie.port_specified[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.port_specified "Link to this definition")
+    
+`True` if a port or set of ports was explicitly specified by the server (in the _Set-Cookie_ / _Set-Cookie2_ header). 
+
+Cookie.domain_specified[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.domain_specified "Link to this definition")
+    
+`True` if a domain was explicitly specified by the server. 
+
+Cookie.domain_initial_dot[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.domain_initial_dot "Link to this definition")
+    
+`True` if the domain explicitly specified by the server began with a dot (`'.'`).
+Cookies may have additional non-standard cookie-attributes. These may be accessed using the following methods: 
+
+Cookie.has_nonstandard_attr(_name_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.has_nonstandard_attr "Link to this definition")
+    
+Return `True` if cookie has the named cookie-attribute. 
+
+Cookie.get_nonstandard_attr(_name_ , _default =None_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.get_nonstandard_attr "Link to this definition")
+    
+If cookie has the named cookie-attribute, return its value. Otherwise, return _default_. 
+
+Cookie.set_nonstandard_attr(_name_ , _value_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.set_nonstandard_attr "Link to this definition")
+    
+Set the value of the named cookie-attribute.
+The [`Cookie`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie "http.cookiejar.Cookie") class also defines the following method: 
+
+Cookie.is_expired(_now =None_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie.is_expired "Link to this definition")
+    
+`True` if cookie has passed the time at which the server requested it should expire. If _now_ is given (in seconds since the epoch), return whether the cookie has expired at the specified time.
+## Examples[¶](https://docs.python.org/3/library/http.cookiejar.html#examples "Link to this heading")
+The first example shows the most common usage of [`http.cookiejar`](https://docs.python.org/3/library/http.cookiejar.html#module-http.cookiejar "http.cookiejar: Classes for automatic handling of HTTP cookies."):
+```
+importhttp.cookiejar,urllib.request
+cj = http.cookiejar.CookieJar()
+opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+r = opener.open("http://example.com/")
+
+```
+
+This example illustrates how to open a URL using your Netscape, Mozilla, or Lynx cookies (assumes Unix/Netscape convention for location of the cookies file):
+```
+importos,http.cookiejar,urllib.request
+cj = http.cookiejar.MozillaCookieJar()
+cj.load(os.path.join(os.path.expanduser("~"), ".netscape", "cookies.txt"))
+opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+r = opener.open("http://example.com/")
+
+```
+
+The next example illustrates the use of [`DefaultCookiePolicy`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy "http.cookiejar.DefaultCookiePolicy"). Turn on [**RFC 2965**](https://datatracker.ietf.org/doc/html/rfc2965.html) cookies, be more strict about domains when setting and returning Netscape cookies, and block some domains from setting cookies or having them returned:
+```
+importurllib.request
+fromhttp.cookiejarimport CookieJar, DefaultCookiePolicy
+policy = DefaultCookiePolicy(
+  rfc2965=True, strict_ns_domain=Policy.DomainStrict,
+  blocked_domains=["ads.net", ".ads.net"])
+cj = CookieJar(policy)
+opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+r = opener.open("http://example.com/")

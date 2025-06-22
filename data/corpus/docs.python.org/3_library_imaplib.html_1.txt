@@ -1,0 +1,50 @@
+Title: IMAP4 Class Exceptions in Python
+URL: https://docs.python.org/3/library/imaplib.html
+Summary: This section details changes in the `imaplib` module between versions 3.5 and 3.9, highlighting the introduction of the `with` statement support and the optional `_timeout_` parameter. It also describes three exceptions associated with the `IMAP4` class: `IMAP4.error`, for general errors; `IMAP4.abort`, for server-related errors; and notes on their handling.
+---
+
+```
+
+Changed in version 3.5: Support for the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement was added.
+Changed in version 3.9: The optional _timeout_ parameter was added.
+Three exceptions are defined as attributes of the [`IMAP4`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4 "imaplib.IMAP4") class: 
+
+_exception_ IMAP4.error[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.error "Link to this definition")
+    
+Exception raised on any errors. The reason for the exception is passed to the constructor as a string. 
+
+_exception_ IMAP4.abort[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.abort "Link to this definition")
+    
+IMAP4 server errors cause this exception to be raised. This is a sub-class of [`IMAP4.error`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.error "imaplib.IMAP4.error"). Note that closing the instance and instantiating a new one will usually allow recovery from this exception. 
+
+_exception_ IMAP4.readonly[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.readonly "Link to this definition")
+    
+This exception is raised when a writable mailbox has its status changed by the server. This is a sub-class of [`IMAP4.error`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.error "imaplib.IMAP4.error"). Some other client now has write permission, and the mailbox will need to be re-opened to re-obtain write permission.
+There’s also a subclass for secure connections: 
+
+_class_ imaplib.IMAP4_SSL(_host =''_, _port =IMAP4_SSL_PORT_, _*_ , _ssl_context =None_, _timeout =None_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4_SSL "Link to this definition")
+    
+This is a subclass derived from [`IMAP4`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4 "imaplib.IMAP4") that connects over an SSL encrypted socket (to use this class you need a socket module that was compiled with SSL support). If _host_ is not specified, `''` (the local host) is used. If _port_ is omitted, the standard IMAP4-over-SSL port (993) is used. _ssl_context_ is a [`ssl.SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") object which allows bundling SSL configuration options, certificates and private keys into a single (potentially long-lived) structure. Please read [Security considerations](https://docs.python.org/3/library/ssl.html#ssl-security) for best practices.
+The optional _timeout_ parameter specifies a timeout in seconds for the connection attempt. If timeout is not given or is `None`, the global default socket timeout is used.
+Changed in version 3.3: _ssl_context_ parameter was added.
+Changed in version 3.4: The class now supports hostname check with [`ssl.SSLContext.check_hostname`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.check_hostname "ssl.SSLContext.check_hostname") and _Server Name Indication_ (see [`ssl.HAS_SNI`](https://docs.python.org/3/library/ssl.html#ssl.HAS_SNI "ssl.HAS_SNI")).
+Changed in version 3.9: The optional _timeout_ parameter was added.
+Changed in version 3.12: The deprecated _keyfile_ and _certfile_ parameters have been removed.
+The second subclass allows for connections created by a child process: 
+
+_class_ imaplib.IMAP4_stream(_command_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4_stream "Link to this definition")
+    
+This is a subclass derived from [`IMAP4`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4 "imaplib.IMAP4") that connects to the `stdin/stdout` file descriptors created by passing _command_ to `subprocess.Popen()`.
+The following utility functions are defined: 
+
+imaplib.Internaldate2tuple(_datestr_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.Internaldate2tuple "Link to this definition")
+    
+Parse an IMAP4 `INTERNALDATE` string and return corresponding local time. The return value is a [`time.struct_time`](https://docs.python.org/3/library/time.html#time.struct_time "time.struct_time") tuple or `None` if the string has wrong format. 
+
+imaplib.Int2AP(_num_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.Int2AP "Link to this definition")
+    
+Converts an integer into a bytes representation using characters from the set [`A` .. `P`]. 
+
+imaplib.ParseFlags(_flagstr_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.ParseFlags "Link to this definition")
+    
+Converts an IMAP4 `FLAGS` response to a tuple of individual flags.

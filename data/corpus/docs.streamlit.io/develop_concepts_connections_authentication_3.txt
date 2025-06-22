@@ -1,0 +1,30 @@
+Title: Configuring OIDC Connections in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/connections/authentication
+Summary: This section discusses how to configure your Streamlit application for OIDC authentication. It covers the use of the `st.login()` function along with the `secrets.toml` file, emphasizing the need for an `[auth]` dictionary that includes necessary parameters like `redirect_uri` and `cookie_secret`. The document also outlines how to manage multiple OIDC providers.
+---
+
+Examples for popular OIDC provider configurations are listed in the API reference for `st.login()`.
+## [](https://docs.streamlit.io/develop/concepts/connections/authentication#configure-your-oidc-connection-in-streamlit)Configure your OIDC connection in Streamlit
+After you've configured your identity-provider client, you'll need to configure your Streamlit app, too. `st.login()` uses your app's `secrets.toml` file to configure your connection, similar to how `st.connection()` works.
+Whether you have one OIDC provider or many, you'll need to have an `[auth]` dictionary in `secrets.toml`. You must declare `redirect_uri` and `cookie_secret` in the `[auth]` dictionary. These two values are shared between all OIDC providers in your app.
+If you are only using one OIDC provider, you can put the remaining three properties (`client_id`, `client_secret`, and `server_metadata_url`) in `[auth]`. However, if you are using multiple providers, they should each have a unique name so you can declare their unique values in their own dictionaries. For example, if you name your connections `"connection_1"` and `"connection_2"`, put their remaining properties in dictionaries named `[auth.connection_1]` and `[auth.connection_2]`, respectively.
+## [](https://docs.streamlit.io/develop/concepts/connections/authentication#a-simple-example)A simple example
+If you use Google Identity as your identity provider, a basic configuration for local development will look like the following TOML file:
+`.streamlit/secrets.toml`:
+`[auth] redirect_uri = "http://localhost:8501/oauth2callback" cookie_secret = "xxx" client_id = "xxx" client_secret = "xxx" server_metadata_url = (   "https://accounts.google.com/.well-known/openid-configuration" ) `
+Make sure the port in `redirect_uri` matches the port you are using. The `cookie_secret` should be a strong, randomly generated secret. Both the `redirect_uri` and `cookie_secret` should have been entered into your client configuration on Google Cloud. You must copy the `client_id` and `client_secret` from Google Cloud after you create your client. For some identity providers, `server_metadata_url` may be unique to your client. However, for Google Cloud, a single URL is shared for OIDC clients.
+In your app, create a simple login flow:
+`import streamlit as st if not st.experimental_user.is_logged_in: if st.button("Log in with Google"):     st.login()   st.stop() if st.button("Log out"):   st.logout() st.markdown(f"Welcome! {st.experimental_user.name}") `
+When you use `st.stop()`, your script run ends as soon as the login button is displayed. This lets you avoid nesting your entire page within a conditional block. Additionally, you can use callbacks to simplify the code further:
+`import streamlit as st if not st.experimental_user.is_logged_in:   st.button("Log in with Google", on_click=st.login)   st.stop() st.button("Log out", on_click=st.logout) st.markdown(f"Welcome! {st.experimental_user.name}") `
+## [](https://docs.streamlit.io/develop/concepts/connections/authentication#using-multiple-oidc-providers)Using multiple OIDC providers
+If you use more than one OIDC provider, you'll need to declare a unique name for each. If you want to use Google Identity and Microsoft Entra ID as two providers for the same app, your configuration for local development will look like the following TOML file:
+`.streamlit/secrets.toml`:
+`[auth] redirect_uri = "http://localhost:8501/oauth2callback" cookie_secret = "xxx" [auth.google] client_id = "xxx" client_secret = "xxx" server_metadata_url = (   "https://accounts.google.com/.well-known/openid-configuration" ) [auth.microsoft] client_id = "xxx" client_secret = "xxx" server_metadata_url = (   "https://login.microsoftonline.com/{tenant}/v2.0/.well-known/openid-configuration" ) `
+Microsoft's server metadata URL varies slightly depending on how your client is scoped. Replace `{tenant}` with the appropriate value described in Microsoft's documentation for [OpenID configuration](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc#find-your-apps-openid-configuration-document-uri).
+Your app code:
+`import streamlit as st if not st.experimental_user.is_logged_in: if st.button("Log in with Google"):     st.login("google") if st.button("Log in with Microsoft"):     st.login("microsoft")   st.stop() if st.button("Log out"):   st.logout() st.markdown(f"Welcome! {st.experimental_user.name}") `
+Using callbacks, this would look like:
+`import streamlit as st if not st.experimental_user.is_logged_in:   st.button("Log in with Google", on_click=st.login, args=["google"])   st.button("Log in with Microsoft", on_click=st.login, args=["microsoft"])   st.stop() st.button("Log out", on_click=st.logout) st.markdown(f"Welcome! {st.experimental_user.name}") `
+## [](https://docs.streamlit.io/develop/concepts/connections/authentication#passing-keywords-to-your-identity-provider)Passing keywords to your identity provider
+To customize the behavior of your identity provider, you may ne

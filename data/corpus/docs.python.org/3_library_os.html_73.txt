@@ -1,0 +1,40 @@
+Title: OS Module: Dynamic Loading Flags and Random Numbers
+URL: https://docs.python.org/3/library/os.html
+Summary: This section describes dynamic loading flags such as `os.RTLD_NODELETE`, `os.RTLD_NOLOAD`, and `os.RTLD_DEEPBIND` used with `setdlopenflags()` and `getdlopenflags()`. It also introduces the `os.getrandom(size, flags=0)` function which retrieves random bytes.
+---
+
+os.RTLD_NODELETE[¶](https://docs.python.org/3/library/os.html#os.RTLD_NODELETE "Link to this definition")
+
+
+os.RTLD_NOLOAD[¶](https://docs.python.org/3/library/os.html#os.RTLD_NOLOAD "Link to this definition")
+
+
+os.RTLD_DEEPBIND[¶](https://docs.python.org/3/library/os.html#os.RTLD_DEEPBIND "Link to this definition")
+    
+Flags for use with the [`setdlopenflags()`](https://docs.python.org/3/library/sys.html#sys.setdlopenflags "sys.setdlopenflags") and [`getdlopenflags()`](https://docs.python.org/3/library/sys.html#sys.getdlopenflags "sys.getdlopenflags") functions. See the Unix manual page _[dlopen(3)](https://manpages.debian.org/dlopen\(3\))_ for what the different flags mean.
+Added in version 3.3.
+## Random numbers[¶](https://docs.python.org/3/library/os.html#random-numbers "Link to this heading") 
+
+os.getrandom(_size_ , _flags =0_)[¶](https://docs.python.org/3/library/os.html#os.getrandom "Link to this definition")
+    
+Get up to _size_ random bytes. The function can return less bytes than requested.
+These bytes can be used to seed user-space random number generators or for cryptographic purposes.
+`getrandom()` relies on entropy gathered from device drivers and other sources of environmental noise. Unnecessarily reading large quantities of data will have a negative impact on other users of the `/dev/random` and `/dev/urandom` devices.
+The flags argument is a bit mask that can contain zero or more of the following values ORed together: [`os.GRND_RANDOM`](https://docs.python.org/3/library/os.html#os.GRND_RANDOM "os.GRND_RANDOM") and [`GRND_NONBLOCK`](https://docs.python.org/3/library/os.html#os.GRND_NONBLOCK "os.GRND_NONBLOCK").
+See also the [Linux getrandom() manual page](https://man7.org/linux/man-pages/man2/getrandom.2.html).
+[Availability](https://docs.python.org/3/library/intro.html#availability): Linux >= 3.17.
+Added in version 3.6. 
+
+os.urandom(_size_ , _/_)[¶](https://docs.python.org/3/library/os.html#os.urandom "Link to this definition")
+    
+Return a bytestring of _size_ random bytes suitable for cryptographic use.
+This function returns random bytes from an OS-specific randomness source. The returned data should be unpredictable enough for cryptographic applications, though its exact quality depends on the OS implementation.
+On Linux, if the `getrandom()` syscall is available, it is used in blocking mode: block until the system urandom entropy pool is initialized (128 bits of entropy are collected by the kernel). See the [**PEP 524**](https://peps.python.org/pep-0524/) for the rationale. On Linux, the [`getrandom()`](https://docs.python.org/3/library/os.html#os.getrandom "os.getrandom") function can be used to get random bytes in non-blocking mode (using the [`GRND_NONBLOCK`](https://docs.python.org/3/library/os.html#os.GRND_NONBLOCK "os.GRND_NONBLOCK") flag) or to poll until the system urandom entropy pool is initialized.
+On a Unix-like system, random bytes are read from the `/dev/urandom` device. If the `/dev/urandom` device is not available or not readable, the [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") exception is raised.
+On Windows, it will use `BCryptGenRandom()`.
+See also
+The [`secrets`](https://docs.python.org/3/library/secrets.html#module-secrets "secrets: Generate secure random numbers for managing secrets.") module provides higher level functions. For an easy-to-use interface to the random number generator provided by your platform, please see [`random.SystemRandom`](https://docs.python.org/3/library/random.html#random.SystemRandom "random.SystemRandom").
+Changed in version 3.5: On Linux 3.17 and newer, the `getrandom()` syscall is now used when available. On OpenBSD 5.6 and newer, the C `getentropy()` function is now used. These functions avoid the usage of an internal file descriptor.
+Changed in version 3.5.2: On Linux, if the `getrandom()` syscall blocks (the urandom entropy pool is not initialized yet), fall back on reading `/dev/urandom`.
+Changed in version 3.6: On Linux, `getrandom()` is now used in blocking mode to increase the security.
+Changed in version 3.11: On Windows, `BCryptGenRandom()` is used instead of `CryptGenRandom()` which is deprecated.

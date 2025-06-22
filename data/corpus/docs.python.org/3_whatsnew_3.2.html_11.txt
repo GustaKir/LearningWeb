@@ -1,0 +1,58 @@
+Title: Python 3.2 Release Notes: Email and ElementTree Updates
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The 'email.message.Message' object now allows optional direct access to sender and recipient addresses. Additionally, the 'xml.etree.ElementTree' and 'xml.etree.cElementTree' packages have been updated to version 1.3, introducing new functions like 'fromstringlist' for building XML documents from a list of strings.
+---
+
+message.html#email.message.Message "email.message.Message") object and can optionally obtain the _from_addr_ and _to_addrs_ addresses directly from the object.
+
+
+(Proposed and implemented by R. David Murray, [bpo-4661](https://bugs.python.org/issue?@action=redirect&bpo=4661) and [bpo-10321](https://bugs.python.org/issue?@action=redirect&bpo=10321).)
+### elementtree[¶](https://docs.python.org/3/whatsnew/3.2.html#elementtree "Link to this heading")
+The [`xml.etree.ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "xml.etree.ElementTree: Implementation of the ElementTree API.") package and its `xml.etree.cElementTree` counterpart have been updated to version 1.3.
+Several new and useful functions and methods have been added:
+  * [`xml.etree.ElementTree.fromstringlist()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.fromstringlist "xml.etree.ElementTree.fromstringlist") which builds an XML document from a sequence of fragments
+  * [`xml.etree.ElementTree.register_namespace()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.register_namespace "xml.etree.ElementTree.register_namespace") for registering a global namespace prefix
+  * [`xml.etree.ElementTree.tostringlist()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.tostringlist "xml.etree.ElementTree.tostringlist") for string representation including all sublists
+  * [`xml.etree.ElementTree.Element.extend()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.extend "xml.etree.ElementTree.Element.extend") for appending a sequence of zero or more elements
+  * [`xml.etree.ElementTree.Element.iterfind()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.iterfind "xml.etree.ElementTree.Element.iterfind") searches an element and subelements
+  * [`xml.etree.ElementTree.Element.itertext()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.itertext "xml.etree.ElementTree.Element.itertext") creates a text iterator over an element and its subelements
+  * [`xml.etree.ElementTree.TreeBuilder.end()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.TreeBuilder.end "xml.etree.ElementTree.TreeBuilder.end") closes the current element
+  * [`xml.etree.ElementTree.TreeBuilder.doctype()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.TreeBuilder.doctype "xml.etree.ElementTree.TreeBuilder.doctype") handles a doctype declaration
+
+
+Two methods have been deprecated:
+  * `xml.etree.ElementTree.getchildren()` use `list(elem)` instead.
+  * `xml.etree.ElementTree.getiterator()` use `Element.iter` instead.
+
+
+For details of the update, see [Introducing ElementTree](https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm) on Fredrik Lundh’s website.
+(Contributed by Florent Xicluna and Fredrik Lundh, [bpo-6472](https://bugs.python.org/issue?@action=redirect&bpo=6472).)
+### functools[¶](https://docs.python.org/3/whatsnew/3.2.html#functools "Link to this heading")
+  * The [`functools`](https://docs.python.org/3/library/functools.html#module-functools "functools: Higher-order functions and operations on callable objects.") module includes a new decorator for caching function calls. [`functools.lru_cache()`](https://docs.python.org/3/library/functools.html#functools.lru_cache "functools.lru_cache") can save repeated queries to an external resource whenever the results are expected to be the same.
+For example, adding a caching decorator to a database query function can save database accesses for popular searches:
+>>>```
+>>> importfunctools
+>>> @functools.lru_cache(maxsize=300)
+... defget_phone_number(name):
+...   c = conn.cursor()
+...   c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
+...   return c.fetchone()[0]
+
+```
+
+>>>```
+>>> for name in user_requests:
+...   get_phone_number(name)    # cached lookup
+
+```
+
+To help with choosing an effective cache size, the wrapped function is instrumented for tracking cache statistics:
+>>>```
+>>> get_phone_number.cache_info()
+CacheInfo(hits=4805, misses=980, maxsize=300, currsize=300)
+
+```
+
+If the phonelist table gets updated, the outdated contents of the cache can be cleared with:
+>>>```
+>>> get_phone_number.cache_clear()

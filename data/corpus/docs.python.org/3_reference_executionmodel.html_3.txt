@@ -1,0 +1,38 @@
+Title: Class Definition and Name Resolution in Python
+URL: https://docs.python.org/3/reference/executionmodel.html
+Summary: This chunk discusses how class definition blocks and their names interact with name resolution in Python. It highlights that while class definitions are executable statements that can use and define names, unbound local variables are resolved in the global namespace. Furthermore, it notes that the scope of names defined in a class is limited to that class block and does not extend to method code blocks, with the exception of annotation scopes that can access enclosing class scopes.
+---
+
+d-line interfaces, import-time behavior, and ``__name__ == '__main__'``.").
+Class definition blocks and arguments to [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec") and [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") are special in the context of name resolution. A class definition is an executable statement that may use and define names. These references follow the normal rules for name resolution with an exception that unbound local variables are looked up in the global namespace. The namespace of the class definition becomes the attribute dictionary of the class. The scope of names defined in a class block is limited to the class block; it does not extend to the code blocks of methods. This includes comprehensions and generator expressions, but it does not include [annotation scopes](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes), which have access to their enclosing class scopes. This means that the following will fail:
+```
+classA:
+  a = 42
+  b = list(a + i for i in range(10))
+
+```
+
+However, the following will succeed:
+```
+classA:
+  type Alias = Nested
+  classNested: pass
+print(A.Alias.__value__) # <type 'A.Nested'>
+
+```
+
+### 4.2.3. Annotation scopes[¶](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes "Link to this heading")
+[Type parameter lists](https://docs.python.org/3/reference/compound_stmts.html#type-params) and [`type`](https://docs.python.org/3/reference/simple_stmts.html#type) statements introduce _annotation scopes_ , which behave mostly like function scopes, but with some exceptions discussed below. [Annotations](https://docs.python.org/3/glossary.html#term-annotation) currently do not use annotation scopes, but they are expected to use annotation scopes in Python 3.13 when [**PEP 649**](https://peps.python.org/pep-0649/) is implemented.
+Annotation scopes are used in the following contexts:
+  * Type parameter lists for [generic type aliases](https://docs.python.org/3/reference/compound_stmts.html#generic-type-aliases).
+  * Type parameter lists for [generic functions](https://docs.python.org/3/reference/compound_stmts.html#generic-functions). A generic function’s annotations are executed within the annotation scope, but its defaults and decorators are not.
+  * Type parameter lists for [generic classes](https://docs.python.org/3/reference/compound_stmts.html#generic-classes). A generic class’s base classes and keyword arguments are executed within the annotation scope, but its decorators are not.
+  * The bounds, constraints, and default values for type parameters ([lazily evaluated](https://docs.python.org/3/reference/executionmodel.html#lazy-evaluation)).
+  * The value of type aliases ([lazily evaluated](https://docs.python.org/3/reference/executionmodel.html#lazy-evaluation)).
+
+
+Annotation scopes differ from function scopes in the following ways:
+  * Annotation scopes have access to their enclosing class namespace. If an annotation scope is immediately within a class scope, or within another annotation scope that is immediately within a class scope, the code in the annotation scope can use names defined in the class scope as if it were executed directly within the class body. This contrasts with regular functions defined within classes, which cannot access names defined in the class scope.
+  * Expressions in annotation scopes cannot contain [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield), `yield from`, [`await`](https://docs.python.org/3/reference/expressions.html#await), or [`:=`](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-assignment_expression) expressions. (These expressions are allowed in other scopes contained within the annotation scope.)
+  * Names defined in annotation scopes cannot be rebound with [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) statements in inner scopes. This includes only type parameters, as no other syntactic elements that can appear within annotation scopes can introduce new names.
+  * While annotation scopes have an internal name, that name is not reflected in the [qualified name](https://docs.python.org/3/glossary.html#term-qualified-name) of objects defined within the scope. Instead, the [`__qualname__`](https://docs.python.org/3/library/stdtypes.html#definition.__qualname__ "definition.__qualname__") of such objects is as if the object were defined in the enclosing scope.

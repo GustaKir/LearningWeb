@@ -1,0 +1,73 @@
+Title: PyMutex Overview and Functions
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The chunk discusses `PyMutex`, emphasizing that instances should not be copied or moved due to their significance in memory. It notes that the size of `PyMutex` is currently one byte but may change in future releases. It also describes the functions `PyMutex_Lock` and `PyMutex_Unlock`, detailing their behavior in multi-threaded contexts, specifically that calling `PyMutex_Lock` will block if already held by another thread.
+---
+
+```
+
+Instances of `PyMutex` should not be copied or moved. Both the contents and address of a `PyMutex` are meaningful, and it must remain at a fixed, writable location in memory.
+Note
+A `PyMutex` currently occupies one byte, but the size should be considered unstable. The size may change in future Python releases without a deprecation period.
+Added in version 3.13. 
+
+voidPyMutex_Lock([PyMutex](https://docs.python.org/3/c-api/init.html#c.PyMutex "PyMutex")*m)[¶](https://docs.python.org/3/c-api/init.html#c.PyMutex_Lock "Link to this definition")
+    
+Lock mutex _m_. If another thread has already locked it, the calling thread will block until the mutex is unlocked. While blocked, the thread will temporarily release the [GIL](https://docs.python.org/3/glossary.html#term-GIL) if it is held.
+Added in version 3.13. 
+
+voidPyMutex_Unlock([PyMutex](https://docs.python.org/3/c-api/init.html#c.PyMutex "PyMutex")*m)[¶](https://docs.python.org/3/c-api/init.html#c.PyMutex_Unlock "Link to this definition")
+    
+Unlock mutex _m_. The mutex must be locked — otherwise, the function will issue a fatal error.
+Added in version 3.13.
+### Python Critical Section API[¶](https://docs.python.org/3/c-api/init.html#python-critical-section-api "Link to this heading")
+The critical section API provides a deadlock avoidance layer on top of per-object locks for [free-threaded](https://docs.python.org/3/glossary.html#term-free-threading) CPython. They are intended to replace reliance on the [global interpreter lock](https://docs.python.org/3/glossary.html#term-global-interpreter-lock), and are no-ops in versions of Python with the global interpreter lock.
+Critical sections avoid deadlocks by implicitly suspending active critical sections and releasing the locks during calls to [`PyEval_SaveThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "PyEval_SaveThread"). When [`PyEval_RestoreThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread") is called, the most recent critical section is resumed, and its locks reacquired. This means the critical section API provides weaker guarantees than traditional locks – they are useful because their behavior is similar to the [GIL](https://docs.python.org/3/glossary.html#term-GIL).
+The functions and structs used by the macros are exposed for cases where C macros are not available. They should only be used as in the given macro expansions. Note that the sizes and contents of the structures may change in future Python versions.
+Note
+Operations that need to lock two objects at once must use [`Py_BEGIN_CRITICAL_SECTION2`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_CRITICAL_SECTION2 "Py_BEGIN_CRITICAL_SECTION2"). You _cannot_ use nested critical sections to lock more than one object at once, because the inner critical section may suspend the outer critical sections. This API does not provide a way to lock more than two objects at once.
+Example usage:
+```
+staticPyObject*
+set_field(MyObject*self,PyObject*value)
+{
+Py_BEGIN_CRITICAL_SECTION(self);
+Py_SETREF(self->field,Py_XNewRef(value));
+Py_END_CRITICAL_SECTION();
+Py_RETURN_NONE;
+}
+
+```
+
+In the above example, [`Py_SETREF`](https://docs.python.org/3/c-api/refcounting.html#c.Py_SETREF "Py_SETREF") calls [`Py_DECREF`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF"), which can call arbitrary code through an object’s deallocation function. The critical section API avoids potential deadlocks due to reentrancy and lock ordering by allowing the runtime to temporarily suspend the critical section if the code triggered by the finalizer blocks and calls [`PyEval_SaveThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "PyEval_SaveThread"). 
+
+Py_BEGIN_CRITICAL_SECTION(op)[¶](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_CRITICAL_SECTION "Link to this definition")
+    
+Acquires the per-object lock for the object _op_ and begins a critical section.
+In the free-threaded build, this macro expands to:
+```
+{
+PyCriticalSection_py_cs;
+PyCriticalSection_Begin(&_py_cs,(PyObject*)(op))
+
+```
+
+In the default build, this macro expands to `{`.
+Added in version 3.13. 
+
+Py_END_CRITICAL_SECTION()[¶](https://docs.python.org/3/c-api/init.html#c.Py_END_CRITICAL_SECTION "Link to this definition")
+    
+Ends the critical section and releases the per-object lock.
+In the free-threaded build, this macro expands to:
+```
+PyCriticalSection_End(&_py_cs);
+}
+
+```
+
+In the default build, this macro expands to `}`.
+Added in version 3.13. 
+
+Py_BEGIN_CRITICAL_SECTION2(a, b)[¶](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_CRITICAL_SECTION2 "Link to this definition")
+    
+Acquires the per-objects locks for the objects _a_ and _b_ and begins a critical section. The locks are acquired in a consistent order (lowest address first) to avoid lock ordering deadlocks.
+In the free-threaded build, this macro expands to:

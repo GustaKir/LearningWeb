@@ -1,0 +1,63 @@
+Title: Topological Sorting in Python's graphlib
+URL: https://docs.python.org/3/library/graphlib.html
+Summary: The document discusses the `TopologicalSorter` class in Python's `graphlib` module, presenting the `static_order()` method for immediate sorting of graph nodes without parallelism. It also details the class's capability to support parallel processing of nodes, showing how to prepare the sorter and handle nodes with worker threads or processes.
+---
+
+In case just an immediate sorting of the nodes in the graph is required and no parallelism is involved, the convenience method [`TopologicalSorter.static_order()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.static_order "graphlib.TopologicalSorter.static_order") can be used directly:
+>>>```
+>>> graph = {"D": {"B", "C"}, "C": {"A"}, "B": {"A"}}
+>>> ts = TopologicalSorter(graph)
+>>> tuple(ts.static_order())
+('A', 'C', 'B', 'D')
+
+```
+
+The class is designed to easily support parallel processing of the nodes as they become ready. For instance:
+```
+topological_sorter = TopologicalSorter()
+# Add nodes to 'topological_sorter'...
+topological_sorter.prepare()
+while topological_sorter.is_active():
+  for node in topological_sorter.get_ready():
+    # Worker threads or processes take nodes to work on off the
+    # 'task_queue' queue.
+    task_queue.put(node)
+  # When the work for a node is done, workers put the node in
+  # 'finalized_tasks_queue' so we can get more nodes to work on.
+  # The definition of 'is_active()' guarantees that, at this point, at
+  # least one node has been placed on 'task_queue' that hasn't yet
+  # been passed to 'done()', so this blocking 'get()' must (eventually)
+  # succeed. After calling 'done()', we loop back to call 'get_ready()'
+  # again, so put newly freed nodes on 'task_queue' as soon as
+  # logically possible.
+  node = finalized_tasks_queue.get()
+  topological_sorter.done(node)
+
+```
+
+
+add(_node_ , _* predecessors_)[¶](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.add "Link to this definition")
+    
+Add a new node and its predecessors to the graph. Both the _node_ and all elements in _predecessors_ must be [hashable](https://docs.python.org/3/glossary.html#term-hashable).
+If called multiple times with the same node argument, the set of dependencies will be the union of all dependencies passed in.
+It is possible to add a node with no dependencies (_predecessors_ is not provided) or to provide a dependency twice. If a node that has not been provided before is included among _predecessors_ it will be automatically added to the graph with no predecessors of its own.
+Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if called after [`prepare()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.prepare "graphlib.TopologicalSorter.prepare"). 
+
+prepare()[¶](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.prepare "Link to this definition")
+    
+Mark the graph as finished and check for cycles in the graph. If any cycle is detected, [`CycleError`](https://docs.python.org/3/library/graphlib.html#graphlib.CycleError "graphlib.CycleError") will be raised, but [`get_ready()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.get_ready "graphlib.TopologicalSorter.get_ready") can still be used to obtain as many nodes as possible until cycles block more progress. After a call to this function, the graph cannot be modified, and therefore no more nodes can be added using [`add()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.add "graphlib.TopologicalSorter.add"). 
+
+is_active()[¶](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.is_active "Link to this definition")
+    
+Returns `True` if more progress can be made and `False` otherwise. Progress can be made if cycles do not block the resolution and either there are still nodes ready that haven’t yet been returned by [`TopologicalSorter.get_ready()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.get_ready "graphlib.TopologicalSorter.get_ready") or the number of nodes marked [`TopologicalSorter.done()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.done "graphlib.TopologicalSorter.done") is less than the number that have been returned by [`TopologicalSorter.get_ready()`](https://docs.python.org/3/library/graphlib.html#graphlib.TopologicalSorter.get_ready "graphlib.TopologicalSorter.get_ready").
+The [`__bool__()`](https://docs.python.org/3/reference/datamodel.html#object.__bool__ "object.__bool__") method of this class defers to this function, so instead of:
+```
+if ts.is_active():
+  ...
+
+```
+
+it is possible to simply do:
+```
+if ts:
+  ...

@@ -1,0 +1,61 @@
+Title: Handling Exceptions in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section explains how exceptions in Python must be assigned to a different name for reference after the `except` clause. It discusses the storage of the exception in the `sys` module, its accessibility within the `except` clause, and how it resets when leaving the exception handler.
+---
+
+```
+
+This means the exception must be assigned to a different name to be able to refer to it after the `except` clause. Exceptions are cleared because with the traceback attached to them, they form a reference cycle with the stack frame, keeping all locals in that frame alive until the next garbage collection occurs.
+Before an `except` clause’s suite is executed, the exception is stored in the [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module, where it can be accessed from within the body of the `except` clause by calling [`sys.exception()`](https://docs.python.org/3/library/sys.html#sys.exception "sys.exception"). When leaving an exception handler, the exception stored in the [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module is reset to its previous value:
+>>>```
+>>> print(sys.exception())
+None
+>>> try:
+...   raise TypeError
+... except:
+...   print(repr(sys.exception()))
+...   try:
+...      raise ValueError
+...   except:
+...     print(repr(sys.exception()))
+...   print(repr(sys.exception()))
+...
+TypeError()
+ValueError()
+TypeError()
+>>> print(sys.exception())
+None
+
+```
+
+### 8.4.2. `except*` clause[¶](https://docs.python.org/3/reference/compound_stmts.html#except-star "Link to this heading")
+The `except*` clause(s) are used for handling [`ExceptionGroup`](https://docs.python.org/3/library/exceptions.html#ExceptionGroup "ExceptionGroup")s. The exception type for matching is interpreted as in the case of [`except`](https://docs.python.org/3/reference/compound_stmts.html#except), but in the case of exception groups we can have partial matches when the type matches some of the exceptions in the group. This means that multiple `except*` clauses can execute, each handling part of the exception group. Each clause executes at most once and handles an exception group of all matching exceptions. Each exception in the group is handled by at most one `except*` clause, the first that matches it.
+>>>```
+>>> try:
+...   raise ExceptionGroup("eg",
+...     [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+... except* TypeError as e:
+...   print(f'caught {type(e)} with nested {e.exceptions}')
+... except* OSError as e:
+...   print(f'caught {type(e)} with nested {e.exceptions}')
+...
+caught <class 'ExceptionGroup'> with nested (TypeError(2),)
+caught <class 'ExceptionGroup'> with nested (OSError(3), OSError(4))
+ + Exception Group Traceback (most recent call last):
+ |  File "<stdin>", line 2, in <module>
+ | ExceptionGroup: eg
+ +-+---------------- 1 ----------------
+  | ValueError: 1
+  +------------------------------------
+
+```
+
+Any remaining exceptions that were not handled by any `except*` clause are re-raised at the end, along with all exceptions that were raised from within the `except*` clauses. If this list contains more than one exception to reraise, they are combined into an exception group.
+If the raised exception is not an exception group and its type matches one of the `except*` clauses, it is caught and wrapped by an exception group with an empty message string.
+>>>```
+>>> try:
+...   raise BlockingIOError
+... except* BlockingIOError as e:
+...   print(repr(e))
+...
+ExceptionGroup('', (BlockingIOError()))

@@ -1,0 +1,96 @@
+Title: Building Bigger Applications with FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/bigger-applications/
+Summary: This chunk demonstrates how to set up a FastAPI application that includes multiple routers, such as users, items, and an admin router. It details how to apply dependencies, prefixes, tags, and custom responses for the admin module without modifying the original `APIRouter`, allowing for reuse in other projects.
+---
+
+```
+fromfastapiimport Depends, FastAPI
+from.dependenciesimport get_query_token, get_token_header
+from.internalimport admin
+from.routersimport items, users
+app = FastAPI(dependencies=[Depends(get_query_token)])
+app.include_router(users.router)
+app.include_router(items.router)
+app.include_router(
+  admin.router,
+  prefix="/admin",
+  tags=["admin"],
+  dependencies=[Depends(get_token_header)],
+  responses={418: {"description": "I'm a teapot"}},
+)
+@app.get("/")
+async defroot():
+  return {"message": "Hello Bigger Applications!"}
+
+```
+
+That way, the original `APIRouter` will stay unmodified, so we can still share that same `app/internal/admin.py` file with other projects in the organization.
+The result is that in our app, each of the _path operations_ from the `admin` module will have:
+  * The prefix `/admin`.
+  * The tag `admin`.
+  * The dependency `get_token_header`.
+  * The response `418`. 🍵
+
+
+But that will only affect that `APIRouter` in our app, not in any other code that uses it.
+So, for example, other projects could use the same `APIRouter` with a different authentication method.
+### Include a _path operation_[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#include-a-path-operation "Permanent link")
+We can also add _path operations_ directly to the `FastAPI` app.
+Here we do it... just to show that we can 🤷:
+app/main.py```
+fromfastapiimport Depends, FastAPI
+from.dependenciesimport get_query_token, get_token_header
+from.internalimport admin
+from.routersimport items, users
+app = FastAPI(dependencies=[Depends(get_query_token)])
+app.include_router(users.router)
+app.include_router(items.router)
+app.include_router(
+  admin.router,
+  prefix="/admin",
+  tags=["admin"],
+  dependencies=[Depends(get_token_header)],
+  responses={418: {"description": "I'm a teapot"}},
+)
+@app.get("/")
+async defroot():
+  return {"message": "Hello Bigger Applications!"}
+
+```
+
+and it will work correctly, together with all the other _path operations_ added with `app.include_router()`.
+Very Technical Details
+**Note** : this is a very technical detail that you probably can **just skip**.
+The `APIRouter`s are not "mounted", they are not isolated from the rest of the application.
+This is because we want to include their _path operations_ in the OpenAPI schema and the user interfaces.
+As we cannot just isolate them and "mount" them independently of the rest, the _path operations_ are "cloned" (re-created), not included directly.
+## Check the automatic API docs[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#check-the-automatic-api-docs "Permanent link")
+Now, run your app:
+```
+
+fast →[](https://fastapi.tiangolo.com/tutorial/bigger-applications/)fastapi dev app/main.pyINFO:   Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)restart ↻[](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
+
+```
+
+And open the docs at <http://127.0.0.1:8000/docs>.
+You will see the automatic API docs, including the paths from all the submodules, using the correct paths (and prefixes) and the correct tags:
+![](https://fastapi.tiangolo.com/img/tutorial/bigger-applications/image01.png)
+## Include the same router multiple times with different `prefix`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#include-the-same-router-multiple-times-with-different-prefix "Permanent link")
+You can also use `.include_router()` multiple times with the _same_ router using different prefixes.
+This could be useful, for example, to expose the same API under different prefixes, e.g. `/api/v1` and `/api/latest`.
+This is an advanced usage that you might not really need, but it's there in case you do.
+## Include an `APIRouter` in another[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#include-an-apirouter-in-another "Permanent link")
+The same way you can include an `APIRouter` in a `FastAPI` application, you can include an `APIRouter` in another `APIRouter` using:
+```
+router.include_router(other_router)
+
+```
+
+Make sure you do it before including `router` in the `FastAPI` app, so that the _path operations_ from `other_router` are also included.
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  SQL (Relational) Databases  ](https://fastapi.tiangolo.com/tutorial/sql-databases/) [ Next  Background Tasks  ](https://fastapi.tiangolo.com/tutorial/background-tasks/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

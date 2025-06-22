@@ -1,0 +1,73 @@
+Title: JSONEncoder Methods: default and encode
+URL: https://docs.python.org/3/library/json.html
+Summary: This section discusses two methods of the JSONEncoder class in Python: `default` and `encode`. The `default` method should be overridden in subclasses to return a serializable object or call the base implementation to raise a TypeError, with an example provided for handling iterators. The `encode` method converts a Python data structure into a JSON string representation.
+---
+
+default(_o_)[¶](https://docs.python.org/3/library/json.html#json.JSONEncoder.default "Link to this definition")
+    
+Implement this method in a subclass such that it returns a serializable object for _o_ , or calls the base implementation (to raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError")).
+For example, to support arbitrary iterators, you could implement [`default()`](https://docs.python.org/3/library/json.html#json.JSONEncoder.default "json.JSONEncoder.default") like this:
+```
+defdefault(self, o):
+  try:
+    iterable = iter(o)
+  except TypeError:
+    pass
+  else:
+    return list(iterable)
+  # Let the base class default method raise the TypeError
+  return super().default(o)
+
+```
+
+
+encode(_o_)[¶](https://docs.python.org/3/library/json.html#json.JSONEncoder.encode "Link to this definition")
+    
+Return a JSON string representation of a Python data structure, _o_. For example:
+>>>```
+>>> json.JSONEncoder().encode({"foo": ["bar", "baz"]})
+'{"foo": ["bar", "baz"]}'
+
+```
+
+
+iterencode(_o_)[¶](https://docs.python.org/3/library/json.html#json.JSONEncoder.iterencode "Link to this definition")
+    
+Encode the given object, _o_ , and yield each string representation as available. For example:
+```
+for chunk in json.JSONEncoder().iterencode(bigobject):
+  mysocket.write(chunk)
+
+```
+
+## Exceptions[¶](https://docs.python.org/3/library/json.html#exceptions "Link to this heading") 
+
+_exception_ json.JSONDecodeError(_msg_ , _doc_ , _pos_)[¶](https://docs.python.org/3/library/json.html#json.JSONDecodeError "Link to this definition")
+    
+Subclass of [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") with the following additional attributes: 
+
+msg[¶](https://docs.python.org/3/library/json.html#json.JSONDecodeError.msg "Link to this definition")
+    
+The unformatted error message. 
+
+doc[¶](https://docs.python.org/3/library/json.html#json.JSONDecodeError.doc "Link to this definition")
+    
+The JSON document being parsed. 
+
+pos[¶](https://docs.python.org/3/library/json.html#json.JSONDecodeError.pos "Link to this definition")
+    
+The start index of _doc_ where parsing failed. 
+
+lineno[¶](https://docs.python.org/3/library/json.html#json.JSONDecodeError.lineno "Link to this definition")
+    
+The line corresponding to _pos_. 
+
+colno[¶](https://docs.python.org/3/library/json.html#json.JSONDecodeError.colno "Link to this definition")
+    
+The column corresponding to _pos_.
+Added in version 3.5.
+## Standard Compliance and Interoperability[¶](https://docs.python.org/3/library/json.html#standard-compliance-and-interoperability "Link to this heading")
+The JSON format is specified by [**RFC 7159**](https://datatracker.ietf.org/doc/html/rfc7159.html) and by [ECMA-404](https://ecma-international.org/publications-and-standards/standards/ecma-404/). This section details this module’s level of compliance with the RFC. For simplicity, [`JSONEncoder`](https://docs.python.org/3/library/json.html#json.JSONEncoder "json.JSONEncoder") and [`JSONDecoder`](https://docs.python.org/3/library/json.html#json.JSONDecoder "json.JSONDecoder") subclasses, and parameters other than those explicitly mentioned, are not considered.
+This module does not comply with the RFC in a strict fashion, implementing some extensions that are valid JavaScript but not valid JSON. In particular:
+  * Infinite and NaN number values are accepted and output;
+  * Repeated names within an object are accepted, and only the value of the last name-value pair is used.

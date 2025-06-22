@@ -1,0 +1,78 @@
+Title: Logging Configuration for Non-root Loggers
+URL: https://docs.python.org/3/library/logging.config.html
+Summary: This section explains how entries such as `level`, `handlers`, `propagate`, and `qualname` are interpreted for non-root loggers in Python's logging configuration. It details how a non-root logger's level can be tied to its parent loggers and illustrates the configuration of a handler using a `StreamHandler` with a specified formatter and output arguments.
+---
+
+```
+
+The `level` and `handlers` entries are interpreted as for the root logger, except that if a non-root logger’s level is specified as `NOTSET`, the system consults loggers higher up the hierarchy to determine the effective level of the logger. The `propagate` entry is set to 1 to indicate that messages must propagate to handlers higher up the logger hierarchy from this logger, or 0 to indicate that messages are **not** propagated to handlers up the hierarchy. The `qualname` entry is the hierarchical channel name of the logger, that is to say the name used by the application to get the logger.
+Sections which specify handler configuration are exemplified by the following.
+```
+[handler_hand01]
+class=StreamHandler
+level=NOTSET
+formatter=form01
+args=(sys.stdout,)
+
+```
+
+The `class` entry indicates the handler’s class (as determined by [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") in the `logging` package’s namespace). The `level` is interpreted as for loggers, and `NOTSET` is taken to mean ‘log everything’.
+The `formatter` entry indicates the key name of the formatter for this handler. If blank, a default formatter (`logging._defaultFormatter`) is used. If a name is specified, it must appear in the `[formatters]` section and have a corresponding section in the configuration file.
+The `args` entry, when [evaluated](https://docs.python.org/3/library/functions.html#func-eval) in the context of the `logging` package’s namespace, is the list of arguments to the constructor for the handler class. Refer to the constructors for the relevant handlers, or to the examples below, to see how typical entries are constructed. If not provided, it defaults to `()`.
+The optional `kwargs` entry, when [evaluated](https://docs.python.org/3/library/functions.html#func-eval) in the context of the `logging` package’s namespace, is the keyword argument dict to the constructor for the handler class. If not provided, it defaults to `{}`.
+```
+[handler_hand02]
+class=FileHandler
+level=DEBUG
+formatter=form02
+args=('python.log', 'w')
+[handler_hand03]
+class=handlers.SocketHandler
+level=INFO
+formatter=form03
+args=('localhost', handlers.DEFAULT_TCP_LOGGING_PORT)
+[handler_hand04]
+class=handlers.DatagramHandler
+level=WARN
+formatter=form04
+args=('localhost', handlers.DEFAULT_UDP_LOGGING_PORT)
+[handler_hand05]
+class=handlers.SysLogHandler
+level=ERROR
+formatter=form05
+args=(('localhost', handlers.SYSLOG_UDP_PORT), handlers.SysLogHandler.LOG_USER)
+[handler_hand06]
+class=handlers.NTEventLogHandler
+level=CRITICAL
+formatter=form06
+args=('Python Application', '', 'Application')
+[handler_hand07]
+class=handlers.SMTPHandler
+level=WARN
+formatter=form07
+args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
+kwargs={'timeout': 10.0}
+[handler_hand08]
+class=handlers.MemoryHandler
+level=NOTSET
+formatter=form08
+target=
+args=(10, ERROR)
+[handler_hand09]
+class=handlers.HTTPHandler
+level=NOTSET
+formatter=form09
+args=('localhost:9022', '/log', 'GET')
+kwargs={'secure': True}
+
+```
+
+Sections which specify formatter configuration are typified by the following.
+```
+[formatter_form01]
+format=F1 %(asctime)s %(levelname)s %(message)s %(customfield)s
+datefmt=
+style=%
+validate=True
+defaults={'customfield':'defaultvalue'}
+class=logging.Formatter

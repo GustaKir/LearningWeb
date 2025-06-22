@@ -1,0 +1,59 @@
+Title: SnowflakeConnection.query Method
+URL: https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowflakeconnection
+Summary: The SnowflakeConnection.query method in Streamlit (version 1.44.0) allows users to execute read-only SQL queries with caching and error handling features. Queries run without a specified 'ttl' will be cached indefinitely, mirroring the behavior of 'st.cache_data'.
+---
+
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowflakeconnection#snowflakeconnectionquery)SnowflakeConnection.query
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Run a read-only SQL query.
+This method implements query result caching and simple error handling/retries. The caching behavior is identical to that of using `@st.cache_data`.
+Note
+Queries that are run without a specified `ttl` are cached indefinitely.
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/snowflake_connection.py#L277 "View st.query source code on GitHub")  
+---  
+SnowflakeConnection.query(sql, *, ttl=None, show_spinner="Running `snowflake.query(...)`.", params=None, **kwargs)  
+Parameters  
+sql (str) |  The read-only SQL query to execute.  
+ttl (float, int, timedelta or None) |  The maximum number of seconds to keep results in the cache. If this is `None` (default), cached results do not expire with time.  
+show_spinner (boolean or string) |  Whether to enable the spinner. When a cached query is executed, no spinner is displayed because the result is immediately available. When a new query is executed, the default is to show a spinner with the message "Running `snowflake.query(...)`." If this is `False`, no spinner displays while executing the query. If this is a string, the string will be used as the message for the spinner.  
+params (list, tuple, dict or None) |  List of parameters to pass to the Snowflake Connector for Python `Cursor.execute()` method. This connector supports binding data to a SQL statement using qmark bindings. For more information and examples, see the [Snowflake Connector for Python documentation](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-example#using-qmark-or-numeric-binding). This defaults to `None`.  
+Returns  
+(pandas.DataFrame) | The result of running the query, formatted as a pandas DataFrame.  
+#### Example
+```
+import streamlit as st
+conn = st.connection("snowflake")
+df = conn.query("SELECT * FROM my_table")
+st.dataframe(df)
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowflakeconnection#snowflakeconnectionraw_connection)SnowflakeConnection.raw_connection
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Access the underlying connection object from the Snowflake Connector for Python.
+For information on how to use the Snowflake Connector for Python, see the [Snowflake Connector for Python documentation](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-example).
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/snowflake_connection.py#L488 "View st.raw_connection source code on GitHub")  
+---  
+SnowflakeConnection.raw_connection  
+Returns  
+(snowflake.connector.connection.SnowflakeConnection) | The connection object.  
+#### Example
+The following example uses a cursor to submit an asynchronous query, saves the query ID, then periodically checks the query status through the connection before retrieving the results.
+```
+import streamlit as st
+import time
+conn = st.connection("snowflake")
+cur = conn.cursor()
+cur.execute_async("SELECT * FROM my_table")
+query_id = cur.sfqid
+while True:
+  status = conn.raw_connection.get_query_status(query_id)
+  if conn.raw_connection.is_still_running(status):
+    time.sleep(1)
+  else:
+    break
+cur.get_results_from_sfqid(query_id)
+df = cur.fetchall()

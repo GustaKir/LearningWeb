@@ -1,0 +1,60 @@
+Title: Tkinter Event Fields and Index Parameters
+URL: https://docs.python.org/3/library/tkinter.html
+Summary: This section describes how to access the widget field in event callbacks using `turn_red()` and provides a table of event fields available in Tkinter, including their Tk representation. It also introduces the concept of 'index' parameters necessary for certain widgets like Text, Entry, and Menu to identify specific locations or items.
+---
+
+```
+
+Notice how the widget field of the event is being accessed in the `turn_red()` callback. This field contains the widget that caught the X event. The following table lists the other event fields you can access, and how they are denoted in Tk, which can be useful when referring to the Tk man pages.
+Tk | Tkinter Event Field | Tk | Tkinter Event Field  
+---|---|---|---  
+%f | focus | %A | char  
+%h | height | %E | send_event  
+%k | keycode | %K | keysym  
+%s | state | %N | keysym_num  
+%t | time | %T | type  
+%w | width | %W | widget  
+%x | x | %X | x_root  
+%y | y | %Y | y_root  
+### The index Parameter[¶](https://docs.python.org/3/library/tkinter.html#the-index-parameter "Link to this heading")
+A number of widgets require “index” parameters to be passed. These are used to point at a specific place in a Text widget, or to particular characters in an Entry widget, or to particular menu items in a Menu widget. 
+
+Entry widget indexes (index, view index, etc.)
+    
+Entry widgets have options that refer to character positions in the text being displayed. You can use these [`tkinter`](https://docs.python.org/3/library/tkinter.html#module-tkinter "tkinter: Interface to Tcl/Tk for graphical user interfaces") functions to access these special points in text widgets: 
+
+Text widget indexes
+    
+The index notation for Text widgets is very rich and is best described in the Tk man pages. 
+
+Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
+    
+Some options and methods for menus manipulate specific menu entries. Anytime a menu index is needed for an option or a parameter, you may pass in:
+  * an integer which refers to the numeric position of the entry in the widget, counted from the top, starting with 0;
+  * the string `"active"`, which refers to the menu position that is currently under the cursor;
+  * the string `"last"` which refers to the last menu item;
+  * An integer preceded by `@`, as in `@6`, where the integer is interpreted as a y pixel coordinate in the menu’s coordinate system;
+  * the string `"none"`, which indicates no menu entry at all, most often used with menu.activate() to deactivate all entries, and finally,
+  * a text string that is pattern matched against the label of the menu entry, as scanned from the top of the menu to the bottom. Note that this index type is considered after all the others, which means that matches for menu items labelled `last`, `active`, or `none` may be interpreted as the above literals, instead.
+
+
+### Images[¶](https://docs.python.org/3/library/tkinter.html#images "Link to this heading")
+Images of different formats can be created through the corresponding subclass of `tkinter.Image`:
+  * `BitmapImage` for images in XBM format.
+  * `PhotoImage` for images in PGM, PPM, GIF and PNG formats. The latter is supported starting with Tk 8.6.
+
+
+Either type of image is created through either the `file` or the `data` option (other options are available as well).
+Changed in version 3.13: Added the `PhotoImage` method `copy_replace()` to copy a region from one image to other image, possibly with pixel zooming and/or subsampling. Add _from_coords_ parameter to `PhotoImage` methods `copy()`, `zoom()` and `subsample()`. Add _zoom_ and _subsample_ parameters to `PhotoImage` method `copy()`.
+The image object can then be used wherever an `image` option is supported by some widget (e.g. labels, buttons, menus). In these cases, Tk will not keep a reference to the image. When the last Python reference to the image object is deleted, the image data is deleted as well, and Tk will display an empty box wherever the image was used.
+See also
+The [Pillow](https://python-pillow.org/) package adds support for formats such as BMP, JPEG, TIFF, and WebP, among others.
+## File Handlers[¶](https://docs.python.org/3/library/tkinter.html#file-handlers "Link to this heading")
+Tk allows you to register and unregister a callback function which will be called from the Tk mainloop when I/O is possible on a file descriptor. Only one handler may be registered per file descriptor. Example code:
+```
+importtkinter
+widget = tkinter.Tk()
+mask = tkinter.READABLE | tkinter.WRITABLE
+widget.tk.createfilehandler(file, mask, callback)
+...
+widget.tk.deletefilehandler(file)

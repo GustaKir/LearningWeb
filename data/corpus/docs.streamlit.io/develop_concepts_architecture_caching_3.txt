@@ -1,0 +1,22 @@
+Title: Streamlit Caching: Overview and Basic Usage
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: This documentation segment introduces Streamlit's caching decorators, focusing on `st.cache_data` for functions that return various data types and the efficient reuse of cached values within user sessions. It highlights scenarios for caching, distinguishing between the use of `st.cache_data` and `st.cache_resource`.
+---
+
+![Streamlit's two caching decorators and their use cases. Use st.cache_data for anything you'd store in a database. Use st.cache_resource for anything you can't store in a database, like a connection to a database or a machine learning model.](https://docs.streamlit.io/images/caching-high-level-diagram.png)
+Streamlit's two caching decorators and their use cases.
+## [](https://docs.streamlit.io/develop/concepts/architecture/caching#basic-usage)Basic usage
+### [](https://docs.streamlit.io/develop/concepts/architecture/caching#stcache_data)st.cache_data
+`st.cache_data` is your go-to command for all functions that return data – whether DataFrames, NumPy arrays, str, int, float, or other serializable types. It's the right command for almost all use cases! Within each user session, an `@st.cache_data`-decorated function returns a _copy_ of the cached return value (if the value is already cached).
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#usage)Usage
+Let's look at an example of using `st.cache_data`. Suppose your app loads the [Uber ride-sharing dataset](https://github.com/plotly/datasets/blob/master/uber-rides-data1.csv) – a CSV file of 50 MB – from the internet into a DataFrame:
+`def load_data(url):   df = pd.read_csv(url) # 👈 Download the data return df df = load_data("https://github.com/plotly/datasets/raw/master/uber-rides-data1.csv") st.dataframe(df) st.button("Rerun") `
+Running the `load_data` function takes 2 to 30 seconds, depending on your internet connection. (Tip: if you are on a slow connection, use [this 5 MB dataset instead](https://github.com/plotly/datasets/blob/master/26k-consumer-complaints.csv)). Without caching, the download is rerun each time the app is loaded or with user interaction. Try it yourself by clicking the button we added! Not a great experience… 😕
+Now let's add the `@st.cache_data` decorator on `load_data`:
+`@st.cache_data # 👈 Add the caching decorator def load_data(url):   df = pd.read_csv(url) return df df = load_data("https://github.com/plotly/datasets/raw/master/uber-rides-data1.csv") st.dataframe(df) st.button("Rerun") `
+Run the app again. You'll notice that the slow download only happens on the first run. Every subsequent rerun should be almost instant! 💨
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#behavior)Behavior
+How does this work? Let's go through the behavior of `st.cache_data` step by step:
+  * On the first run, Streamlit recognizes that it has never called the `load_data` function with the specified parameter value (the URL of the CSV file) So it runs the function and downloads the data.
+  * Now our caching mechanism becomes active: the returned DataFrame is serialized (converted to bytes) via [pickle](https://docs.python.org/3/library/pickle.html) and stored in the cache (together with the value of the `url` parameter).
+  * On the next run, Streamlit checks the cache for an entry of `load_data` with the specific `url`. There is one! So it retrieves the cached object, deserializes it to a DataFrame, and returns it instead of re-running the function and downloading the data again.

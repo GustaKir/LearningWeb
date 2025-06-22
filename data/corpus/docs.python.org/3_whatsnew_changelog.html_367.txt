@@ -1,0 +1,46 @@
+Title: C API Enhancements in Debug Mode
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: The limited C API is now supported in debug mode if the `Py_DEBUG` macro is defined. Functions like `Py_INCREF()` and `Py_DECREF()` are implemented as opaque calls instead of direct member access when targeting Python 3.10 or newer, allowing better compatibility with debug builds.
+---
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id307 "Link to this heading")
+  * [bpo-43688](https://bugs.python.org/issue?@action=redirect&bpo=43688): The limited C API is now supported if Python is built in debug mode (if the `Py_DEBUG` macro is defined). In the limited C API, the [`Py_INCREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_INCREF "Py_INCREF") and [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF") functions are now implemented as opaque function calls, rather than accessing directly the [`PyObject.ob_refcnt`](https://docs.python.org/3/c-api/typeobj.html#c.PyObject.ob_refcnt "PyObject.ob_refcnt") member, if Python is built in debug mode and the `Py_LIMITED_API` macro targets Python 3.10 or newer. It became possible to support the limited C API in debug mode because the [`PyObject`](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject") structure is the same in release and debug mode since Python 3.8 (see [bpo-36465](https://bugs.python.org/issue?@action=redirect&bpo=36465)).
+The limited C API is still not supported in the `--with-trace-refs` special build (`Py_TRACE_REFS` macro).
+Patch by Victor Stinner.
+  * [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244): Remove the `pyarena.h` header file with functions:
+    * `PyArena_New()`
+    * `PyArena_Free()`
+    * `PyArena_Malloc()`
+    * `PyArena_AddPyObject()`
+These functions were undocumented, excluded from the limited C API, and were only used internally by the compiler. Patch by Victor Stinner.
+  * [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244): Remove the compiler and parser functions using `struct _mod` type, because the public AST C API was removed:
+    * `PyAST_Compile()`
+    * `PyAST_CompileEx()`
+    * `PyAST_CompileObject()`
+    * `PyFuture_FromAST()`
+    * `PyFuture_FromASTObject()`
+    * `PyParser_ASTFromFile()`
+    * `PyParser_ASTFromFileObject()`
+    * `PyParser_ASTFromFilename()`
+    * `PyParser_ASTFromString()`
+    * `PyParser_ASTFromStringObject()`
+These functions were undocumented and excluded from the limited C API. Patch by Victor Stinner.
+  * [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244): Remove `ast.h`, `asdl.h`, and `Python-ast.h` header files. These functions were undocumented and excluded from the limited C API. Most names defined by these header files were not prefixed by `Py` and so could create names conflicts. For example, `Python-ast.h` defined a `Yield` macro which was conflict with the `Yield` name used by the Windows `<winbase.h>` header. Use the Python [`ast`](https://docs.python.org/3/library/ast.html#module-ast "ast: Abstract Syntax Tree classes and manipulation.") module instead. Patch by Victor Stinner.
+  * [bpo-43541](https://bugs.python.org/issue?@action=redirect&bpo=43541): Fix a `PyEval_EvalCodeEx()` regression: fix reference counting on builtins. Patch by Victor Stinner.
+  * [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244): Remove the `symtable.h` header file and the undocumented functions:
+    * `PyST_GetScope()`
+    * `PySymtable_Build()`
+    * `PySymtable_BuildObject()`
+    * `PySymtable_Free()`
+    * `Py_SymtableString()`
+    * `Py_SymtableStringObject()`
+The `Py_SymtableString()` function was part the stable ABI by mistake but it could not be used, because the `symtable.h` header file was excluded from the limited C API.
+The Python [`symtable`](https://docs.python.org/3/library/symtable.html#module-symtable "symtable: Interface to the compiler's internal symbol tables.") module remains available and is unchanged.
+Patch by Victor Stinner.
+  * [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244): Remove the `PyAST_Validate()` function. It is no longer possible to build a AST object (`mod_ty` type) with the public C API. The function was already excluded from the limited C API ([**PEP 384**](https://peps.python.org/pep-0384/)). Patch by Victor Stinner.
+
+
+## Python 3.10.0 alpha 6[¶](https://docs.python.org/3/whatsnew/changelog.html#python-3-10-0-alpha-6 "Link to this heading")
+_Release date: 2021-03-01_
+### Security[¶](https://docs.python.org/3/whatsnew/changelog.html#id308 "Link to this heading")
+  * [bpo-42967](https://bugs.python.org/issue?@action=redirect&bpo=42967): Fix web cache poisoning vulnerability by defaulting the query args separator to `&`, and allowing the user to choose a custom separator.

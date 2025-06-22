@@ -1,0 +1,17 @@
+Title: Py_LeaveRecursiveCall Function
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: The `Py_LeaveRecursiveCall` function is part of the stable ABI since version 3.9 and is used to end a recursive call initiated by `Py_EnterRecursiveCall`. It must be called once for each successful invocation of `Py_EnterRecursiveCall`. The function is available in the limited API and is essential for proper implementation of `tp_repr` for container types, requiring special recursion handling.
+---
+
+voidPy_LeaveRecursiveCall(void)[¶](https://docs.python.org/3/c-api/exceptions.html#c.Py_LeaveRecursiveCall "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.9._
+Ends a [`Py_EnterRecursiveCall()`](https://docs.python.org/3/c-api/exceptions.html#c.Py_EnterRecursiveCall "Py_EnterRecursiveCall"). Must be called once for each _successful_ invocation of [`Py_EnterRecursiveCall()`](https://docs.python.org/3/c-api/exceptions.html#c.Py_EnterRecursiveCall "Py_EnterRecursiveCall").
+Changed in version 3.9: This function is now also available in the [limited API](https://docs.python.org/3/c-api/stable.html#limited-c-api).
+Properly implementing [`tp_repr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_repr "PyTypeObject.tp_repr") for container types requires special recursion handling. In addition to protecting the stack, [`tp_repr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_repr "PyTypeObject.tp_repr") also needs to track objects to prevent cycles. The following two functions facilitate this functionality. Effectively, these are the C equivalent to [`reprlib.recursive_repr()`](https://docs.python.org/3/library/reprlib.html#reprlib.recursive_repr "reprlib.recursive_repr"). 
+
+intPy_ReprEnter([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*object)[¶](https://docs.python.org/3/c-api/exceptions.html#c.Py_ReprEnter "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Called at the beginning of the [`tp_repr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_repr "PyTypeObject.tp_repr") implementation to detect cycles.
+If the object has already been processed, the function returns a positive integer. In that case the [`tp_repr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_repr "PyTypeObject.tp_repr") implementation should return a string object indicating a cycle. As examples, [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") objects return `{...}` and [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") objects return `[...]`.
+The function will return a negative integer if the recursion limit is reached. In that case the [`tp_repr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_repr "PyTypeObject.tp_repr") implementation should typically return `NULL`.
+Otherwise, the function returns zero and the [`tp_repr`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_repr "PyTypeObject.tp_repr") implementation can continue normally.

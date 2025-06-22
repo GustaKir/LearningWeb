@@ -1,0 +1,40 @@
+Title: Introspection Helpers in the Typing Library
+URL: https://docs.python.org/3/library/typing.html
+Summary: The section discusses returning instances of private classes and provides a description of the `typing.get_type_hints` function, which returns a dictionary of type hints for a function, method, module, or class object. It highlights how this function differs from `obj.__annotations__` by evaluating forward references in provided namespaces.
+---
+
+```
+
+Note that returning instances of private classes is not recommended. It is usually preferable to make such classes public.
+### Introspection helpers[¶](https://docs.python.org/3/library/typing.html#introspection-helpers "Link to this heading") 
+
+typing.get_type_hints(_obj_ , _globalns =None_, _localns =None_, _include_extras =False_)[¶](https://docs.python.org/3/library/typing.html#typing.get_type_hints "Link to this definition")
+    
+Return a dictionary containing type hints for a function, method, module or class object.
+This is often the same as `obj.__annotations__`, but this function makes the following changes to the annotations dictionary:
+  * Forward references encoded as string literals or [`ForwardRef`](https://docs.python.org/3/library/typing.html#typing.ForwardRef "typing.ForwardRef") objects are handled by evaluating them in _globalns_ , _localns_ , and (where applicable) _obj_ ’s [type parameter](https://docs.python.org/3/reference/compound_stmts.html#type-params) namespace. If _globalns_ or _localns_ is not given, appropriate namespace dictionaries are inferred from _obj_.
+  * `None` is replaced with [`types.NoneType`](https://docs.python.org/3/library/types.html#types.NoneType "types.NoneType").
+  * If [`@no_type_check`](https://docs.python.org/3/library/typing.html#typing.no_type_check "typing.no_type_check") has been applied to _obj_ , an empty dictionary is returned.
+  * If _obj_ is a class `C`, the function returns a dictionary that merges annotations from `C`’s base classes with those on `C` directly. This is done by traversing [`C.__mro__`](https://docs.python.org/3/reference/datamodel.html#type.__mro__ "type.__mro__") and iteratively combining `__annotations__` dictionaries. Annotations on classes appearing earlier in the [method resolution order](https://docs.python.org/3/glossary.html#term-method-resolution-order) always take precedence over annotations on classes appearing later in the method resolution order.
+  * The function recursively replaces all occurrences of `Annotated[T, ...]` with `T`, unless _include_extras_ is set to `True` (see [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated "typing.Annotated") for more information).
+
+
+See also [`inspect.get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations"), a lower-level function that returns annotations more directly.
+Note
+If any forward references in the annotations of _obj_ are not resolvable or are not valid Python code, this function will raise an exception such as [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError"). For example, this can happen with imported [type aliases](https://docs.python.org/3/library/typing.html#type-aliases) that include forward references, or with names imported under [`if TYPE_CHECKING`](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING "typing.TYPE_CHECKING").
+Changed in version 3.9: Added `include_extras` parameter as part of [**PEP 593**](https://peps.python.org/pep-0593/). See the documentation on [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated "typing.Annotated") for more information.
+Changed in version 3.11: Previously, `Optional[t]` was added for function and method annotations if a default value equal to `None` was set. Now the annotation is returned unchanged. 
+
+typing.get_origin(_tp_)[¶](https://docs.python.org/3/library/typing.html#typing.get_origin "Link to this definition")
+    
+Get the unsubscripted version of a type: for a typing object of the form `X[Y, Z, ...]` return `X`.
+If `X` is a typing-module alias for a builtin or [`collections`](https://docs.python.org/3/library/collections.html#module-collections "collections: Container datatypes") class, it will be normalized to the original class. If `X` is an instance of [`ParamSpecArgs`](https://docs.python.org/3/library/typing.html#typing.ParamSpecArgs "typing.ParamSpecArgs") or [`ParamSpecKwargs`](https://docs.python.org/3/library/typing.html#typing.ParamSpecKwargs "typing.ParamSpecKwargs"), return the underlying [`ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec"). Return `None` for unsupported objects.
+Examples:
+```
+assert get_origin(str) is None
+assert get_origin(Dict[str, int]) is dict
+assert get_origin(Union[int, str]) is Union
+assert get_origin(Annotated[str, "metadata"]) is Annotated
+P = ParamSpec('P')
+assert get_origin(P.args) is P
+assert get_origin(P.kwargs) is P

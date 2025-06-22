@@ -1,0 +1,106 @@
+Title: Defining and Using TypedDict in Python
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section discusses the usage of `TypedDict`, allowing for the definition of dictionaries with a fixed set of keys. It explains the `total` argument for requiring or omitting keys, how to use `Required` to specify mandatory keys, and illustrates inheritance between `TypedDict` types.
+---
+
+```
+classPoint2D(TypedDict, total=False):
+  x: int
+  y: int
+# Alternative syntax
+Point2D = TypedDict('Point2D', {'x': int, 'y': int}, total=False)
+
+```
+
+This means that a `Point2D` `TypedDict` can have any of the keys omitted. A type checker is only expected to support a literal `False` or `True` as the value of the `total` argument. `True` is the default, and makes all items defined in the class body required.
+Individual keys of a `total=False` `TypedDict` can be marked as required using [`Required`](https://docs.python.org/3/library/typing.html#typing.Required "typing.Required"):
+```
+classPoint2D(TypedDict, total=False):
+  x: Required[int]
+  y: Required[int]
+  label: str
+# Alternative syntax
+Point2D = TypedDict('Point2D', {
+  'x': Required[int],
+  'y': Required[int],
+  'label': str
+}, total=False)
+
+```
+
+It is possible for a `TypedDict` type to inherit from one or more other `TypedDict` types using the class-based syntax. Usage:
+```
+classPoint3D(Point2D):
+  z: int
+
+```
+
+`Point3D` has three items: `x`, `y` and `z`. It is equivalent to this definition:
+```
+classPoint3D(TypedDict):
+  x: int
+  y: int
+  z: int
+
+```
+
+A `TypedDict` cannot inherit from a non-`TypedDict` class, except for [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic"). For example:
+```
+classX(TypedDict):
+  x: int
+classY(TypedDict):
+  y: int
+classZ(object): pass # A non-TypedDict class
+classXY(X, Y): pass # OK
+classXZ(X, Z): pass # raises TypeError
+
+```
+
+A `TypedDict` can be generic:
+```
+classGroup[T](TypedDict):
+  key: T
+  group: list[T]
+
+```
+
+To create a generic `TypedDict` that is compatible with Python 3.11 or lower, inherit from [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic") explicitly:
+```
+T = TypeVar("T")
+classGroup(TypedDict, Generic[T]):
+  key: T
+  group: list[T]
+
+```
+
+A `TypedDict` can be introspected via annotations dicts (see [Annotations Best Practices](https://docs.python.org/3/howto/annotations.html#annotations-howto) for more information on annotations best practices), [`__total__`](https://docs.python.org/3/library/typing.html#typing.TypedDict.__total__ "typing.TypedDict.__total__"), [`__required_keys__`](https://docs.python.org/3/library/typing.html#typing.TypedDict.__required_keys__ "typing.TypedDict.__required_keys__"), and [`__optional_keys__`](https://docs.python.org/3/library/typing.html#typing.TypedDict.__optional_keys__ "typing.TypedDict.__optional_keys__"). 
+
+__total__[¶](https://docs.python.org/3/library/typing.html#typing.TypedDict.__total__ "Link to this definition")
+    
+`Point2D.__total__` gives the value of the `total` argument. Example:
+>>>```
+>>> fromtypingimport TypedDict
+>>> classPoint2D(TypedDict): pass
+>>> Point2D.__total__
+True
+>>> classPoint2D(TypedDict, total=False): pass
+>>> Point2D.__total__
+False
+>>> classPoint3D(Point2D): pass
+>>> Point3D.__total__
+True
+
+```
+
+This attribute reflects _only_ the value of the `total` argument to the current `TypedDict` class, not whether the class is semantically total. For example, a `TypedDict` with `__total__` set to `True` may have keys marked with [`NotRequired`](https://docs.python.org/3/library/typing.html#typing.NotRequired "typing.NotRequired"), or it may inherit from another `TypedDict` with `total=False`. Therefore, it is generally better to use [`__required_keys__`](https://docs.python.org/3/library/typing.html#typing.TypedDict.__required_keys__ "typing.TypedDict.__required_keys__") and [`__optional_keys__`](https://docs.python.org/3/library/typing.html#typing.TypedDict.__optional_keys__ "typing.TypedDict.__optional_keys__") for introspection. 
+
+__required_keys__[¶](https://docs.python.org/3/library/typing.html#typing.TypedDict.__required_keys__ "Link to this definition")
+    
+Added in version 3.9. 
+
+__optional_keys__[¶](https://docs.python.org/3/library/typing.html#typing.TypedDict.__optional_keys__ "Link to this definition")
+    
+`Point2D.__required_keys__` and `Point2D.__optional_keys__` return [`frozenset`](https://docs.python.org/3/library/stdtypes.html#frozenset "frozenset") objects containing required and non-required keys, respectively.
+Keys marked with [`Required`](https://docs.python.org/3/library/typing.html#typing.Required "typing.Required") will always appear in `__required_keys__` and keys marked with [`NotRequired`](https://docs.python.org/3/library/typing.html#typing.NotRequired "typing.NotRequired") will always appear in `__optional_keys__`.
+For backwards compatibility with Python 3.10 and below, it is also possible to use inheritance to declare both required and non-required keys in the same `TypedDict` . This is done by declaring a `TypedDict` with one value for the `total` argument and then inheriting from it in another `TypedDict` with a different value for `total`:
+>>>

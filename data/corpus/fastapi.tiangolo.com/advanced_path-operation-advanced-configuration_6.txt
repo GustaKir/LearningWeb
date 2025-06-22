@@ -1,0 +1,125 @@
+Title: Advanced Path Operation Configuration in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/
+Summary: This section illustrates how to configure a POST path operation in FastAPI without declaring a Pydantic model. It shows how to read the raw request body as bytes, use a custom data reader function, and define the expected schema for the request body using OpenAPI configuration.
+---
+
+```
+fromfastapiimport FastAPI, Request
+app = FastAPI()
+defmagic_data_reader(raw_body: bytes):
+  return {
+    "size": len(raw_body),
+    "content": {
+      "name": "Maaaagic",
+      "price": 42,
+      "description": "Just kiddin', no magic here. ✨",
+    },
+  }
+@app.post(
+  "/items/",
+  openapi_extra={
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "required": ["name", "price"],
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "price": {"type": "number"},
+              "description": {"type": "string"},
+            },
+          }
+        }
+      },
+      "required": True,
+    },
+  },
+)
+async defcreate_item(request: Request):
+  raw_body = await request.body()
+  data = magic_data_reader(raw_body)
+  return data
+
+```
+
+In this example, we didn't declare any Pydantic model. In fact, the request body is not even parsed as JSON, it is read directly as `bytes`, and the function `magic_data_reader()` would be in charge of parsing it in some way.
+Nevertheless, we can declare the expected schema for the request body.
+### Custom OpenAPI content type[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#custom-openapi-content-type "Permanent link")
+Using this same trick, you could use a Pydantic model to define the JSON Schema that is then included in the custom OpenAPI schema section for the _path operation_.
+And you could do this even if the data type in the request is not JSON.
+For example, in this application we don't use FastAPI's integrated functionality to extract the JSON Schema from Pydantic models nor the automatic validation for JSON. In fact, we are declaring the request content type as YAML, not JSON:
+[Pydantic v2](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_7_1)[Pydantic v1](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_7_2)
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_8_1)
+```
+fromtypingimport List
+importyaml
+fromfastapiimport FastAPI, HTTPException, Request
+frompydanticimport BaseModel, ValidationError
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  tags: List[str]
+@app.post(
+  "/items/",
+  openapi_extra={
+    "requestBody": {
+      "content": {"application/x-yaml": {"schema": Item.model_json_schema()}},
+      "required": True,
+    },
+  },
+)
+async defcreate_item(request: Request):
+  raw_body = await request.body()
+  try:
+    data = yaml.safe_load(raw_body)
+  except yaml.YAMLError:
+    raise HTTPException(status_code=422, detail="Invalid YAML")
+  try:
+    item = Item.model_validate(data)
+  except ValidationError as e:
+    raise HTTPException(status_code=422, detail=e.errors(include_url=False))
+  return item
+
+```
+
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_9_1)
+```
+fromtypingimport List
+importyaml
+fromfastapiimport FastAPI, HTTPException, Request
+frompydanticimport BaseModel, ValidationError
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  tags: List[str]
+@app.post(
+  "/items/",
+  openapi_extra={
+    "requestBody": {
+      "content": {"application/x-yaml": {"schema": Item.schema()}},
+      "required": True,
+    },
+  },
+)
+async defcreate_item(request: Request):
+  raw_body = await request.body()
+  try:
+    data = yaml.safe_load(raw_body)
+  except yaml.YAMLError:
+    raise HTTPException(status_code=422, detail="Invalid YAML")
+  try:
+    item = Item.parse_obj(data)
+  except ValidationError as e:
+    raise HTTPException(status_code=422, detail=e.errors())
+  return item
+
+```
+
+Info
+In Pydantic version 1 the method to get the JSON Schema for a model was called `Item.schema()`, in Pydantic version 2, the method is called `Item.model_json_schema()`.
+Nevertheless, although we are not using the default integrated functionality, we are still using a Pydantic model to manually generate the JSON Schema for the data that we want to receive in YAML.
+Then we use the request directly, and extract the body as `bytes`. This means that FastAPI won't even try to parse the request payload as JSON.
+And then in our code, we parse that YAML content directly, and then we are again using the same Pydantic model to validate the YAML content:
+[Pydantic v2](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_10_1)[Pydantic v1](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_10_2)
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_11_1)

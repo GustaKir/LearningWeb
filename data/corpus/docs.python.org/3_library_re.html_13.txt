@@ -1,0 +1,70 @@
+Title: Changes in Regular Expression Escaping and Cache Management
+URL: https://docs.python.org/3/library/re.html
+Summary: This section outlines updates to regular expression escaping from versions 3.3 and 3.7, including specific characters that are no longer escaped. It also introduces `re.purge()` for clearing the regular expression cache and describes the `re.PatternError` exception, which occurs with invalid regular expressions.
+---
+
+```
+
+Changed in version 3.3: The `'_'` character is no longer escaped.
+Changed in version 3.7: Only characters that can have special meaning in a regular expression are escaped. As a result, `'!'`, `'"'`, `'%'`, `"'"`, `','`, `'/'`, `':'`, `';'`, `'<'`, `'='`, `'>'`, `'@'`, and `"`"` are no longer escaped. 
+
+re.purge()[¶](https://docs.python.org/3/library/re.html#re.purge "Link to this definition")
+    
+Clear the regular expression cache.
+### Exceptions[¶](https://docs.python.org/3/library/re.html#exceptions "Link to this heading") 
+
+_exception_ re.PatternError(_msg_ , _pattern =None_, _pos =None_)[¶](https://docs.python.org/3/library/re.html#re.PatternError "Link to this definition")
+    
+Exception raised when a string passed to one of the functions here is not a valid regular expression (for example, it might contain unmatched parentheses) or when some other error occurs during compilation or matching. It is never an error if a string contains no match for a pattern. The `PatternError` instance has the following additional attributes: 
+
+msg[¶](https://docs.python.org/3/library/re.html#re.PatternError.msg "Link to this definition")
+    
+The unformatted error message. 
+
+pattern[¶](https://docs.python.org/3/library/re.html#re.PatternError.pattern "Link to this definition")
+    
+The regular expression pattern. 
+
+pos[¶](https://docs.python.org/3/library/re.html#re.PatternError.pos "Link to this definition")
+    
+The index in _pattern_ where compilation failed (may be `None`). 
+
+lineno[¶](https://docs.python.org/3/library/re.html#re.PatternError.lineno "Link to this definition")
+    
+The line corresponding to _pos_ (may be `None`). 
+
+colno[¶](https://docs.python.org/3/library/re.html#re.PatternError.colno "Link to this definition")
+    
+The column corresponding to _pos_ (may be `None`).
+Changed in version 3.5: Added additional attributes.
+Changed in version 3.13: `PatternError` was originally named `error`; the latter is kept as an alias for backward compatibility.
+## Regular Expression Objects[¶](https://docs.python.org/3/library/re.html#regular-expression-objects "Link to this heading") 
+
+_class_ re.Pattern[¶](https://docs.python.org/3/library/re.html#re.Pattern "Link to this definition")
+    
+Compiled regular expression object returned by [`re.compile()`](https://docs.python.org/3/library/re.html#re.compile "re.compile").
+Changed in version 3.9: [`re.Pattern`](https://docs.python.org/3/library/re.html#re.Pattern "re.Pattern") supports `[]` to indicate a Unicode (str) or bytes pattern. See [Generic Alias Type](https://docs.python.org/3/library/stdtypes.html#types-genericalias). 
+
+Pattern.search(_string_[, _pos_[, _endpos_]])[¶](https://docs.python.org/3/library/re.html#re.Pattern.search "Link to this definition")
+    
+Scan through _string_ looking for the first location where this regular expression produces a match, and return a corresponding [`Match`](https://docs.python.org/3/library/re.html#re.Match "re.Match"). Return `None` if no position in the string matches the pattern; note that this is different from finding a zero-length match at some point in the string.
+The optional second parameter _pos_ gives an index in the string where the search is to start; it defaults to `0`. This is not completely equivalent to slicing the string; the `'^'` pattern character matches at the real beginning of the string and at positions just after a newline, but not necessarily at the index where the search is to start.
+The optional parameter _endpos_ limits how far the string will be searched; it will be as if the string is _endpos_ characters long, so only the characters from _pos_ to `endpos - 1` will be searched for a match. If _endpos_ is less than _pos_ , no match will be found; otherwise, if _rx_ is a compiled regular expression object, `rx.search(string, 0, 50)` is equivalent to `rx.search(string[:50], 0)`.
+>>>```
+>>> pattern = re.compile("d")
+>>> pattern.search("dog")   # Match at index 0
+<re.Match object; span=(0, 1), match='d'>
+>>> pattern.search("dog", 1) # No match; search doesn't include the "d"
+
+```
+
+
+Pattern.match(_string_[, _pos_[, _endpos_]])[¶](https://docs.python.org/3/library/re.html#re.Pattern.match "Link to this definition")
+    
+If zero or more characters at the _beginning_ of _string_ match this regular expression, return a corresponding [`Match`](https://docs.python.org/3/library/re.html#re.Match "re.Match"). Return `None` if the string does not match the pattern; note that this is different from a zero-length match.
+The optional _pos_ and _endpos_ parameters have the same meaning as for the [`search()`](https://docs.python.org/3/library/re.html#re.Pattern.search "re.Pattern.search") method.
+>>>```
+>>> pattern = re.compile("o")
+>>> pattern.match("dog")   # No match as "o" is not at the start of "dog".
+>>> pattern.match("dog", 1)  # Match as "o" is the 2nd character of "dog".
+<re.Match object; span=(1, 2), match='o'>

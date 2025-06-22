@@ -1,0 +1,40 @@
+Title: Process Forking in Python C API
+URL: https://docs.python.org/3/c-api/sys.html
+Summary: This section discusses the functions PyOS_AfterFork_Parent() and PyOS_AfterFork_Child(), which are part of the Stable ABI available since Python 3.7. PyOS_AfterFork_Parent() updates internal state in the parent process after forking, while PyOS_AfterFork_Child() handles the child process. Both functions should only be called from the main thread of the main interpreter following a fork() call.
+---
+
+voidPyOS_AfterFork_Parent()[¶](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork_Parent "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) on platforms with fork() since version 3.7._
+Function to update some internal state after a process fork. This should be called from the parent process after calling `fork()` or any similar function that clones the current process, regardless of whether process cloning was successful. Only available on systems where `fork()` is defined.
+Warning
+The C `fork()` call should only be made from the [“main” thread](https://docs.python.org/3/c-api/init.html#fork-and-threads) (of the [“main” interpreter](https://docs.python.org/3/c-api/init.html#sub-interpreter-support)). The same is true for `PyOS_AfterFork_Parent()`.
+Added in version 3.7. 
+
+voidPyOS_AfterFork_Child()[¶](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork_Child "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) on platforms with fork() since version 3.7._
+Function to update internal interpreter state after a process fork. This must be called from the child process after calling `fork()`, or any similar function that clones the current process, if there is any chance the process will call back into the Python interpreter. Only available on systems where `fork()` is defined.
+Warning
+The C `fork()` call should only be made from the [“main” thread](https://docs.python.org/3/c-api/init.html#fork-and-threads) (of the [“main” interpreter](https://docs.python.org/3/c-api/init.html#sub-interpreter-support)). The same is true for `PyOS_AfterFork_Child()`.
+Added in version 3.7.
+See also
+[`os.register_at_fork()`](https://docs.python.org/3/library/os.html#os.register_at_fork "os.register_at_fork") allows registering custom Python functions to be called by [`PyOS_BeforeFork()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_BeforeFork "PyOS_BeforeFork"), [`PyOS_AfterFork_Parent()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork_Parent "PyOS_AfterFork_Parent") and [`PyOS_AfterFork_Child()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork_Child "PyOS_AfterFork_Child"). 
+
+voidPyOS_AfterFork()[¶](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) on platforms with fork()._
+Function to update some internal state after a process fork; this should be called in the new process if the Python interpreter will continue to be used. If a new executable is loaded into the new process, this function does not need to be called.
+Deprecated since version 3.7: This function is superseded by [`PyOS_AfterFork_Child()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork_Child "PyOS_AfterFork_Child"). 
+
+intPyOS_CheckStack()[¶](https://docs.python.org/3/c-api/sys.html#c.PyOS_CheckStack "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) on platforms with USE_STACKCHECK since version 3.7._
+Return true when the interpreter runs out of stack space. This is a reliable check, but is only available when `USE_STACKCHECK` is defined (currently on certain versions of Windows using the Microsoft Visual C++ compiler). `USE_STACKCHECK` will be defined automatically; you should never change the definition in your own code. 
+
+typedefvoid(*PyOS_sighandler_t)(int)[¶](https://docs.python.org/3/c-api/sys.html#c.PyOS_sighandler_t "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._ 
+
+[PyOS_sighandler_t](https://docs.python.org/3/c-api/sys.html#c.PyOS_sighandler_t "PyOS_sighandler_t")PyOS_getsig(inti)[¶](https://docs.python.org/3/c-api/sys.html#c.PyOS_getsig "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return the current signal handler for signal _i_. This is a thin wrapper around either `sigaction()` or `signal()`. Do not call those functions directly! 
+
+[PyOS_sighandler_t](https://docs.python.org/3/c-api/sys.html#c.PyOS_sighandler_t "PyOS_sighandler_t")PyOS_setsig(inti, [PyOS_sighandler_t](https://docs.python.org/3/c-api/sys.html#c.PyOS_sighandler_t "PyOS_sighandler_t")h)[¶](https://docs.python.org/3/c-api/sys.html#c.PyOS_setsig "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Set the signal handler for signal _i_ to be _h_ ; return the old signal handler. This is a thin wrapper around either `sigaction()` or `signal()`. Do not call those functions directly!

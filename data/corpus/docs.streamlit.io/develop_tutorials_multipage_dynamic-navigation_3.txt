@@ -1,0 +1,51 @@
+Title: Defining Pages for Dynamic Navigation
+URL: https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation
+Summary: This section outlines steps for defining pages in a Streamlit multi-page app, including setting user roles and creating account and request pages with titles and icons for enhanced navigation.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#define-all-your-pages)Define all your pages
+  1. As a convenience, save `st.session_state.role` to a variable.
+`role = st.session_state.role `
+  2. Define your account pages.
+`logout_page = st.Page(logout, title="Log out", icon=":material/logout:") settings = st.Page("settings.py", title="Settings", icon=":material/settings:") `
+This gives each page a nice title and icon to make your navigation menu look neat and clean.
+  3. Define your request pages.
+`request_1 = st.Page( "request/request_1.py",   title="Request 1",   icon=":material/help:",   default=(role == "Requester"), ) request_2 = st.Page( "request/request_2.py", title="Request 2", icon=":material/bug_report:" ) `
+If you don't manually declare a default page in `st.navigation`, then the first page will automatically be the default. The first page in the menu will be "Log out" within an "Account" section of the menu. Therefore, you'll need to tell Streamlit what page each user should be directed to by default.
+This code dynamically sets `default=True` when the role is "Requester" and sets it to `False`, otherwise.
+  4. Define your remaining pages.
+`respond_1 = st.Page( "respond/respond_1.py",   title="Respond 1",   icon=":material/healing:",   default=(role == "Responder"), ) respond_2 = st.Page( "respond/respond_2.py", title="Respond 2", icon=":material/handyman:" ) admin_1 = st.Page( "admin/admin_1.py",   title="Admin 1",   icon=":material/person_add:",   default=(role == "Admin"), ) admin_2 = st.Page("admin/admin_2.py", title="Admin 2", icon=":material/security:") `
+Similar to the request pages, the `default` parameter is set for the other roles' default pages.
+  5. Group your pages into convenient lists.
+`account_pages = [logout_page, settings] request_pages = [request_1, request_2] respond_pages = [respond_1, respond_2] admin_pages = [admin_1, admin_2] `
+These are all the pages available to logged-in users.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/multipage/dynamic-navigation#define-your-common-elements-and-navigation)Define your common elements and navigation
+  1. Add a title to show on all pages.
+`st.title("Request manager") `
+Since you're calling the title command in your entrypoint file, this title will be visible on all pages. Elements created in your entrypoint file create a frame of common elements around all your pages.
+  2. Add a logo to your app.
+`st.logo("images/horizontal_blue.png", icon_image="images/icon_blue.png") `
+Once again, since you're calling this command in your entrypoint file, you won't need to also call it within each page.
+  3. Initialize a dictionary of page lists.
+`page_dict = {} `
+In the next step, you'll check the user's role and add pages to the dictionary that the user is allowed to access. When `st.navigation` receives a dictionary of page lists, it creates a navigation menu with groups of pages and section headers.
+  4. Build the dictionary of allowed pages by checking the user's role.
+`if st.session_state.role in ["Requester", "Admin"]:   page_dict["Request"] = request_pages if st.session_state.role in ["Responder", "Admin"]:   page_dict["Respond"] = respond_pages if st.session_state.role == "Admin":   page_dict["Admin"] = admin_pages `
+  5. Check if the user is allowed to access any pages and add the account pages if they are.
+`if len(page_dict) > 0:   pg = st.navigation({"Account": account_pages} | page_dict) `
+If `page_dict` is not empty, then the user is logged in. The `|` operator merges the two dictionaries, adding the account pages to the beginning.
+  6. Fallback to the login page if the user isn't logged in.
+`else:   pg = st.navigation([st.Page(login)]) `
+  7. Execute the page returned by `st.navigation`.
+`pg.run() `
+  8. Save your `streamlit_app.py` file and view your app!
+Try logging in, switching pages, and logging out. Try again with a different role.
+
+[Previous: Multipage apps](https://docs.streamlit.io/develop/tutorials/multipage)[Next: Build navigation with st.page_link](https://docs.streamlit.io/develop/tutorials/multipage/st.page_link-nav) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

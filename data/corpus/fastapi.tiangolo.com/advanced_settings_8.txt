@@ -1,0 +1,70 @@
+Title: Using lru_cache to Optimize Settings Retrieval
+URL: https://fastapi.tiangolo.com/advanced/settings/
+Summary: This section explains how the `lru_cache` decorator optimizes the `get_settings()` function by caching the returned `Settings` object, ensuring that subsequent calls retrieve the same instance without recalculating it. It also illustrates with an example of a cached function that returns a greeting based on given parameters.
+---
+
+```
+
+Then for any subsequent call of `get_settings()` in the dependencies for the next requests, instead of executing the internal code of `get_settings()` and creating a new `Settings` object, it will return the same object that was returned on the first call, again and again.
+#### `lru_cache` Technical Details[¶](https://fastapi.tiangolo.com/advanced/settings/#lru_cache-technical-details "Permanent link")
+`@lru_cache` modifies the function it decorates to return the same value that was returned the first time, instead of computing it again, executing the code of the function every time.
+So, the function below it will be executed once for each combination of arguments. And then the values returned by each of those combinations of arguments will be used again and again whenever the function is called with exactly the same combination of arguments.
+For example, if you have a function:
+```
+@lru_cache
+defsay_hi(name: str, salutation: str = "Ms."):
+  return f"Hello {salutation}{name}"
+
+```
+
+your program could execute like this:
+```
+sequenceDiagram
+participant code as Code
+participant function as say_hi()
+participant execute as Execute function
+  rect rgba(0, 255, 0, .1)
+    code ->> function: say_hi(name="Camila")
+    function ->> execute: execute function code
+    execute ->> code: return the result
+  end
+  rect rgba(0, 255, 255, .1)
+    code ->> function: say_hi(name="Camila")
+    function ->> code: return stored result
+  end
+  rect rgba(0, 255, 0, .1)
+    code ->> function: say_hi(name="Rick")
+    function ->> execute: execute function code
+    execute ->> code: return the result
+  end
+  rect rgba(0, 255, 0, .1)
+    code ->> function: say_hi(name="Rick", salutation="Mr.")
+    function ->> execute: execute function code
+    execute ->> code: return the result
+  end
+  rect rgba(0, 255, 255, .1)
+    code ->> function: say_hi(name="Rick")
+    function ->> code: return stored result
+  end
+  rect rgba(0, 255, 255, .1)
+    code ->> function: say_hi(name="Camila")
+    function ->> code: return stored result
+  end
+```
+
+In the case of our dependency `get_settings()`, the function doesn't even take any arguments, so it always returns the same value.
+That way, it behaves almost as if it was just a global variable. But as it uses a dependency function, then we can override it easily for testing.
+`@lru_cache` is part of `functools` which is part of Python's standard library, you can read more about it in the [Python docs for `@lru_cache`](https://docs.python.org/3/library/functools.html#functools.lru_cache).
+## Recap[¶](https://fastapi.tiangolo.com/advanced/settings/#recap "Permanent link")
+You can use Pydantic Settings to handle the settings or configurations for your application, with all the power of Pydantic models.
+  * By using a dependency you can simplify testing.
+  * You can use `.env` files with it.
+  * Using `@lru_cache` lets you avoid reading the dotenv file again and again for each request, while allowing you to override it during testing.
+
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Async Tests  ](https://fastapi.tiangolo.com/advanced/async-tests/) [ Next  OpenAPI Callbacks  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

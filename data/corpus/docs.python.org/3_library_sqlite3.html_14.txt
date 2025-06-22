@@ -1,0 +1,100 @@
+Title: SQLite3 Backup Method
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: The `backup` method allows creating a backup of an SQLite database, even when it is being accessed by other clients or concurrently. The method includes parameters such as `target` for the backup connection, `pages` for controlling the number of pages to copy at a time, and `progress` as an optional callback for tracking progress.
+---
+
+```
+
+See also
+[How to handle non-UTF-8 text encodings](https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-encoding)
+Changed in version 3.13: Added the _filter_ parameter. 
+
+backup(_target_ , _*_ , _pages =-1_, _progress =None_, _name ='main'_, _sleep =0.250_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.backup "Link to this definition")
+    
+Create a backup of an SQLite database.
+Works even if the database is being accessed by other clients or concurrently by the same connection. 
+
+Parameters:
+    
+  * **target** ([_Connection_](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection "sqlite3.Connection")) – The database connection to save the backup to.
+  * **pages** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The number of pages to copy at a time. If equal to or less than `0`, the entire database is copied in a single step. Defaults to `-1`.
+  * **progress** ([callback](https://docs.python.org/3/glossary.html#term-callback) | None) – If set to a [callable](https://docs.python.org/3/glossary.html#term-callable), it is invoked with three integer arguments for every backup iteration: the _status_ of the last iteration, the _remaining_ number of pages still to be copied, and the _total_ number of pages. Defaults to `None`.
+  * **name** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – The name of the database to back up. Either `"main"` (the default) for the main database, `"temp"` for the temporary database, or the name of a custom database as attached using the `ATTACH DATABASE` SQL statement.
+  * **sleep** ([_float_](https://docs.python.org/3/library/functions.html#float "float")) – The number of seconds to sleep between successive attempts to back up remaining pages.
+
+
+Example 1, copy an existing database into another:
+```
+defprogress(status, remaining, total):
+  print(f'Copied {total-remaining} of {total} pages...')
+src = sqlite3.connect('example.db')
+dst = sqlite3.connect('backup.db')
+with dst:
+  src.backup(dst, pages=1, progress=progress)
+dst.close()
+src.close()
+
+```
+
+Example 2, copy an existing database into a transient copy:
+```
+src = sqlite3.connect('example.db')
+dst = sqlite3.connect(':memory:')
+src.backup(dst)
+dst.close()
+src.close()
+
+```
+
+Added in version 3.7.
+See also
+[How to handle non-UTF-8 text encodings](https://docs.python.org/3/library/sqlite3.html#sqlite3-howto-encoding) 
+
+getlimit(_category_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.getlimit "Link to this definition")
+    
+Get a connection runtime limit. 
+
+Parameters:
+    
+**category** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The [SQLite limit category](https://www.sqlite.org/c3ref/c_limit_attached.html) to be queried. 
+
+Return type:
+    
+[int](https://docs.python.org/3/library/functions.html#int "int") 
+
+Raises:
+    
+[**ProgrammingError**](https://docs.python.org/3/library/sqlite3.html#sqlite3.ProgrammingError "sqlite3.ProgrammingError") – If _category_ is not recognised by the underlying SQLite library.
+Example, query the maximum length of an SQL statement for [`Connection`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection "sqlite3.Connection") `con` (the default is 1000000000):
+>>>```
+>>> con.getlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH)
+1000000000
+
+```
+
+Added in version 3.11. 
+
+setlimit(_category_ , _limit_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.setlimit "Link to this definition")
+    
+Set a connection runtime limit. Attempts to increase a limit above its hard upper bound are silently truncated to the hard upper bound. Regardless of whether or not the limit was changed, the prior value of the limit is returned. 
+
+Parameters:
+    
+  * **category** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The [SQLite limit category](https://www.sqlite.org/c3ref/c_limit_attached.html) to be set.
+  * **limit** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The value of the new limit. If negative, the current limit is unchanged.
+
+
+
+Return type:
+    
+[int](https://docs.python.org/3/library/functions.html#int "int") 
+
+Raises:
+    
+[**ProgrammingError**](https://docs.python.org/3/library/sqlite3.html#sqlite3.ProgrammingError "sqlite3.ProgrammingError") – If _category_ is not recognised by the underlying SQLite library.
+Example, limit the number of attached databases to 1 for [`Connection`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection "sqlite3.Connection") `con` (the default limit is 10):
+>>>```
+>>> con.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 1)
+10
+>>> con.getlimit(sqlite3.SQLITE_LIMIT_ATTACHED)
+1

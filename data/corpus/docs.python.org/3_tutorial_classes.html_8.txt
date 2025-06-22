@@ -1,0 +1,31 @@
+Title: Attribute Resolution in Python's Multiple Inheritance
+URL: https://docs.python.org/3/tutorial/classes.html
+Summary: Python uses a depth-first, left-to-right approach to search for attributes in a class hierarchy, checking the derived class first before recursively searching base classes. The method resolution order may change dynamically to facilitate cooperative calls to 'super()', enhancing functionality over single-inheritance languages, particularly in scenarios involving diamond relationships.
+---
+
+```
+
+For most purposes, in the simplest cases, you can think of the search for attributes inherited from a parent class as depth-first, left-to-right, not searching twice in the same class where there is an overlap in the hierarchy. Thus, if an attribute is not found in `DerivedClassName`, it is searched for in `Base1`, then (recursively) in the base classes of `Base1`, and if it was not found there, it was searched for in `Base2`, and so on.
+In fact, it is slightly more complex than that; the method resolution order changes dynamically to support cooperative calls to [`super()`](https://docs.python.org/3/library/functions.html#super "super"). This approach is known in some other multiple-inheritance languages as call-next-method and is more powerful than the super call found in single-inheritance languages.
+Dynamic ordering is necessary because all cases of multiple inheritance exhibit one or more diamond relationships (where at least one of the parent classes can be accessed through multiple paths from the bottommost class). For example, all classes inherit from [`object`](https://docs.python.org/3/library/functions.html#object "object"), so any case of multiple inheritance provides more than one path to reach [`object`](https://docs.python.org/3/library/functions.html#object "object"). To keep the base classes from being accessed more than once, the dynamic algorithm linearizes the search order in a way that preserves the left-to-right ordering specified in each class, that calls each parent only once, and that is monotonic (meaning that a class can be subclassed without affecting the precedence order of its parents). Taken together, these properties make it possible to design reliable and extensible classes with multiple inheritance. For more detail, see [The Python 2.3 Method Resolution Order](https://docs.python.org/3/howto/mro.html#python-2-3-mro).
+## 9.6. Private Variables[¶](https://docs.python.org/3/tutorial/classes.html#private-variables "Link to this heading")
+“Private” instance variables that cannot be accessed except from inside an object don’t exist in Python. However, there is a convention that is followed by most Python code: a name prefixed with an underscore (e.g. `_spam`) should be treated as a non-public part of the API (whether it is a function, a method or a data member). It should be considered an implementation detail and subject to change without notice.
+Since there is a valid use-case for class-private members (namely to avoid name clashes of names with names defined by subclasses), there is limited support for such a mechanism, called _name mangling_. Any identifier of the form `__spam` (at least two leading underscores, at most one trailing underscore) is textually replaced with `_classname__spam`, where `classname` is the current class name with leading underscore(s) stripped. This mangling is done without regard to the syntactic position of the identifier, as long as it occurs within the definition of a class.
+See also
+The [private name mangling specifications](https://docs.python.org/3/reference/expressions.html#private-name-mangling) for details and special cases.
+Name mangling is helpful for letting subclasses override methods without breaking intraclass method calls. For example:
+```
+classMapping:
+  def__init__(self, iterable):
+    self.items_list = []
+    self.__update(iterable)
+  defupdate(self, iterable):
+    for item in iterable:
+      self.items_list.append(item)
+  __update = update  # private copy of original update() method
+classMappingSubclass(Mapping):
+  defupdate(self, keys, values):
+    # provides new signature for update()
+    # but does not break __init__()
+    for item in zip(keys, values):
+      self.items_list.append(item)

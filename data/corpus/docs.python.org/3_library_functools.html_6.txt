@@ -1,0 +1,44 @@
+Title: functools.singledispatchmethod
+URL: https://docs.python.org/3/library/functools.html
+Summary: Introduced in Python 3.4 and updated in later versions, `functools.singledispatchmethod` allows the transformation of a method into a single-dispatch generic function. The dispatch mechanism operates based on the type of the first non-self or non-cls argument, and from version 3.7 onward, it supports type annotations including `types.UnionType` and `typing.Union`.
+---
+
+```
+
+Added in version 3.4.
+Changed in version 3.7: The `register()` attribute now supports using type annotations.
+Changed in version 3.11: The `register()` attribute now supports [`types.UnionType`](https://docs.python.org/3/library/types.html#types.UnionType "types.UnionType") and [`typing.Union`](https://docs.python.org/3/library/typing.html#typing.Union "typing.Union") as type annotations. 
+
+_class_ functools.singledispatchmethod(_func_)[¶](https://docs.python.org/3/library/functools.html#functools.singledispatchmethod "Link to this definition")
+    
+Transform a method into a [single-dispatch](https://docs.python.org/3/glossary.html#term-single-dispatch) [generic function](https://docs.python.org/3/glossary.html#term-generic-function).
+To define a generic method, decorate it with the `@singledispatchmethod` decorator. When defining a function using `@singledispatchmethod`, note that the dispatch happens on the type of the first non-_self_ or non-_cls_ argument:
+```
+classNegator:
+  @singledispatchmethod
+  defneg(self, arg):
+    raise NotImplementedError("Cannot negate a")
+  @neg.register
+  def_(self, arg: int):
+    return -arg
+  @neg.register
+  def_(self, arg: bool):
+    return not arg
+
+```
+
+`@singledispatchmethod` supports nesting with other decorators such as [`@classmethod`](https://docs.python.org/3/library/functions.html#classmethod "classmethod"). Note that to allow for `dispatcher.register`, `singledispatchmethod` must be the _outer most_ decorator. Here is the `Negator` class with the `neg` methods bound to the class, rather than an instance of the class:
+```
+classNegator:
+  @singledispatchmethod
+  @classmethod
+  defneg(cls, arg):
+    raise NotImplementedError("Cannot negate a")
+  @neg.register
+  @classmethod
+  def_(cls, arg: int):
+    return -arg
+  @neg.register
+  @classmethod
+  def_(cls, arg: bool):
+    return not arg

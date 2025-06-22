@@ -1,0 +1,108 @@
+Title: Using PurePath in Python's pathlib
+URL: https://docs.python.org/3/library/pathlib.html
+Summary: This section explains how to create a PurePath object using path segments, which can be strings or PathLike objects. If no segments are provided, the current directory is used. It also describes how absolute paths override previous segments, identifying their behavior on both POSIX and Windows systems.
+---
+
+```
+
+Each element of _pathsegments_ can be either a string representing a path segment, or an object implementing the [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike "os.PathLike") interface where the [`__fspath__()`](https://docs.python.org/3/library/os.html#os.PathLike.__fspath__ "os.PathLike.__fspath__") method returns a string, such as another path object:
+>>>```
+>>> PurePath('foo', 'some/path', 'bar')
+PurePosixPath('foo/some/path/bar')
+>>> PurePath(Path('foo'), Path('bar'))
+PurePosixPath('foo/bar')
+
+```
+
+When _pathsegments_ is empty, the current directory is assumed:
+>>>```
+>>> PurePath()
+PurePosixPath('.')
+
+```
+
+If a segment is an absolute path, all previous segments are ignored (like [`os.path.join()`](https://docs.python.org/3/library/os.path.html#os.path.join "os.path.join")):
+>>>```
+>>> PurePath('/etc', '/usr', 'lib64')
+PurePosixPath('/usr/lib64')
+>>> PureWindowsPath('c:/Windows', 'd:bar')
+PureWindowsPath('d:bar')
+
+```
+
+On Windows, the drive is not reset when a rooted relative path segment (e.g., `r'\foo'`) is encountered:
+>>>```
+>>> PureWindowsPath('c:/Windows', '/Program Files')
+PureWindowsPath('c:/Program Files')
+
+```
+
+Spurious slashes and single dots are collapsed, but double dots (`'..'`) and leading double slashes (`'//'`) are not, since this would change the meaning of a path for various reasons (e.g. symbolic links, UNC paths):
+>>>```
+>>> PurePath('foo//bar')
+PurePosixPath('foo/bar')
+>>> PurePath('//foo/bar')
+PurePosixPath('//foo/bar')
+>>> PurePath('foo/./bar')
+PurePosixPath('foo/bar')
+>>> PurePath('foo/../bar')
+PurePosixPath('foo/../bar')
+
+```
+
+(a naïve approach would make `PurePosixPath('foo/../bar')` equivalent to `PurePosixPath('bar')`, which is wrong if `foo` is a symbolic link to another directory)
+Pure path objects implement the [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike "os.PathLike") interface, allowing them to be used anywhere the interface is accepted.
+Changed in version 3.6: Added support for the [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike "os.PathLike") interface. 
+
+_class_ pathlib.PurePosixPath(_* pathsegments_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PurePosixPath "Link to this definition")
+    
+A subclass of [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath"), this path flavour represents non-Windows filesystem paths:
+>>>```
+>>> PurePosixPath('/etc/hosts')
+PurePosixPath('/etc/hosts')
+
+```
+
+_pathsegments_ is specified similarly to [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath"). 
+
+_class_ pathlib.PureWindowsPath(_* pathsegments_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PureWindowsPath "Link to this definition")
+    
+A subclass of [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath"), this path flavour represents Windows filesystem paths, including [UNC paths](https://en.wikipedia.org/wiki/Path_\(computing\)#UNC):
+>>>```
+>>> PureWindowsPath('c:/', 'Users', 'Ximénez')
+PureWindowsPath('c:/Users/Ximénez')
+>>> PureWindowsPath('//server/share/file')
+PureWindowsPath('//server/share/file')
+
+```
+
+_pathsegments_ is specified similarly to [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath").
+Regardless of the system you’re running on, you can instantiate all of these classes, since they don’t provide any operation that does system calls.
+### General properties[¶](https://docs.python.org/3/library/pathlib.html#general-properties "Link to this heading")
+Paths are immutable and [hashable](https://docs.python.org/3/glossary.html#term-hashable). Paths of a same flavour are comparable and orderable. These properties respect the flavour’s case-folding semantics:
+>>>```
+>>> PurePosixPath('foo') == PurePosixPath('FOO')
+False
+>>> PureWindowsPath('foo') == PureWindowsPath('FOO')
+True
+>>> PureWindowsPath('FOO') in { PureWindowsPath('foo') }
+True
+>>> PureWindowsPath('C:') < PureWindowsPath('d:')
+True
+
+```
+
+Paths of a different flavour compare unequal and cannot be ordered:
+>>>```
+>>> PureWindowsPath('foo') == PurePosixPath('foo')
+False
+>>> PureWindowsPath('foo') < PurePosixPath('foo')
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: '<' not supported between instances of 'PureWindowsPath' and 'PurePosixPath'
+
+```
+
+### Operators[¶](https://docs.python.org/3/library/pathlib.html#operators "Link to this heading")
+The slash operator helps create child paths, like [`os.path.join()`](https://docs.python.org/3/library/os.path.html#os.path.join "os.path.join"). If the argument is an absolute path, the previous path is ignored. On Windows, the drive is not reset when the argument is a rooted relative path (e.g., `r'\foo'`):
+>>>

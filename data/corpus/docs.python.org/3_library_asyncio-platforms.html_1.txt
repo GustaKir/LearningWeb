@@ -1,0 +1,30 @@
+Title: Limitations of SelectorEventLoop in asyncio
+URL: https://docs.python.org/3/library/asyncio-platforms.html
+Summary: The `SelectorEventLoop` in asyncio has notable limitations, including a maximum of 512 sockets supported by `SelectSelector`, restrictions on the `loop.add_reader()` and `loop.add_writer()` methods to only accept socket handles, and the lack of support for pipes, impacting the use of `loop.connect_read_pipe()` and `loop.connect_write_pipe()`.
+---
+
+[`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") has the following limitations:
+  * [`SelectSelector`](https://docs.python.org/3/library/selectors.html#selectors.SelectSelector "selectors.SelectSelector") is used to wait on socket events: it supports sockets and is limited to 512 sockets.
+  * [`loop.add_reader()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_reader "asyncio.loop.add_reader") and [`loop.add_writer()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_writer "asyncio.loop.add_writer") only accept socket handles (e.g. pipe file descriptors are not supported).
+  * Pipes are not supported, so the [`loop.connect_read_pipe()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.connect_read_pipe "asyncio.loop.connect_read_pipe") and [`loop.connect_write_pipe()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.connect_write_pipe "asyncio.loop.connect_write_pipe") methods are not implemented.
+  * [Subprocesses](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio-subprocess) are not supported, i.e. [`loop.subprocess_exec()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.subprocess_exec "asyncio.loop.subprocess_exec") and [`loop.subprocess_shell()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.subprocess_shell "asyncio.loop.subprocess_shell") methods are not implemented.
+
+
+[`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop") has the following limitations:
+  * The [`loop.add_reader()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_reader "asyncio.loop.add_reader") and [`loop.add_writer()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_writer "asyncio.loop.add_writer") methods are not supported.
+
+
+The resolution of the monotonic clock on Windows is usually around 15.6 milliseconds. The best resolution is 0.5 milliseconds. The resolution depends on the hardware (availability of [HPET](https://en.wikipedia.org/wiki/High_Precision_Event_Timer)) and on the Windows configuration.
+### Subprocess Support on Windows[¶](https://docs.python.org/3/library/asyncio-platforms.html#subprocess-support-on-windows "Link to this heading")
+On Windows, the default event loop [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop") supports subprocesses, whereas [`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") does not.
+The [`policy.set_child_watcher()`](https://docs.python.org/3/library/asyncio-policy.html#asyncio.AbstractEventLoopPolicy.set_child_watcher "asyncio.AbstractEventLoopPolicy.set_child_watcher") function is also not supported, as [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop") has a different mechanism to watch child processes.
+## macOS[¶](https://docs.python.org/3/library/asyncio-platforms.html#macos "Link to this heading")
+Modern macOS versions are fully supported.
+macOS <= 10.8
+On macOS 10.6, 10.7 and 10.8, the default event loop uses [`selectors.KqueueSelector`](https://docs.python.org/3/library/selectors.html#selectors.KqueueSelector "selectors.KqueueSelector"), which does not support character devices on these versions. The [`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") can be manually configured to use [`SelectSelector`](https://docs.python.org/3/library/selectors.html#selectors.SelectSelector "selectors.SelectSelector") or [`PollSelector`](https://docs.python.org/3/library/selectors.html#selectors.PollSelector "selectors.PollSelector") to support character devices on these older versions of macOS. Example:
+```
+importasyncio
+importselectors
+selector = selectors.SelectSelector()
+loop = asyncio.SelectorEventLoop(selector)
+asyncio.set_event_loop(loop)

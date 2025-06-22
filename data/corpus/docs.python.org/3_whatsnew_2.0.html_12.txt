@@ -1,0 +1,29 @@
+Title: Introduction of Distutils and XML Modules in Python 2.0
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: The Distutils package simplifies the creation of source and binary distributions in Python, with commands like 'sdist' and contributions for RPM and Windows installers. Additionally, the new documentation manual, _Distributing Python Modules_, supports this feature. Python 2.0 also introduces updated XML processing capabilities with new interfaces such as SAX2.
+---
+
+```
+
+The Distutils can also take care of creating source and binary distributions. The “sdist” command, run by “`python setup.py sdist`’, builds a source distribution such as `foo-1.0.tar.gz`. Adding new commands isn’t difficult, “bdist_rpm” and “bdist_wininst” commands have already been contributed to create an RPM distribution and a Windows installer for the software, respectively. Commands to create other distribution formats such as Debian packages and Solaris `.pkg` files are in various stages of development.
+All this is documented in a new manual, _Distributing Python Modules_ , that joins the basic set of Python documentation.
+## XML Modules[¶](https://docs.python.org/3/whatsnew/2.0.html#xml-modules "Link to this heading")
+Python 1.5.2 included a simple XML parser in the form of the `xmllib` module, contributed by Sjoerd Mullender. Since 1.5.2’s release, two different interfaces for processing XML have become common: SAX2 (version 2 of the Simple API for XML) provides an event-driven interface with some similarities to `xmllib`, and the DOM (Document Object Model) provides a tree-based interface, transforming an XML document into a tree of nodes that can be traversed and modified. Python 2.0 includes a SAX2 interface and a stripped-down DOM interface as part of the [`xml`](https://docs.python.org/3/library/xml.html#module-xml "xml: Package containing XML processing modules") package. Here we will give a brief overview of these new interfaces; consult the Python documentation or the source code for complete details. The Python XML SIG is also working on improved documentation.
+### SAX2 Support[¶](https://docs.python.org/3/whatsnew/2.0.html#sax2-support "Link to this heading")
+SAX defines an event-driven interface for parsing XML. To use SAX, you must write a SAX handler class. Handler classes inherit from various classes provided by SAX, and override various methods that will then be called by the XML parser. For example, the [`startElement()`](https://docs.python.org/3/library/xml.sax.handler.html#xml.sax.handler.ContentHandler.startElement "xml.sax.handler.ContentHandler.startElement") and [`endElement()`](https://docs.python.org/3/library/xml.sax.handler.html#xml.sax.handler.ContentHandler.endElement "xml.sax.handler.ContentHandler.endElement") methods are called for every starting and end tag encountered by the parser, the [`characters()`](https://docs.python.org/3/library/xml.sax.handler.html#xml.sax.handler.ContentHandler.characters "xml.sax.handler.ContentHandler.characters") method is called for every chunk of character data, and so forth.
+The advantage of the event-driven approach is that the whole document doesn’t have to be resident in memory at any one time, which matters if you are processing really huge documents. However, writing the SAX handler class can get very complicated if you’re trying to modify the document structure in some elaborate way.
+For example, this little example program defines a handler that prints a message for every starting and ending tag, and then parses the file `hamlet.xml` using it:
+```
+fromxmlimport sax
+classSimpleHandler(sax.ContentHandler):
+  defstartElement(self, name, attrs):
+    print 'Start of element:', name, attrs.keys()
+  defendElement(self, name):
+    print 'End of element:', name
+# Create a parser object
+parser = sax.make_parser()
+# Tell it what handler to use
+handler = SimpleHandler()
+parser.setContentHandler( handler )
+# Parse a file!
+parser.parse( 'hamlet.xml' )

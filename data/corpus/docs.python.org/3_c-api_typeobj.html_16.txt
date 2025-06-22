@@ -1,0 +1,33 @@
+Title: Hash Function Error Handling in Python C API
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: In the Python C API, returning `-1` from a hash function indicates an error has occurred; it should instead set an exception. If the hash field is not set and `tp_richcompare` is also unset, attempting to hash the object raises a `TypeError`. Additionally, the field can be explicitly set to `PyObject_HashNotImplemented()` to prevent hash method inheritance, effectively making the hash method equivalent to `__hash__ = None`.
+---
+
+```
+
+The value `-1` should not be returned as a normal return value; when an error occurs during the computation of the hash value, the function should set an exception and return `-1`.
+When this field is not set (_and_ [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare") is not set), an attempt to take the hash of the object raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError"). This is the same as setting it to [`PyObject_HashNotImplemented()`](https://docs.python.org/3/c-api/object.html#c.PyObject_HashNotImplemented "PyObject_HashNotImplemented").
+This field can be set explicitly to [`PyObject_HashNotImplemented()`](https://docs.python.org/3/c-api/object.html#c.PyObject_HashNotImplemented "PyObject_HashNotImplemented") to block inheritance of the hash method from a parent type. This is interpreted as the equivalent of `__hash__ = None` at the Python level, causing `isinstance(o, collections.Hashable)` to correctly return `False`. Note that the converse is also true - setting `__hash__ = None` on a class at the Python level will result in the `tp_hash` slot being set to [`PyObject_HashNotImplemented()`](https://docs.python.org/3/c-api/object.html#c.PyObject_HashNotImplemented "PyObject_HashNotImplemented").
+**Inheritance:**
+Group: [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash"), [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare")
+This field is inherited by subtypes together with [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare"): a subtype inherits both of [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare") and [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash"), when the subtype’s [`tp_richcompare`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_richcompare "PyTypeObject.tp_richcompare") and [`tp_hash`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_hash "PyTypeObject.tp_hash") are both `NULL`.
+**Default:**
+[`PyBaseObject_Type`](https://docs.python.org/3/c-api/structures.html#c.PyBaseObject_Type "PyBaseObject_Type") uses [`PyObject_GenericHash()`](https://docs.python.org/3/c-api/hash.html#c.PyObject_GenericHash "PyObject_GenericHash"). 
+
+[ternaryfunc](https://docs.python.org/3/c-api/typeobj.html#c.ternaryfunc "ternaryfunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_call[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "Link to this definition")
+    
+An optional pointer to a function that implements calling the object. This should be `NULL` if the object is not callable. The signature is the same as for [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call"):
+```
+PyObject*tp_call(PyObject*self,PyObject*args,PyObject*kwargs);
+
+```
+
+**Inheritance:**
+This field is inherited by subtypes. 
+
+[reprfunc](https://docs.python.org/3/c-api/typeobj.html#c.reprfunc "reprfunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_str[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_str "Link to this definition")
+    
+An optional pointer to a function that implements the built-in operation [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str"). (Note that [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") is a type now, and [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") calls the constructor for that type. This constructor calls [`PyObject_Str()`](https://docs.python.org/3/c-api/object.html#c.PyObject_Str "PyObject_Str") to do the actual work, and [`PyObject_Str()`](https://docs.python.org/3/c-api/object.html#c.PyObject_Str "PyObject_Str") will call this handler.)
+The signature is the same as for [`PyObject_Str()`](https://docs.python.org/3/c-api/object.html#c.PyObject_Str "PyObject_Str"):
+```
+PyObject*tp_str(PyObject*self);

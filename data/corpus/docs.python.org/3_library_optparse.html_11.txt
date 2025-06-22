@@ -1,0 +1,37 @@
+Title: Error Handling in Optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: Optparse-generated error messages specify the problematic options, and custom error handling can be achieved by subclassing OptionParser to override the exit and error methods.
+---
+
+```
+$ /usr/bin/foo-n
+Usage: foo [options]
+foo: error: -n option requires an argument
+
+```
+
+[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.")-generated error messages take care always to mention the option involved in the error; be sure to do the same when calling `OptionParser.error()` from your application code.
+If [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.")’s default error-handling behaviour does not suit your needs, you’ll need to subclass OptionParser and override its `exit()` and/or `error()` methods.
+### Putting it all together[¶](https://docs.python.org/3/library/optparse.html#putting-it-all-together "Link to this heading")
+Here’s what [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.")-based scripts usually look like:
+```
+fromoptparseimport OptionParser
+...
+defmain():
+  usage = "usage: %prog [options] arg"
+  parser = OptionParser(usage)
+  parser.add_option("-f", "--file", dest="filename",
+           help="read data from FILENAME")
+  parser.add_option("-v", "--verbose",
+           action="store_true", dest="verbose")
+  parser.add_option("-q", "--quiet",
+           action="store_false", dest="verbose")
+  ...
+  (options, args) = parser.parse_args()
+  if len(args) != 1:
+    parser.error("incorrect number of arguments")
+  if options.verbose:
+    print("reading %s..." % options.filename)
+  ...
+if __name__ == "__main__":
+  main()

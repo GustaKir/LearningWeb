@@ -1,0 +1,27 @@
+Title: Cycle Detection and Garbage Collection in Python 2.0
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: In Python 2.0, the issue of object reference cycles is addressed by introducing a cycle detection algorithm that identifies and deletes inaccessible cycles. The `gc` module allows for garbage collection management, providing functions for collection, debugging, and tuning.
+---
+
+```
+
+After the above two lines of code have been executed, the reference count of `instance` is 2; one reference is from the variable named `'instance'`, and the other is from the `myself` attribute of the instance.
+If the next line of code is `del instance`, what happens? The reference count of `instance` is decreased by 1, so it has a reference count of 1; the reference in the `myself` attribute still exists. Yet the instance is no longer accessible through Python code, and it could be deleted. Several objects can participate in a cycle if they have references to each other, causing all of the objects to be leaked.
+Python 2.0 fixes this problem by periodically executing a cycle detection algorithm which looks for inaccessible cycles and deletes the objects involved. A new [`gc`](https://docs.python.org/3/library/gc.html#module-gc "gc: Interface to the cycle-detecting garbage collector.") module provides functions to perform a garbage collection, obtain debugging statistics, and tuning the collector’s parameters.
+Running the cycle detection algorithm takes some time, and therefore will result in some additional overhead. It is hoped that after we’ve gotten experience with the cycle collection from using 2.0, Python 2.1 will be able to minimize the overhead with careful tuning. It’s not yet obvious how much performance is lost, because benchmarking this is tricky and depends crucially on how often the program creates and destroys objects. The detection of cycles can be disabled when Python is compiled, if you can’t afford even a tiny speed penalty or suspect that the cycle collection is buggy, by specifying the `--without-cycle-gc` switch when running the **configure** script.
+Several people tackled this problem and contributed to a solution. An early implementation of the cycle detection approach was written by Toby Kelsey. The current algorithm was suggested by Eric Tiedemann during a visit to CNRI, and Guido van Rossum and Neil Schemenauer wrote two different implementations, which were later integrated by Neil. Lots of other people offered suggestions along the way; the March 2000 archives of the python-dev mailing list contain most of the relevant discussion, especially in the threads titled “Reference cycle collection for Python” and “Finalization again”.
+## Other Core Changes[¶](https://docs.python.org/3/whatsnew/2.0.html#other-core-changes "Link to this heading")
+Various minor changes have been made to Python’s syntax and built-in functions. None of the changes are very far-reaching, but they’re handy conveniences.
+### Minor Language Changes[¶](https://docs.python.org/3/whatsnew/2.0.html#minor-language-changes "Link to this heading")
+A new syntax makes it more convenient to call a given function with a tuple of arguments and/or a dictionary of keyword arguments. In Python 1.5 and earlier, you’d use the `apply()` built-in function: `apply(f, args, kw)` calls the function `f()` with the argument tuple _args_ and the keyword arguments in the dictionary _kw_. `apply()` is the same in 2.0, but thanks to a patch from Greg Ewing, `f(*args, **kw)` is a shorter and clearer way to achieve the same effect. This syntax is symmetrical with the syntax for defining functions:
+```
+deff(*args, **kw):
+  # args is a tuple of positional args,
+  # kw is a dictionary of keyword args
+  ...
+
+```
+
+The `print` statement can now have its output directed to a file-like object by following the `print` with `>> file`, similar to the redirection operator in Unix shells. Previously you’d either have to use the `write()` method of the file-like object, which lacks the convenience and simplicity of `print`, or you could assign a new value to `sys.stdout` and then restore the old value. For sending output to standard error, it’s much easier to write this:
+```
+print >> sys.stderr, "Warning: action field not supplied"

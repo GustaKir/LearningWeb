@@ -1,0 +1,43 @@
+Title: asyncio.loop.sendfile Method Overview
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: The `sendfile` method in the asyncio event loop sends a specified file over a transport, returning the total bytes sent. It employs `os.sendfile()` for efficiency if supported, and allows specification of the read start position and byte count. The file position updates even on errors, and a fallback option can be enabled for unsupported platforms.
+---
+
+_async_ loop.sendfile(_transport_ , _file_ , _offset =0_, _count =None_, _*_ , _fallback =True_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.sendfile "Link to this definition")
+    
+Send a _file_ over a _transport_. Return the total number of bytes sent.
+The method uses high-performance [`os.sendfile()`](https://docs.python.org/3/library/os.html#os.sendfile "os.sendfile") if available.
+_file_ must be a regular file object opened in binary mode.
+_offset_ tells from where to start reading the file. If specified, _count_ is the total number of bytes to transmit as opposed to sending the file until EOF is reached. File position is always updated, even when this method raises an error, and [`file.tell()`](https://docs.python.org/3/library/io.html#io.IOBase.tell "io.IOBase.tell") can be used to obtain the actual number of bytes sent.
+_fallback_ set to `True` makes asyncio to manually read and send the file when the platform does not support the sendfile system call (e.g. Windows or SSL socket on Unix).
+Raise [`SendfileNotAvailableError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.SendfileNotAvailableError "asyncio.SendfileNotAvailableError") if the system does not support the _sendfile_ syscall and _fallback_ is `False`.
+Added in version 3.7.
+### [TLS Upgrade](https://docs.python.org/3/library/asyncio-eventloop.html#id8)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#tls-upgrade "Link to this heading") 
+
+_async_ loop.start_tls(_transport_ , _protocol_ , _sslcontext_ , _*_ , _server_side =False_, _server_hostname =None_, _ssl_handshake_timeout =None_, _ssl_shutdown_timeout =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.start_tls "Link to this definition")
+    
+Upgrade an existing transport-based connection to TLS.
+Create a TLS coder/decoder instance and insert it between the _transport_ and the _protocol_. The coder/decoder implements both _transport_ -facing protocol and _protocol_ -facing transport.
+Return the created two-interface instance. After _await_ , the _protocol_ must stop using the original _transport_ and communicate with the returned object only because the coder caches _protocol_ -side data and sporadically exchanges extra TLS session packets with _transport_.
+In some situations (e.g. when the passed transport is already closing) this may return `None`.
+Parameters:
+  * _transport_ and _protocol_ instances that methods like [`create_server()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server "asyncio.loop.create_server") and [`create_connection()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_connection "asyncio.loop.create_connection") return.
+  * _sslcontext_ : a configured instance of [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext").
+  * _server_side_ pass `True` when a server-side connection is being upgraded (like the one created by [`create_server()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server "asyncio.loop.create_server")).
+  * _server_hostname_ : sets or overrides the host name that the target server’s certificate will be matched against.
+  * _ssl_handshake_timeout_ is (for a TLS connection) the time in seconds to wait for the TLS handshake to complete before aborting the connection. `60.0` seconds if `None` (default).
+  * _ssl_shutdown_timeout_ is the time in seconds to wait for the SSL shutdown to complete before aborting the connection. `30.0` seconds if `None` (default).
+
+
+Added in version 3.7.
+Changed in version 3.11: Added the _ssl_shutdown_timeout_ parameter.
+### [Watching file descriptors](https://docs.python.org/3/library/asyncio-eventloop.html#id9)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#watching-file-descriptors "Link to this heading") 
+
+loop.add_reader(_fd_ , _callback_ , _* args_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_reader "Link to this definition")
+    
+Start monitoring the _fd_ file descriptor for read availability and invoke _callback_ with the specified arguments once _fd_ is available for reading.
+Any preexisting callback registered for _fd_ is cancelled and replaced by _callback_. 
+
+loop.remove_reader(_fd_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.remove_reader "Link to this definition")
+    
+Stop monitoring the _fd_ file descriptor for read availability. Returns `True` if _fd_ was previously being monitored for reads.

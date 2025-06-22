@@ -1,0 +1,32 @@
+Title: PyType API Functions
+URL: https://docs.python.org/3/c-api/type.html
+Summary: This section describes two functions related to Python's type system: `PyType_IS_GC`, which checks if a type object supports the cycle detector, and `PyType_IsSubtype`, which determines if one type is a subtype of another.
+---
+
+intPyType_IS_GC([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*o)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_IS_GC "Link to this definition")
+    
+Return true if the type object includes support for the cycle detector; this tests the type flag [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC"). 
+
+intPyType_IsSubtype([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*a, [PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*b)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_IsSubtype "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return true if _a_ is a subtype of _b_.
+This function only checks for actual subtypes, which means that [`__subclasscheck__()`](https://docs.python.org/3/reference/datamodel.html#type.__subclasscheck__ "type.__subclasscheck__") is not called on _b_. Call [`PyObject_IsSubclass()`](https://docs.python.org/3/c-api/object.html#c.PyObject_IsSubclass "PyObject_IsSubclass") to do the same check that [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass") would do. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyType_GenericAlloc([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")nitems)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_GenericAlloc "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Generic handler for the [`tp_alloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_alloc "PyTypeObject.tp_alloc") slot of a type object. Use Python’s default memory allocation mechanism to allocate a new instance and initialize all its contents to `NULL`. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyType_GenericNew([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*args, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*kwds)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_GenericNew "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Generic handler for the [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") slot of a type object. Create a new instance using the type’s [`tp_alloc`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_alloc "PyTypeObject.tp_alloc") slot. 
+
+intPyType_Ready([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Finalize a type object. This should be called on all type objects to finish their initialization. This function is responsible for adding inherited slots from a type’s base class. Return `0` on success, or return `-1` and sets an exception on error.
+Note
+If some of the base classes implements the GC protocol and the provided type does not include the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") in its flags, then the GC protocol will be automatically implemented from its parents. On the contrary, if the type being created does include [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") in its flags then it **must** implement the GC protocol itself by at least implementing the [`tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse") handle. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyType_GetName([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_GetName "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.11._
+Return the type’s name. Equivalent to getting the type’s [`__name__`](https://docs.python.org/3/reference/datamodel.html#type.__name__ "type.__name__") attribute.
+Added in version 3.11.

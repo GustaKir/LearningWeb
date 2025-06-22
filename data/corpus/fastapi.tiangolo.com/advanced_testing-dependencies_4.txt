@@ -1,0 +1,64 @@
+Title: Testing Dependencies with Overrides
+URL: https://fastapi.tiangolo.com/advanced/testing-dependencies/
+Summary: This section discusses how to override dependencies during testing in FastAPI. It highlights scenarios where it's necessary to replace the original dependency with a test-specific one to avoid executing external services or sub-dependencies, allowing for controlled testing environments.
+---
+
+# Testing Dependencies with Overrides[¶](https://fastapi.tiangolo.com/advanced/testing-dependencies/#testing-dependencies-with-overrides "Permanent link")
+## Overriding dependencies during testing[¶](https://fastapi.tiangolo.com/advanced/testing-dependencies/#overriding-dependencies-during-testing "Permanent link")
+There are some scenarios where you might want to override a dependency during testing.
+You don't want the original dependency to run (nor any of the sub-dependencies it might have).
+Instead, you want to provide a different dependency that will be used only during tests (possibly only some specific tests), and will provide a value that can be used where the value of the original dependency was used.
+### Use cases: external service[¶](https://fastapi.tiangolo.com/advanced/testing-dependencies/#use-cases-external-service "Permanent link")
+An example could be that you have an external authentication provider that you need to call.
+You send it a token and it returns an authenticated user.
+This provider might be charging you per request, and calling it might take some extra time than if you had a fixed mock user for tests.
+You probably want to test the external provider once, but not necessarily call it for every test that runs.
+In this case, you can override the dependency that calls that provider, and use a custom dependency that returns a mock user, only for your tests.
+### Use the `app.dependency_overrides` attribute[¶](https://fastapi.tiangolo.com/advanced/testing-dependencies/#use-the-appdependency_overrides-attribute "Permanent link")
+For these cases, your **FastAPI** application has an attribute `app.dependency_overrides`, it is a simple `dict`.
+To override a dependency for testing, you put as a key the original dependency (a function), and as the value, your dependency override (another function).
+And then **FastAPI** will call that override instead of the original dependency.
+[Python 3.10+](https://fastapi.tiangolo.com/advanced/testing-dependencies/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+fromfastapi.testclientimport TestClient
+app = FastAPI()
+async defcommon_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return {"message": "Hello Items!", "params": commons}
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return {"message": "Hello Users!", "params": commons}
+client = TestClient(app)
+async defoverride_dependency(q: str | None = None):
+  return {"q": q, "skip": 5, "limit": 10}
+app.dependency_overrides[common_parameters] = override_dependency
+deftest_override_in_items():
+  response = client.get("/items/")
+  assert response.status_code == 200
+  assert response.json() == {
+    "message": "Hello Items!",
+    "params": {"q": None, "skip": 5, "limit": 10},
+  }
+deftest_override_in_items_with_q():
+  response = client.get("/items/?q=foo")
+  assert response.status_code == 200
+  assert response.json() == {
+    "message": "Hello Items!",
+    "params": {"q": "foo", "skip": 5, "limit": 10},
+  }
+deftest_override_in_items_with_params():
+  response = client.get("/items/?q=foo&skip=100&limit=200")
+  assert response.status_code == 200
+  assert response.json() == {
+    "message": "Hello Items!",
+    "params": {"q": "foo", "skip": 5, "limit": 10},
+  }
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/testing-dependencies/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/advanced/testing-dependencies/#__tabbed_2_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/advanced/testing-dependencies/#__tabbed_2_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/advanced/testing-dependencies/#__tabbed_2_4)

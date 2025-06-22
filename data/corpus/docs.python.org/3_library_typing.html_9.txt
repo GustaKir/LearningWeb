@@ -1,0 +1,109 @@
+Title: Deprecation of AnyStr and Introduction of LiteralString in typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: The `AnyStr` type in Python's typing module is deprecated since version 3.13 and will be removed in version 3.18, recommended to use the new type parameter syntax instead. In Python 3.16, it will no longer be included in `typing.__all__`, with deprecation warnings emitted at runtime. The `LiteralString` type is introduced, representing only literal strings, which can include string literals and other `LiteralString` objects.
+---
+
+```
+
+Deprecated since version 3.13, will be removed in version 3.18: Deprecated in favor of the new [type parameter syntax](https://docs.python.org/3/reference/compound_stmts.html#type-params). Use `class A[T: (str, bytes)]: ...` instead of importing `AnyStr`. See [**PEP 695**](https://peps.python.org/pep-0695/) for more details.
+In Python 3.16, `AnyStr` will be removed from `typing.__all__`, and deprecation warnings will be emitted at runtime when it is accessed or imported from `typing`. `AnyStr` will be removed from `typing` in Python 3.18. 
+
+typing.LiteralString[¶](https://docs.python.org/3/library/typing.html#typing.LiteralString "Link to this definition")
+    
+Special type that includes only literal strings.
+Any string literal is compatible with `LiteralString`, as is another `LiteralString`. However, an object typed as just `str` is not. A string created by composing `LiteralString`-typed objects is also acceptable as a `LiteralString`.
+Example:
+```
+defrun_query(sql: LiteralString) -> None:
+  ...
+defcaller(arbitrary_string: str, literal_string: LiteralString) -> None:
+  run_query("SELECT * FROM students") # OK
+  run_query(literal_string) # OK
+  run_query("SELECT * FROM " + literal_string) # OK
+  run_query(arbitrary_string) # type checker error
+  run_query( # type checker error
+    f"SELECT * FROM students WHERE name = {arbitrary_string}"
+  )
+
+```
+
+`LiteralString` is useful for sensitive APIs where arbitrary user-generated strings could generate problems. For example, the two cases above that generate type checker errors could be vulnerable to an SQL injection attack.
+See [**PEP 675**](https://peps.python.org/pep-0675/) for more details.
+Added in version 3.11. 
+
+typing.Never[¶](https://docs.python.org/3/library/typing.html#typing.Never "Link to this definition")
+
+
+typing.NoReturn[¶](https://docs.python.org/3/library/typing.html#typing.NoReturn "Link to this definition")
+    
+`Never` and `NoReturn` represent the [bottom type](https://en.wikipedia.org/wiki/Bottom_type), a type that has no members.
+They can be used to indicate that a function never returns, such as [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit"):
+```
+fromtypingimport Never # or NoReturn
+defstop() -> Never:
+  raise RuntimeError('no way')
+
+```
+
+Or to define a function that should never be called, as there are no valid arguments, such as [`assert_never()`](https://docs.python.org/3/library/typing.html#typing.assert_never "typing.assert_never"):
+```
+fromtypingimport Never # or NoReturn
+defnever_call_me(arg: Never) -> None:
+  pass
+defint_or_str(arg: int | str) -> None:
+  never_call_me(arg) # type checker error
+  match arg:
+    case int():
+      print("It's an int")
+    case str():
+      print("It's a str")
+    case_:
+      never_call_me(arg) # OK, arg is of type Never (or NoReturn)
+
+```
+
+`Never` and `NoReturn` have the same meaning in the type system and static type checkers treat both equivalently.
+Added in version 3.6.2: Added [`NoReturn`](https://docs.python.org/3/library/typing.html#typing.NoReturn "typing.NoReturn").
+Added in version 3.11: Added [`Never`](https://docs.python.org/3/library/typing.html#typing.Never "typing.Never"). 
+
+typing.Self[¶](https://docs.python.org/3/library/typing.html#typing.Self "Link to this definition")
+    
+Special type to represent the current enclosed class.
+For example:
+```
+fromtypingimport Self, reveal_type
+classFoo:
+  defreturn_self(self) -> Self:
+    ...
+    return self
+classSubclassOfFoo(Foo): pass
+reveal_type(Foo().return_self()) # Revealed type is "Foo"
+reveal_type(SubclassOfFoo().return_self()) # Revealed type is "SubclassOfFoo"
+
+```
+
+This annotation is semantically equivalent to the following, albeit in a more succinct fashion:
+```
+fromtypingimport TypeVar
+Self = TypeVar("Self", bound="Foo")
+classFoo:
+  defreturn_self(self: Self) -> Self:
+    ...
+    return self
+
+```
+
+In general, if something returns `self`, as in the above examples, you should use `Self` as the return annotation. If `Foo.return_self` was annotated as returning `"Foo"`, then the type checker would infer the object returned from `SubclassOfFoo.return_self` as being of type `Foo` rather than `SubclassOfFoo`.
+Other common use cases include:
+  * [`classmethod`](https://docs.python.org/3/library/functions.html#classmethod "classmethod")s that are used as alternative constructors and return instances of the `cls` parameter.
+  * Annotating an [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method which returns self.
+
+
+You should not use `Self` as the return annotation if the method is not guaranteed to return an instance of a subclass when the class is subclassed:
+```
+classEggs:
+  # Self would be an incorrect return annotation here,
+  # as the object returned is always an instance of Eggs,
+  # even in subclasses
+  defreturns_eggs(self) -> "Eggs":
+    return Eggs()

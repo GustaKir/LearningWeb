@@ -1,0 +1,68 @@
+Title: Understanding Concurrency and Parallelism in Programming
+URL: https://fastapi.tiangolo.com/async/
+Summary: The passage illustrates the difference between concurrency and parallelism using a cleaning house analogy. It emphasizes that in scenarios where tasks do not involve waiting, like cleaning a house, concurrency does not provide benefits. Instead, having multiple workers (processors) cleaning different areas in parallel significantly speeds up the process.
+---
+
+But not for everything.
+So, to balance that out, imagine the following short story:
+> You have to clean a big, dirty house.
+_Yep, that's the whole story_.
+There's no waiting 🕙 anywhere, just a lot of work to be done, on multiple places of the house.
+You could have turns as in the burgers example, first the living room, then the kitchen, but as you are not waiting 🕙 for anything, just cleaning and cleaning, the turns wouldn't affect anything.
+It would take the same amount of time to finish with or without turns (concurrency) and you would have done the same amount of work.
+But in this case, if you could bring the 8 ex-cashier/cooks/now-cleaners, and each one of them (plus you) could take a zone of the house to clean it, you could do all the work in **parallel** , with the extra help, and finish much sooner.
+In this scenario, each one of the cleaners (including you) would be a processor, doing their part of the job.
+And as most of the execution time is taken by actual work (instead of waiting), and the work in a computer is done by a CPU, they call these problems "CPU bound".
+Common examples of CPU bound operations are things that require complex math processing.
+For example:
+  * **Audio** or **image processing**.
+  * **Computer vision** : an image is composed of millions of pixels, each pixel has 3 values / colors, processing that normally requires computing something on those pixels, all at the same time.
+  * **Machine Learning** : it normally requires lots of "matrix" and "vector" multiplications. Think of a huge spreadsheet with numbers and multiplying all of them together at the same time.
+  * **Deep Learning** : this is a sub-field of Machine Learning, so, the same applies. It's just that there is not a single spreadsheet of numbers to multiply, but a huge set of them, and in many cases, you use a special processor to build and / or use those models.
+
+
+### Concurrency + Parallelism: Web + Machine Learning[¶](https://fastapi.tiangolo.com/async/#concurrency-parallelism-web-machine-learning "Permanent link")
+With **FastAPI** you can take advantage of concurrency that is very common for web development (the same main attraction of NodeJS).
+But you can also exploit the benefits of parallelism and multiprocessing (having multiple processes running in parallel) for **CPU bound** workloads like those in Machine Learning systems.
+That, plus the simple fact that Python is the main language for **Data Science** , Machine Learning and especially Deep Learning, make FastAPI a very good match for Data Science / Machine Learning web APIs and applications (among many others).
+To see how to achieve this parallelism in production see the section about [Deployment](https://fastapi.tiangolo.com/deployment/).
+## `async` and `await`[¶](https://fastapi.tiangolo.com/async/#async-and-await "Permanent link")
+Modern versions of Python have a very intuitive way to define asynchronous code. This makes it look just like normal "sequential" code and do the "awaiting" for you at the right moments.
+When there is an operation that will require waiting before giving the results and has support for these new Python features, you can code it like:
+```
+burgers = await get_burgers(2)
+
+```
+
+The key here is the `await`. It tells Python that it has to wait ⏸ for `get_burgers(2)` to finish doing its thing 🕙 before storing the results in `burgers`. With that, Python will know that it can go and do something else 🔀 ⏯ in the meanwhile (like receiving another request).
+For `await` to work, it has to be inside a function that supports this asynchronicity. To do that, you just declare it with `async def`:
+```
+async defget_burgers(number: int):
+  # Do some asynchronous stuff to create the burgers
+  return burgers
+
+```
+
+...instead of `def`:
+```
+# This is not asynchronous
+defget_sequential_burgers(number: int):
+  # Do some sequential stuff to create the burgers
+  return burgers
+
+```
+
+With `async def`, Python knows that, inside that function, it has to be aware of `await` expressions, and that it can "pause" ⏸ the execution of that function and go do something else 🔀 before coming back.
+When you want to call an `async def` function, you have to "await" it. So, this won't work:
+```
+# This won't work, because get_burgers was defined with: async def
+burgers = get_burgers(2)
+
+```
+
+So, if you are using a library that tells you that you can call it with `await`, you need to create the _path operation functions_ that uses it with `async def`, like in:
+```
+@app.get('/burgers')
+async defread_burgers():
+  burgers = await get_burgers(2)
+  return burgers

@@ -1,0 +1,45 @@
+Title: Platform Version Information Functions
+URL: https://docs.python.org/3/library/platform.html
+Summary: The document details functions for retrieving version information for macOS and iOS platforms. For macOS, `platform.mac_ver()` returns a tuple with the release, version info, and machine type. For iOS, `platform.ios_ver()` provides a named tuple with attributes for the system name, release version, model, and simulator status.
+---
+
+platform.mac_ver(_release =''_, _versioninfo =('', '', '')_, _machine =''_)[¶](https://docs.python.org/3/library/platform.html#platform.mac_ver "Link to this definition")
+    
+Get macOS version information and return it as tuple `(release, versioninfo, machine)` with _versioninfo_ being a tuple `(version, dev_stage, non_release_version)`.
+Entries which cannot be determined are set to `''`. All tuple entries are strings.
+## iOS Platform[¶](https://docs.python.org/3/library/platform.html#ios-platform "Link to this heading") 
+
+platform.ios_ver(_system =''_, _release =''_, _model =''_, _is_simulator =False_)[¶](https://docs.python.org/3/library/platform.html#platform.ios_ver "Link to this definition")
+    
+Get iOS version information and return it as a [`namedtuple()`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple") with the following attributes:
+  * `system` is the OS name; either `'iOS'` or `'iPadOS'`.
+  * `release` is the iOS version number as a string (e.g., `'17.2'`).
+  * `model` is the device model identifier; this will be a string like `'iPhone13,2'` for a physical device, or `'iPhone'` on a simulator.
+  * `is_simulator` is a boolean describing if the app is running on a simulator or a physical device.
+
+
+Entries which cannot be determined are set to the defaults given as parameters.
+## Unix Platforms[¶](https://docs.python.org/3/library/platform.html#unix-platforms "Link to this heading") 
+
+platform.libc_ver(_executable =sys.executable_, _lib =''_, _version =''_, _chunksize =16384_)[¶](https://docs.python.org/3/library/platform.html#platform.libc_ver "Link to this definition")
+    
+Tries to determine the libc version against which the file executable (defaults to the Python interpreter) is linked. Returns a tuple of strings `(lib, version)` which default to the given parameters in case the lookup fails.
+Note that this function has intimate knowledge of how different libc versions add symbols to the executable is probably only usable for executables compiled using **gcc**.
+The file is read and scanned in chunks of _chunksize_ bytes.
+## Linux Platforms[¶](https://docs.python.org/3/library/platform.html#linux-platforms "Link to this heading") 
+
+platform.freedesktop_os_release()[¶](https://docs.python.org/3/library/platform.html#platform.freedesktop_os_release "Link to this definition")
+    
+Get operating system identification from `os-release` file and return it as a dict. The `os-release` file is a [freedesktop.org standard](https://www.freedesktop.org/software/systemd/man/os-release.html) and is available in most Linux distributions. A noticeable exception is Android and Android-based distributions.
+Raises [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") or subclass when neither `/etc/os-release` nor `/usr/lib/os-release` can be read.
+On success, the function returns a dictionary where keys and values are strings. Values have their special characters like `"` and `$` unquoted. The fields `NAME`, `ID`, and `PRETTY_NAME` are always defined according to the standard. All other fields are optional. Vendors may include additional fields.
+Note that fields like `NAME`, `VERSION`, and `VARIANT` are strings suitable for presentation to users. Programs should use fields like `ID`, `ID_LIKE`, `VERSION_ID`, or `VARIANT_ID` to identify Linux distributions.
+Example:
+```
+defget_like_distro():
+  info = platform.freedesktop_os_release()
+  ids = [info["ID"]]
+  if "ID_LIKE" in info:
+    # ids are space separated and ordered by precedence
+    ids.extend(info["ID_LIKE"].split())
+  return ids

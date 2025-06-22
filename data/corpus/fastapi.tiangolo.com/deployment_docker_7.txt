@@ -1,0 +1,92 @@
+Title: Using Pre-Made Container Images for Development
+URL: https://fastapi.tiangolo.com/deployment/docker/
+Summary: This section explains how pre-made container images facilitate the integration of various tools, such as databases and web servers, through environment variable configuration. It emphasizes the ease of managing multiple containers within a network and highlights the built-in networking features of container management systems like Docker and Kubernetes.
+---
+
+By using a pre-made container image it's very easy to **combine** and use different tools. For example, to try out a new database. In most cases, you can use the **official images** , and just configure them with environment variables.
+That way, in many cases you can learn about containers and Docker and reuse that knowledge with many different tools and components.
+So, you would run **multiple containers** with different things, like a database, a Python application, a web server with a React frontend application, and connect them together via their internal network.
+All the container management systems (like Docker or Kubernetes) have these networking features integrated into them.
+## Containers and Processes[¶](https://fastapi.tiangolo.com/deployment/docker/#containers-and-processes "Permanent link")
+A **container image** normally includes in its metadata the default program or command that should be run when the **container** is started and the parameters to be passed to that program. Very similar to what would be if it was in the command line.
+When a **container** is started, it will run that command/program (although you can override it and make it run a different command/program).
+A container is running as long as the **main process** (command or program) is running.
+A container normally has a **single process** , but it's also possible to start subprocesses from the main process, and that way you will have **multiple processes** in the same container.
+But it's not possible to have a running container without **at least one running process**. If the main process stops, the container stops.
+## Build a Docker Image for FastAPI[¶](https://fastapi.tiangolo.com/deployment/docker/#build-a-docker-image-for-fastapi "Permanent link")
+Okay, let's build something now! 🚀
+I'll show you how to build a **Docker image** for FastAPI **from scratch** , based on the **official Python** image.
+This is what you would want to do in **most cases** , for example:
+  * Using **Kubernetes** or similar tools
+  * When running on a **Raspberry Pi**
+  * Using a cloud service that would run a container image for you, etc.
+
+
+### Package Requirements[¶](https://fastapi.tiangolo.com/deployment/docker/#package-requirements "Permanent link")
+You would normally have the **package requirements** for your application in some file.
+It would depend mainly on the tool you use to **install** those requirements.
+The most common way to do it is to have a file `requirements.txt` with the package names and their versions, one per line.
+You would of course use the same ideas you read in [About FastAPI versions](https://fastapi.tiangolo.com/deployment/versions/) to set the ranges of versions.
+For example, your `requirements.txt` could look like:
+```
+fastapi[standard]>=0.113.0,<0.114.0
+pydantic>=2.7.0,<3.0.0
+
+```
+
+And you would normally install those package dependencies with `pip`, for example:
+```
+
+fast →[](https://fastapi.tiangolo.com/deployment/docker/)pip install -r requirements.txtSuccessfully installed fastapi pydanticrestart ↻[](https://fastapi.tiangolo.com/deployment/docker/)
+
+```
+
+Info
+There are other formats and tools to define and install package dependencies.
+### Create the **FastAPI** Code[¶](https://fastapi.tiangolo.com/deployment/docker/#create-the-fastapi-code "Permanent link")
+  * Create an `app` directory and enter it.
+  * Create an empty file `__init__.py`.
+  * Create a `main.py` file with:
+
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/")
+defread_root():
+  return {"Hello": "World"}
+@app.get("/items/{item_id}")
+defread_item(item_id: int, q: Union[str, None] = None):
+  return {"item_id": item_id, "q": q}
+
+```
+
+### Dockerfile[¶](https://fastapi.tiangolo.com/deployment/docker/#dockerfile "Permanent link")
+Now in the same project directory create a file `Dockerfile` with:
+```
+[](https://fastapi.tiangolo.com/deployment/docker/#__code_4_annotation_1)
+FROMpython:3.9
+[](https://fastapi.tiangolo.com/deployment/docker/#__code_4_annotation_2)
+WORKDIR/code
+[](https://fastapi.tiangolo.com/deployment/docker/#__code_4_annotation_3)
+COPY./requirements.txt/code/requirements.txt
+[](https://fastapi.tiangolo.com/deployment/docker/#__code_4_annotation_4)
+RUNpipinstall--no-cache-dir--upgrade-r/code/requirements.txt
+[](https://fastapi.tiangolo.com/deployment/docker/#__code_4_annotation_5)
+COPY./app/code/app
+[](https://fastapi.tiangolo.com/deployment/docker/#__code_4_annotation_6)
+CMD["fastapi","run","app/main.py","--port","80"]
+
+```
+
+Tip
+Review what each line does by clicking each number bubble in the code. 👆
+Warning
+Make sure to **always** use the **exec form** of the `CMD` instruction, as explained below.
+#### Use `CMD` - Exec Form[¶](https://fastapi.tiangolo.com/deployment/docker/#use-cmd-exec-form "Permanent link")
+The [`CMD`](https://docs.docker.com/reference/dockerfile/#cmd) Docker instruction can be written using two forms:
+✅ **Exec** form:
+```
+# ✅ Do this
+CMD["fastapi","run","app/main.py","--port","80"]

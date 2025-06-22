@@ -1,0 +1,32 @@
+Title: Handling Tracebacks in Doctest
+URL: https://docs.python.org/3/library/doctest.html
+Summary: This section discusses how tracebacks are processed in doctest, highlighting the special treatment of ellipses in examples. It notes that doctest cannot distinguish between outputs from exceptions and regular prints, allowing expected exception messages to appear without forcing an actual exception. The documentation also points out that traceback lines must be formatted correctly for proper matching.
+---
+
+```
+
+Note that tracebacks are treated very specially. In particular, in the rewritten example, the use of `...` is independent of doctest’s [`ELLIPSIS`](https://docs.python.org/3/library/doctest.html#doctest.ELLIPSIS "doctest.ELLIPSIS") option. The ellipsis in that example could be left out, or could just as well be three (or three hundred) commas or digits, or an indented transcript of a Monty Python skit.
+Some details you should read once, but won’t need to remember:
+  * Doctest can’t guess whether your expected output came from an exception traceback or from ordinary printing. So, e.g., an example that expects `ValueError: 42 is prime` will pass whether [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is actually raised or if the example merely prints that traceback text. In practice, ordinary output rarely begins with a traceback header line, so this doesn’t create real problems.
+  * Each line of the traceback stack (if present) must be indented further than the first line of the example, _or_ start with a non-alphanumeric character. The first line following the traceback header indented the same and starting with an alphanumeric is taken to be the start of the exception detail. Of course this does the right thing for genuine tracebacks.
+  * When the [`IGNORE_EXCEPTION_DETAIL`](https://docs.python.org/3/library/doctest.html#doctest.IGNORE_EXCEPTION_DETAIL "doctest.IGNORE_EXCEPTION_DETAIL") doctest option is specified, everything following the leftmost colon and any module information in the exception name is ignored.
+  * The interactive shell omits the traceback header line for some [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError")s. But doctest uses the traceback header line to distinguish exceptions from non-exceptions. So in the rare case where you need to test a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") that omits the traceback header, you will need to manually add the traceback header line to your test example.
+
+
+  * For some exceptions, Python displays the position of the error using `^` markers and tildes:
+>>>```
+>>> 1 + None
+ File "<stdin>", line 1
+1 + None
+~~^~~~~~
+TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
+
+```
+
+Since the lines showing the position of the error come before the exception type and detail, they are not checked by doctest. For example, the following test would pass, even though it puts the `^` marker in the wrong location:
+>>>```
+>>> 1 + None
+ File "<stdin>", line 1
+1 + None
+^~~~~~~~
+TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'

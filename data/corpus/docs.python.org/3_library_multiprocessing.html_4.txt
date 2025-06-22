@@ -1,0 +1,77 @@
+Title: Multiprocessing Set Start Method and Contexts
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The `set_start_method()` function in Python's multiprocessing library should only be used once. Instead, `get_context()` can be utilized to create a context object that supports multiple start methods within the same program. Caution is advised as context-related objects may not be compatible across different contexts, particularly locks when switching methods.
+---
+
+```
+
+[`set_start_method()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.set_start_method "multiprocessing.set_start_method") should not be used more than once in the program.
+Alternatively, you can use [`get_context()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context "multiprocessing.get_context") to obtain a context object. Context objects have the same API as the multiprocessing module, and allow one to use multiple start methods in the same program.
+```
+importmultiprocessingasmp
+deffoo(q):
+  q.put('hello')
+if __name__ == '__main__':
+  ctx = mp.get_context('spawn')
+  q = ctx.Queue()
+  p = ctx.Process(target=foo, args=(q,))
+  p.start()
+  print(q.get())
+  p.join()
+
+```
+
+Note that objects related to one context may not be compatible with processes for a different context. In particular, locks created using the _fork_ context cannot be passed to processes started using the _spawn_ or _forkserver_ start methods.
+A library which wants to use a particular start method should probably use [`get_context()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context "multiprocessing.get_context") to avoid interfering with the choice of the library user.
+Warning
+The `'spawn'` and `'forkserver'` start methods generally cannot be used with “frozen” executables (i.e., binaries produced by packages like **PyInstaller** and **cx_Freeze**) on POSIX systems. The `'fork'` start method may work if code does not use threads.
+### Exchanging objects between processes[¶](https://docs.python.org/3/library/multiprocessing.html#exchanging-objects-between-processes "Link to this heading")
+[`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") supports two types of communication channel between processes:
+**Queues**
+> The [`Queue`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue "multiprocessing.Queue") class is a near clone of [`queue.Queue`](https://docs.python.org/3/library/queue.html#queue.Queue "queue.Queue"). For example:
+> ```
+frommultiprocessingimport Process, Queue
+deff(q):
+  q.put([42, None, 'hello'])
+if __name__ == '__main__':
+  q = Queue()
+  p = Process(target=f, args=(q,))
+  p.start()
+  print(q.get())  # prints "[42, None, 'hello']"
+  p.join()
+
+```
+
+> Queues are thread and process safe. Any object put into a [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") queue will be serialized.
+**Pipes**
+> The [`Pipe()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe "multiprocessing.Pipe") function returns a pair of connection objects connected by a pipe which by default is duplex (two-way). For example:
+> ```
+frommultiprocessingimport Process, Pipe
+deff(conn):
+  conn.send([42, None, 'hello'])
+  conn.close()
+if __name__ == '__main__':
+  parent_conn, child_conn = Pipe()
+  p = Process(target=f, args=(child_conn,))
+  p.start()
+  print(parent_conn.recv())  # prints "[42, None, 'hello']"
+  p.join()
+
+```
+
+> The two connection objects returned by [`Pipe()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe "multiprocessing.Pipe") represent the two ends of the pipe. Each connection object has `send()` and `recv()` methods (among others). Note that data in a pipe may become corrupted if two processes (or threads) try to read from or write to the _same_ end of the pipe at the same time. Of course there is no risk of corruption from processes using different ends of the pipe at the same time.
+> The `send()` method serializes the object and `recv()` re-creates the object.
+### Synchronization between processes[¶](https://docs.python.org/3/library/multiprocessing.html#synchronization-between-processes "Link to this heading")
+[`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") contains equivalents of all the synchronization primitives from [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism."). For instance one can use a lock to ensure that only one process prints to standard output at a time:
+```
+frommultiprocessingimport Process, Lock
+deff(l, i):
+  l.acquire()
+  try:
+    print('hello world', i)
+  finally:
+    l.release()
+if __name__ == '__main__':
+  lock = Lock()
+  for num in range(10):
+    Process(target=f, args=(lock, num)).start()

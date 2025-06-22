@@ -1,0 +1,47 @@
+Title: io — Core tools for working with streams
+URL: https://docs.python.org/3/library/io.html
+Summary: The `io` module provides essential tools for handling text, binary, and raw I/O in Python. It categorizes I/O into three types and introduces the concept of file objects and streams, which can be read-only, write-only, or read-write.
+---
+
+# `io` — Core tools for working with streams[¶](https://docs.python.org/3/library/io.html#module-io "Link to this heading")
+**Source code:** [Lib/io.py](https://github.com/python/cpython/tree/3.13/Lib/io.py)
+## Overview[¶](https://docs.python.org/3/library/io.html#overview "Link to this heading")
+The [`io`](https://docs.python.org/3/library/io.html#module-io "io: Core tools for working with streams.") module provides Python’s main facilities for dealing with various types of I/O. There are three main types of I/O: _text I/O_ , _binary I/O_ and _raw I/O_. These are generic categories, and various backing stores can be used for each of them. A concrete object belonging to any of these categories is called a [file object](https://docs.python.org/3/glossary.html#term-file-object). Other common terms are _stream_ and _file-like object_.
+Independent of its category, each concrete stream object will also have various capabilities: it can be read-only, write-only, or read-write. It can also allow arbitrary random access (seeking forwards or backwards to any location), or only sequential access (for example in the case of a socket or pipe).
+All streams are careful about the type of data you give to them. For example giving a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") object to the `write()` method of a binary stream will raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError"). So will giving a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object to the `write()` method of a text stream.
+Changed in version 3.3: Operations that used to raise [`IOError`](https://docs.python.org/3/library/exceptions.html#IOError "IOError") now raise [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError"), since [`IOError`](https://docs.python.org/3/library/exceptions.html#IOError "IOError") is now an alias of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError").
+### Text I/O[¶](https://docs.python.org/3/library/io.html#text-i-o "Link to this heading")
+Text I/O expects and produces [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") objects. This means that whenever the backing store is natively made of bytes (such as in the case of a file), encoding and decoding of data is made transparently as well as optional translation of platform-specific newline characters.
+The easiest way to create a text stream is with [`open()`](https://docs.python.org/3/library/functions.html#open "open"), optionally specifying an encoding:
+```
+f = open("myfile.txt", "r", encoding="utf-8")
+
+```
+
+In-memory text streams are also available as [`StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") objects:
+```
+f = io.StringIO("some initial text data")
+
+```
+
+The text stream API is described in detail in the documentation of [`TextIOBase`](https://docs.python.org/3/library/io.html#io.TextIOBase "io.TextIOBase").
+### Binary I/O[¶](https://docs.python.org/3/library/io.html#binary-i-o "Link to this heading")
+Binary I/O (also called _buffered I/O_) expects [bytes-like objects](https://docs.python.org/3/glossary.html#term-bytes-like-object) and produces [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") objects. No encoding, decoding, or newline translation is performed. This category of streams can be used for all kinds of non-text data, and also when manual control over the handling of text data is desired.
+The easiest way to create a binary stream is with [`open()`](https://docs.python.org/3/library/functions.html#open "open") with `'b'` in the mode string:
+```
+f = open("myfile.jpg", "rb")
+
+```
+
+In-memory binary streams are also available as [`BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO "io.BytesIO") objects:
+```
+f = io.BytesIO(b"some initial binary data: \x00\x01")
+
+```
+
+The binary stream API is described in detail in the docs of [`BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase").
+Other library modules may provide additional ways to create text or binary streams. See [`socket.socket.makefile()`](https://docs.python.org/3/library/socket.html#socket.socket.makefile "socket.socket.makefile") for example.
+### Raw I/O[¶](https://docs.python.org/3/library/io.html#raw-i-o "Link to this heading")
+Raw I/O (also called _unbuffered I/O_) is generally used as a low-level building-block for binary and text streams; it is rarely useful to directly manipulate a raw stream from user code. Nevertheless, you can create a raw stream by opening a file in binary mode with buffering disabled:
+```
+f = open("myfile.jpg", "rb", buffering=0)

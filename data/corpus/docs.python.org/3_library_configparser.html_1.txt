@@ -1,0 +1,109 @@
+Title: Creating and Using INI Configuration Files with configparser
+URL: https://docs.python.org/3/library/configparser.html
+Summary: This section discusses the structure of INI files, which consist of sections containing key-value pairs, and introduces the 'configparser' module in Python for reading and writing these files. An example of programmatically creating a configuration file is provided, illustrating how to define default settings and specific sections.
+---
+
+```
+[DEFAULT]
+ServerAliveInterval=45
+Compression=yes
+CompressionLevel=9
+ForwardX11=yes
+[forge.example]
+User=hg
+[topsecret.server.example]
+Port=50022
+ForwardX11=no
+
+```
+
+The structure of INI files is described [in the following section](https://docs.python.org/3/library/configparser.html#supported-ini-file-structure). Essentially, the file consists of sections, each of which contains keys with values. [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") classes can read and write such files. Let’s start by creating the above configuration file programmatically.
+>>>```
+>>> importconfigparser
+>>> config = configparser.ConfigParser()
+>>> config['DEFAULT'] = {'ServerAliveInterval': '45',
+...            'Compression': 'yes',
+...            'CompressionLevel': '9'}
+>>> config['forge.example'] = {}
+>>> config['forge.example']['User'] = 'hg'
+>>> config['topsecret.server.example'] = {}
+>>> topsecret = config['topsecret.server.example']
+>>> topsecret['Port'] = '50022'   # mutates the parser
+>>> topsecret['ForwardX11'] = 'no' # same here
+>>> config['DEFAULT']['ForwardX11'] = 'yes'
+>>> with open('example.ini', 'w') as configfile:
+...  config.write(configfile)
+...
+
+```
+
+As you can see, we can treat a config parser much like a dictionary. There are differences, [outlined later](https://docs.python.org/3/library/configparser.html#mapping-protocol-access), but the behavior is very close to what you would expect from a dictionary.
+Now that we have created and saved a configuration file, let’s read it back and explore the data it holds.
+>>>```
+>>> config = configparser.ConfigParser()
+>>> config.sections()
+[]
+>>> config.read('example.ini')
+['example.ini']
+>>> config.sections()
+['forge.example', 'topsecret.server.example']
+>>> 'forge.example' in config
+True
+>>> 'python.org' in config
+False
+>>> config['forge.example']['User']
+'hg'
+>>> config['DEFAULT']['Compression']
+'yes'
+>>> topsecret = config['topsecret.server.example']
+>>> topsecret['ForwardX11']
+'no'
+>>> topsecret['Port']
+'50022'
+>>> for key in config['forge.example']:
+...   print(key)
+user
+compressionlevel
+serveraliveinterval
+compression
+forwardx11
+>>> config['forge.example']['ForwardX11']
+'yes'
+
+```
+
+As we can see above, the API is pretty straightforward. The only bit of magic involves the `DEFAULT` section which provides default values for all other sections [[1]](https://docs.python.org/3/library/configparser.html#id16). Note also that keys in sections are case-insensitive and stored in lowercase [[1]](https://docs.python.org/3/library/configparser.html#id16).
+It is possible to read several configurations into a single [`ConfigParser`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser "configparser.ConfigParser"), where the most recently added configuration has the highest priority. Any conflicting keys are taken from the more recent configuration while the previously existing keys are retained. The example below reads in an `override.ini` file, which will override any conflicting keys from the `example.ini` file.
+```
+[DEFAULT]
+ServerAliveInterval=-1
+
+```
+
+>>>```
+>>> config_override = configparser.ConfigParser()
+>>> config_override['DEFAULT'] = {'ServerAliveInterval': '-1'}
+>>> with open('override.ini', 'w') as configfile:
+...   config_override.write(configfile)
+...
+>>> config_override = configparser.ConfigParser()
+>>> config_override.read(['example.ini', 'override.ini'])
+['example.ini', 'override.ini']
+>>> print(config_override.get('DEFAULT', 'ServerAliveInterval'))
+-1
+
+```
+
+This behaviour is equivalent to a [`ConfigParser.read()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.read "configparser.ConfigParser.read") call with several files passed to the _filenames_ parameter.
+## Supported Datatypes[¶](https://docs.python.org/3/library/configparser.html#supported-datatypes "Link to this heading")
+Config parsers do not guess datatypes of values in configuration files, always storing them internally as strings. This means that if you need other datatypes, you should convert on your own:
+>>>```
+>>> int(topsecret['Port'])
+50022
+>>> float(topsecret['CompressionLevel'])
+9.0
+
+```
+
+Since this task is so common, config parsers provide a range of handy getter methods to handle integers, floats and booleans. The last one is the most interesting because simply passing the value to `bool()` would do no good since `bool('False')` is still `True`. This is why config parsers also provide [`getboolean()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean "configparser.ConfigParser.getboolean"). This method is case-insensitive and recognizes Boolean values from `'yes'`/`'no'`, `'on'`/`'off'`, `'true'`/`'false'` and `'1'`/`'0'` [[1]](https://docs.python.org/3/library/configparser.html#id16). For example:
+>>>

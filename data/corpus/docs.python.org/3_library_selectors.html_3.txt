@@ -1,0 +1,85 @@
+Title: Selectors Module in Python
+URL: https://docs.python.org/3/library/selectors.html
+Summary: This section describes the `fileno()` method for obtaining file descriptors from `select.devpoll()` and `select.kqueue()` objects in the selectors module, which was introduced in version 3.5. It also mentions an example of a simple echo server implementation.
+---
+
+fileno()[¶](https://docs.python.org/3/library/selectors.html#selectors.DevpollSelector.fileno "Link to this definition")
+    
+This returns the file descriptor used by the underlying [`select.devpoll()`](https://docs.python.org/3/library/select.html#select.devpoll "select.devpoll") object.
+Added in version 3.5. 
+
+_class_ selectors.KqueueSelector[¶](https://docs.python.org/3/library/selectors.html#selectors.KqueueSelector "Link to this definition")
+    
+[`select.kqueue()`](https://docs.python.org/3/library/select.html#select.kqueue "select.kqueue")-based selector. 
+
+fileno()[¶](https://docs.python.org/3/library/selectors.html#selectors.KqueueSelector.fileno "Link to this definition")
+    
+This returns the file descriptor used by the underlying [`select.kqueue()`](https://docs.python.org/3/library/select.html#select.kqueue "select.kqueue") object.
+## Examples[¶](https://docs.python.org/3/library/selectors.html#examples "Link to this heading")
+Here is a simple echo server implementation:
+```
+importselectors
+importsocket
+sel = selectors.DefaultSelector()
+defaccept(sock, mask):
+  conn, addr = sock.accept() # Should be ready
+  print('accepted', conn, 'from', addr)
+  conn.setblocking(False)
+  sel.register(conn, selectors.EVENT_READ, read)
+defread(conn, mask):
+  data = conn.recv(1000) # Should be ready
+  if data:
+    print('echoing', repr(data), 'to', conn)
+    conn.send(data) # Hope it won't block
+  else:
+    print('closing', conn)
+    sel.unregister(conn)
+    conn.close()
+sock = socket.socket()
+sock.bind(('localhost', 1234))
+sock.listen(100)
+sock.setblocking(False)
+sel.register(sock, selectors.EVENT_READ, accept)
+while True:
+  events = sel.select()
+  for key, mask in events:
+    callback = key.data
+    callback(key.fileobj, mask)
+
+```
+
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [`selectors` — High-level I/O multiplexing](https://docs.python.org/3/library/selectors.html)
+    * [Introduction](https://docs.python.org/3/library/selectors.html#introduction)
+    * [Classes](https://docs.python.org/3/library/selectors.html#classes)
+    * [Examples](https://docs.python.org/3/library/selectors.html#examples)
+
+
+#### Previous topic
+[`select` — Waiting for I/O completion](https://docs.python.org/3/library/select.html "previous chapter")
+#### Next topic
+[`signal` — Set handlers for asynchronous events](https://docs.python.org/3/library/signal.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/selectors.rst)
+
+
+«
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/library/signal.html "signal — Set handlers for asynchronous events") |
+  * [previous](https://docs.python.org/3/library/select.html "select — Waiting for I/O completion") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [The Python Standard Library](https://docs.python.org/3/library/index.html) »
+  * [Networking and Interprocess Communication](https://docs.python.org/3/library/ipc.html) »
+  * [`selectors` — High-level I/O multiplexing](https://docs.python.org/3/library/selectors.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+© [ Copyright ](https://docs.python.org/3/copyright.html) 2001-2025, Python Software Foundation. This page is licensed under the Python Software Foundation License Version 2. Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License. See [History and License](https://docs.python.org/license.html) for more information. The Python Software Foundation is a non-profit corporation. [Please donate.](https://www.python.org/psf/donations/) Last updated on Apr 27, 2025 (05:38 UTC). [Found a bug](https://docs.python.org/bugs.html)? Created using [Sphinx](https://www.sphinx-doc.org/) 8.2.3.

@@ -1,0 +1,22 @@
+Title: Defining and Calling a Fragment in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/architecture/fragments
+Summary: Streamlit introduces the `st.fragment` decorator to convert any function into a fragment function, allowing for fragment reruns when interacting with widget functions. During these reruns, only the specific fragment function is re-executed, keeping the rest of the app intact. An example illustrates how to define and call a fragment function.
+---
+
+## [](https://docs.streamlit.io/develop/concepts/architecture/fragments#defining-and-calling-a-fragment)Defining and calling a fragment
+Streamlit provides a decorator ([`st.fragment`](https://docs.streamlit.io/develop/api-reference/execution-flow/st.fragment)) to turn any function into a fragment function. When you call a fragment function that contains a widget function, a user triggers a _fragment rerun_ instead of a full rerun when they interact with that fragment's widget. During a fragment rerun, only your fragment function is re-executed. Anything within the main body of your fragment is updated on the frontend, while the rest of your app remains the same. We'll describe fragments written across multiple containers later on.
+Here is a basic example of defining and calling a fragment function. Just like with caching, remember to call your function after defining it.
+`import streamlit as st @st.fragment def fragment_function(): if st.button("Hi!"):     st.write("Hi back!") fragment_function() `
+If you want the main body of your fragment to appear in the sidebar or another container, call your fragment function inside a context manager.
+`with st.sidebar:   fragment_function() `
+### [](https://docs.streamlit.io/develop/concepts/architecture/fragments#fragment-execution-flow)Fragment execution flow
+Consider the following code with the explanation and diagram below.
+`import streamlit as st st.title("My Awesome App") @st.fragment() def toggle_and_text():   cols = st.columns(2)   cols[0].toggle("Toggle")   cols[1].text_area("Enter text") @st.fragment() def filter_and_file():   cols = st.columns(2)   cols[0].checkbox("Filter")   cols[1].file_uploader("Upload image") toggle_and_text() cols = st.columns(2) cols[0].selectbox("Select", [1,2,3], None) cols[1].button("Update") filter_and_file() `
+When a user interacts with an input widget inside a fragment, only the fragment reruns instead of the full script. When a user interacts with an input widget outside a fragment, the full script reruns as usual.
+If you run the code above, the full script will run top to bottom on your app's initial load. If you flip the toggle button in your running app, the first fragment (`toggle_and_text()`) will rerun, redrawing the toggle and text area while leaving everything else unchanged. If you click the checkbox, the second fragment (`filter_and_file()`) will rerun and consequently redraw the checkbox and file uploader. Everything else remains unchanged. Finally, if you click the update button, the full script will rerun, and Streamlit will redraw everything.
+![Diagram of fragment execution flow](https://docs.streamlit.io/images/concepts/fragment_diagram.png)
+## [](https://docs.streamlit.io/develop/concepts/architecture/fragments#fragment-return-values-and-interacting-with-the-rest-of-your-app)Fragment return values and interacting with the rest of your app
+Streamlit ignores fragment return values during fragment reruns, so defining return values for your fragment functions is not recommended. Instead, if your fragment needs to share data with the rest of your app, use Session State. Fragments are just functions in your script, so they can access Session State, imported modules, and other Streamlit elements like containers. If your fragment writes to any container created outside of itself, note the following difference in behavior:
+  * Elements drawn in the main body of your fragment are cleared and redrawn in place during a fragment rerun. Repeated fragment reruns will not cause additional elements to appear.
+  * Elements drawn to containers outside the main body of fragment will not be cleared with each fragment rerun. Instead, Streamlit will draw them additively and these elements will accumulate until the next full-script rerun.
+  * A fragment can't draw widgets in containers outside of the main body of the fragment. Widgets can only go in the main body of a fragment.

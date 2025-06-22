@@ -1,0 +1,29 @@
+Title: Python Path Configuration Behavior
+URL: https://docs.python.org/3/c-api/init_config.html
+Summary: This section explains how Python handles output fields in path configuration. If any output field is unset, Python calculates its value based on `module_search_paths_set`. If set to `0`, the default `module_search_paths` is used and `module_search_paths_set` is updated to `1`. Users can override this behavior by explicitly setting all relevant configuration fields.
+---
+
+If at least one “output field” is not set, Python calculates the path configuration to fill unset fields. If [`module_search_paths_set`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths_set "PyConfig.module_search_paths_set") is equal to `0`, [`module_search_paths`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths "PyConfig.module_search_paths") is overridden and [`module_search_paths_set`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths_set "PyConfig.module_search_paths_set") is set to `1`.
+It is possible to completely ignore the function calculating the default path configuration by setting explicitly all path configuration output fields listed above. A string is considered as set even if it is non-empty. `module_search_paths` is considered as set if `module_search_paths_set` is set to `1`. In this case, `module_search_paths` will be used without modification.
+Set [`pathconfig_warnings`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.pathconfig_warnings "PyConfig.pathconfig_warnings") to `0` to suppress warnings when calculating the path configuration (Unix only, Windows does not log any warning).
+If [`base_prefix`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.base_prefix "PyConfig.base_prefix") or [`base_exec_prefix`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.base_exec_prefix "PyConfig.base_exec_prefix") fields are not set, they inherit their value from [`prefix`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.prefix "PyConfig.prefix") and [`exec_prefix`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.exec_prefix "PyConfig.exec_prefix") respectively.
+[`Py_RunMain()`](https://docs.python.org/3/c-api/init.html#c.Py_RunMain "Py_RunMain") and [`Py_Main()`](https://docs.python.org/3/c-api/init.html#c.Py_Main "Py_Main") modify [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"):
+  * If [`run_filename`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_filename "PyConfig.run_filename") is set and is a directory which contains a `__main__.py` script, prepend [`run_filename`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_filename "PyConfig.run_filename") to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path").
+  * If [`isolated`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.isolated "PyConfig.isolated") is zero:
+    * If [`run_module`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_module "PyConfig.run_module") is set, prepend the current directory to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"). Do nothing if the current directory cannot be read.
+    * If [`run_filename`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_filename "PyConfig.run_filename") is set, prepend the directory of the filename to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path").
+    * Otherwise, prepend an empty string to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path").
+
+
+If [`site_import`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.site_import "PyConfig.site_import") is non-zero, [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") can be modified by the [`site`](https://docs.python.org/3/library/site.html#module-site "site: Module responsible for site-specific configuration.") module. If [`user_site_directory`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.user_site_directory "PyConfig.user_site_directory") is non-zero and the user’s site-package directory exists, the [`site`](https://docs.python.org/3/library/site.html#module-site "site: Module responsible for site-specific configuration.") module appends the user’s site-package directory to [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path").
+The following configuration files are used by the path configuration:
+  * `pyvenv.cfg`
+  * `._pth` file (ex: `python._pth`)
+  * `pybuilddir.txt` (Unix only)
+
+
+If a `._pth` file is present:
+  * Set [`isolated`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.isolated "PyConfig.isolated") to `1`.
+  * Set [`use_environment`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.use_environment "PyConfig.use_environment") to `0`.
+  * Set [`site_import`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.site_import "PyConfig.site_import") to `0`.
+  * Set [`safe_path`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.safe_path "PyConfig.safe_path") to `1`.

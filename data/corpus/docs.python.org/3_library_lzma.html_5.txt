@@ -1,0 +1,107 @@
+Title: LZMA Delta and BCJ Filters
+URL: https://docs.python.org/3/library/lzma.html
+Summary: This section explains the delta and BCJ filters used in LZMA compression. The delta filter captures byte differences to enhance redundancy, while BCJ filters convert machine code branches to improve compressibility. Examples demonstrate how to read from and write to compressed files using the lzma module.
+---
+
+The delta filter stores the differences between bytes, producing more repetitive input for the compressor in certain circumstances. It supports one option, `dist`. This indicates the distance between bytes to be subtracted. The default is 1, i.e. take the differences between adjacent bytes.
+The BCJ filters are intended to be applied to machine code. They convert relative branches, calls and jumps in the code to use absolute addressing, with the aim of increasing the redundancy that can be exploited by the compressor. These filters support one option, `start_offset`. This specifies the address that should be mapped to the beginning of the input data. The default is 0.
+## Examples[¶](https://docs.python.org/3/library/lzma.html#examples "Link to this heading")
+Reading in a compressed file:
+```
+importlzma
+with lzma.open("file.xz") as f:
+  file_content = f.read()
+
+```
+
+Creating a compressed file:
+```
+importlzma
+data = b"Insert Data Here"
+with lzma.open("file.xz", "w") as f:
+  f.write(data)
+
+```
+
+Compressing data in memory:
+```
+importlzma
+data_in = b"Insert Data Here"
+data_out = lzma.compress(data_in)
+
+```
+
+Incremental compression:
+```
+importlzma
+lzc = lzma.LZMACompressor()
+out1 = lzc.compress(b"Some data\n")
+out2 = lzc.compress(b"Another piece of data\n")
+out3 = lzc.compress(b"Even more data\n")
+out4 = lzc.flush()
+# Concatenate all the partial results:
+result = b"".join([out1, out2, out3, out4])
+
+```
+
+Writing compressed data to an already-open file:
+```
+importlzma
+with open("file.xz", "wb") as f:
+  f.write(b"This data will not be compressed\n")
+  with lzma.open(f, "w") as lzf:
+    lzf.write(b"This *will* be compressed\n")
+  f.write(b"Not compressed\n")
+
+```
+
+Creating a compressed file using a custom filter chain:
+```
+importlzma
+my_filters = [
+  {"id": lzma.FILTER_DELTA, "dist": 5},
+  {"id": lzma.FILTER_LZMA2, "preset": 7 | lzma.PRESET_EXTREME},
+]
+with lzma.open("file.xz", "w", filters=my_filters) as f:
+  f.write(b"blah blah blah")
+
+```
+
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [`lzma` — Compression using the LZMA algorithm](https://docs.python.org/3/library/lzma.html)
+    * [Reading and writing compressed files](https://docs.python.org/3/library/lzma.html#reading-and-writing-compressed-files)
+    * [Compressing and decompressing data in memory](https://docs.python.org/3/library/lzma.html#compressing-and-decompressing-data-in-memory)
+    * [Miscellaneous](https://docs.python.org/3/library/lzma.html#miscellaneous)
+    * [Specifying custom filter chains](https://docs.python.org/3/library/lzma.html#specifying-custom-filter-chains)
+    * [Examples](https://docs.python.org/3/library/lzma.html#examples)
+
+
+#### Previous topic
+[`bz2` — Support for **bzip2** compression](https://docs.python.org/3/library/bz2.html "previous chapter")
+#### Next topic
+[`zipfile` — Work with ZIP archives](https://docs.python.org/3/library/zipfile.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/lzma.rst)
+
+
+«
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/library/zipfile.html "zipfile — Work with ZIP archives") |
+  * [previous](https://docs.python.org/3/library/bz2.html "bz2 — Support for bzip2 compression") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [The Python Standard Library](https://docs.python.org/3/library/index.html) »
+  * [Data Compression and Archiving](https://docs.python.org/3/library/archiving.html) »
+  * [`lzma` — Compression using the LZMA algorithm](https://docs.python.org/3/library/lzma.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+© [ Copyright ](https://docs.python.org/3/copyright.html) 2001-2025, Python Software Foundation. This page is licensed under the Python Software Foundation License Version 2. Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License. See [History and License](https://docs.python.org/license.html) for more information. The Python Software Foundation is a non-profit corporation. [Please donate.](https://www.python.org/psf/donations/) Last updated on Apr 27, 2025 (05:38 UTC). [Found a bug](https://docs.python.org/bugs.html)? Created using [Sphinx](https://www.sphinx-doc.org/) 8.2.3. 
+  *[*]: Keyword-only parameters separator (PEP 3102)

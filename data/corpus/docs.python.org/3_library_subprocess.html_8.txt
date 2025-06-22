@@ -1,0 +1,30 @@
+Title: Using subprocess with Shell Commands on Windows
+URL: https://docs.python.org/3/library/subprocess.html
+Summary: On Windows, use `shell=True` in subprocess only for shell built-in commands. For batch files or executables, it's unnecessary. Refer to the Security Considerations section before using it. The `_bufsize_` parameter in subprocess controls the buffering of stdin/stdout/stderr pipe file objects.
+---
+
+```
+
+On Windows with `shell=True`, the `COMSPEC` environment variable specifies the default shell. The only time you need to specify `shell=True` on Windows is when the command you wish to execute is built into the shell (e.g. **dir** or **copy**). You do not need `shell=True` to run a batch file or console-based executable.
+Note
+Read the [Security Considerations](https://docs.python.org/3/library/subprocess.html#security-considerations) section before using `shell=True`.
+_bufsize_ will be supplied as the corresponding argument to the [`open()`](https://docs.python.org/3/library/functions.html#open "open") function when creating the stdin/stdout/stderr pipe file objects:
+  * `0` means unbuffered (read and write are one system call and can return short)
+  * `1` means line buffered (only usable if `text=True` or `universal_newlines=True`)
+  * any other positive value means use a buffer of approximately that size
+  * negative bufsize (the default) means the system default of io.DEFAULT_BUFFER_SIZE will be used.
+
+
+Changed in version 3.3.1: _bufsize_ now defaults to -1 to enable buffering by default to match the behavior that most code expects. In versions prior to Python 3.2.4 and 3.3.1 it incorrectly defaulted to `0` which was unbuffered and allowed short reads. This was unintentional and did not match the behavior of Python 2 as most code expected.
+The _executable_ argument specifies a replacement program to execute. It is very seldom needed. When `shell=False`, _executable_ replaces the program to execute specified by _args_. However, the original _args_ is still passed to the program. Most programs treat the program specified by _args_ as the command name, which can then be different from the program actually executed. On POSIX, the _args_ name becomes the display name for the executable in utilities such as **ps**. If `shell=True`, on POSIX the _executable_ argument specifies a replacement shell for the default `/bin/sh`.
+Changed in version 3.6: _executable_ parameter accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object) on POSIX.
+Changed in version 3.8: _executable_ parameter accepts a bytes and [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object) on Windows.
+Changed in version 3.12: Changed Windows shell search order for `shell=True`. The current directory and `%PATH%` are replaced with `%COMSPEC%` and `%SystemRoot%\System32\cmd.exe`. As a result, dropping a malicious program named `cmd.exe` into a current directory no longer works.
+_stdin_ , _stdout_ and _stderr_ specify the executed program’s standard input, standard output and standard error file handles, respectively. Valid values are `None`, [`PIPE`](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE "subprocess.PIPE"), [`DEVNULL`](https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL "subprocess.DEVNULL"), an existing file descriptor (a positive integer), and an existing [file object](https://docs.python.org/3/glossary.html#term-file-object) with a valid file descriptor. With the default settings of `None`, no redirection will occur. [`PIPE`](https://docs.python.org/3/library/subprocess.html#subprocess.PIPE "subprocess.PIPE") indicates that a new pipe to the child should be created. [`DEVNULL`](https://docs.python.org/3/library/subprocess.html#subprocess.DEVNULL "subprocess.DEVNULL") indicates that the special file [`os.devnull`](https://docs.python.org/3/library/os.html#os.devnull "os.devnull") will be used. Additionally, _stderr_ can be [`STDOUT`](https://docs.python.org/3/library/subprocess.html#subprocess.STDOUT "subprocess.STDOUT"), which indicates that the stderr data from the applications should be captured into the same file handle as for _stdout_.
+If _preexec_fn_ is set to a callable object, this object will be called in the child process just before the child is executed. (POSIX only)
+Warning
+The _preexec_fn_ parameter is NOT SAFE to use in the presence of threads in your application. The child process could deadlock before exec is called.
+Note
+If you need to modify the environment for the child use the _env_ parameter rather than doing it in a _preexec_fn_. The _start_new_session_ and _process_group_ parameters should take the place of code using _preexec_fn_ to call [`os.setsid()`](https://docs.python.org/3/library/os.html#os.setsid "os.setsid") or [`os.setpgid()`](https://docs.python.org/3/library/os.html#os.setpgid "os.setpgid") in the child.
+Changed in version 3.8: The _preexec_fn_ parameter is no longer supported in subinterpreters. The use of the parameter in a subinterpreter raises [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError"). The new restriction may affect applications that are deployed in mod_wsgi, uWSGI, and other embedded environments.
+If _close_fds_ is true, all file descriptors except `0`, `1` and `2` will be closed before the child process is executed. Otherwise when _close_fds_

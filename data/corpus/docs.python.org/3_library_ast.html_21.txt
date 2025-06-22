@@ -1,0 +1,48 @@
+Title: AST Module: Node Location Utilities
+URL: https://docs.python.org/3/library/ast.html
+Summary: This chunk discusses two utility functions in the AST module: `fix_missing_locations` which recursively fills in missing `lineno` and `col_offset` attributes for nodes, and `increment_lineno`, which increments the line numbers of nodes in a tree starting from a specified node.
+---
+
+ast.fix_missing_locations(_node_)[¶](https://docs.python.org/3/library/ast.html#ast.fix_missing_locations "Link to this definition")
+    
+When you compile a node tree with [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile"), the compiler expects [`lineno`](https://docs.python.org/3/library/ast.html#ast.AST.lineno "ast.AST.lineno") and [`col_offset`](https://docs.python.org/3/library/ast.html#ast.AST.col_offset "ast.AST.col_offset") attributes for every node that supports them. This is rather tedious to fill in for generated nodes, so this helper adds these attributes recursively where not already set, by setting them to the values of the parent node. It works recursively starting at _node_. 
+
+ast.increment_lineno(_node_ , _n =1_)[¶](https://docs.python.org/3/library/ast.html#ast.increment_lineno "Link to this definition")
+    
+Increment the line number and end line number of each node in the tree starting at _node_ by _n_. This is useful to “move code” to a different location in a file. 
+
+ast.copy_location(_new_node_ , _old_node_)[¶](https://docs.python.org/3/library/ast.html#ast.copy_location "Link to this definition")
+    
+Copy source location ([`lineno`](https://docs.python.org/3/library/ast.html#ast.AST.lineno "ast.AST.lineno"), [`col_offset`](https://docs.python.org/3/library/ast.html#ast.AST.col_offset "ast.AST.col_offset"), [`end_lineno`](https://docs.python.org/3/library/ast.html#ast.AST.end_lineno "ast.AST.end_lineno"), and [`end_col_offset`](https://docs.python.org/3/library/ast.html#ast.AST.end_col_offset "ast.AST.end_col_offset")) from _old_node_ to _new_node_ if possible, and return _new_node_. 
+
+ast.iter_fields(_node_)[¶](https://docs.python.org/3/library/ast.html#ast.iter_fields "Link to this definition")
+    
+Yield a tuple of `(fieldname, value)` for each field in `node._fields` that is present on _node_. 
+
+ast.iter_child_nodes(_node_)[¶](https://docs.python.org/3/library/ast.html#ast.iter_child_nodes "Link to this definition")
+    
+Yield all direct child nodes of _node_ , that is, all fields that are nodes and all items of fields that are lists of nodes. 
+
+ast.walk(_node_)[¶](https://docs.python.org/3/library/ast.html#ast.walk "Link to this definition")
+    
+Recursively yield all descendant nodes in the tree starting at _node_ (including _node_ itself), in no specified order. This is useful if you only want to modify nodes in place and don’t care about the context. 
+
+_class_ ast.NodeVisitor[¶](https://docs.python.org/3/library/ast.html#ast.NodeVisitor "Link to this definition")
+    
+A node visitor base class that walks the abstract syntax tree and calls a visitor function for every node found. This function may return a value which is forwarded by the [`visit()`](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.visit "ast.NodeVisitor.visit") method.
+This class is meant to be subclassed, with the subclass adding visitor methods. 
+
+visit(_node_)[¶](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.visit "Link to this definition")
+    
+Visit a node. The default implementation calls the method called `self.visit__classname_`where _classname_ is the name of the node class, or [`generic_visit()`](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.generic_visit "ast.NodeVisitor.generic_visit") if that method doesn’t exist. 
+
+generic_visit(_node_)[¶](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.generic_visit "Link to this definition")
+    
+This visitor calls [`visit()`](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.visit "ast.NodeVisitor.visit") on all children of the node.
+Note that child nodes of nodes that have a custom visitor method won’t be visited unless the visitor calls [`generic_visit()`](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.generic_visit "ast.NodeVisitor.generic_visit") or visits them itself. 
+
+visit_Constant(_node_)[¶](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.visit_Constant "Link to this definition")
+    
+Handles all constant nodes.
+Don’t use the [`NodeVisitor`](https://docs.python.org/3/library/ast.html#ast.NodeVisitor "ast.NodeVisitor") if you want to apply changes to nodes during traversal. For this a special visitor exists ([`NodeTransformer`](https://docs.python.org/3/library/ast.html#ast.NodeTransformer "ast.NodeTransformer")) that allows modifications.
+Deprecated since version 3.8: Methods `visit_Num()`, `visit_Str()`, `visit_Bytes()`, `visit_NameConstant()` and `visit_Ellipsis()` are deprecated now and will not be called in future Python versions. Add the [`visit_Constant()`](https://docs.python.org/3/library/ast.html#ast.NodeVisitor.visit_Constant "ast.NodeVisitor.visit_Constant") method to handle all constant nodes.

@@ -1,0 +1,65 @@
+Title: PEP 389: The argparse Module for Command-Line Parsing
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: The argparse module was introduced as a more robust alternative to optparse for parsing command-line arguments. It offers improved functionality for handling options and arguments.
+---
+
+```
+
+This mechanism is not adaptable at all; commas are always used as the separator and the grouping is always into three-digit groups. The comma-formatting mechanism isn’t as general as the [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.") module, but it’s easier to use.
+See also 
+
+[**PEP 378**](https://peps.python.org/pep-0378/) - Format Specifier for Thousands Separator
+    
+PEP written by Raymond Hettinger; implemented by Eric Smith.
+## PEP 389: The argparse Module for Parsing Command Lines[¶](https://docs.python.org/3/whatsnew/2.7.html#pep-389-the-argparse-module-for-parsing-command-lines "Link to this heading")
+The [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") module for parsing command-line arguments was added as a more powerful replacement for the [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") module.
+This means Python now supports three different modules for parsing command-line arguments: [`getopt`](https://docs.python.org/3/library/getopt.html#module-getopt "getopt: Portable parser for command line options; support both short and long option names."), [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library."), and [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library."). The [`getopt`](https://docs.python.org/3/library/getopt.html#module-getopt "getopt: Portable parser for command line options; support both short and long option names.") module closely resembles the C library’s `getopt()` function, so it remains useful if you’re writing a Python prototype that will eventually be rewritten in C. [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") becomes redundant, but there are no plans to remove it because there are many scripts still using it, and there’s no automated way to update these scripts. (Making the [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") API consistent with [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.")’s interface was discussed but rejected as too messy and difficult.)
+In short, if you’re writing a new script and don’t need to worry about compatibility with earlier versions of Python, use [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") instead of [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.").
+Here’s an example:
+```
+importargparse
+parser = argparse.ArgumentParser(description='Command-line example.')
+# Add optional switches
+parser.add_argument('-v', action='store_true', dest='is_verbose',
+          help='produce verbose output')
+parser.add_argument('-o', action='store', dest='output',
+          metavar='FILE',
+          help='direct output to FILE instead of stdout')
+parser.add_argument('-C', action='store', type=int, dest='context',
+          metavar='NUM', default=0,
+          help='display NUM lines of added context')
+# Allow any number of additional arguments.
+parser.add_argument(nargs='*', action='store', dest='inputs',
+          help='input filenames (default is stdin)')
+args = parser.parse_args()
+print args.__dict__
+
+```
+
+Unless you override it, `-h` and `--help` switches are automatically added, and produce neatly formatted output:
+```
+-> ./python.exe argparse-example.py --help
+usage: argparse-example.py [-h] [-v] [-o FILE] [-C NUM] [inputs [inputs ...]]
+Command-line example.
+positional arguments:
+ inputs   input filenames (default is stdin)
+optional arguments:
+ -h, --help show this help message and exit
+ -v     produce verbose output
+ -o FILE   direct output to FILE instead of stdout
+ -C NUM   display NUM lines of added context
+
+```
+
+As with [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library."), the command-line switches and arguments are returned as an object with attributes named by the _dest_ parameters:
+```
+-> ./python.exe argparse-example.py -v
+{'output': None,
+ 'is_verbose': True,
+ 'context': 0,
+ 'inputs': []}
+-> ./python.exe argparse-example.py -v -o /tmp/output -C 4 file1 file2
+{'output': '/tmp/output',
+ 'is_verbose': True,
+ 'context': 4,
+ 'inputs': ['file1', 'file2']}

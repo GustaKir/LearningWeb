@@ -1,0 +1,39 @@
+Title: New `getcallargs()` Function in `inspect` Module
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: The `inspect` module introduces the `getcallargs()` function, which maps the arguments passed to a callable to their corresponding parameters. It returns a dictionary of parameter names and their received values, enhancing argument handling and providing error feedback.
+---
+
+(Contributed by Derek Morr; [bpo-1655](https://bugs.python.org/issue?@action=redirect&bpo=1655).)
+  * New function: the [`inspect`](https://docs.python.org/3/library/inspect.html#module-inspect "inspect: Extract information and source code from live objects.") module’s [`getcallargs()`](https://docs.python.org/3/library/inspect.html#inspect.getcallargs "inspect.getcallargs") takes a callable and its positional and keyword arguments, and figures out which of the callable’s parameters will receive each argument, returning a dictionary mapping argument names to their values. For example:
+>>>```
+>>> frominspectimport getcallargs
+>>> deff(a, b=1, *pos, **named):
+...   pass
+...
+>>> getcallargs(f, 1, 2, 3)
+{'a': 1, 'b': 2, 'pos': (3,), 'named': {}}
+>>> getcallargs(f, a=2, x=4)
+{'a': 2, 'b': 1, 'pos': (), 'named': {'x': 4}}
+>>> getcallargs(f)
+Traceback (most recent call last):
+...
+TypeError: f() takes at least 1 argument (0 given)
+
+```
+
+Contributed by George Sakkis; [bpo-3135](https://bugs.python.org/issue?@action=redirect&bpo=3135).
+  * Updated module: The [`io`](https://docs.python.org/3/library/io.html#module-io "io: Core tools for working with streams.") library has been upgraded to the version shipped with Python 3.1. For 3.1, the I/O library was entirely rewritten in C and is 2 to 20 times faster depending on the task being performed. The original Python version was renamed to the `_pyio` module.
+One minor resulting change: the [`io.TextIOBase`](https://docs.python.org/3/library/io.html#io.TextIOBase "io.TextIOBase") class now has an [`errors`](https://docs.python.org/3/library/io.html#io.TextIOBase.errors "io.TextIOBase.errors") attribute giving the error setting used for encoding and decoding errors (one of `'strict'`, `'replace'`, `'ignore'`).
+The [`io.FileIO`](https://docs.python.org/3/library/io.html#io.FileIO "io.FileIO") class now raises an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") when passed an invalid file descriptor. (Implemented by Benjamin Peterson; [bpo-4991](https://bugs.python.org/issue?@action=redirect&bpo=4991).) The [`truncate()`](https://docs.python.org/3/library/io.html#io.IOBase.truncate "io.IOBase.truncate") method now preserves the file position; previously it would change the file position to the end of the new file. (Fixed by Pascal Chambon; [bpo-6939](https://bugs.python.org/issue?@action=redirect&bpo=6939).)
+  * New function: `itertools.compress(data, selectors)` takes two iterators. Elements of _data_ are returned if the corresponding value in _selectors_ is true:
+```
+itertools.compress('ABCDEF', [1,0,1,0,1,1]) =>
+ A, C, E, F
+
+```
+
+New function: `itertools.combinations_with_replacement(iter, r)` returns all the possible _r_ -length combinations of elements from the iterable _iter_. Unlike [`combinations()`](https://docs.python.org/3/library/itertools.html#itertools.combinations "itertools.combinations"), individual elements can be repeated in the generated combinations:
+```
+itertools.combinations_with_replacement('abc', 2) =>
+ ('a', 'a'), ('a', 'b'), ('a', 'c'),
+ ('b', 'b'), ('b', 'c'), ('c', 'c')

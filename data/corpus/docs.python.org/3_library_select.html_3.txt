@@ -1,0 +1,67 @@
+Title: devpoll Methods Overview
+URL: https://docs.python.org/3/library/select.html
+Summary: This section describes two methods of the devpoll polling object in Python: `modify()`, which efficiently unregisters and re-registers a file descriptor, and `unregister()`, which removes a specified file descriptor from tracking.
+---
+
+devpoll.modify(_fd_[, _eventmask_])[¶](https://docs.python.org/3/library/select.html#select.devpoll.modify "Link to this definition")
+    
+This method does an [`unregister()`](https://docs.python.org/3/library/select.html#select.devpoll.unregister "select.devpoll.unregister") followed by a [`register()`](https://docs.python.org/3/library/select.html#select.devpoll.register "select.devpoll.register"). It is (a bit) more efficient that doing the same explicitly. 
+
+devpoll.unregister(_fd_)[¶](https://docs.python.org/3/library/select.html#select.devpoll.unregister "Link to this definition")
+    
+Remove a file descriptor being tracked by a polling object. Just like the [`register()`](https://docs.python.org/3/library/select.html#select.devpoll.register "select.devpoll.register") method, _fd_ can be an integer or an object with a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method that returns an integer.
+Attempting to remove a file descriptor that was never registered is safely ignored. 
+
+devpoll.poll([_timeout_])[¶](https://docs.python.org/3/library/select.html#select.devpoll.poll "Link to this definition")
+    
+Polls the set of registered file descriptors, and returns a possibly empty list containing `(fd, event)` 2-tuples for the descriptors that have events or errors to report. _fd_ is the file descriptor, and _event_ is a bitmask with bits set for the reported events for that descriptor — `POLLIN` for waiting input, `POLLOUT` to indicate that the descriptor can be written to, and so forth. An empty list indicates that the call timed out and no file descriptors had any events to report. If _timeout_ is given, it specifies the length of time in milliseconds which the system will wait for events before returning. If _timeout_ is omitted, -1, or [`None`](https://docs.python.org/3/library/constants.html#None "None"), the call will block until there is an event for this poll object.
+Changed in version 3.5: The function is now retried with a recomputed timeout when interrupted by a signal, except if the signal handler raises an exception (see [**PEP 475**](https://peps.python.org/pep-0475/) for the rationale), instead of raising [`InterruptedError`](https://docs.python.org/3/library/exceptions.html#InterruptedError "InterruptedError").
+## Edge and Level Trigger Polling (epoll) Objects[¶](https://docs.python.org/3/library/select.html#edge-and-level-trigger-polling-epoll-objects "Link to this heading")
+> <https://linux.die.net/man/4/epoll>
+> _eventmask_
+> Constant | Meaning  
+> ---|---  
+> `EPOLLIN` | Available for read  
+> `EPOLLOUT` | Available for write  
+> `EPOLLPRI` | Urgent data for read  
+> `EPOLLERR` | Error condition happened on the assoc. fd  
+> `EPOLLHUP` | Hang up happened on the assoc. fd  
+> `EPOLLET` | Set Edge Trigger behavior, the default is Level Trigger behavior  
+> `EPOLLONESHOT` | Set one-shot behavior. After one event is pulled out, the fd is internally disabled  
+> `EPOLLEXCLUSIVE` | Wake only one epoll object when the associated fd has an event. The default (if this flag is not set) is to wake all epoll objects polling on a fd.  
+> `EPOLLRDHUP` | Stream socket peer closed connection or shut down writing half of connection.  
+> `EPOLLRDNORM` | Equivalent to `EPOLLIN`  
+> `EPOLLRDBAND` | Priority data band can be read.  
+> `EPOLLWRNORM` | Equivalent to `EPOLLOUT`  
+> `EPOLLWRBAND` | Priority data may be written.  
+> `EPOLLMSG` | Ignored.  
+> Added in version 3.6: `EPOLLEXCLUSIVE` was added. It’s only supported by Linux Kernel 4.5 or later. 
+
+epoll.close()[¶](https://docs.python.org/3/library/select.html#select.epoll.close "Link to this definition")
+    
+Close the control file descriptor of the epoll object. 
+
+epoll.closed[¶](https://docs.python.org/3/library/select.html#select.epoll.closed "Link to this definition")
+    
+`True` if the epoll object is closed. 
+
+epoll.fileno()[¶](https://docs.python.org/3/library/select.html#select.epoll.fileno "Link to this definition")
+    
+Return the file descriptor number of the control fd. 
+
+epoll.fromfd(_fd_)[¶](https://docs.python.org/3/library/select.html#select.epoll.fromfd "Link to this definition")
+    
+Create an epoll object from a given file descriptor. 
+
+epoll.register(_fd_[, _eventmask_])[¶](https://docs.python.org/3/library/select.html#select.epoll.register "Link to this definition")
+    
+Register a fd descriptor with the epoll object. 
+
+epoll.modify(_fd_ , _eventmask_)[¶](https://docs.python.org/3/library/select.html#select.epoll.modify "Link to this definition")
+    
+Modify a registered file descriptor. 
+
+epoll.unregister(_fd_)[¶](https://docs.python.org/3/library/select.html#select.epoll.unregister "Link to this definition")
+    
+Remove a registered file descriptor from the epoll object.
+Changed in version 3.9: The method no longer ignores the [`EBADF`](https://docs.python.org/3/library/errno.html#errno.EBADF "errno.EBADF") error.

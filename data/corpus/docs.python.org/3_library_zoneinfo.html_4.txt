@@ -1,0 +1,48 @@
+Title: ZoneInfo Class Constructors
+URL: https://docs.python.org/3/library/zoneinfo.html
+Summary: The `ZoneInfo` class requires a `key` in the form of a normalized POSIX path. If the key is invalid or not found, it raises exceptions: `ValueError` or `ZoneInfoNotFoundError`. Additionally, the class includes an alternate constructor `from_file` that allows creation of a `ZoneInfo` object from a file-like object, ensuring a new instance is created regardless.
+---
+
+```
+
+`key` must be in the form of a relative, normalized POSIX path, with no up-level references. The constructor will raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if a non-conforming key is passed.
+If no file matching `key` is found, the constructor will raise [`ZoneInfoNotFoundError`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfoNotFoundError "zoneinfo.ZoneInfoNotFoundError").
+The `ZoneInfo` class has two alternate constructors: 
+
+_classmethod_ ZoneInfo.from_file(_fobj_ , _/_ , _key =None_)[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo.from_file "Link to this definition")
+    
+Constructs a `ZoneInfo` object from a file-like object returning bytes (e.g. a file opened in binary mode or an [`io.BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO "io.BytesIO") object). Unlike the primary constructor, this always constructs a new object.
+The `key` parameter sets the name of the zone for the purposes of [`__str__()`](https://docs.python.org/3/reference/datamodel.html#object.__str__ "object.__str__") and [`__repr__()`](https://docs.python.org/3/reference/datamodel.html#object.__repr__ "object.__repr__").
+Objects created via this constructor cannot be pickled (see [pickling](https://docs.python.org/3/library/zoneinfo.html#pickling)). 
+
+_classmethod_ ZoneInfo.no_cache(_key_)[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo.no_cache "Link to this definition")
+    
+An alternate constructor that bypasses the constructor’s cache. It is identical to the primary constructor, but returns a new object on each call. This is most likely to be useful for testing or demonstration purposes, but it can also be used to create a system with a different cache invalidation strategy.
+Objects created via this constructor will also bypass the cache of a deserializing process when unpickled.
+Caution
+Using this constructor may change the semantics of your datetimes in surprising ways, only use it if you know that you need to.
+The following class methods are also available: 
+
+_classmethod_ ZoneInfo.clear_cache(_*_ , _only_keys =None_)[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo.clear_cache "Link to this definition")
+    
+A method for invalidating the cache on the `ZoneInfo` class. If no arguments are passed, all caches are invalidated and the next call to the primary constructor for each key will return a new instance.
+If an iterable of key names is passed to the `only_keys` parameter, only the specified keys will be removed from the cache. Keys passed to `only_keys` but not found in the cache are ignored.
+Warning
+Invoking this function may change the semantics of datetimes using `ZoneInfo` in surprising ways; this modifies module state and thus may have wide-ranging effects. Only use it if you know that you need to.
+The class has one attribute: 
+
+ZoneInfo.key[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo.key "Link to this definition")
+    
+This is a read-only [attribute](https://docs.python.org/3/glossary.html#term-attribute) that returns the value of `key` passed to the constructor, which should be a lookup key in the IANA time zone database (e.g. `America/New_York`, `Europe/Paris` or `Asia/Tokyo`).
+For zones constructed from file without specifying a `key` parameter, this will be set to `None`.
+Note
+Although it is a somewhat common practice to expose these to end users, these values are designed to be primary keys for representing the relevant zones and not necessarily user-facing elements. Projects like CLDR (the Unicode Common Locale Data Repository) can be used to get more user-friendly strings from these keys.
+### String representations[¶](https://docs.python.org/3/library/zoneinfo.html#string-representations "Link to this heading")
+The string representation returned when calling [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") on a [`ZoneInfo`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo "zoneinfo.ZoneInfo") object defaults to using the [`ZoneInfo.key`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo.key "zoneinfo.ZoneInfo.key") attribute (see the note on usage in the attribute documentation):
+>>>```
+>>> zone = ZoneInfo("Pacific/Kwajalein")
+>>> str(zone)
+'Pacific/Kwajalein'
+>>> dt = datetime(2020, 4, 1, 3, 15, tzinfo=zone)
+>>> f"{dt.isoformat()} [{dt.tzinfo}]"
+'2020-04-01T03:15:00+12:00 [Pacific/Kwajalein]'

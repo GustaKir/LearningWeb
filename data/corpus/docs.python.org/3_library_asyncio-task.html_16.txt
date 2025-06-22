@@ -1,0 +1,45 @@
+Title: Handling Task Cancellation in asyncio
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: This section explains how the `uncancel()` method allows tasks to continue running despite timeouts or cancellations. It highlights the use of `uncancel()` in TaskGroup context managers, and addresses the need for end-user code to call this method if it suppresses cancellation by catching `CancelledError`.
+---
+
+```
+
+While the block with `make_request()` and `make_another_request()` might get cancelled due to the timeout, `unrelated_code()` should continue running even in case of the timeout. This is implemented with [`uncancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel"). [`TaskGroup`](https://docs.python.org/3/library/asyncio-task.html#asyncio.TaskGroup "asyncio.TaskGroup") context managers use [`uncancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel") in a similar fashion.
+If end-user code is, for some reason, suppressing cancellation by catching [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError"), it needs to call this method to remove the cancellation state.
+When this method decrements the cancellation count to zero, the method checks if a previous [`cancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel") call had arranged for [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") to be thrown into the task. If it hasn’t been thrown yet, that arrangement will be rescinded (by resetting the internal `_must_cancel` flag).
+Changed in version 3.13: Changed to rescind pending cancellation requests upon reaching zero. 
+
+cancelling()[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancelling "Link to this definition")
+    
+Return the number of pending cancellation requests to this Task, i.e., the number of calls to [`cancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel") less the number of [`uncancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel") calls.
+Note that if this number is greater than zero but the Task is still executing, [`cancelled()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancelled "asyncio.Task.cancelled") will still return `False`. This is because this number can be lowered by calling [`uncancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel"), which can lead to the task not being cancelled after all if the cancellation requests go down to zero.
+This method is used by asyncio’s internals and isn’t expected to be used by end-user code. See [`uncancel()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.uncancel "asyncio.Task.uncancel") for more details.
+Added in version 3.11.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Coroutines and Tasks](https://docs.python.org/3/library/asyncio-task.html)
+    * [Coroutines](https://docs.python.org/3/library/asyncio-task.html#coroutines)
+    * [Awaitables](https://docs.python.org/3/library/asyncio-task.html#awaitables)
+    * [Creating Tasks](https://docs.python.org/3/library/asyncio-task.html#creating-tasks)
+    * [Task Cancellation](https://docs.python.org/3/library/asyncio-task.html#task-cancellation)
+    * [Task Groups](https://docs.python.org/3/library/asyncio-task.html#task-groups)
+      * [Terminating a Task Group](https://docs.python.org/3/library/asyncio-task.html#terminating-a-task-group)
+    * [Sleeping](https://docs.python.org/3/library/asyncio-task.html#sleeping)
+    * [Running Tasks Concurrently](https://docs.python.org/3/library/asyncio-task.html#running-tasks-concurrently)
+    * [Eager Task Factory](https://docs.python.org/3/library/asyncio-task.html#eager-task-factory)
+    * [Shielding From Cancellation](https://docs.python.org/3/library/asyncio-task.html#shielding-from-cancellation)
+    * [Timeouts](https://docs.python.org/3/library/asyncio-task.html#timeouts)
+    * [Waiting Primitives](https://docs.python.org/3/library/asyncio-task.html#waiting-primitives)
+    * [Running in Threads](https://docs.python.org/3/library/asyncio-task.html#running-in-threads)
+    * [Scheduling From Other Threads](https://docs.python.org/3/library/asyncio-task.html#scheduling-from-other-threads)
+    * [Introspection](https://docs.python.org/3/library/asyncio-task.html#introspection)
+    * [Task Object](https://docs.python.org/3/library/asyncio-task.html#task-object)
+
+
+#### Previous topic
+[Runners](https://docs.python.org/3/library/asyncio-runner.html "previous chapter")
+#### Next topic
+[Streams](https://docs.python.org/3/library/asyncio-stream.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/asyncio-task.rst)

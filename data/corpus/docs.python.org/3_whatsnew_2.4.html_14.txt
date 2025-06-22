@@ -1,0 +1,65 @@
+Title: What's New in Python 2.4: itertools Enhancements
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: This section demonstrates the use of the itertools.groupby function for sorting and counting occurrences of characters in a string. It provides examples of creating sorted lists, listing unique letters, and counting their occurrences. Additionally, it introduces the itertools.tee function, which allows the creation of multiple independent iterators from a single iterator.
+---
+
+```
+>>> word = 'abracadabra'
+>>> letters = sorted(word)  # Turn string into a sorted list of letters
+>>> letters
+['a', 'a', 'a', 'a', 'a', 'b', 'b', 'c', 'd', 'r', 'r']
+>>> for k, g in itertools.groupby(letters):
+...   print k, list(g)
+...
+a ['a', 'a', 'a', 'a', 'a']
+b ['b', 'b']
+c ['c']
+d ['d']
+r ['r', 'r']
+>>> # List unique letters
+>>> [k for k, g in groupby(letters)]
+['a', 'b', 'c', 'd', 'r']
+>>> # Count letter occurrences
+>>> [(k, len(list(g))) for k, g in groupby(letters)]
+[('a', 5), ('b', 2), ('c', 1), ('d', 1), ('r', 2)]
+
+```
+
+(Contributed by Hye-Shik Chang.)
+  * [`itertools`](https://docs.python.org/3/library/itertools.html#module-itertools "itertools: Functions creating iterators for efficient looping.") also gained a function named `tee(iterator, N)` that returns _N_ independent iterators that replicate _iterator_. If _N_ is omitted, the default is 2.
+>>>```
+>>> L = [1,2,3]
+>>> i1, i2 = itertools.tee(L)
+>>> i1,i2
+(<itertools.tee object at 0x402c2080>, <itertools.tee object at 0x402c2090>)
+>>> list(i1)        # Run the first iterator to exhaustion
+[1, 2, 3]
+>>> list(i2)        # Run the second iterator to exhaustion
+[1, 2, 3]
+
+```
+
+Note that `tee()` has to keep copies of the values returned by the iterator; in the worst case, it may need to keep all of them. This should therefore be used carefully if the leading iterator can run far ahead of the trailing iterator in a long stream of inputs. If the separation is large, then you might as well use [`list()`](https://docs.python.org/3/library/stdtypes.html#list "list") instead. When the iterators track closely with one another, `tee()` is ideal. Possible applications include bookmarking, windowing, or lookahead iterators. (Contributed by Raymond Hettinger.)
+  * A number of functions were added to the [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.") module, such as `bind_textdomain_codeset()` to specify a particular encoding and a family of `l*gettext()` functions that return messages in the chosen encoding. (Contributed by Gustavo Niemeyer.)
+  * Some keyword arguments were added to the [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") package’s `basicConfig()` function to simplify log configuration. The default behavior is to log messages to standard error, but various keyword arguments can be specified to log to a particular file, change the logging format, or set the logging level. For example:
+```
+importlogging
+logging.basicConfig(filename='/var/log/application.log',
+  level=0, # Log all messages
+  format='%(levelname):%(process):%(thread):%(message)')
+
+```
+
+Other additions to the [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") package include a `log(level, msg)` convenience method, as well as a `TimedRotatingFileHandler` class that rotates its log files at a timed interval. The module already had `RotatingFileHandler`, which rotated logs once the file exceeded a certain size. Both classes derive from a new `BaseRotatingHandler` class that can be used to implement other rotating handlers.
+(Changes implemented by Vinay Sajip.)
+  * The [`marshal`](https://docs.python.org/3/library/marshal.html#module-marshal "marshal: Convert Python objects to streams of bytes and back \(with different constraints\).") module now shares interned strings on unpacking a data structure. This may shrink the size of certain pickle strings, but the primary effect is to make `.pyc` files significantly smaller. (Contributed by Martin von Löwis.)
+  * The `nntplib` module’s `NNTP` class gained `description()` and `descriptions()` methods to retrieve newsgroup descriptions for a single group or for a range of groups. (Contributed by Jürgen A. Erhard.)
+  * Two new functions were added to the [`operator`](https://docs.python.org/3/library/operator.html#module-operator "operator: Functions corresponding to the standard operators.") module, `attrgetter(attr)` and `itemgetter(index)`. Both functions return callables that take a single argument and return the corresponding attribute or item; these callables make excellent data extractors when used with [`map()`](https://docs.python.org/3/library/functions.html#map "map") or [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted"). For example:
+>>>```
+>>> L = [('c', 2), ('d', 1), ('a', 4), ('b', 3)]
+>>> map(operator.itemgetter(0), L)
+['c', 'd', 'a', 'b']
+>>> map(operator.itemgetter(1), L)
+[2, 1, 4, 3]
+>>> sorted(L, key=operator.itemgetter(1)) # Sort list by second tuple item
+[('d', 1), ('c', 2), ('b', 3), ('a', 4)]

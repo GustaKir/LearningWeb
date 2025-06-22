@@ -1,0 +1,197 @@
+Title: Response Class in FastAPI
+URL: https://fastapi.tiangolo.com/reference/responses/
+Summary: This documentation chunk describes the parameters of the `fastapi.responses.Response` class, which inherits from `starlette.responses.Response`. It outlines the `content`, `status_code`, `headers`, `media_type`, and `background` parameters with their types and default values.
+---
+
+```
+
+Bases: `Response[](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.Response "<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>      <span class="doc doc-object-name doc-class-name">fastapi.responses.Response</span> \(<code>starlette.responses.Response</code>\)")`
+PARAMETER | DESCRIPTION  
+---|---  
+`content` |  **TYPE:** `Any` **DEFAULT:** `None`  
+`status_code` |  **TYPE:** `int` **DEFAULT:** `200`  
+`headers` |  **TYPE:** `Mapping[str, str] | None` **DEFAULT:** `None`  
+`media_type` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`background` |  **TYPE:** `BackgroundTask | None` **DEFAULT:** `None`  
+Source code in `starlette/responses.py`
+```
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+```
+| ```
+def__init__(
+  self,
+  content: typing.Any = None,
+  status_code: int = 200,
+  headers: typing.Mapping[str, str] | None = None,
+  media_type: str | None = None,
+  background: BackgroundTask | None = None,
+) -> None:
+  self.status_code = status_code
+  if media_type is not None:
+    self.media_type = media_type
+  self.background = background
+  self.body = self.render(content)
+  self.init_headers(headers)
+
+```
+  
+---|---  
+###  charset `class-attribute` `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.charset "Permanent link")
+```
+charset = 'utf-8'
+
+```
+
+###  status_code `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.status_code "Permanent link")
+```
+status_code = status_code
+
+```
+
+###  media_type `class-attribute` `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.media_type "Permanent link")
+```
+media_type = 'text/html'
+
+```
+
+###  body `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.body "Permanent link")
+```
+body = render(content)
+
+```
+
+###  background `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.background "Permanent link")
+```
+background = background
+
+```
+
+###  headers `property` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.headers "Permanent link")
+```
+headers
+
+```
+
+###  render [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.render "Permanent link")
+```
+render(content)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`content` |  **TYPE:** `Any`  
+Source code in `starlette/responses.py`
+```
+48
+49
+50
+51
+52
+53
+```
+| ```
+defrender(self, content: typing.Any) -> bytes | memoryview:
+  if content is None:
+    return b""
+  if isinstance(content, (bytes, memoryview)):
+    return content
+  return content.encode(self.charset) # type: ignore
+
+```
+  
+---|---  
+###  init_headers [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.init_headers "Permanent link")
+```
+init_headers(headers=None)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`headers` |  **TYPE:** `Mapping[str, str] | None` **DEFAULT:** `None`  
+Source code in `starlette/responses.py`
+```
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+```
+| ```
+definit_headers(self, headers: typing.Mapping[str, str] | None = None) -> None:
+  if headers is None:
+    raw_headers: list[tuple[bytes, bytes]] = []
+    populate_content_length = True
+    populate_content_type = True
+  else:
+    raw_headers = [(k.lower().encode("latin-1"), v.encode("latin-1")) for k, v in headers.items()]
+    keys = [h[0] for h in raw_headers]
+    populate_content_length = b"content-length" not in keys
+    populate_content_type = b"content-type" not in keys
+  body = getattr(self, "body", None)
+  if (
+    body is not None
+    and populate_content_length
+    and not (self.status_code < 200 or self.status_code in (204, 304))
+  ):
+    content_length = str(len(body))
+    raw_headers.append((b"content-length", content_length.encode("latin-1")))
+  content_type = self.media_type
+  if content_type is not None and populate_content_type:
+    if content_type.startswith("text/") and "charset=" not in content_type.lower():
+      content_type += "; charset=" + self.charset
+    raw_headers.append((b"content-type", content_type.encode("latin-1")))
+  self.raw_headers = raw_headers
+
+```
+  
+---|---  
+###  set_cookie [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.HTMLResponse.set_cookie "Permanent link")
+```
+set_cookie(
+  key,
+  value="",
+  max_age=None,
+  expires=None,
+  path="/",
+  domain=None,
+  secure=False,
+  httponly=False,
+  samesite="lax",
+)

@@ -1,0 +1,33 @@
+Title: PyTypeObject.tp_weaklistoffset
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: The tp_weaklistoffset field indicates the offset of the weak reference list head in an instance structure for weakly referenceable types. It is recommended to use Py_TPFLAGS_MANAGED_WEAKREF instead. The value of tp_weaklistoffset is greater than zero if the type supports weak references, and is utilized by PyObject_ClearWeakRefs and associated functions.
+---
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_weaklistoffset[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklistoffset "Link to this definition")
+    
+While this field is still supported, [`Py_TPFLAGS_MANAGED_WEAKREF`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_WEAKREF "Py_TPFLAGS_MANAGED_WEAKREF") should be used instead, if at all possible.
+If the instances of this type are weakly referenceable, this field is greater than zero and contains the offset in the instance structure of the weak reference list head (ignoring the GC header, if present); this offset is used by [`PyObject_ClearWeakRefs()`](https://docs.python.org/3/c-api/weakref.html#c.PyObject_ClearWeakRefs "PyObject_ClearWeakRefs") and the `PyWeakref_*` functions. The instance structure needs to include a field of type [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* which is initialized to `NULL`.
+Do not confuse this field with [`tp_weaklist`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklist "PyTypeObject.tp_weaklist"); that is the list head for weak references to the type object itself.
+It is an error to set both the [`Py_TPFLAGS_MANAGED_WEAKREF`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_WEAKREF "Py_TPFLAGS_MANAGED_WEAKREF") bit and [`tp_weaklistoffset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklistoffset "PyTypeObject.tp_weaklistoffset").
+**Inheritance:**
+This field is inherited by subtypes, but see the rules listed below. A subtype may override this offset; this means that the subtype uses a different weak reference list head than the base type. Since the list head is always found via [`tp_weaklistoffset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklistoffset "PyTypeObject.tp_weaklistoffset"), this should not be a problem.
+**Default:**
+If the [`Py_TPFLAGS_MANAGED_WEAKREF`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MANAGED_WEAKREF "Py_TPFLAGS_MANAGED_WEAKREF") bit is set in the [`tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags") field, then [`tp_weaklistoffset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_weaklistoffset "PyTypeObject.tp_weaklistoffset") will be set to a negative value, to indicate that it is unsafe to use this field. 
+
+[getiterfunc](https://docs.python.org/3/c-api/typeobj.html#c.getiterfunc "getiterfunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_iter[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_iter "Link to this definition")
+    
+An optional pointer to a function that returns an [iterator](https://docs.python.org/3/glossary.html#term-iterator) for the object. Its presence normally signals that the instances of this type are [iterable](https://docs.python.org/3/glossary.html#term-iterable) (although sequences may be iterable without this function).
+This function has the same signature as [`PyObject_GetIter()`](https://docs.python.org/3/c-api/object.html#c.PyObject_GetIter "PyObject_GetIter"):
+```
+PyObject*tp_iter(PyObject*self);
+
+```
+
+**Inheritance:**
+This field is inherited by subtypes. 
+
+[iternextfunc](https://docs.python.org/3/c-api/typeobj.html#c.iternextfunc "iternextfunc")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_iternext[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_iternext "Link to this definition")
+    
+An optional pointer to a function that returns the next item in an [iterator](https://docs.python.org/3/glossary.html#term-iterator). The signature is:
+```
+PyObject*tp_iternext(PyObject*self);

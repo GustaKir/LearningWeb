@@ -1,0 +1,120 @@
+Title: Using side_effect in Mock Objects
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: The 'side_effect' attribute of a mock can be a function that will determine return values dynamically based on input arguments. An example shows how to implement 'side_effect' for a MagicMock, enabling varied outputs while maintaining the ability to return a default value if desired.
+---
+
+```
+
+If [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") is a function then whatever that function returns is what calls to the mock return. The `side_effect` function is called with the same arguments as the mock. This allows you to vary the return value of the call dynamically, based on the input:
+>>>```
+>>> defside_effect(value):
+...   return value + 1
+...
+>>> m = MagicMock(side_effect=side_effect)
+>>> m(1)
+2
+>>> m(2)
+3
+>>> m.mock_calls
+[call(1), call(2)]
+
+```
+
+If you want the mock to still return the default return value (a new mock), or any set return value, then there are two ways of doing this. Either return [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value") from inside [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect"), or return [`DEFAULT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.DEFAULT "unittest.mock.DEFAULT"):
+>>>```
+>>> m = MagicMock()
+>>> defside_effect(*args, **kwargs):
+...   return m.return_value
+...
+>>> m.side_effect = side_effect
+>>> m.return_value = 3
+>>> m()
+3
+>>> defside_effect(*args, **kwargs):
+...   return DEFAULT
+...
+>>> m.side_effect = side_effect
+>>> m()
+3
+
+```
+
+To remove a [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect"), and return to the default behaviour, set the `side_effect` to `None`:
+>>>```
+>>> m = MagicMock(return_value=6)
+>>> defside_effect(*args, **kwargs):
+...   return 3
+...
+>>> m.side_effect = side_effect
+>>> m()
+3
+>>> m.side_effect = None
+>>> m()
+6
+
+```
+
+The [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") can also be any iterable object. Repeated calls to the mock will return values from the iterable (until the iterable is exhausted and a [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") is raised):
+>>>```
+>>> m = MagicMock(side_effect=[1, 2, 3])
+>>> m()
+1
+>>> m()
+2
+>>> m()
+3
+>>> m()
+Traceback (most recent call last):
+...
+StopIteration
+
+```
+
+If any members of the iterable are exceptions they will be raised instead of returned:
+>>>```
+>>> iterable = (33, ValueError, 66)
+>>> m = MagicMock(side_effect=iterable)
+>>> m()
+33
+>>> m()
+Traceback (most recent call last):
+...
+ValueError
+>>> m()
+66
+
+```
+
+### Deleting Attributes[¶](https://docs.python.org/3/library/unittest.mock.html#deleting-attributes "Link to this heading")
+Mock objects create attributes on demand. This allows them to pretend to be objects of any type.
+You may want a mock object to return `False` to a [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") call, or raise an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") when an attribute is fetched. You can do this by providing an object as a `spec` for a mock, but that isn’t always convenient.
+You “block” attributes by deleting them. Once deleted, accessing an attribute will raise an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError").
+>>>```
+>>> mock = MagicMock()
+>>> hasattr(mock, 'm')
+True
+>>> del mock.m
+>>> hasattr(mock, 'm')
+False
+>>> del mock.f
+>>> mock.f
+Traceback (most recent call last):
+...
+AttributeError: f
+
+```
+
+### Mock names and the name attribute[¶](https://docs.python.org/3/library/unittest.mock.html#mock-names-and-the-name-attribute "Link to this heading")
+Since “name” is an argument to the [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") constructor, if you want your mock object to have a “name” attribute you can’t just pass it in at creation time. There are two alternatives. One option is to use [`configure_mock()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.configure_mock "unittest.mock.Mock.configure_mock"):
+>>>```
+>>> mock = MagicMock()
+>>> mock.configure_mock(name='my_name')
+>>> mock.name
+'my_name'
+
+```
+
+A simpler option is to simply set the “name” attribute after mock creation:
+>>>```
+>>> mock = MagicMock()
+>>> mock.name = "foo"

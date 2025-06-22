@@ -1,0 +1,40 @@
+Title: Understanding Day of Year and DST in Python's Datetime
+URL: https://docs.python.org/3/library/datetime.html
+Summary: This section explains how to calculate the day number of the year using the `toordinal()` method and discusses the `tm_isdst` flag in relation to daylight saving time, detailing its values based on the `dst()` method from the `tzinfo` class.
+---
+
+```
+
+where `yday = d.toordinal() - date(d.year, 1, 1).toordinal() + 1` is the day number within the current year starting with 1 for January 1st. The [`tm_isdst`](https://docs.python.org/3/library/time.html#time.struct_time.tm_isdst "time.struct_time.tm_isdst") flag of the result is set according to the [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.dst "datetime.datetime.dst") method: [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") is `None` or [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.dst "datetime.datetime.dst") returns `None`, `tm_isdst` is set to `-1`; else if [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.dst "datetime.datetime.dst") returns a non-zero value, `tm_isdst` is set to 1; else `tm_isdst` is set to 0. 
+
+datetime.utctimetuple()[¶](https://docs.python.org/3/library/datetime.html#datetime.datetime.utctimetuple "Link to this definition")
+    
+If [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") instance `d` is naive, this is the same as `d.timetuple()` except that [`tm_isdst`](https://docs.python.org/3/library/time.html#time.struct_time.tm_isdst "time.struct_time.tm_isdst") is forced to 0 regardless of what `d.dst()` returns. DST is never in effect for a UTC time.
+If `d` is aware, `d` is normalized to UTC time, by subtracting `d.utcoffset()`, and a [`time.struct_time`](https://docs.python.org/3/library/time.html#time.struct_time "time.struct_time") for the normalized time is returned. `tm_isdst` is forced to 0. Note that an [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") may be raised if `d.year` was `MINYEAR` or `MAXYEAR` and UTC adjustment spills over a year boundary.
+Warning
+Because naive `datetime` objects are treated by many `datetime` methods as local times, it is preferred to use aware datetimes to represent times in UTC; as a result, using [`datetime.utctimetuple()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.utctimetuple "datetime.datetime.utctimetuple") may give misleading results. If you have a naive `datetime` representing UTC, use `datetime.replace(tzinfo=timezone.utc)` to make it aware, at which point you can use [`datetime.timetuple()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.timetuple "datetime.datetime.timetuple"). 
+
+datetime.toordinal()[¶](https://docs.python.org/3/library/datetime.html#datetime.datetime.toordinal "Link to this definition")
+    
+Return the proleptic Gregorian ordinal of the date. The same as `self.date().toordinal()`. 
+
+datetime.timestamp()[¶](https://docs.python.org/3/library/datetime.html#datetime.datetime.timestamp "Link to this definition")
+    
+Return POSIX timestamp corresponding to the [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") instance. The return value is a [`float`](https://docs.python.org/3/library/functions.html#float "float") similar to that returned by [`time.time()`](https://docs.python.org/3/library/time.html#time.time "time.time").
+Naive [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") instances are assumed to represent local time and this method relies on the platform C `mktime()` function to perform the conversion. Since [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") supports wider range of values than `mktime()` on many platforms, this method may raise [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") or [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") for times far in the past or far in the future.
+For aware [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") instances, the return value is computed as:
+```
+(dt - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds()
+
+```
+
+Added in version 3.3.
+Changed in version 3.6: The [`timestamp()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.timestamp "datetime.datetime.timestamp") method uses the [`fold`](https://docs.python.org/3/library/datetime.html#datetime.datetime.fold "datetime.datetime.fold") attribute to disambiguate the times during a repeated interval.
+Note
+There is no method to obtain the POSIX timestamp directly from a naive [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") instance representing UTC time. If your application uses this convention and your system time zone is not set to UTC, you can obtain the POSIX timestamp by supplying `tzinfo=timezone.utc`:
+```
+timestamp = dt.replace(tzinfo=timezone.utc).timestamp()
+
+```
+
+or by calculating the timestamp directly:

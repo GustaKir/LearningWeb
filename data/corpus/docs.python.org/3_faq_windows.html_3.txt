@@ -1,0 +1,30 @@
+Title: Initializing the Python Interpreter with C Extensions
+URL: https://docs.python.org/3/faq/windows.html
+Summary: This section explains how to initialize the Python interpreter within a C extension module using the Py_Initialize function and discusses potential issues when using compilers other than MSVC, particularly with the use of 'Very High Level' functions and multi-compiler environments.
+---
+
+will be called initleo(). If you use SWIG shadow classes, as you should, the init function will be called initleoc(). This initializes a mostly hidden helper class used by the shadow class.
+The reason you can link the C code in step 2 into your .exe file is that calling the initialization function is equivalent to importing the module into Python! (This is the second key undocumented fact.)
+  4. In short, you can use the following code to initialize the Python interpreter with your extension module.
+```
+#include<Python.h>
+...
+Py_Initialize();// Initialize Python.
+initmyAppc();// Initialize (import) the helper class.
+PyRun_SimpleString("import myApp");// Import the shadow class.
+
+```
+
+  5. There are two problems with Python’s C API which will become apparent if you use a compiler other than MSVC, the compiler used to build pythonNN.dll.
+Problem 1: The so-called “Very High Level” functions that take `FILE *` arguments will not work in a multi-compiler environment because each compiler’s notion of a `struct FILE` will be different. From an implementation standpoint these are very low level functions.
+Problem 2: SWIG generates the following code when generating wrappers to void functions:
+```
+Py_INCREF(Py_None);
+_resultobj=Py_None;
+return_resultobj;
+
+```
+
+Alas, Py_None is a macro that expands to a reference to a complex data structure called _Py_NoneStruct inside pythonNN.dll. Again, this code will fail in a mult-compiler environment. Replace such code by:
+```
+returnPy_BuildValue("");

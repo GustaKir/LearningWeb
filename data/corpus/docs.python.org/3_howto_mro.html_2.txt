@@ -1,0 +1,139 @@
+Title: Method Resolution Order Conflicts in Python
+URL: https://docs.python.org/3/howto/mro.html
+Summary: This section discusses class inheritance conflicts in Python, focusing on how ambiguous method resolution orders arise when deriving classes from multiple bases. It contrasts the behavior of Python 2.2 and 2.3 regarding such conflicts, introducing the C3 method resolution order (MRO) and notational conventions for class lists.
+---
+
+```
+
+In this case, it is not possible to derive a new class C from A and B, since X precedes Y in A, but Y precedes X in B, therefore the method resolution order would be ambiguous in C.
+Python 2.3 raises an exception in this situation (TypeError: MRO conflict among bases Y, X) forbidding the naive programmer from creating ambiguous hierarchies. Python 2.2 instead does not raise an exception, but chooses an _ad hoc_ ordering (CABXYO in this case).
+## The C3 Method Resolution Order[¶](https://docs.python.org/3/howto/mro.html#the-c3-method-resolution-order "Link to this heading")
+Let me introduce a few simple notations which will be useful for the following discussion. I will use the shortcut notation:
+```
+C1 C2 ... CN
+
+```
+
+to indicate the list of classes [C1, C2, … , CN].
+The _head_ of the list is its first element:
+```
+head = C1
+
+```
+
+whereas the _tail_ is the rest of the list:
+```
+tail = C2 ... CN.
+
+```
+
+I shall also use the notation:
+```
+C + (C1 C2 ... CN) = C C1 C2 ... CN
+
+```
+
+to denote the sum of the lists [C] + [C1, C2, … ,CN].
+Now I can explain how the MRO works in Python 2.3.
+Consider a class C in a multiple inheritance hierarchy, with C inheriting from the base classes B1, B2, … , BN. We want to compute the linearization L[C] of the class C. The rule is the following:
+> _the linearization of C is the sum of C plus the merge of the linearizations of the parents and the list of the parents._
+In symbolic notation:
+```
+L[C(B1 ... BN)] = C + merge(L[B1] ... L[BN], B1 ... BN)
+
+```
+
+In particular, if C is the `object` class, which has no parents, the linearization is trivial:
+```
+L[object] = object.
+
+```
+
+However, in general one has to compute the merge according to the following prescription:
+> _take the head of the first list, i.e L[B1][0]; if this head is not in the tail of any of the other lists, then add it to the linearization of C and remove it from the lists in the merge, otherwise look at the head of the next list and take it, if it is a good head. Then repeat the operation until all the class are removed or it is impossible to find good heads. In this case, it is impossible to construct the merge, Python 2.3 will refuse to create the class C and will raise an exception._
+This prescription ensures that the merge operation _preserves_ the ordering, if the ordering can be preserved. On the other hand, if the order cannot be preserved (as in the example of serious order disagreement discussed above) then the merge cannot be computed.
+The computation of the merge is trivial if C has only one parent (single inheritance); in this case:
+```
+L[C(B)] = C + merge(L[B],B) = C + L[B]
+
+```
+
+However, in the case of multiple inheritance things are more cumbersome and I don’t expect you can understand the rule without a couple of examples ;-)
+## Examples[¶](https://docs.python.org/3/howto/mro.html#examples "Link to this heading")
+First example. Consider the following hierarchy:
+>>>```
+>>> O = object
+>>> classF(O): pass
+>>> classE(O): pass
+>>> classD(O): pass
+>>> classC(D,F): pass
+>>> classB(D,E): pass
+>>> classA(B,C): pass
+
+```
+
+In this case the inheritance graph can be drawn as:
+> ```
+             6
+             ---
+Level 3         | O |         (more general)
+           / --- \
+           /  |  \           |
+          /   |   \           |
+          /   |   \          |
+         ---  ---  ---          |
+Level 2    3 | D | 4| E | | F | 5        |
+         ---  ---  ---          |
+          \ \ _ /    |          |
+          \  / \ _  |          |
+           \ /   \ |          |
+           ---   ---          |
+Level 1      1 | B |  | C | 2         |
+           ---   ---          |
+            \   /           |
+             \  /           \ /
+              ---
+Level 0         0 | A |        (more specialized)
+              ---
+
+```
+
+The linearizations of O,D,E and F are trivial:
+```
+L[O] = O
+L[D] = D O
+L[E] = E O
+L[F] = F O
+
+```
+
+The linearization of B can be computed as:
+```
+L[B] = B + merge(DO, EO, DE)
+
+```
+
+We see that D is a good head, therefore we take it and we are reduced to compute `merge(O,EO,E)`. Now O is not a good head, since it is in the tail of the sequence EO. In this case the rule says that we have to skip to the next sequence. Then we see that E is a good head; we take it and we are reduced to compute `merge(O,O)` which gives O. Therefore:
+```
+L[B] = B D E O
+
+```
+
+Using the same procedure one finds:
+```
+L[C] = C + merge(DO,FO,DF)
+   = C + D + merge(O,FO,F)
+   = C + D + F + merge(O,O)
+   = C D F O
+
+```
+
+Now we can compute:
+```
+L[A] = A + merge(BDEO,CDFO,BC)
+   = A + B + merge(DEO,CDFO,C)
+   = A + B + C + merge(DEO,DFO)
+   = A + B + C + D + merge(EO,FO)
+   = A + B + C + D + E + merge(O,FO)
+   = A + B + C + D + E + F + merge(O,O)
+   = A B C D E F O

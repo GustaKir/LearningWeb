@@ -1,0 +1,36 @@
+Title: Expressions in Python: Tuples and Displays
+URL: https://docs.python.org/3/reference/expressions.html
+Summary: This section explains how parenthesized expression lists yield tuples or single expressions, highlighting that commas determine tuple formation and noting the requirement of parentheses for empty tuples. It also introduces the concept of displays for lists, sets, and dictionaries, which utilize special syntax for construction.
+---
+
+```
+
+A parenthesized expression list yields whatever that expression list yields: if the list contains at least one comma, it yields a tuple; otherwise, it yields the single expression that makes up the expression list.
+An empty pair of parentheses yields an empty tuple object. Since tuples are immutable, the same rules as for literals apply (i.e., two occurrences of the empty tuple may or may not yield the same object).
+Note that tuples are not formed by the parentheses, but rather by use of the comma. The exception is the empty tuple, for which parentheses _are_ required — allowing unparenthesized “nothing” in expressions would cause ambiguities and allow common typos to pass uncaught.
+### 6.2.4. Displays for lists, sets and dictionaries[¶](https://docs.python.org/3/reference/expressions.html#displays-for-lists-sets-and-dictionaries "Link to this heading")
+For constructing a list, a set or a dictionary Python provides special syntax called “displays”, each of them in two flavors:
+  * either the container contents are listed explicitly, or
+  * they are computed via a set of looping and filtering instructions, called a _comprehension_.
+
+
+Common syntax elements for comprehensions are:
+```
+**comprehension** ::= [assignment_expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-assignment_expression) [comp_for](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-comp_for)
+**comp_for**   ::= ["async"] "for" [target_list](https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-target_list) "in" [or_test](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-or_test) [[comp_iter](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-comp_iter)]
+**comp_iter**   ::= [comp_for](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-comp_for) | [comp_if](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-comp_if)
+**comp_if**    ::= "if" [or_test](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-or_test) [[comp_iter](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-comp_iter)]
+
+```
+
+The comprehension consists of a single expression followed by at least one `for` clause and zero or more `for` or `if` clauses. In this case, the elements of the new container are those that would be produced by considering each of the `for` or `if` clauses a block, nesting from left to right, and evaluating the expression to produce an element each time the innermost block is reached.
+However, aside from the iterable expression in the leftmost `for` clause, the comprehension is executed in a separate implicitly nested scope. This ensures that names assigned to in the target list don’t “leak” into the enclosing scope.
+The iterable expression in the leftmost `for` clause is evaluated directly in the enclosing scope and then passed as an argument to the implicitly nested scope. Subsequent `for` clauses and any filter condition in the leftmost `for` clause cannot be evaluated in the enclosing scope as they may depend on the values obtained from the leftmost iterable. For example: `[x*y for x in range(10) for y in range(x, x+10)]`.
+To ensure the comprehension always results in a container of the appropriate type, `yield` and `yield from` expressions are prohibited in the implicitly nested scope.
+Since Python 3.6, in an [`async def`](https://docs.python.org/3/reference/compound_stmts.html#async-def) function, an `async for` clause may be used to iterate over a [asynchronous iterator](https://docs.python.org/3/glossary.html#term-asynchronous-iterator). A comprehension in an `async def` function may consist of either a `for` or `async for` clause following the leading expression, may contain additional `for` or `async for` clauses, and may also use [`await`](https://docs.python.org/3/reference/expressions.html#await) expressions.
+If a comprehension contains `async for` clauses, or if it contains `await` expressions or other asynchronous comprehensions anywhere except the iterable expression in the leftmost `for` clause, it is called an _asynchronous comprehension_. An asynchronous comprehension may suspend the execution of the coroutine function in which it appears. See also [**PEP 530**](https://peps.python.org/pep-0530/).
+Added in version 3.6: Asynchronous comprehensions were introduced.
+Changed in version 3.8: `yield` and `yield from` prohibited in the implicitly nested scope.
+Changed in version 3.11: Asynchronous comprehensions are now allowed inside comprehensions in asynchronous functions. Outer comprehensions implicitly become asynchronous.
+### 6.2.5. List displays[¶](https://docs.python.org/3/reference/expressions.html#list-displays "Link to this heading")
+A list display is a possibly empty series of expressions enclosed in square brackets:

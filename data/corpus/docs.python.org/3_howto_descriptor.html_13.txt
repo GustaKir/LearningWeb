@@ -1,0 +1,126 @@
+Title: Simulating ____________ in Pure Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This document discusses the limitations of creating a pure Python equivalent of `__slots__`, which requires direct access to C structures. It describes a simulation using a private `_slotvalues` list to manage memory allocation, along with member descriptors to handle reads and writes to this structure.
+---
+
+```
+
+It is not possible to create an exact drop-in pure Python version of `__slots__` because it requires direct access to C structures and control over object memory allocation. However, we can build a mostly faithful simulation where the actual C structure for slots is emulated by a private `_slotvalues` list. Reads and writes to that private structure are managed by member descriptors:
+```
+null = object()
+classMember:
+  def__init__(self, name, clsname, offset):
+    'Emulate PyMemberDef in Include/structmember.h'
+    # Also see descr_new() in Objects/descrobject.c
+    self.name = name
+    self.clsname = clsname
+    self.offset = offset
+  def__get__(self, obj, objtype=None):
+    'Emulate member_get() in Objects/descrobject.c'
+    # Also see PyMember_GetOne() in Python/structmember.c
+    if obj is None:
+      return self
+    value = obj._slotvalues[self.offset]
+    if value is null:
+      raise AttributeError(self.name)
+    return value
+  def__set__(self, obj, value):
+    'Emulate member_set() in Objects/descrobject.c'
+    obj._slotvalues[self.offset] = value
+  def__delete__(self, obj):
+    'Emulate member_delete() in Objects/descrobject.c'
+    value = obj._slotvalues[self.offset]
+    if value is null:
+      raise AttributeError(self.name)
+    obj._slotvalues[self.offset] = null
+  def__repr__(self):
+    'Emulate member_repr() in Objects/descrobject.c'
+    return f'<Member {self.name!r} of {self.clsname!r}>'
+
+```
+
+The `type.__new__()` method takes care of adding member objects to class variables:
+```
+classType(type):
+  'Simulate how the type metaclass adds member objects for slots'
+  def__new__(mcls, clsname, bases, mapping, **kwargs):
+    'Emulate type_new() in Objects/typeobject.c'
+    # type_new() calls PyTypeReady() which calls add_methods()
+    slot_names = mapping.get('slot_names', [])
+    for offset, name in enumerate(slot_names):
+      mapping[name] = Member(name, clsname, offset)
+    return type.__new__(mcls, clsname, bases, mapping, **kwargs)
+
+```
+
+The [`object.__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method takes care of creating instances that have slots instead of an instance dictionary. Here is a rough simulation in pure Python:
+```
+classObject:
+  'Simulate how object.__new__() allocates memory for __slots__'
+  def__new__(cls, *args, **kwargs):
+    'Emulate object_new() in Objects/typeobject.c'
+    inst = super().__new__(cls)
+    if hasattr(cls, 'slot_names'):
+      empty_slots = [null] * len(cls.slot_names)
+      object.__setattr__(inst, '_slotvalues', empty_slots)
+    return inst
+  def__setattr__(self, name, value):
+    'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
+    cls = type(self)
+    if hasattr(cls, 'slot_names') and name not in cls.slot_names:
+      raise AttributeError(
+        f'{cls.__name__!r} object has no attribute {name!r}'
+      )
+    super().__setattr__(name, value)
+  def__delattr__(self, name):
+    'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
+    cls = type(self)
+    if hasattr(cls, 'slot_names') and name not in cls.slot_names:
+      raise AttributeError(
+        f'{cls.__name__!r} object has no attribute {name!r}'
+      )
+    super().__delattr__(name)
+
+```
+
+To use the simulation in a real class, just inherit from `Object` and set the [metaclass](https://docs.python.org/3/glossary.html#term-metaclass) to `Type`:
+```
+classH(Object, metaclass=Type):
+  'Instance variables stored in slots'
+  slot_names = ['x', 'y']
+  def__init__(self, x, y):
+    self.x = x
+    self.y = y
+
+```
+
+At this point, the metaclass has loaded member objects for _x_ and _y_ :
+>>>```
+>>> frompprintimport pp
+>>> pp(dict(vars(H)))
+{'__module__': '__main__',
+ '__doc__': 'Instance variables stored in slots',
+ 'slot_names': ['x', 'y'],
+ '__init__': <function H.__init__ at 0x7fb5d302f9d0>,
+ 'x': <Member 'x' of 'H'>,
+ 'y': <Member 'y' of 'H'>}
+
+```
+
+When instances are created, they have a `slot_values` list where the attributes are stored:
+>>>```
+>>> h = H(10, 20)
+>>> vars(h)
+{'_slotvalues': [10, 20]}
+>>> h.x = 55
+>>> vars(h)
+{'_slotvalues': [55, 20]}
+
+```
+
+Misspelled or unassigned attributes will raise an exception:
+>>>```
+>>> h.xz
+Traceback (most recent call last):
+...
+AttributeError: 'H' object has no attribute 'xz'

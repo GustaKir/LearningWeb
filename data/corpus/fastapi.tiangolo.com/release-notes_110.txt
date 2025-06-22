@@ -1,0 +1,84 @@
+Title: FastAPI Internal Updates and Modifications
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: This section details various internal updates to the FastAPI project, including improvements to translation notifications for Hebrew, updates to Dependabot commit messages, and version bumps for GitHub actions. Additionally, it mentions updates to sponsorship badge configurations and FastAPI People.
+---
+
+### Internal[¶](https://fastapi.tiangolo.com/release-notes/#internal_60 "Permanent link")
+  * 🔧 Update translations notification for Hebrew. PR [#5158](https://github.com/tiangolo/fastapi/pull/5158) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update Dependabot commit message. PR [#5156](https://github.com/tiangolo/fastapi/pull/5156) by [@tiangolo](https://github.com/tiangolo).
+  * ⬆ Bump actions/upload-artifact from 2 to 3. PR [#5148](https://github.com/tiangolo/fastapi/pull/5148) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ Bump actions/cache from 2 to 3. PR [#5149](https://github.com/tiangolo/fastapi/pull/5149) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * 🔧 Update sponsors badge configs. PR [#5155](https://github.com/tiangolo/fastapi/pull/5155) by [@tiangolo](https://github.com/tiangolo).
+  * 👥 Update FastAPI People. PR [#5154](https://github.com/tiangolo/fastapi/pull/5154) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update Jina sponsor badges. PR [#5151](https://github.com/tiangolo/fastapi/pull/5151) by [@tiangolo](https://github.com/tiangolo).
+  * ⬆ Bump actions/checkout from 2 to 3. PR [#5133](https://github.com/tiangolo/fastapi/pull/5133) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ [pre-commit.ci] pre-commit autoupdate. PR [#5030](https://github.com/tiangolo/fastapi/pull/5030) by [@pre-commit-ci[bot]](https://github.com/apps/pre-commit-ci).
+  * ⬆ Bump nwtgck/actions-netlify from 1.1.5 to 1.2.3. PR [#5132](https://github.com/tiangolo/fastapi/pull/5132) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ Bump codecov/codecov-action from 2 to 3. PR [#5131](https://github.com/tiangolo/fastapi/pull/5131) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ Bump dawidd6/action-download-artifact from 2.9.0 to 2.21.1. PR [#5130](https://github.com/tiangolo/fastapi/pull/5130) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ Bump actions/setup-python from 2 to 4. PR [#5129](https://github.com/tiangolo/fastapi/pull/5129) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * 👷 Add Dependabot. PR [#5128](https://github.com/tiangolo/fastapi/pull/5128) by [@tiangolo](https://github.com/tiangolo).
+  * ♻️ Move from `Optional[X]` to `Union[X, None]` for internal utils. PR [#5124](https://github.com/tiangolo/fastapi/pull/5124) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update sponsors, remove Dropbase, add Doist. PR [#5096](https://github.com/tiangolo/fastapi/pull/5096) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update sponsors, remove Classiq, add ImgWhale. PR [#5079](https://github.com/tiangolo/fastapi/pull/5079) by [@tiangolo](https://github.com/tiangolo).
+
+
+## 0.78.0[¶](https://fastapi.tiangolo.com/release-notes/#0780 "Permanent link")
+### Features[¶](https://fastapi.tiangolo.com/release-notes/#features_25 "Permanent link")
+  * ✨ Add support for omitting `...` as default value when declaring required parameters with:
+  * `Path()`
+  * `Query()`
+  * `Header()`
+  * `Cookie()`
+  * `Body()`
+  * `Form()`
+  * `File()`
+
+
+New docs at [Tutorial - Query Parameters and String Validations - Make it required](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#make-it-required). PR [#4906](https://github.com/tiangolo/fastapi/pull/4906) by [@tiangolo](https://github.com/tiangolo).
+Up to now, declaring a required parameter while adding additional validation or metadata needed using `...` (Ellipsis).
+For example:
+```
+fromfastapiimport Cookie, FastAPI, Header, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+defmain(
+  item_id: int = Path(default=..., gt=0),
+  query: str = Query(default=..., max_length=10),
+  session: str = Cookie(default=..., min_length=3),
+  x_trace: str = Header(default=..., title="Tracing header"),
+):
+  return {"message": "Hello World"}
+
+```
+
+...all these parameters are required because the default value is `...` (Ellipsis).
+But now it's possible and supported to just omit the default value, as would be done with Pydantic fields, and the parameters would still be required.
+✨ For example, this is now supported:
+```
+fromfastapiimport Cookie, FastAPI, Header, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+defmain(
+  item_id: int = Path(gt=0),
+  query: str = Query(max_length=10),
+  session: str = Cookie(min_length=3),
+  x_trace: str = Header(title="Tracing header"),
+):
+  return {"message": "Hello World"}
+
+```
+
+To declare parameters as optional (not required), you can set a default value as always, for example using `None`:
+```
+fromtypingimport Union
+fromfastapiimport Cookie, FastAPI, Header, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+defmain(
+  item_id: int = Path(gt=0),
+  query: Union[str, None] = Query(default=None, max_length=10),
+  session: Union[str, None] = Cookie(default=None, min_length=3),
+  x_trace: Union[str, None] = Header(default=None, title="Tracing header"),
+):
+  return {"message": "Hello World"}

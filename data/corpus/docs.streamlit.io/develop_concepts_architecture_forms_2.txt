@@ -1,0 +1,38 @@
+Title: Streamlit Forms: Usage and Processing
+URL: https://docs.streamlit.io/develop/concepts/architecture/forms
+Summary: This section explains how to create forms in Streamlit, including defining a form, adding widgets like select boxes and text inputs, and handling form submissions. It highlights how forms allow for controlled input without immediate script reruns.
+---
+
+streamlit as st animal = st.form('my_animal') # This is writing directly to the main body. Since the form container is # defined above, this will appear below everything written in the form. sound = st.selectbox('Sounds like', ['meow','woof','squeak','tweet']) # These methods called on the form container, so they appear inside the form. submit = animal.form_submit_button(f'Say it with {sound}!') sentence = animal.text_input('Your sentence:', 'Where\'s the tuna?') say_it = sentence.rstrip('.,!?') + f', {sound}!' if submit:   animal.subheader(say_it) else:   animal.subheader('&nbsp;') `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-forms-container.streamlit.app/?utm_medium=oembed)
+## [](https://docs.streamlit.io/develop/concepts/architecture/forms#processing-form-submissions)Processing form submissions
+The purpose of a form is to override the default behavior of Streamlit which reruns a script as soon as the user makes a change. For widgets outside of a form, the logical flow is:
+  1. The user changes a widget's value on the frontend.
+  2. The widget's value in `st.session_state` and in the Python backend (server) is updated.
+  3. The script rerun begins.
+  4. If the widget has a callback, it is executed as a prefix to the page rerun.
+  5. When the updated widget's function is executed during the rerun, it outputs the new value.
+
+
+For widgets inside a form, any changes made by a user (step 1) do not get passed to the Python backend (step 2) until the form is submitted. Furthermore, the only widget inside a form that can have a callback function is the `st.form_submit_button`. If you need to execute a process using newly submitted values, you have three major patterns for doing so.
+### [](https://docs.streamlit.io/develop/concepts/architecture/forms#execute-the-process-after-the-form)Execute the process after the form
+If you need to execute a one-time process as a result of a form submission, you can condition that process on the `st.form_submit_button` and execute it after the form. If you need results from your process to display above the form, you can use containers to control where the form displays relative to your output.
+`import streamlit as st col1,col2 = st.columns([1,2]) col1.title('Sum:') with st.form('addition'):   a = st.number_input('a')   b = st.number_input('b')   submit = st.form_submit_button('add') if submit:   col2.title(f'{a+b:.2f}') `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-forms-process1.streamlit.app/?utm_medium=oembed)
+### [](https://docs.streamlit.io/develop/concepts/architecture/forms#use-a-callback-with-session-state)Use a callback with session state
+You can use a callback to execute a process as a prefix to the script rerunning.
+_priority_high_
+#### Important
+When processing newly updated values within a callback, do not pass those values to the callback directly through the `args` or `kwargs` parameters. You need to assign a key to any widget whose value you use within the callback. If you look up the value of that widget from `st.session_state` within the body of the callback, you will be able to access the newly submitted value. See the example below.
+`import streamlit as st if 'sum' not in st.session_state:   st.session_state.sum = '' def sum():   result = st.session_state.a + st.session_state.b   st.session_state.sum = result col1,col2 = st.columns(2) col1.title('Sum:') if isinstance(st.session_state.sum, float):   col2.title(f'{st.session_state.sum:.2f}') with st.form('addition'):   st.number_input('a', key = 'a')   st.number_input('b', key = 'b')   st.form_submit_button('add', on_click=sum) `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-forms-process2.streamlit.app/?utm_medium=oembed)
+### [](https://docs.streamlit.io/develop/concepts/architecture/forms#use-strerun)Use `st.rerun`
+If your process affects content above your form, another alternative is using an extra rerun. This can be less resource-efficient though, and may be less desirable that the above options.
+`import streamlit as st if 'sum' not in st.session_state:   st.session_state.sum = '' col1,col2 = st.columns(2) col1.title('Sum:') if isinstance(st.session_state.sum, float):   col2.title(f'{st.session_state.sum:.2f}') with st.form('addition'):   a = st.number_input('a')   b = st.number_input('b')   submit = st.form_submit_button('add') # The value of st.session_state.sum is updated at the end of the script rerun, # so the displayed value at the top in col2 does not show the new sum. Trigger # a second rerun when the form is submitted to update the value above. st.session_state.sum = a + b if submit:   st.rerun() `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-forms-process3.streamlit.app/?utm_medium=oembed)
+## [](https://docs.streamlit.io/develop/concepts/architecture/forms#limitations)Limitations
+  * Every form must contain a `st.form_submit_button

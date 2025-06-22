@@ -1,0 +1,22 @@
+Title: Python 3.11 What's New
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: This segment discusses optimizations in Python 3.11, highlighting improvements in subscripting for built-in types like lists and dictionaries, the inlining of custom `__getitem__()` methods, and direct calls to common built-in functions to enhance performance.
+---
+
+stdtypes.html#list "list"), [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") and [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") directly index the underlying data structures. Subscripting custom [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") is also inlined similar to [Inlined Python function calls](https://docs.python.org/3/whatsnew/3.11.html#inline-calls). | 10-25% | Irit Katriel, Mark Shannon  
+Store subscript | `a[i] = z` | Similar to subscripting specialization above. | 10-25% | Dennis Sweeney  
+Calls | `f(arg)` `C(arg)` | Calls to common builtin (C) functions and types such as [`len()`](https://docs.python.org/3/library/functions.html#len "len") and [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") directly call their underlying C version. This avoids going through the internal calling convention. | 20% | Mark Shannon, Ken Jin  
+Load global variable | `print` `len` | The object’s index in the globals/builtins namespace is cached. Loading globals and builtins require zero namespace lookups. | [[1]](https://docs.python.org/3/whatsnew/3.11.html#load-global) | Mark Shannon  
+Load attribute | `o.attr` | Similar to loading global variables. The attribute’s index inside the class/object’s namespace is cached. In most cases, attribute loading will require zero namespace lookups. | [[2]](https://docs.python.org/3/whatsnew/3.11.html#load-attr) | Mark Shannon  
+Load methods for call | `o.meth()` | The actual address of the method is cached. Method loading now has no namespace lookups – even for classes with long inheritance chains. | 10-20% | Ken Jin, Mark Shannon  
+Store attribute | `o.attr = z` | Similar to load attribute optimization. | 2% in pyperformance | Mark Shannon  
+Unpack Sequence | `*seq` | Specialized for common containers such as [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") and [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple"). Avoids internal calling convention. | 8% | Brandt Bucher  
+[[1](https://docs.python.org/3/whatsnew/3.11.html#id2)]
+A similar optimization already existed since Python 3.8. 3.11 specializes for more forms and reduces some overhead.
+[[2](https://docs.python.org/3/whatsnew/3.11.html#id3)]
+A similar optimization already existed since Python 3.10. 3.11 specializes for more forms. Furthermore, all attribute loads should be sped up by [bpo-45947](https://bugs.python.org/issue?@action=redirect&bpo=45947).
+### Misc[¶](https://docs.python.org/3/whatsnew/3.11.html#misc "Link to this heading")
+  * Objects now require less memory due to lazily created object namespaces. Their namespace dictionaries now also share keys more freely. (Contributed Mark Shannon in [bpo-45340](https://bugs.python.org/issue?@action=redirect&bpo=45340) and [bpo-40116](https://bugs.python.org/issue?@action=redirect&bpo=40116).)
+  * “Zero-cost” exceptions are implemented, eliminating the cost of [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) statements when no exception is raised. (Contributed by Mark Shannon in [bpo-40222](https://bugs.python.org/issue?@action=redirect&bpo=40222).)
+  * A more concise representation of exceptions in the interpreter reduced the time required for catching an exception by about 10%. (Contributed by Irit Katriel in [bpo-45711](https://bugs.python.org/issue?@action=redirect&bpo=45711).)
+  * [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.")’s regular expression matching engine has been partially refactored, and now uses computed gotos (or “threaded code”) on supported platforms. As a result, Python 3.11 executes the [pyperformance regular expression benchmarks](https://pyperformance.readthedocs.io/benchmarks.html#regex-dna) up to 10% faster than Python 3.10. (Contributed by Brandt Bucher in [gh-91404](https://github.com/python/cpython/issues/91404).)

@@ -1,0 +1,21 @@
+Title: PyType_FromMetaclass Function
+URL: https://docs.python.org/3/c-api/type.html
+Summary: The PyType_FromMetaclass function creates and returns a heap type from a given specification. It utilizes the specified metaclass to construct the resulting type object, and is part of the Stable ABI since Python 3.12.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyType_FromMetaclass([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*metaclass, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, [PyType_Spec](https://docs.python.org/3/c-api/type.html#c.PyType_Spec "PyType_Spec")*spec, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*bases)[¶](https://docs.python.org/3/c-api/type.html#c.PyType_FromMetaclass "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+Create and return a [heap type](https://docs.python.org/3/c-api/typeobj.html#heap-types) from the _spec_ (see [`Py_TPFLAGS_HEAPTYPE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HEAPTYPE "Py_TPFLAGS_HEAPTYPE")).
+The metaclass _metaclass_ is used to construct the resulting type object. When _metaclass_ is `NULL`, the metaclass is derived from _bases_ (or _Py_tp_base[s]_ slots if _bases_ is `NULL`, see below).
+Metaclasses that override [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") are not supported, except if `tp_new` is `NULL`. (For backwards compatibility, other `PyType_From*` functions allow such metaclasses. They ignore `tp_new`, which may result in incomplete initialization. This is deprecated and in Python 3.14+ such metaclasses will not be supported.)
+The _bases_ argument can be used to specify base classes; it can either be only one class or a tuple of classes. If _bases_ is `NULL`, the _Py_tp_bases_ slot is used instead. If that also is `NULL`, the _Py_tp_base_ slot is used instead. If that also is `NULL`, the new type derives from [`object`](https://docs.python.org/3/library/functions.html#object "object").
+The _module_ argument can be used to record the module in which the new class is defined. It must be a module object or `NULL`. If not `NULL`, the module is associated with the new type and can later be retrieved with [`PyType_GetModule()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetModule "PyType_GetModule"). The associated module is not inherited by subclasses; it must be specified for each class individually.
+This function calls [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready") on the new type.
+Note that this function does _not_ fully match the behavior of calling [`type()`](https://docs.python.org/3/library/functions.html#type "type") or using the [`class`](https://docs.python.org/3/reference/compound_stmts.html#class) statement. With user-provided base types or metaclasses, prefer [calling](https://docs.python.org/3/c-api/call.html#capi-call) [`type`](https://docs.python.org/3/library/functions.html#type "type") (or the metaclass) over `PyType_From*` functions. Specifically:
+  * [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") is not called on the new class (and it must be set to `type.__new__`).
+  * [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") is not called on the new class.
+  * [`__init_subclass__()`](https://docs.python.org/3/reference/datamodel.html#object.__init_subclass__ "object.__init_subclass__") is not called on any bases.
+  * [`__set_name__()`](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "object.__set_name__") is not called on new descriptors.
+
+
+Added in version 3.12.

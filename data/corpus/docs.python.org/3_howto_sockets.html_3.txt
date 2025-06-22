@@ -1,0 +1,50 @@
+Title: Custom Socket Class in Python
+URL: https://docs.python.org/3/howto/sockets.html
+Summary: This documentation chunk outlines a demonstration class 'MySocket' which provides basic socket functionalities. It includes methods for initialization, connecting to a host and port, sending messages, and receiving data. The class emphasizes clarity over efficiency and is suitable for understanding socket operations in Python.
+---
+
+```
+classMySocket:
+"""demonstration class only
+   - coded for clarity, not efficiency
+  """
+  def__init__(self, sock=None):
+    if sock is None:
+      self.sock = socket.socket(
+              socket.AF_INET, socket.SOCK_STREAM)
+    else:
+      self.sock = sock
+  defconnect(self, host, port):
+    self.sock.connect((host, port))
+  defmysend(self, msg):
+    totalsent = 0
+    while totalsent < MSGLEN:
+      sent = self.sock.send(msg[totalsent:])
+      if sent == 0:
+        raise RuntimeError("socket connection broken")
+      totalsent = totalsent + sent
+  defmyreceive(self):
+    chunks = []
+    bytes_recd = 0
+    while bytes_recd < MSGLEN:
+      chunk = self.sock.recv(min(MSGLEN - bytes_recd, 2048))
+      if chunk == b'':
+        raise RuntimeError("socket connection broken")
+      chunks.append(chunk)
+      bytes_recd = bytes_recd + len(chunk)
+    return b''.join(chunks)
+
+```
+
+The sending code here is usable for almost any messaging scheme - in Python you send strings, and you can use `len()` to determine its length (even if it has embedded `\0` characters). It’s mostly the receiving code that gets more complex. (And in C, it’s not much worse, except you can’t use `strlen` if the message has embedded `\0`s.)
+The easiest enhancement is to make the first character of the message an indicator of message type, and have the type determine the length. Now you have two `recv`s - the first to get (at least) that first character so you can look up the length, and the second in a loop to get the rest. If you decide to go the delimited route, you’ll be receiving in some arbitrary chunk size, (4096 or 8192 is frequently a good match for network buffer sizes), and scanning what you’ve received for a delimiter.
+One complication to be aware of: if your conversational protocol allows multiple messages to be sent back to back (without some kind of reply), and you pass `recv` an arbitrary chunk size, you may end up reading the start of a following message. You’ll need to put that aside and hold onto it, until it’s needed.
+Prefixing the message with its length (say, as 5 numeric characters) gets more complex, because (believe it or not), you may not get all 5 characters in one `recv`. In playing around, you’ll get away with it; but in high network loads, your code will very quickly break unless you use two `recv` loops - the first to determine the length, the second to get the data part of the message. Nasty. This is also when you’ll discover that `send` does not always manage to get rid of everything in one pass. And despite having read this, you will eventually get bit by it!
+In the interests of space, building your character, (and preserving my competitive position), these enhancements are left as an exercise for the reader. Lets move on to cleaning up.
+### Binary Data[¶](https://docs.python.org/3/howto/sockets.html#binary-data "Link to this heading")
+It is perfectly possible to send binary data over a socket. The major problem is that not all machines use the same formats for binary data. For example, [network byte order](https://en.wikipedia.org/wiki/Endianness#Networking) is big-endian, with the most significant byte first, so a 16 bit integer with the value `1` would be the two hex bytes `00 01`. However, most common processors (x86/AMD64, ARM, RISC-V), are little-endian, with the least significant byte first - that same `1` would be `01 00`.
+Socket libraries have calls for converting 16 and 32 bit integers - `ntohl, htonl, ntohs, htons` where “n” means _network_ and “h” means _host_ , “s” means _short_ and “l” means _long_. Where network order is host order, these do nothing, but where the machine is byte-reversed, these swap the bytes around appropriately.
+In these days of 64-bit machines, the ASCII representation of binary data is frequently smaller than the binary representation. That’s because a surprising amount of the time, most integers have the value 0, or maybe 1. The string `"0"` would be two bytes, while a full 64-bit integer would be 8. Of course, this doesn’t fit well with fixed-length messages. Decisions, decisions.
+## Disconnecting[¶](https://docs.python.org/3/howto/sockets.html#disconnecting "Link to this heading")
+Strictly speaking, you’re supposed to use `shutdown` on a socket before you `close` it. The `shutdown` is an advisory to the socket at the other end. Depending on the argument you pass it, it can mean “I’m not going to send anymore, but I’ll still listen”, or “I’m not listening, good riddance!”. Most socket libraries, however, are so used to programmers neglecting to use this piece of etiquette that normally a `close` is the same as `shutdown(); close()`. So in most situations, an explicit `shutdown` is not needed.
+One way to use `shutdown` effectively is in an HTTP-like exchange. The client sends a request and then does a `shutdown(1)`. This tells the server “This client is done sending, but can still receive.” The server can detect “EOF” by a receive of 0 bytes. It can assume it has the compl

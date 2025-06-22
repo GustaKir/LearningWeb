@@ -1,0 +1,37 @@
+Title: fcntl.fcntl Function Overview
+URL: https://docs.python.org/3/library/fcntl.html
+Summary: The `fcntl.fcntl` function performs operations defined by the `_cmd_` parameter on a file descriptor `_fd_`. It accepts file objects with a `fileno()` method and requires the `_cmd_` values, which are OS-dependent constants from the `fcntl` module. The optional `_arg_` can be an integer, bytes, or string, and must match the expected type and size from the C documentation. When `_arg_` is an integer, the function returns the integer result from the C `fcntl()` call.
+---
+
+fcntl.fcntl(_fd_ , _cmd_ , _arg =0_, _/_)[¶](https://docs.python.org/3/library/fcntl.html#fcntl.fcntl "Link to this definition")
+    
+Perform the operation _cmd_ on file descriptor _fd_ (file objects providing a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method are accepted as well). The values used for _cmd_ are operating system dependent, and are available as constants in the [`fcntl`](https://docs.python.org/3/library/fcntl.html#module-fcntl "fcntl: The fcntl\(\) and ioctl\(\) system calls. \(Unix\)") module, using the same names as used in the relevant C header files. The argument _arg_ can either be an integer value, a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object, or a string. The type and size of _arg_ must match the type and size of the argument of the operation as specified in the relevant C documentation.
+When _arg_ is an integer, the function returns the integer return value of the C `fcntl()` call.
+When the argument is bytes, it represents a binary structure, for example, created by [`struct.pack()`](https://docs.python.org/3/library/struct.html#struct.pack "struct.pack"). A string value is encoded to binary using the UTF-8 encoding. The binary data is copied to a buffer whose address is passed to the C `fcntl()` call. The return value after a successful call is the contents of the buffer, converted to a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object. The length of the returned object will be the same as the length of the _arg_ argument. This is limited to 1024 bytes.
+If the `fcntl()` call fails, an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised.
+Note
+If the type or the size of _arg_ does not match the type or size of the argument of the operation (for example, if an integer is passed when a pointer is expected, or the information returned in the buffer by the operating system is larger than 1024 bytes), this is most likely to result in a segmentation violation or a more subtle data corruption.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `fcntl.fcntl` with arguments `fd`, `cmd`, `arg`. 
+
+fcntl.ioctl(_fd_ , _request_ , _arg =0_, _mutate_flag =True_, _/_)[¶](https://docs.python.org/3/library/fcntl.html#fcntl.ioctl "Link to this definition")
+    
+This function is identical to the [`fcntl()`](https://docs.python.org/3/library/fcntl.html#fcntl.fcntl "fcntl.fcntl") function, except that the argument handling is even more complicated.
+The _request_ parameter is limited to values that can fit in 32-bits or 64-bits, depending on the platform. Additional constants of interest for use as the _request_ argument can be found in the [`termios`](https://docs.python.org/3/library/termios.html#module-termios "termios: POSIX style tty control. \(Unix\)") module, under the same names as used in the relevant C header files.
+The parameter _arg_ can be an integer, a [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object), or a string. The type and size of _arg_ must match the type and size of the argument of the operation as specified in the relevant C documentation.
+If _arg_ does not support the read-write buffer interface or the _mutate_flag_ is false, behavior is as for the [`fcntl()`](https://docs.python.org/3/library/fcntl.html#fcntl.fcntl "fcntl.fcntl") function.
+If _arg_ supports the read-write buffer interface (like [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray")) and _mutate_flag_ is true (the default), then the buffer is (in effect) passed to the underlying `ioctl()` system call, the latter’s return code is passed back to the calling Python, and the buffer’s new contents reflect the action of the `ioctl()`. This is a slight simplification, because if the supplied buffer is less than 1024 bytes long it is first copied into a static buffer 1024 bytes long which is then passed to [`ioctl()`](https://docs.python.org/3/library/fcntl.html#fcntl.ioctl "fcntl.ioctl") and copied back into the supplied buffer.
+If the `ioctl()` call fails, an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") exception is raised.
+Note
+If the type or size of _arg_ does not match the type or size of the operation’s argument (for example, if an integer is passed when a pointer is expected, or the information returned in the buffer by the operating system is larger than 1024 bytes, or the size of the mutable bytes-like object is too small), this is most likely to result in a segmentation violation or a more subtle data corruption.
+An example:
+>>>```
+>>> importarray,fcntl,struct,termios,os
+>>> os.getpgrp()
+13341
+>>> struct.unpack('h', fcntl.ioctl(0, termios.TIOCGPGRP, " "))[0]
+13341
+>>> buf = array.array('h', [0])
+>>> fcntl.ioctl(0, termios.TIOCGPGRP, buf, 1)
+0
+>>> buf
+array('h', [13341])

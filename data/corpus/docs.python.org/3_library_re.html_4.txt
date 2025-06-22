@@ -1,0 +1,66 @@
+Title: Regular Expression Flags in Python
+URL: https://docs.python.org/3/library/re.html
+Summary: This section explains the use of flags in Python's regular expressions, represented by the letters 'a', 'i', 'L', 'm', 's', 'u', and 'x'. Each flag modifies the regex behavior, including case sensitivity, locale settings, multi-line matching, and others. The document provides a link to a detailed description of each flag.
+---
+
+`(?aiLmsux)`
+    
+(One or more letters from the set `'a'`, `'i'`, `'L'`, `'m'`, `'s'`, `'u'`, `'x'`.) The group matches the empty string; the letters set the corresponding flags for the entire regular expression:
+  * [`re.A`](https://docs.python.org/3/library/re.html#re.A "re.A") (ASCII-only matching)
+  * [`re.I`](https://docs.python.org/3/library/re.html#re.I "re.I") (ignore case)
+  * [`re.L`](https://docs.python.org/3/library/re.html#re.L "re.L") (locale dependent)
+  * [`re.M`](https://docs.python.org/3/library/re.html#re.M "re.M") (multi-line)
+  * [`re.S`](https://docs.python.org/3/library/re.html#re.S "re.S") (dot matches all)
+  * [`re.U`](https://docs.python.org/3/library/re.html#re.U "re.U") (Unicode matching)
+  * [`re.X`](https://docs.python.org/3/library/re.html#re.X "re.X") (verbose)
+
+
+(The flags are described in [Module Contents](https://docs.python.org/3/library/re.html#contents-of-module-re).) This is useful if you wish to include the flags as part of the regular expression, instead of passing a _flag_ argument to the [`re.compile()`](https://docs.python.org/3/library/re.html#re.compile "re.compile") function. Flags should be used first in the expression string.
+Changed in version 3.11: This construction can only be used at the start of the expression. 
+
+`(?:...)`
+    
+A non-capturing version of regular parentheses. Matches whatever regular expression is inside the parentheses, but the substring matched by the group _cannot_ be retrieved after performing a match or referenced later in the pattern. 
+
+`(?aiLmsux-imsx:...)`
+    
+(Zero or more letters from the set `'a'`, `'i'`, `'L'`, `'m'`, `'s'`, `'u'`, `'x'`, optionally followed by `'-'` followed by one or more letters from the `'i'`, `'m'`, `'s'`, `'x'`.) The letters set or remove the corresponding flags for the part of the expression:
+  * [`re.A`](https://docs.python.org/3/library/re.html#re.A "re.A") (ASCII-only matching)
+  * [`re.I`](https://docs.python.org/3/library/re.html#re.I "re.I") (ignore case)
+  * [`re.L`](https://docs.python.org/3/library/re.html#re.L "re.L") (locale dependent)
+  * [`re.M`](https://docs.python.org/3/library/re.html#re.M "re.M") (multi-line)
+  * [`re.S`](https://docs.python.org/3/library/re.html#re.S "re.S") (dot matches all)
+  * [`re.U`](https://docs.python.org/3/library/re.html#re.U "re.U") (Unicode matching)
+  * [`re.X`](https://docs.python.org/3/library/re.html#re.X "re.X") (verbose)
+
+
+(The flags are described in [Module Contents](https://docs.python.org/3/library/re.html#contents-of-module-re).)
+The letters `'a'`, `'L'` and `'u'` are mutually exclusive when used as inline flags, so they can’t be combined or follow `'-'`. Instead, when one of them appears in an inline group, it overrides the matching mode in the enclosing group. In Unicode patterns `(?a:...)` switches to ASCII-only matching, and `(?u:...)` switches to Unicode matching (default). In bytes patterns `(?L:...)` switches to locale dependent matching, and `(?a:...)` switches to ASCII-only matching (default). This override is only in effect for the narrow inline group, and the original matching mode is restored outside of the group.
+Added in version 3.6.
+Changed in version 3.7: The letters `'a'`, `'L'` and `'u'` also can be used in a group. 
+
+`(?>...)`
+    
+Attempts to match `...` as if it was a separate regular expression, and if successful, continues to match the rest of the pattern following it. If the subsequent pattern fails to match, the stack can only be unwound to a point _before_ the `(?>...)` because once exited, the expression, known as an _atomic group_ , has thrown away all stack points within itself. Thus, `(?>.*).` would never match anything because first the `.*` would match all characters possible, then, having nothing left to match, the final `.` would fail to match. Since there are no stack points saved in the Atomic Group, and there is no stack point before it, the entire expression would thus fail to match.
+Added in version 3.11. 
+
+`(?P<name>...)`
+    
+Similar to regular parentheses, but the substring matched by the group is accessible via the symbolic group name _name_. Group names must be valid Python identifiers, and in [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") patterns they can only contain bytes in the ASCII range. Each group name must be defined only once within a regular expression. A symbolic group is also a numbered group, just as if the group were not named.
+Named groups can be referenced in three contexts. If the pattern is `(?P<quote>['"]).*?(?P=quote)` (i.e. matching a string quoted with either single or double quotes):
+Context of reference to group “quote” | Ways to reference it  
+---|---  
+in the same pattern itself | 
+  * `(?P=quote)` (as shown)
+  * `\1`
+
+  
+when processing match object _m_ | 
+  * `m.group('quote')`
+  * `m.end('quote')` (etc.)
+
+  
+in a string passed to the _repl_ argument of `re.sub()` | 
+  * `\g<quote>`
+  * `\g<1>`
+  * `\1`

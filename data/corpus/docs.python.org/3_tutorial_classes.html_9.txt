@@ -1,0 +1,70 @@
+Title: Private Variables and Name Mangling in Python Classes
+URL: https://docs.python.org/3/tutorial/classes.html
+Summary: This section explains the concept of name mangling for private variables in Python classes, highlighting how identifiers are altered to include the class name for protection. It notes the ability to access mangled variables and discusses the limitations of name mangling in relation to functions like `exec()`, `eval()`, `getattr()`, `setattr()`, and direct dictionary access.
+---
+
+```
+
+The above example would work even if `MappingSubclass` were to introduce a `__update` identifier since it is replaced with `_Mapping__update` in the `Mapping` class and `_MappingSubclass__update` in the `MappingSubclass` class respectively.
+Note that the mangling rules are designed mostly to avoid accidents; it still is possible to access or modify a variable that is considered private. This can even be useful in special circumstances, such as in the debugger.
+Notice that code passed to `exec()` or `eval()` does not consider the classname of the invoking class to be the current class; this is similar to the effect of the `global` statement, the effect of which is likewise restricted to code that is byte-compiled together. The same restriction applies to `getattr()`, `setattr()` and `delattr()`, as well as when referencing `__dict__` directly.
+## 9.7. Odds and Ends[¶](https://docs.python.org/3/tutorial/classes.html#odds-and-ends "Link to this heading")
+Sometimes it is useful to have a data type similar to the Pascal “record” or C “struct”, bundling together a few named data items. The idiomatic approach is to use [`dataclasses`](https://docs.python.org/3/library/dataclasses.html#module-dataclasses "dataclasses: Generate special methods on user-defined classes.") for this purpose:
+```
+fromdataclassesimport dataclass
+@dataclass
+classEmployee:
+  name: str
+  dept: str
+  salary: int
+
+```
+
+>>>```
+>>> john = Employee('john', 'computer lab', 1000)
+>>> john.dept
+'computer lab'
+>>> john.salary
+1000
+
+```
+
+A piece of Python code that expects a particular abstract data type can often be passed a class that emulates the methods of that data type instead. For instance, if you have a function that formats some data from a file object, you can define a class with methods [`read()`](https://docs.python.org/3/library/io.html#io.TextIOBase.read "io.TextIOBase.read") and [`readline()`](https://docs.python.org/3/library/io.html#io.TextIOBase.readline "io.TextIOBase.readline") that get the data from a string buffer instead, and pass it as an argument.
+[Instance method objects](https://docs.python.org/3/reference/datamodel.html#instance-methods) have attributes, too: [`m.__self__`](https://docs.python.org/3/reference/datamodel.html#method.__self__ "method.__self__") is the instance object with the method `m()`, and [`m.__func__`](https://docs.python.org/3/reference/datamodel.html#method.__func__ "method.__func__") is the [function object](https://docs.python.org/3/reference/datamodel.html#user-defined-funcs) corresponding to the method.
+## 9.8. Iterators[¶](https://docs.python.org/3/tutorial/classes.html#iterators "Link to this heading")
+By now you have probably noticed that most container objects can be looped over using a [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) statement:
+```
+for element in [1, 2, 3]:
+  print(element)
+for element in (1, 2, 3):
+  print(element)
+for key in {'one':1, 'two':2}:
+  print(key)
+for char in "123":
+  print(char)
+for line in open("myfile.txt"):
+  print(line, end='')
+
+```
+
+This style of access is clear, concise, and convenient. The use of iterators pervades and unifies Python. Behind the scenes, the [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) statement calls [`iter()`](https://docs.python.org/3/library/functions.html#iter "iter") on the container object. The function returns an iterator object that defines the method [`__next__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__next__ "iterator.__next__") which accesses elements in the container one at a time. When there are no more elements, [`__next__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__next__ "iterator.__next__") raises a [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") exception which tells the `for` loop to terminate. You can call the [`__next__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__next__ "iterator.__next__") method using the [`next()`](https://docs.python.org/3/library/functions.html#next "next") built-in function; this example shows how it all works:
+>>>```
+>>> s = 'abc'
+>>> it = iter(s)
+>>> it
+<str_iterator object at 0x10c90e650>
+>>> next(it)
+'a'
+>>> next(it)
+'b'
+>>> next(it)
+'c'
+>>> next(it)
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+next(it)
+StopIteration
+
+```
+
+Having seen the mechanics behind the iterator protocol, it is easy to add iterator behavior to your classes. Define an [`__iter__()`](https://docs.python.org/3/library/stdtypes.html#container.__iter__ "container.__iter__") method which returns an object with a [`__next__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__next__ "iterator.__next__") method. If the class defines `__next__()`, then `__iter__()` can just return `self`:

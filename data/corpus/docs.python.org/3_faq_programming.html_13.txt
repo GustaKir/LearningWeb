@@ -1,0 +1,36 @@
+Title: Performance Optimization in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section addresses common concerns about program speed in Python, particularly focusing on CPython. It emphasizes the importance of understanding performance variations across implementations and operating systems, and advises developers to identify bottlenecks using profiling tools before attempting any optimizations.
+---
+
+```
+
+Also see the specification in the [language reference](https://docs.python.org/3/reference/lexical_analysis.html#strings).
+## [Performance](https://docs.python.org/3/faq/programming.html#id39)[¶](https://docs.python.org/3/faq/programming.html#performance "Link to this heading")
+### [My program is too slow. How do I speed it up?](https://docs.python.org/3/faq/programming.html#id40)[¶](https://docs.python.org/3/faq/programming.html#my-program-is-too-slow-how-do-i-speed-it-up "Link to this heading")
+That’s a tough one, in general. First, here are a list of things to remember before diving further:
+  * Performance characteristics vary across Python implementations. This FAQ focuses on [CPython](https://docs.python.org/3/glossary.html#term-CPython).
+  * Behaviour can vary across operating systems, especially when talking about I/O or multi-threading.
+  * You should always find the hot spots in your program _before_ attempting to optimize any code (see the [`profile`](https://docs.python.org/3/library/profile.html#module-profile "profile: Python source profiler.") module).
+  * Writing benchmark scripts will allow you to iterate quickly when searching for improvements (see the [`timeit`](https://docs.python.org/3/library/timeit.html#module-timeit "timeit: Measure the execution time of small code snippets.") module).
+  * It is highly recommended to have good code coverage (through unit testing or any other technique) before potentially introducing regressions hidden in sophisticated optimizations.
+
+
+That being said, there are many tricks to speed up Python code. Here are some general principles which go a long way towards reaching acceptable performance levels:
+  * Making your algorithms faster (or changing to faster ones) can yield much larger benefits than trying to sprinkle micro-optimization tricks all over your code.
+  * Use the right data structures. Study documentation for the [Built-in Types](https://docs.python.org/3/library/stdtypes.html#bltin-types) and the [`collections`](https://docs.python.org/3/library/collections.html#module-collections "collections: Container datatypes") module.
+  * When the standard library provides a primitive for doing something, it is likely (although not guaranteed) to be faster than any alternative you may come up with. This is doubly true for primitives written in C, such as builtins and some extension types. For example, be sure to use either the [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") built-in method or the related [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") function to do sorting (and see the [Sorting Techniques](https://docs.python.org/3/howto/sorting.html#sortinghowto) for examples of moderately advanced usage).
+  * Abstractions tend to create indirections and force the interpreter to work more. If the levels of indirection outweigh the amount of useful work done, your program will be slower. You should avoid excessive abstraction, especially under the form of tiny functions or methods (which are also often detrimental to readability).
+
+
+If you have reached the limit of what pure Python can allow, there are tools to take you further away. For example, [Cython](https://cython.org) can compile a slightly modified version of Python code into a C extension, and can be used on many different platforms. Cython can take advantage of compilation (and optional type annotations) to make your code significantly faster than when interpreted. If you are confident in your C programming skills, you can also [write a C extension module](https://docs.python.org/3/extending/index.html#extending-index) yourself.
+See also
+The wiki page devoted to [performance tips](https://wiki.python.org/moin/PythonSpeed/PerformanceTips).
+### [What is the most efficient way to concatenate many strings together?](https://docs.python.org/3/faq/programming.html#id41)[¶](https://docs.python.org/3/faq/programming.html#what-is-the-most-efficient-way-to-concatenate-many-strings-together "Link to this heading")
+[`str`](https://docs.python.org/3/library/stdtypes.html#str "str") and [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") objects are immutable, therefore concatenating many strings together is inefficient as each concatenation creates a new object. In the general case, the total runtime cost is quadratic in the total string length.
+To accumulate many [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") objects, the recommended idiom is to place them into a list and call [`str.join()`](https://docs.python.org/3/library/stdtypes.html#str.join "str.join") at the end:
+```
+chunks = []
+for s in my_strings:
+  chunks.append(s)
+result = ''.join(chunks)

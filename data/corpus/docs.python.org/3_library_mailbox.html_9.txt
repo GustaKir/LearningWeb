@@ -1,0 +1,58 @@
+Title: Mailbox Module - File and String Retrieval Methods
+URL: https://docs.python.org/3/library/mailbox.html
+Summary: The `get_file` and `get_string` methods in the `mbox` class of the mailbox module feature an optional `_from_` parameter. This parameter controls whether the Unix 'From ' line at the beginning of an mbox entry is included. Notably, using the file after calling `flush()` or `close()` may result in unpredictable behavior or exceptions.
+---
+
+get_file(_key_ , _from_ =False_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.mbox.get_file "Link to this definition")
+    
+Using the file after calling [`flush()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.flush "mailbox.Mailbox.flush") or [`close()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.close "mailbox.Mailbox.close") on the `mbox` instance may yield unpredictable results or raise an exception.
+Note: This method has an extra parameter (_from__) compared with other classes. The first line of an mbox file entry is the Unix “From “ line. If _from__ is False, the first line of the file is dropped. 
+
+get_string(_key_ , _from_ =False_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.mbox.get_string "Link to this definition")
+    
+Note: This method has an extra parameter (_from__) compared with other classes. The first line of an mbox file entry is the Unix “From “ line. If _from__ is False, the first line of the file is dropped. 
+
+lock()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.mbox.lock "Link to this definition")
+
+
+unlock()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.mbox.unlock "Link to this definition")
+    
+Three locking mechanisms are used—dot locking and, if available, the `flock()` and `lockf()` system calls.
+See also 
+
+[mbox man page from tin](http://www.tin.org/bin/man.cgi?section=5&topic=mbox)
+    
+A specification of the format, with details on locking. 
+
+[Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad](https://www.jwz.org/doc/content-length.html)
+    
+An argument for using the original mbox format rather than a variation. 
+
+[“mbox” is a family of several mutually incompatible mailbox formats](https://www.loc.gov/preservation/digital/formats/fdd/fdd000383.shtml)
+    
+A history of mbox variations.
+### `MH` objects[¶](https://docs.python.org/3/library/mailbox.html#mh-objects "Link to this heading") 
+
+_class_ mailbox.MH(_path_ , _factory =None_, _create =True_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MH "Link to this definition")
+    
+A subclass of [`Mailbox`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "mailbox.Mailbox") for mailboxes in MH format. Parameter _factory_ is a callable object that accepts a file-like message representation (which behaves as if opened in binary mode) and returns a custom representation. If _factory_ is `None`, [`MHMessage`](https://docs.python.org/3/library/mailbox.html#mailbox.MHMessage "mailbox.MHMessage") is used as the default message representation. If _create_ is `True`, the mailbox is created if it does not exist.
+MH is a directory-based mailbox format invented for the MH Message Handling System, a mail user agent. Each message in an MH mailbox resides in its own file. An MH mailbox may contain other MH mailboxes (called _folders_) in addition to messages. Folders may be nested indefinitely. MH mailboxes also support _sequences_ , which are named lists used to logically group messages without moving them to sub-folders. Sequences are defined in a file called `.mh_sequences` in each folder.
+The `MH` class manipulates MH mailboxes, but it does not attempt to emulate all of **mh** ’s behaviors. In particular, it does not modify and is not affected by the `context` or `.mh_profile` files that are used by **mh** to store its state and configuration.
+`MH` instances have all of the methods of [`Mailbox`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "mailbox.Mailbox") in addition to the following:
+Changed in version 3.13: Supported folders that don’t contain a `.mh_sequences` file. 
+
+list_folders()[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MH.list_folders "Link to this definition")
+    
+Return a list of the names of all folders. 
+
+get_folder(_folder_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MH.get_folder "Link to this definition")
+    
+Return an `MH` instance representing the folder whose name is _folder_. A [`NoSuchMailboxError`](https://docs.python.org/3/library/mailbox.html#mailbox.NoSuchMailboxError "mailbox.NoSuchMailboxError") exception is raised if the folder does not exist. 
+
+add_folder(_folder_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MH.add_folder "Link to this definition")
+    
+Create a folder whose name is _folder_ and return an `MH` instance representing it. 
+
+remove_folder(_folder_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.MH.remove_folder "Link to this definition")
+    
+Delete the folder whose name is _folder_. If the folder contains any messages, a [`NotEmptyError`](https://docs.python.org/3/library/mailbox.html#mailbox.NotEmptyError "mailbox.NotEmptyError") exception will be raised and the folder will not be deleted.

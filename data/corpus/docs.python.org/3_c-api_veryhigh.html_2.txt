@@ -1,0 +1,33 @@
+Title: Python C API: Interactive Execution Functions
+URL: https://docs.python.org/3/c-api/veryhigh.html
+Summary: This section describes the `PyRun_InteractiveOneFlags` function, which executes a single statement from a file in an interactive environment. It outlines the usage of the `flags` argument, the prompting mechanism using `sys.ps1` and `sys.ps2`, and the return values indicating success, exceptions, or parse errors. The importance of including `errcode.h` for error codes is also noted.
+---
+
+intPyRun_InteractiveOneFlags(FILE*fp, constchar*filename, [PyCompilerFlags](https://docs.python.org/3/c-api/veryhigh.html#c.PyCompilerFlags "PyCompilerFlags")*flags)[¶](https://docs.python.org/3/c-api/veryhigh.html#c.PyRun_InteractiveOneFlags "Link to this definition")
+    
+Read and execute a single statement from a file associated with an interactive device according to the _flags_ argument. The user will be prompted using `sys.ps1` and `sys.ps2`. _filename_ is decoded from the [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler).
+Returns `0` when the input was executed successfully, `-1` if there was an exception, or an error code from the `errcode.h` include file distributed as part of Python if there was a parse error. (Note that `errcode.h` is not included by `Python.h`, so must be included specifically if needed.) 
+
+intPyRun_InteractiveLoop(FILE*fp, constchar*filename)[¶](https://docs.python.org/3/c-api/veryhigh.html#c.PyRun_InteractiveLoop "Link to this definition")
+    
+This is a simplified interface to [`PyRun_InteractiveLoopFlags()`](https://docs.python.org/3/c-api/veryhigh.html#c.PyRun_InteractiveLoopFlags "PyRun_InteractiveLoopFlags") below, leaving _flags_ set to `NULL`. 
+
+intPyRun_InteractiveLoopFlags(FILE*fp, constchar*filename, [PyCompilerFlags](https://docs.python.org/3/c-api/veryhigh.html#c.PyCompilerFlags "PyCompilerFlags")*flags)[¶](https://docs.python.org/3/c-api/veryhigh.html#c.PyRun_InteractiveLoopFlags "Link to this definition")
+    
+Read and execute statements from a file associated with an interactive device until EOF is reached. The user will be prompted using `sys.ps1` and `sys.ps2`. _filename_ is decoded from the [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler). Returns `0` at EOF or a negative number upon failure. 
+
+int(*PyOS_InputHook)(void)[¶](https://docs.python.org/3/c-api/veryhigh.html#c.PyOS_InputHook "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Can be set to point to a function with the prototype `int func(void)`. The function will be called when Python’s interpreter prompt is about to become idle and wait for user input from the terminal. The return value is ignored. Overriding this hook can be used to integrate the interpreter’s prompt with other event loops, as done in the `Modules/_tkinter.c` in the Python source code.
+Changed in version 3.12: This function is only called from the [main interpreter](https://docs.python.org/3/c-api/init.html#sub-interpreter-support). 
+
+char*(*PyOS_ReadlineFunctionPointer)(FILE*,FILE*,constchar*)[¶](https://docs.python.org/3/c-api/veryhigh.html#c.PyOS_ReadlineFunctionPointer "Link to this definition")
+    
+Can be set to point to a function with the prototype `char *func(FILE *stdin, FILE *stdout, char *prompt)`, overriding the default function used to read a single line of input at the interpreter’s prompt. The function is expected to output the string _prompt_ if it’s not `NULL`, and then read a line of input from the provided standard input file, returning the resulting string. For example, The [`readline`](https://docs.python.org/3/library/readline.html#module-readline "readline: GNU readline support for Python. \(Unix\)") module sets this hook to provide line-editing and tab-completion features.
+The result must be a string allocated by [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc") or [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc"), or `NULL` if an error occurred.
+Changed in version 3.4: The result must be allocated by [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc") or [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc"), instead of being allocated by [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc") or [`PyMem_Realloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Realloc "PyMem_Realloc").
+Changed in version 3.12: This function is only called from the [main interpreter](https://docs.python.org/3/c-api/init.html#sub-interpreter-support). 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyRun_String(constchar*str, intstart, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*globals, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*locals)[¶](https://docs.python.org/3/c-api/veryhigh.html#c.PyRun_String "Link to this definition")
+    _Return value: New reference._
+This is a simplified interface to [`PyRun_StringFlags()`](https://docs.python.org/3/c-api/veryhigh.html#c.PyRun_StringFlags "PyRun_StringFlags") below, leaving _flags_ set to `NULL`.

@@ -1,0 +1,60 @@
+Title: Understanding Mock Return Values and Side Effects in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section explains the behavior of return values and side effects when using the `Mock` class from the `unittest.mock` module. It demonstrates how setting a return value can be overridden by assigning `None`, and describes the precedence of `side_effect` and `return_value` when initialized simultaneously.
+---
+
+```
+>>> order_mock.get_value.return_value = "second"
+>>> order_mock.get_value()
+'second'
+
+```
+
+But if you assign `None` to it, this will not be ignored as it is an explicit assignment. So, the order of precedence will not move to the wrapped object.
+>>>```
+>>> order_mock.get_value.return_value = None
+>>> order_mock.get_value() is None
+True
+
+```
+
+Even if you set all three at once when initializing the mock, the order of precedence remains the same:
+>>>```
+>>> order_mock = Mock(spec=Order, wraps=Order,
+...          **{"get_value.side_effect": ["first"],
+...            "get_value.return_value": "second"}
+...          )
+...
+>>> order_mock.get_value()
+'first'
+>>> order_mock.get_value.side_effect = None
+>>> order_mock.get_value()
+'second'
+>>> order_mock.get_value.return_value = DEFAULT
+>>> order_mock.get_value()
+'third'
+
+```
+
+If [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") is exhausted, the order of precedence will not cause a value to be obtained from the successors. Instead, `StopIteration` exception is raised.
+>>>```
+>>> order_mock = Mock(spec=Order, wraps=Order)
+>>> order_mock.get_value.side_effect = ["first side effect value",
+...                   "another side effect value"]
+>>> order_mock.get_value.return_value = "second"
+
+```
+
+>>>```
+>>> order_mock.get_value()
+'first side effect value'
+>>> order_mock.get_value()
+'another side effect value'
+
+```
+
+>>>```
+>>> order_mock.get_value()
+Traceback (most recent call last):
+...
+StopIteration

@@ -1,0 +1,90 @@
+Title: Marking Strings for Translation in Python
+URL: https://docs.python.org/3/library/gettext.html
+Summary: This section discusses how to mark strings in a list as translatable using a dummy definition of the `_()` function, which temporarily returns the strings unchanged. It demonstrates this approach with a list of animals, highlighting the importance of ensuring local definitions of `_()` do not conflict.
+---
+
+```
+animals = ['mollusk',
+      'albatross',
+      'rat',
+      'penguin',
+      'python', ]
+# ...
+for a in animals:
+  print(a)
+
+```
+
+Here, you want to mark the strings in the `animals` list as being translatable, but you don’t actually want to translate them until they are printed.
+Here is one way you can handle this situation:
+```
+def_(message): return message
+animals = [_('mollusk'),
+      _('albatross'),
+      _('rat'),
+      _('penguin'),
+      _('python'), ]
+del _
+# ...
+for a in animals:
+  print(_(a))
+
+```
+
+This works because the dummy definition of `_()` simply returns the string unchanged. And this dummy definition will temporarily override any definition of `_()` in the built-in namespace (until the [`del`](https://docs.python.org/3/reference/simple_stmts.html#del) command). Take care, though if you have a previous definition of `_()` in the local namespace.
+Note that the second use of `_()` will not identify “a” as being translatable to the **gettext** program, because the parameter is not a string literal.
+Another way to handle this is with the following example:
+```
+defN_(message): return message
+animals = [N_('mollusk'),
+      N_('albatross'),
+      N_('rat'),
+      N_('penguin'),
+      N_('python'), ]
+# ...
+for a in animals:
+  print(_(a))
+
+```
+
+In this case, you are marking translatable strings with the function `N_()`, which won’t conflict with any definition of `_()`. However, you will need to teach your message extraction program to look for translatable strings marked with `N_()`. **xgettext** , **pygettext** , `pybabel extract`, and **xpot** all support this through the use of the `-k` command-line switch. The choice of `N_()` here is totally arbitrary; it could have just as easily been `MarkThisStringForTranslation()`.
+## Acknowledgements[¶](https://docs.python.org/3/library/gettext.html#acknowledgements "Link to this heading")
+The following people contributed code, feedback, design suggestions, previous implementations, and valuable experience to the creation of this module:
+  * Peter Funk
+  * James Henstridge
+  * Juan David Ibáñez Palomar
+  * Marc-André Lemburg
+  * Martin von Löwis
+  * François Pinard
+  * Barry Warsaw
+  * Gustavo Niemeyer
+
+
+Footnotes
+[[1](https://docs.python.org/3/library/gettext.html#id1)]
+The default locale directory is system dependent; for example, on Red Hat Linux it is `/usr/share/locale`, but on Solaris it is `/usr/lib/locale`. The `gettext` module does not try to support these system dependent defaults; instead its default is `_sys.base_prefix_/share/locale`(see[`sys.base_prefix`](https://docs.python.org/3/library/sys.html#sys.base_prefix "sys.base_prefix")). For this reason, it is always best to call [`bindtextdomain()`](https://docs.python.org/3/library/gettext.html#gettext.bindtextdomain "gettext.bindtextdomain") with an explicit absolute path at the start of your application.
+[[2](https://docs.python.org/3/library/gettext.html#id2)]
+See the footnote for [`bindtextdomain()`](https://docs.python.org/3/library/gettext.html#gettext.bindtextdomain "gettext.bindtextdomain") above.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [`gettext` — Multilingual internationalization services](https://docs.python.org/3/library/gettext.html)
+    * [GNU **gettext** API](https://docs.python.org/3/library/gettext.html#gnu-gettext-api)
+    * [Class-based API](https://docs.python.org/3/library/gettext.html#class-based-api)
+      * [The `NullTranslations` class](https://docs.python.org/3/library/gettext.html#the-nulltranslations-class)
+      * [The `GNUTranslations` class](https://docs.python.org/3/library/gettext.html#the-gnutranslations-class)
+      * [Solaris message catalog support](https://docs.python.org/3/library/gettext.html#solaris-message-catalog-support)
+      * [The Catalog constructor](https://docs.python.org/3/library/gettext.html#the-catalog-constructor)
+    * [Internationalizing your programs and modules](https://docs.python.org/3/library/gettext.html#internationalizing-your-programs-and-modules)
+      * [Localizing your module](https://docs.python.org/3/library/gettext.html#localizing-your-module)
+      * [Localizing your application](https://docs.python.org/3/library/gettext.html#localizing-your-application)
+      * [Changing languages on the fly](https://docs.python.org/3/library/gettext.html#changing-languages-on-the-fly)
+      * [Deferred translations](https://docs.python.org/3/library/gettext.html#deferred-translations)
+    * [Acknowledgements](https://docs.python.org/3/library/gettext.html#acknowledgements)
+
+
+#### Previous topic
+[Internationalization](https://docs.python.org/3/library/i18n.html "previous chapter")
+#### Next topic
+[`locale` — Internationalization services](https://docs.python.org/3/library/locale.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/gettext.rst)

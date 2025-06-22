@@ -1,0 +1,27 @@
+Title: Asynchronous Notifications in Python C API
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This section discusses the mechanism for asynchronous notifications to the main interpreter thread via a function pointer and an argument. The function `Py_AddPendingCall` schedules a function to be called from the main interpreter thread, returning 0 on success or -1 on failure.
+---
+
+on-Python created threads will probably be broken when using sub-interpreters.
+## Asynchronous Notifications[¶](https://docs.python.org/3/c-api/init.html#asynchronous-notifications "Link to this heading")
+A mechanism is provided to make asynchronous notifications to the main interpreter thread. These notifications take the form of a function pointer and a void pointer argument. 
+
+intPy_AddPendingCall(int(*func)(void*), void*arg)[¶](https://docs.python.org/3/c-api/init.html#c.Py_AddPendingCall "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Schedule a function to be called from the main interpreter thread. On success, `0` is returned and _func_ is queued for being called in the main thread. On failure, `-1` is returned without setting any exception.
+When successfully queued, _func_ will be _eventually_ called from the main interpreter thread with the argument _arg_. It will be called asynchronously with respect to normally running Python code, but with both these conditions met:
+  * on a [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) boundary;
+  * with the main thread holding the [global interpreter lock](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) (_func_ can therefore use the full C API).
+
+
+_func_ must return `0` on success, or `-1` on failure with an exception set. _func_ won’t be interrupted to perform another asynchronous notification recursively, but it can still be interrupted to switch threads if the global interpreter lock is released.
+This function doesn’t need a current thread state to run, and it doesn’t need the global interpreter lock.
+To call this function in a subinterpreter, the caller must hold the GIL. Otherwise, the function _func_ can be scheduled to be called from the wrong interpreter.
+Warning
+This is a low-level function, only useful for very special cases. There is no guarantee that _func_ will be called as quick as possible. If the main thread is busy executing a system call, _func_ won’t be called before the system call returns. This function is generally **not** suitable for calling Python code from arbitrary C threads. Instead, use the [PyGILState API](https://docs.python.org/3/c-api/init.html#gilstate).
+Added in version 3.1.
+Changed in version 3.9: If this function is called in a subinterpreter, the function _func_ is now scheduled to be called from the subinterpreter, rather than being called from the main interpreter. Each subinterpreter now has its own list of scheduled calls.
+## Profiling and Tracing[¶](https://docs.python.org/3/c-api/init.html#profiling-and-tracing "Link to this heading")
+The Python interpreter provides some low-level support for attaching profiling and execution tracing facilities. These are used for profiling, debugging, and coverage analysis tools.
+This C interface allows the profiling or tracing code to avoid the overhead of calling through Python-level callable objects, making a direct C function call instead. The essential attributes of the facility have not changed; the interface allows trace functions to be installed per-thread, and the basic events reported to the trace function are the same as had been reported to the Python-level trace functions in previous versions.

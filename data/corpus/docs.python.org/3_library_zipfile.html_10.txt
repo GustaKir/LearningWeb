@@ -1,0 +1,86 @@
+Title: Using the writepy() Method in PyZipFile
+URL: https://docs.python.org/3/library/zipfile.html
+Summary: The writepy() method in the PyZipFile class allows you to create archives with compiled Python files, filtering out certain filenames with a user-defined function. Notable features include additional parameters introduced in versions 3.4, 3.6.2, and 3.7, which enhance functionality and behavior.
+---
+
+```
+>>> zf = PyZipFile('myprog.zip')
+>>> defnotests(s):
+...   fn = os.path.basename(s)
+...   return (not (fn == 'test' or fn.startswith('test_')))
+...
+>>> zf.writepy('myprog', filterfunc=notests)
+
+```
+
+The [`writepy()`](https://docs.python.org/3/library/zipfile.html#zipfile.PyZipFile.writepy "zipfile.PyZipFile.writepy") method makes archives with file names like this:
+```
+string.pyc          # Top level name
+test/__init__.pyc      # Package directory
+test/testall.pyc       # Module test.testall
+test/bogus/__init__.pyc   # Subpackage directory
+test/bogus/myfile.pyc    # Submodule test.bogus.myfile
+
+```
+
+Changed in version 3.4: Added the _filterfunc_ parameter.
+Changed in version 3.6.2: The _pathname_ parameter accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+Changed in version 3.7: Recursion sorts directory entries.
+## ZipInfo Objects[¶](https://docs.python.org/3/library/zipfile.html#zipinfo-objects "Link to this heading")
+Instances of the [`ZipInfo`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo "zipfile.ZipInfo") class are returned by the [`getinfo()`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.getinfo "zipfile.ZipFile.getinfo") and [`infolist()`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.infolist "zipfile.ZipFile.infolist") methods of [`ZipFile`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile "zipfile.ZipFile") objects. Each object stores information about a single member of the ZIP archive.
+There is one classmethod to make a [`ZipInfo`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo "zipfile.ZipInfo") instance for a filesystem file: 
+
+_classmethod_ ZipInfo.from_file(_filename_ , _arcname =None_, _*_ , _strict_timestamps =True_)[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.from_file "Link to this definition")
+    
+Construct a [`ZipInfo`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo "zipfile.ZipInfo") instance for a file on the filesystem, in preparation for adding it to a zip file.
+_filename_ should be the path to a file or directory on the filesystem.
+If _arcname_ is specified, it is used as the name within the archive. If _arcname_ is not specified, the name will be the same as _filename_ , but with any drive letter and leading path separators removed.
+The _strict_timestamps_ argument, when set to `False`, allows to zip files older than 1980-01-01 at the cost of setting the timestamp to 1980-01-01. Similar behavior occurs with files newer than 2107-12-31, the timestamp is also set to the limit.
+Added in version 3.6.
+Changed in version 3.6.2: The _filename_ parameter accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+Changed in version 3.8: Added the _strict_timestamps_ keyword-only parameter.
+Instances have the following methods and attributes: 
+
+ZipInfo.is_dir()[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.is_dir "Link to this definition")
+    
+Return `True` if this archive member is a directory.
+This uses the entry’s name: directories should always end with `/`.
+Added in version 3.6. 
+
+ZipInfo.filename[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.filename "Link to this definition")
+    
+Name of the file in the archive. 
+
+ZipInfo.date_time[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.date_time "Link to this definition")
+    
+The time and date of the last modification to the archive member. This is a tuple of six values:
+Index | Value  
+---|---  
+`0` | Year (>= 1980)  
+`1` | Month (one-based)  
+`2` | Day of month (one-based)  
+`3` | Hours (zero-based)  
+`4` | Minutes (zero-based)  
+`5` | Seconds (zero-based)  
+Note
+The ZIP file format does not support timestamps before 1980. 
+
+ZipInfo.compress_type[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.compress_type "Link to this definition")
+    
+Type of compression for the archive member. 
+
+ZipInfo.comment[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.comment "Link to this definition")
+    
+Comment for the individual archive member as a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object. 
+
+ZipInfo.extra[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.extra "Link to this definition")
+    
+Expansion field data. The [PKZIP Application Note](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) contains some comments on the internal structure of the data contained in this [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object. 
+
+ZipInfo.create_system[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.create_system "Link to this definition")
+    
+System which created ZIP archive. 
+
+ZipInfo.create_version[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo.create_version "Link to this definition")
+    
+PKZIP version which created ZIP archive.

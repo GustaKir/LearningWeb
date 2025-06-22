@@ -1,0 +1,80 @@
+Title: Using AsyncMock and ThreadingMock in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This documentation chunk illustrates the use of `AsyncMock` to test asynchronous code by capturing the arguments passed to the mock during calls. Additionally, it introduces `ThreadingMock`, a variant of `MagicMock` designed for multithreading tests, which supports methods for waiting on calls.
+---
+
+```
+>>> mock = AsyncMock()
+>>> async defmain(*args):
+...   await mock(*args)
+...
+>>> mock.await_args_list
+[]
+>>> asyncio.run(main('foo'))
+>>> mock.await_args_list
+[call('foo')]
+>>> asyncio.run(main('bar'))
+>>> mock.await_args_list
+[call('foo'), call('bar')]
+
+```
+
+
+_class_ unittest.mock.ThreadingMock(_spec =None_, _side_effect =None_, _return_value =DEFAULT_, _wraps =None_, _name =None_, _spec_set =None_, _unsafe =False_, _*_ , _timeout =UNSET_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock "Link to this definition")
+    
+A version of [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") for multithreading tests. The [`ThreadingMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock "unittest.mock.ThreadingMock") object provides extra methods to wait for a call to be invoked, rather than assert on it immediately.
+The default timeout is specified by the `timeout` argument, or if unset by the [`ThreadingMock.DEFAULT_TIMEOUT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock.DEFAULT_TIMEOUT "unittest.mock.ThreadingMock.DEFAULT_TIMEOUT") attribute, which defaults to blocking (`None`).
+You can configure the global default timeout by setting [`ThreadingMock.DEFAULT_TIMEOUT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock.DEFAULT_TIMEOUT "unittest.mock.ThreadingMock.DEFAULT_TIMEOUT"). 
+
+wait_until_called(_*_ , _timeout =UNSET_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock.wait_until_called "Link to this definition")
+    
+Waits until the mock is called.
+If a timeout was passed at the creation of the mock or if a timeout argument is passed to this function, the function raises an [`AssertionError`](https://docs.python.org/3/library/exceptions.html#AssertionError "AssertionError") if the call is not performed in time.
+>>>```
+>>> mock = ThreadingMock()
+>>> thread = threading.Thread(target=mock)
+>>> thread.start()
+>>> mock.wait_until_called(timeout=1)
+>>> thread.join()
+
+```
+
+
+wait_until_any_call_with(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock.wait_until_any_call_with "Link to this definition")
+    
+Waits until the mock is called with the specified arguments.
+If a timeout was passed at the creation of the mock the function raises an [`AssertionError`](https://docs.python.org/3/library/exceptions.html#AssertionError "AssertionError") if the call is not performed in time.
+>>>```
+>>> mock = ThreadingMock()
+>>> thread = threading.Thread(target=mock, args=("arg1", "arg2",), kwargs={"arg": "thing"})
+>>> thread.start()
+>>> mock.wait_until_any_call_with("arg1", "arg2", arg="thing")
+>>> thread.join()
+
+```
+
+
+DEFAULT_TIMEOUT[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock.DEFAULT_TIMEOUT "Link to this definition")
+    
+Global default timeout in seconds to create instances of [`ThreadingMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.ThreadingMock "unittest.mock.ThreadingMock").
+Added in version 3.13.
+### Calling[¶](https://docs.python.org/3/library/unittest.mock.html#calling "Link to this heading")
+Mock objects are callable. The call will return the value set as the [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value") attribute. The default return value is a new Mock object; it is created the first time the return value is accessed (either explicitly or by calling the Mock) - but it is stored and the same one returned each time.
+Calls made to the object will be recorded in the attributes like [`call_args`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args "unittest.mock.Mock.call_args") and [`call_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "unittest.mock.Mock.call_args_list").
+If [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") is set then it will be called after the call has been recorded, so if `side_effect` raises an exception the call is still recorded.
+The simplest way to make a mock raise an exception when called is to make [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") an exception class or instance:
+>>>```
+>>> m = MagicMock(side_effect=IndexError)
+>>> m(1, 2, 3)
+Traceback (most recent call last):
+...
+IndexError
+>>> m.mock_calls
+[call(1, 2, 3)]
+>>> m.side_effect = KeyError('Bang!')
+>>> m('two', 'three', 'four')
+Traceback (most recent call last):
+...
+KeyError: 'Bang!'
+>>> m.mock_calls
+[call(1, 2, 3), call('two', 'three', 'four')]

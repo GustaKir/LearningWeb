@@ -1,0 +1,45 @@
+Title: VerboseModule Class Definition in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: This section illustrates the implementation of a custom module class, `VerboseModule`, which overrides the `__repr__` and `__setattr__` methods to provide verbose output when attributes are set. It highlights the behavior of module `__getattr__` and setting `__class__`, noting that these features only influence attribute access and are not applicable to direct global access. Additionally, it references enhancements introduced in Python 3.5 and 3.7 regarding module attributes.
+---
+
+```
+importsys
+fromtypesimport ModuleType
+classVerboseModule(ModuleType):
+  def__repr__(self):
+    return f'Verbose {self.__name__}'
+  def__setattr__(self, attr, value):
+    print(f'Setting {attr}...')
+    super().__setattr__(attr, value)
+sys.modules[__name__].__class__ = VerboseModule
+
+```
+
+Note
+Defining module `__getattr__` and setting module `__class__` only affect lookups made using the attribute access syntax – directly accessing the module globals (whether by code within the module, or via a reference to the module’s globals dictionary) is unaffected.
+Changed in version 3.5: `__class__` module attribute is now writable.
+Added in version 3.7: `__getattr__` and `__dir__` module attributes.
+See also 
+
+[**PEP 562**](https://peps.python.org/pep-0562/) - Module __getattr__ and __dir__
+    
+Describes the `__getattr__` and `__dir__` functions on modules.
+#### 3.3.2.2. Implementing Descriptors[¶](https://docs.python.org/3/reference/datamodel.html#implementing-descriptors "Link to this heading")
+The following methods only apply when an instance of the class containing the method (a so-called _descriptor_ class) appears in an _owner_ class (the descriptor must be in either the owner’s class dictionary or in the class dictionary for one of its parents). In the examples below, “the attribute” refers to the attribute whose name is the key of the property in the owner class’ [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__"). The [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself does not implement any of these protocols. 
+
+object.__get__(_self_ , _instance_ , _owner =None_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__get__ "Link to this definition")
+    
+Called to get the attribute of the owner class (class attribute access) or of an instance of that class (instance attribute access). The optional _owner_ argument is the owner class, while _instance_ is the instance that the attribute was accessed through, or `None` when the attribute is accessed through the _owner_.
+This method should return the computed attribute value or raise an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") exception.
+[**PEP 252**](https://peps.python.org/pep-0252/) specifies that [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") is callable with one or two arguments. Python’s own built-in descriptors support this specification; however, it is likely that some third-party tools have descriptors that require both arguments. Python’s own [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") implementation always passes in both arguments whether they are required or not. 
+
+object.__set__(_self_ , _instance_ , _value_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__set__ "Link to this definition")
+    
+Called to set the attribute on an instance _instance_ of the owner class to a new value, _value_.
+Note, adding [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__") or [`__delete__()`](https://docs.python.org/3/reference/datamodel.html#object.__delete__ "object.__delete__") changes the kind of descriptor to a “data descriptor”. See [Invoking Descriptors](https://docs.python.org/3/reference/datamodel.html#descriptor-invocation) for more details. 
+
+object.__delete__(_self_ , _instance_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__delete__ "Link to this definition")
+    
+Called to delete the attribute on an instance _instance_ of the owner class.
+Instances of descriptors may also have the `__objclass__` attribute present:

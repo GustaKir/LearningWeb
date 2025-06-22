@@ -1,0 +1,61 @@
+Title: FastAPI Release Notes
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: This section includes internal updates and upgrades to GitHub Actions related to FastAPI, highlighting several pull requests that enhance the project's automation and maintainer tools.
+---
+
+cm83).
+
+
+### Internal[¶](https://fastapi.tiangolo.com/release-notes/#internal_27 "Permanent link")
+  * 👥 Update FastAPI People. PR [#10871](https://github.com/tiangolo/fastapi/pull/10871) by [@tiangolo](https://github.com/tiangolo).
+  * 👷 Upgrade custom GitHub Action comment-docs-preview-in-pr. PR [#10916](https://github.com/tiangolo/fastapi/pull/10916) by [@tiangolo](https://github.com/tiangolo).
+  * ⬆️ Upgrade GitHub Action latest-changes. PR [#10915](https://github.com/tiangolo/fastapi/pull/10915) by [@tiangolo](https://github.com/tiangolo).
+  * 👷 Upgrade GitHub Action label-approved. PR [#10913](https://github.com/tiangolo/fastapi/pull/10913) by [@tiangolo](https://github.com/tiangolo).
+  * ⬆️ Upgrade GitHub Action label-approved. PR [#10905](https://github.com/tiangolo/fastapi/pull/10905) by [@tiangolo](https://github.com/tiangolo).
+
+
+## 0.108.0[¶](https://fastapi.tiangolo.com/release-notes/#01080 "Permanent link")
+### Upgrades[¶](https://fastapi.tiangolo.com/release-notes/#upgrades_9 "Permanent link")
+  * ⬆️ Upgrade Starlette to `>=0.29.0,<0.33.0`, update docs and usage of templates with new Starlette arguments. Remove pin of AnyIO `>=3.7.1,<4.0.0`, add support for AnyIO 4.x.x. PR [#10846](https://github.com/tiangolo/fastapi/pull/10846) by [@tiangolo](https://github.com/tiangolo).
+
+
+## 0.107.0[¶](https://fastapi.tiangolo.com/release-notes/#01070 "Permanent link")
+### Upgrades[¶](https://fastapi.tiangolo.com/release-notes/#upgrades_10 "Permanent link")
+  * ⬆️ Upgrade Starlette to 0.28.0. PR [#9636](https://github.com/tiangolo/fastapi/pull/9636) by [@adriangb](https://github.com/adriangb).
+
+
+### Docs[¶](https://fastapi.tiangolo.com/release-notes/#docs_23 "Permanent link")
+  * 📝 Add docs: Node.js script alternative to update OpenAPI for generated clients. PR [#10845](https://github.com/tiangolo/fastapi/pull/10845) by [@alejsdev](https://github.com/alejsdev).
+  * 📝 Restructure Docs section in Contributing page. PR [#10844](https://github.com/tiangolo/fastapi/pull/10844) by [@alejsdev](https://github.com/alejsdev).
+
+
+## 0.106.0[¶](https://fastapi.tiangolo.com/release-notes/#01060 "Permanent link")
+### Breaking Changes[¶](https://fastapi.tiangolo.com/release-notes/#breaking-changes_2 "Permanent link")
+Using resources from dependencies with `yield` in background tasks is no longer supported.
+This change is what supports the new features, read below. 🤓
+### Dependencies with `yield`, `HTTPException` and Background Tasks[¶](https://fastapi.tiangolo.com/release-notes/#dependencies-with-yield-httpexception-and-background-tasks "Permanent link")
+Dependencies with `yield` now can raise `HTTPException` and other exceptions after `yield`. 🎉
+Read the new docs here: [Dependencies with `yield` and `HTTPException`](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#dependencies-with-yield-and-httpexception).
+```
+fromfastapiimport Depends, FastAPI, HTTPException
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+data = {
+  "plumbus": {"description": "Freshly pickled plumbus", "owner": "Morty"},
+  "portal-gun": {"description": "Gun to create portals", "owner": "Rick"},
+}
+classOwnerError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except OwnerError as e:
+    raise HTTPException(status_code=400, detail=f"Owner error: {e}")
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: Annotated[str, Depends(get_username)]):
+  if item_id not in data:
+    raise HTTPException(status_code=404, detail="Item not found")
+  item = data[item_id]
+  if item["owner"] != username:
+    raise OwnerError(username)
+  return item

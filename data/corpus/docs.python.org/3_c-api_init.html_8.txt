@@ -1,0 +1,20 @@
+Title: Py_Main: Standard Interpreter Entry Point
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The `Py_Main` function serves as the main program for the standard Python interpreter, managing the initialization and finalization cycle. It processes environment and command line configurations before executing the `__main__` module, providing a complete CPython command line interface.
+---
+
+intPy_Main(intargc, wchar_t**argv)[¶](https://docs.python.org/3/c-api/init.html#c.Py_Main "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+The main program for the standard interpreter, encapsulating a full initialization/finalization cycle, as well as additional behaviour to implement reading configurations settings from the environment and command line, and then executing `__main__` in accordance with [Command line](https://docs.python.org/3/using/cmdline.html#using-on-cmdline).
+This is made available for programs which wish to support the full CPython command line interface, rather than just embedding a Python runtime in a larger application.
+The _argc_ and _argv_ parameters are similar to those which are passed to a C program’s `main()` function, except that the _argv_ entries are first converted to `wchar_t` using [`Py_DecodeLocale()`](https://docs.python.org/3/c-api/sys.html#c.Py_DecodeLocale "Py_DecodeLocale"). It is also important to note that the argument list entries may be modified to point to strings other than those passed in (however, the contents of the strings pointed to by the argument list are not modified).
+The return value will be `0` if the interpreter exits normally (i.e., without an exception), `1` if the interpreter exits due to an exception, or `2` if the argument list does not represent a valid Python command line.
+Note that if an otherwise unhandled [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit") is raised, this function will not return `1`, but exit the process, as long as `Py_InspectFlag` is not set. If `Py_InspectFlag` is set, execution will drop into the interactive Python prompt, at which point a second otherwise unhandled [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit") will still exit the process, while any other means of exiting will set the return value as described above.
+In terms of the CPython runtime configuration APIs documented in the [runtime configuration](https://docs.python.org/3/c-api/init_config.html#init-config) section (and without accounting for error handling), `Py_Main` is approximately equivalent to:
+```
+PyConfigconfig;
+PyConfig_InitPythonConfig(&config);
+PyConfig_SetArgv(&config,argc,argv);
+Py_InitializeFromConfig(&config);
+PyConfig_Clear(&config);
+Py_RunMain();

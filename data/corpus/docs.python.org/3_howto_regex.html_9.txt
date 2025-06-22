@@ -1,0 +1,78 @@
+Title: More Pattern Power in Regular Expressions
+URL: https://docs.python.org/3/howto/regex.html
+Summary: This section discusses advanced features of regular expressions, including new metacharacters and the use of groups to extract matched text. It highlights the use of zero-width assertions and their behavior in matching without consuming characters.
+---
+
+```
+
+In the above example, Python’s automatic concatenation of string literals has been used to break up the RE into smaller pieces, but it’s still more difficult to understand than the version using [`re.VERBOSE`](https://docs.python.org/3/library/re.html#re.VERBOSE "re.VERBOSE").
+## More Pattern Power[¶](https://docs.python.org/3/howto/regex.html#more-pattern-power "Link to this heading")
+So far we’ve only covered a part of the features of regular expressions. In this section, we’ll cover some new metacharacters, and how to use groups to retrieve portions of the text that was matched.
+### More Metacharacters[¶](https://docs.python.org/3/howto/regex.html#more-metacharacters "Link to this heading")
+There are some metacharacters that we haven’t covered yet. Most of them will be covered in this section.
+Some of the remaining metacharacters to be discussed are _zero-width assertions_. They don’t cause the engine to advance through the string; instead, they consume no characters at all, and simply succeed or fail. For example, `\b` is an assertion that the current position is located at a word boundary; the position isn’t changed by the `\b` at all. This means that zero-width assertions should never be repeated, because if they match once at a given location, they can obviously be matched an infinite number of times. 
+
+`|`
+    
+Alternation, or the “or” operator. If _A_ and _B_ are regular expressions, `A|B` will match any string that matches either _A_ or _B_. `|` has very low precedence in order to make it work reasonably when you’re alternating multi-character strings. `Crow|Servo` will match either `'Crow'` or `'Servo'`, not `'Cro'`, a `'w'` or an `'S'`, and `'ervo'`.
+To match a literal `'|'`, use `\|`, or enclose it inside a character class, as in `[|]`. 
+
+`^`
+    
+Matches at the beginning of lines. Unless the [`MULTILINE`](https://docs.python.org/3/library/re.html#re.MULTILINE "re.MULTILINE") flag has been set, this will only match at the beginning of the string. In [`MULTILINE`](https://docs.python.org/3/library/re.html#re.MULTILINE "re.MULTILINE") mode, this also matches immediately after each newline within the string.
+For example, if you wish to match the word `From` only at the beginning of a line, the RE to use is `^From`.
+>>>```
+>>> print(re.search('^From', 'From Here to Eternity'))
+<re.Match object; span=(0, 4), match='From'>
+>>> print(re.search('^From', 'Reciting From Memory'))
+None
+
+```
+
+To match a literal `'^'`, use `\^`. 
+
+`$`
+    
+Matches at the end of a line, which is defined as either the end of the string, or any location followed by a newline character.
+>>>```
+>>> print(re.search('}$', '{block}'))
+<re.Match object; span=(6, 7), match='}'>
+>>> print(re.search('}$', '{block} '))
+None
+>>> print(re.search('}$', '{block}\n'))
+<re.Match object; span=(6, 7), match='}'>
+
+```
+
+To match a literal `'$'`, use `\$` or enclose it inside a character class, as in `[$]`. 
+
+`\A`
+    
+Matches only at the start of the string. When not in [`MULTILINE`](https://docs.python.org/3/library/re.html#re.MULTILINE "re.MULTILINE") mode, `\A` and `^` are effectively the same. In [`MULTILINE`](https://docs.python.org/3/library/re.html#re.MULTILINE "re.MULTILINE") mode, they’re different: `\A` still matches only at the beginning of the string, but `^` may match at any location inside the string that follows a newline character. 
+
+`\Z`
+    
+Matches only at the end of the string. 
+
+`\b`
+    
+Word boundary. This is a zero-width assertion that matches only at the beginning or end of a word. A word is defined as a sequence of alphanumeric characters, so the end of a word is indicated by whitespace or a non-alphanumeric character.
+The following example matches `class` only when it’s a complete word; it won’t match when it’s contained inside another word.
+>>>```
+>>> p = re.compile(r'\bclass\b')
+>>> print(p.search('no class at all'))
+<re.Match object; span=(3, 8), match='class'>
+>>> print(p.search('the declassified algorithm'))
+None
+>>> print(p.search('one subclass is'))
+None
+
+```
+
+There are two subtleties you should remember when using this special sequence. First, this is the worst collision between Python’s string literals and regular expression sequences. In Python’s string literals, `\b` is the backspace character, ASCII value 8. If you’re not using raw strings, then Python will convert the `\b` to a backspace, and your RE won’t match as you expect it to. The following example looks the same as our previous RE, but omits the `'r'` in front of the RE string.
+>>>```
+>>> p = re.compile('\bclass\b')
+>>> print(p.search('no class at all'))
+None
+>>> print(p.search('\b' + 'class' + '\b'))
+<re.Match object; span=(0, 7), match='\x08class\x08'>

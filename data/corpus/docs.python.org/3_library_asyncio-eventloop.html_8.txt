@@ -1,0 +1,32 @@
+Title: Changes and Enhancements in asyncio Event Loop
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This section details the incremental changes to the `asyncio` event loop across several Python versions, including SSL/TLS support in version 3.5, socket options in 3.6, new parameters in 3.7 and 3.8, and an explanation of the Happy Eyeballs Algorithm to mitigate connection delays for dual-stack clients.
+---
+
+Changed in version 3.5: Added support for SSL/TLS in [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop").
+Changed in version 3.6: The socket option [socket.TCP_NODELAY](https://docs.python.org/3/library/socket.html#socket-unix-constants) is set by default for all TCP connections.
+Changed in version 3.7: Added the _ssl_handshake_timeout_ parameter.
+Changed in version 3.8: Added the _happy_eyeballs_delay_ and _interleave_ parameters.
+Happy Eyeballs Algorithm: Success with Dual-Stack Hosts. When a server’s IPv4 path and protocol are working, but the server’s IPv6 path and protocol are not working, a dual-stack client application experiences significant connection delay compared to an IPv4-only client. This is undesirable because it causes the dual-stack client to have a worse user experience. This document specifies requirements for algorithms that reduce this user-visible delay and provides an algorithm.
+For more information: <https://datatracker.ietf.org/doc/html/rfc6555>
+Changed in version 3.11: Added the _ssl_shutdown_timeout_ parameter.
+Changed in version 3.12: _all_errors_ was added.
+See also
+The [`open_connection()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.open_connection "asyncio.open_connection") function is a high-level alternative API. It returns a pair of ([`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader "asyncio.StreamReader"), [`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter "asyncio.StreamWriter")) that can be used directly in async/await code. 
+
+_async_ loop.create_datagram_endpoint(_protocol_factory_ , _local_addr =None_, _remote_addr =None_, _*_ , _family =0_, _proto =0_, _flags =0_, _reuse_port =None_, _allow_broadcast =None_, _sock =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_datagram_endpoint "Link to this definition")
+    
+Create a datagram connection.
+The socket family can be either [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET"), [`AF_INET6`](https://docs.python.org/3/library/socket.html#socket.AF_INET6 "socket.AF_INET6"), or [`AF_UNIX`](https://docs.python.org/3/library/socket.html#socket.AF_UNIX "socket.AF_UNIX"), depending on _host_ (or the _family_ argument, if provided).
+The socket type will be [`SOCK_DGRAM`](https://docs.python.org/3/library/socket.html#socket.SOCK_DGRAM "socket.SOCK_DGRAM").
+_protocol_factory_ must be a callable returning a [protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-protocol) implementation.
+A tuple of `(transport, protocol)` is returned on success.
+Other arguments:
+  * _local_addr_ , if given, is a `(local_host, local_port)` tuple used to bind the socket locally. The _local_host_ and _local_port_ are looked up using [`getaddrinfo()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.getaddrinfo "asyncio.loop.getaddrinfo").
+  * _remote_addr_ , if given, is a `(remote_host, remote_port)` tuple used to connect the socket to a remote address. The _remote_host_ and _remote_port_ are looked up using [`getaddrinfo()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.getaddrinfo "asyncio.loop.getaddrinfo").
+  * _family_ , _proto_ , _flags_ are the optional address family, protocol and flags to be passed through to [`getaddrinfo()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.getaddrinfo "asyncio.loop.getaddrinfo") for _host_ resolution. If given, these should all be integers from the corresponding [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.") module constants.
+  * _reuse_port_ tells the kernel to allow this endpoint to be bound to the same port as other existing endpoints are bound to, so long as they all set this flag when being created. This option is not supported on Windows and some Unixes. If the [socket.SO_REUSEPORT](https://docs.python.org/3/library/socket.html#socket-unix-constants) constant is not defined then this capability is unsupported.
+  * _allow_broadcast_ tells the kernel to allow this endpoint to send messages to the broadcast address.
+  * _sock_ can optionally be specified in order to use a preexisting, already connected, [`socket.socket`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket") object to be used by the transport. If specified, _local_addr_ and _remote_addr_ should be omitted (must be [`None`](https://docs.python.org/3/library/constants.html#None "None")).
+Note
+The _sock_ argument transfers ownership of the socket to the transport created. To close the socket, call the transport’s [`close()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.close "asyncio.BaseTransport.close") method.

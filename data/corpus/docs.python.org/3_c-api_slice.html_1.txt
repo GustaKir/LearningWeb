@@ -1,0 +1,24 @@
+Title: PySlice_GetIndicesEx Function
+URL: https://docs.python.org/3/c-api/slice.html
+Summary: The `PySlice_GetIndicesEx` function is a usable replacement for `PySlice_GetIndices()`, allowing retrieval of start, stop, and step indices from a given slice object while assuming a specified sequence length.
+---
+
+intPySlice_GetIndicesEx([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*slice, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")length, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*start, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*stop, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*step, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*slicelength)[¶](https://docs.python.org/3/c-api/slice.html#c.PySlice_GetIndicesEx "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Usable replacement for [`PySlice_GetIndices()`](https://docs.python.org/3/c-api/slice.html#c.PySlice_GetIndices "PySlice_GetIndices"). Retrieve the start, stop, and step indices from the slice object _slice_ assuming a sequence of length _length_ , and store the length of the slice in _slicelength_. Out of bounds indices are clipped in a manner consistent with the handling of normal slices.
+Return `0` on success and `-1` on error with an exception set.
+Note
+This function is considered not safe for resizable sequences. Its invocation should be replaced by a combination of [`PySlice_Unpack()`](https://docs.python.org/3/c-api/slice.html#c.PySlice_Unpack "PySlice_Unpack") and [`PySlice_AdjustIndices()`](https://docs.python.org/3/c-api/slice.html#c.PySlice_AdjustIndices "PySlice_AdjustIndices") where
+```
+if(PySlice_GetIndicesEx(slice,length,&start,&stop,&step,&slicelength)<0){
+// return error
+}
+
+```
+
+is replaced by
+```
+if(PySlice_Unpack(slice,&start,&stop,&step)<0){
+// return error
+}
+slicelength=PySlice_AdjustIndices(length,&start,&stop,step);

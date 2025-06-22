@@ -1,0 +1,35 @@
+Title: Locale Management in Python
+URL: https://docs.python.org/3/library/locale.html
+Summary: This section discusses the complexities and considerations of working with locales in Python. It explains that the default locale is set to 'C' at program start, except for the `LC_CTYPE` category, which is set to the user's preferred encoding. Frequent changes to the locale can be problematic and may lead to issues such as core dumps, thus caution is advised when using the `setlocale()` function.
+---
+
+```
+
+## Background, details, hints, tips and caveats[¶](https://docs.python.org/3/library/locale.html#background-details-hints-tips-and-caveats "Link to this heading")
+The C standard defines the locale as a program-wide property that may be relatively expensive to change. On top of that, some implementations are broken in such a way that frequent locale changes may cause core dumps. This makes the locale somewhat painful to use correctly.
+Initially, when a program is started, the locale is the `C` locale, no matter what the user’s preferred locale is. There is one exception: the [`LC_CTYPE`](https://docs.python.org/3/library/locale.html#locale.LC_CTYPE "locale.LC_CTYPE") category is changed at startup to set the current locale encoding to the user’s preferred locale encoding. The program must explicitly say that it wants the user’s preferred locale settings for other categories by calling `setlocale(LC_ALL, '')`.
+It is generally a bad idea to call [`setlocale()`](https://docs.python.org/3/library/locale.html#locale.setlocale "locale.setlocale") in some library routine, since as a side effect it affects the entire program. Saving and restoring it is almost as bad: it is expensive and affects other threads that happen to run before the settings have been restored.
+If, when coding a module for general use, you need a locale independent version of an operation that is affected by the locale (such as certain formats used with [`time.strftime()`](https://docs.python.org/3/library/time.html#time.strftime "time.strftime")), you will have to find a way to do it without using the standard library routine. Even better is convincing yourself that using locale settings is okay. Only as a last resort should you document that your module is not compatible with non-`C` locale settings.
+The only way to perform numeric operations according to the locale is to use the special functions defined by this module: [`atof()`](https://docs.python.org/3/library/locale.html#locale.atof "locale.atof"), [`atoi()`](https://docs.python.org/3/library/locale.html#locale.atoi "locale.atoi"), [`format_string()`](https://docs.python.org/3/library/locale.html#locale.format_string "locale.format_string"), [`str()`](https://docs.python.org/3/library/locale.html#locale.str "locale.str").
+There is no way to perform case conversions and character classifications according to the locale. For (Unicode) text strings these are done according to the character value only, while for byte strings, the conversions and classifications are done according to the ASCII value of the byte, and bytes whose high bit is set (i.e., non-ASCII bytes) are never converted or considered part of a character class such as letter or whitespace.
+## For extension writers and programs that embed Python[¶](https://docs.python.org/3/library/locale.html#for-extension-writers-and-programs-that-embed-python "Link to this heading")
+Extension modules should never call [`setlocale()`](https://docs.python.org/3/library/locale.html#locale.setlocale "locale.setlocale"), except to find out what the current locale is. But since the return value can only be used portably to restore it, that is not very useful (except perhaps to find out whether or not the locale is `C`).
+When Python code uses the [`locale`](https://docs.python.org/3/library/locale.html#module-locale "locale: Internationalization services.") module to change the locale, this also affects the embedding application. If the embedding application doesn’t want this to happen, it should remove the `_locale` extension module (which does all the work) from the table of built-in modules in the `config.c` file, and make sure that the `_locale` module is not accessible as a shared library.
+## Access to message catalogs[¶](https://docs.python.org/3/library/locale.html#access-to-message-catalogs "Link to this heading") 
+
+locale.gettext(_msg_)[¶](https://docs.python.org/3/library/locale.html#locale.gettext "Link to this definition")
+
+
+locale.dgettext(_domain_ , _msg_)[¶](https://docs.python.org/3/library/locale.html#locale.dgettext "Link to this definition")
+
+
+locale.dcgettext(_domain_ , _msg_ , _category_)[¶](https://docs.python.org/3/library/locale.html#locale.dcgettext "Link to this definition")
+
+
+locale.textdomain(_domain_)[¶](https://docs.python.org/3/library/locale.html#locale.textdomain "Link to this definition")
+
+
+locale.bindtextdomain(_domain_ , _dir_)[¶](https://docs.python.org/3/library/locale.html#locale.bindtextdomain "Link to this definition")
+
+
+locale.bind_textdomain_codeset(_domain_ , _codeset_)[¶](https://docs.python.org/3/library/locale.html#locale.bind_textdomain_codeset "Link to this definition")

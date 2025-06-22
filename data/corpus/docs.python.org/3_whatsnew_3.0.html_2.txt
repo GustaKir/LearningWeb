@@ -1,0 +1,21 @@
+Title: Changes in Print Function and API Responses in Python 3.0
+URL: https://docs.python.org/3/whatsnew/3.0.html
+Summary: Python 3.0 replaces the print statement with the print() function, losing the softspace feature from Python 2.x. Users transitioning from Python 2.x may need to adjust their habits during interactive use. The 2to3 conversion tool helps manage this change. Additionally, certain APIs, notably dict methods, now return views and iterators instead of lists.
+---
+
+```
+
+Note:
+  * The [`print()`](https://docs.python.org/3/library/functions.html#print "print") function doesn’t support the “softspace” feature of the old `print` statement. For example, in Python 2.x, `print "A\n", "B"` would write `"A\nB\n"`; but in Python 3.0, `print("A\n", "B")` writes `"A\n B\n"`.
+  * Initially, you’ll be finding yourself typing the old `print x` a lot in interactive mode. Time to retrain your fingers to type `print(x)` instead!
+  * When using the `2to3` source-to-source conversion tool, all `print` statements are automatically converted to [`print()`](https://docs.python.org/3/library/functions.html#print "print") function calls, so this is mostly a non-issue for larger projects.
+
+
+### Views And Iterators Instead Of Lists[¶](https://docs.python.org/3/whatsnew/3.0.html#views-and-iterators-instead-of-lists "Link to this heading")
+Some well-known APIs no longer return lists:
+  * [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") methods [`dict.keys()`](https://docs.python.org/3/library/stdtypes.html#dict.keys "dict.keys"), [`dict.items()`](https://docs.python.org/3/library/stdtypes.html#dict.items "dict.items") and [`dict.values()`](https://docs.python.org/3/library/stdtypes.html#dict.values "dict.values") return “views” instead of lists. For example, this no longer works: `k = d.keys(); k.sort()`. Use `k = sorted(d)` instead (this works in Python 2.5 too and is just as efficient).
+  * Also, the `dict.iterkeys()`, `dict.iteritems()` and `dict.itervalues()` methods are no longer supported.
+  * [`map()`](https://docs.python.org/3/library/functions.html#map "map") and [`filter()`](https://docs.python.org/3/library/functions.html#filter "filter") return iterators. If you really need a list and the input sequences are all of equal length, a quick fix is to wrap [`map()`](https://docs.python.org/3/library/functions.html#map "map") in [`list()`](https://docs.python.org/3/library/stdtypes.html#list "list"), e.g. `list(map(...))`, but a better fix is often to use a list comprehension (especially when the original code uses [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda)), or rewriting the code so it doesn’t need a list at all. Particularly tricky is [`map()`](https://docs.python.org/3/library/functions.html#map "map") invoked for the side effects of the function; the correct transformation is to use a regular [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) loop (since creating a list would just be wasteful).
+If the input sequences are not of equal length, [`map()`](https://docs.python.org/3/library/functions.html#map "map") will stop at the termination of the shortest of the sequences. For full compatibility with [`map()`](https://docs.python.org/3/library/functions.html#map "map") from Python 2.x, also wrap the sequences in [`itertools.zip_longest()`](https://docs.python.org/3/library/itertools.html#itertools.zip_longest "itertools.zip_longest"), e.g. `map(func, *sequences)` becomes `list(map(func, itertools.zip_longest(*sequences)))`.
+  * [`range()`](https://docs.python.org/3/library/stdtypes.html#range "range") now behaves like `xrange()` used to behave, except it works with values of arbitrary size. The latter no longer exists.
+  * [`zip()`](https://docs.python.org/3/library/functions.html#zip "zip") now returns an iterator.

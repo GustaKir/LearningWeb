@@ -1,0 +1,43 @@
+Title: pkgutil.get_loader Function
+URL: https://docs.python.org/3/library/pkgutil.html
+Summary: The `pkgutil.get_loader` function retrieves a loader object for a specified module or package, returning None if the module cannot be found or imported. It ensures the module's containing package is imported if not already done, and has undergone changes in versions 3.3 and 3.4 to align with importlib and PEP 451, respectively. It is deprecated since version 3.12.
+---
+
+pkgutil.get_loader(_module_or_name_)[¶](https://docs.python.org/3/library/pkgutil.html#pkgutil.get_loader "Link to this definition")
+    
+Get a [loader](https://docs.python.org/3/glossary.html#term-loader) object for _module_or_name_.
+If the module or package is accessible via the normal import mechanism, a wrapper around the relevant part of that machinery is returned. Returns `None` if the module cannot be found or imported. If the named module is not already imported, its containing package (if any) is imported, in order to establish the package `__path__`.
+Changed in version 3.3: Updated to be based directly on [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.") rather than relying on the package internal [**PEP 302**](https://peps.python.org/pep-0302/) import emulation.
+Changed in version 3.4: Updated to be based on [**PEP 451**](https://peps.python.org/pep-0451/)
+Deprecated since version 3.12, will be removed in version 3.14: Use [`importlib.util.find_spec()`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec "importlib.util.find_spec") instead. 
+
+pkgutil.iter_importers(_fullname =''_)[¶](https://docs.python.org/3/library/pkgutil.html#pkgutil.iter_importers "Link to this definition")
+    
+Yield [finder](https://docs.python.org/3/glossary.html#term-finder) objects for the given module name.
+If fullname contains a `'.'`, the finders will be for the package containing fullname, otherwise they will be all registered top level finders (i.e. those on both [`sys.meta_path`](https://docs.python.org/3/library/sys.html#sys.meta_path "sys.meta_path") and [`sys.path_hooks`](https://docs.python.org/3/library/sys.html#sys.path_hooks "sys.path_hooks")).
+If the named module is in a package, that package is imported as a side effect of invoking this function.
+If no module name is specified, all top level finders are produced.
+Changed in version 3.3: Updated to be based directly on [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.") rather than relying on the package internal [**PEP 302**](https://peps.python.org/pep-0302/) import emulation. 
+
+pkgutil.iter_modules(_path =None_, _prefix =''_)[¶](https://docs.python.org/3/library/pkgutil.html#pkgutil.iter_modules "Link to this definition")
+    
+Yields [`ModuleInfo`](https://docs.python.org/3/library/pkgutil.html#pkgutil.ModuleInfo "pkgutil.ModuleInfo") for all submodules on _path_ , or, if _path_ is `None`, all top-level modules on [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path").
+_path_ should be either `None` or a list of paths to look for modules in.
+_prefix_ is a string to output on the front of every module name on output.
+Note
+Only works for a [finder](https://docs.python.org/3/glossary.html#term-finder) which defines an `iter_modules()` method. This interface is non-standard, so the module also provides implementations for [`importlib.machinery.FileFinder`](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder "importlib.machinery.FileFinder") and [`zipimport.zipimporter`](https://docs.python.org/3/library/zipimport.html#zipimport.zipimporter "zipimport.zipimporter").
+Changed in version 3.3: Updated to be based directly on [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.") rather than relying on the package internal [**PEP 302**](https://peps.python.org/pep-0302/) import emulation. 
+
+pkgutil.walk_packages(_path =None_, _prefix =''_, _onerror =None_)[¶](https://docs.python.org/3/library/pkgutil.html#pkgutil.walk_packages "Link to this definition")
+    
+Yields [`ModuleInfo`](https://docs.python.org/3/library/pkgutil.html#pkgutil.ModuleInfo "pkgutil.ModuleInfo") for all modules recursively on _path_ , or, if _path_ is `None`, all accessible modules.
+_path_ should be either `None` or a list of paths to look for modules in.
+_prefix_ is a string to output on the front of every module name on output.
+Note that this function must import all _packages_ (_not_ all modules!) on the given _path_ , in order to access the `__path__` attribute to find submodules.
+_onerror_ is a function which gets called with one argument (the name of the package which was being imported) if any exception occurs while trying to import a package. If no _onerror_ function is supplied, [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError")s are caught and ignored, while all other exceptions are propagated, terminating the search.
+Examples:
+```
+# list all modules python can access
+walk_packages()
+# list all submodules of ctypes
+walk_packages(ctypes.__path__, ctypes.__name__ + '.')

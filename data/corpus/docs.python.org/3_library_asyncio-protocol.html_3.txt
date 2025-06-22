@@ -1,0 +1,61 @@
+Title: BaseTransport.get_extra_info Method
+URL: https://docs.python.org/3/library/asyncio-protocol.html
+Summary: The get_extra_info method of BaseTransport returns specific information about the transport or its underlying resources. It takes a name (string) to identify the type of information requested and an optional default value if the requested information is unavailable. An example illustrates how to obtain the underlying socket object of the transport.
+---
+
+BaseTransport.get_extra_info(_name_ , _default =None_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info "Link to this definition")
+    
+Return information about the transport or underlying resources it uses.
+_name_ is a string representing the piece of transport-specific information to get.
+_default_ is the value to return if the information is not available, or if the transport does not support querying it with the given third-party event loop implementation or on the current platform.
+For example, the following code attempts to get the underlying socket object of the transport:
+```
+sock = transport.get_extra_info('socket')
+if sock is not None:
+  print(sock.getsockopt(...))
+
+```
+
+Categories of information that can be queried on some transports:
+  * socket:
+    * `'peername'`: the remote address to which the socket is connected, result of [`socket.socket.getpeername()`](https://docs.python.org/3/library/socket.html#socket.socket.getpeername "socket.socket.getpeername") (`None` on error)
+    * `'socket'`: [`socket.socket`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket") instance
+    * `'sockname'`: the socket’s own address, result of [`socket.socket.getsockname()`](https://docs.python.org/3/library/socket.html#socket.socket.getsockname "socket.socket.getsockname")
+  * SSL socket:
+    * `'compression'`: the compression algorithm being used as a string, or `None` if the connection isn’t compressed; result of [`ssl.SSLSocket.compression()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.compression "ssl.SSLSocket.compression")
+    * `'cipher'`: a three-value tuple containing the name of the cipher being used, the version of the SSL protocol that defines its use, and the number of secret bits being used; result of [`ssl.SSLSocket.cipher()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.cipher "ssl.SSLSocket.cipher")
+    * `'peercert'`: peer certificate; result of [`ssl.SSLSocket.getpeercert()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.getpeercert "ssl.SSLSocket.getpeercert")
+    * `'sslcontext'`: [`ssl.SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") instance
+    * `'ssl_object'`: [`ssl.SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject") or [`ssl.SSLSocket`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket "ssl.SSLSocket") instance
+  * pipe:
+    * `'pipe'`: pipe object
+  * subprocess:
+    * `'subprocess'`: [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") instance
+
+
+
+BaseTransport.set_protocol(_protocol_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.set_protocol "Link to this definition")
+    
+Set a new protocol.
+Switching protocol should only be done when both protocols are documented to support the switch. 
+
+BaseTransport.get_protocol()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_protocol "Link to this definition")
+    
+Return the current protocol.
+### Read-only Transports[¶](https://docs.python.org/3/library/asyncio-protocol.html#read-only-transports "Link to this heading") 
+
+ReadTransport.is_reading()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.ReadTransport.is_reading "Link to this definition")
+    
+Return `True` if the transport is receiving new data.
+Added in version 3.7. 
+
+ReadTransport.pause_reading()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.ReadTransport.pause_reading "Link to this definition")
+    
+Pause the receiving end of the transport. No data will be passed to the protocol’s [`protocol.data_received()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.Protocol.data_received "asyncio.Protocol.data_received") method until [`resume_reading()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.ReadTransport.resume_reading "asyncio.ReadTransport.resume_reading") is called.
+Changed in version 3.7: The method is idempotent, i.e. it can be called when the transport is already paused or closed. 
+
+ReadTransport.resume_reading()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.ReadTransport.resume_reading "Link to this definition")
+    
+Resume the receiving end. The protocol’s [`protocol.data_received()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.Protocol.data_received "asyncio.Protocol.data_received") method will be called once again if some data is available for reading.
+Changed in version 3.7: The method is idempotent, i.e. it can be called when the transport is already reading.
+### Write-only Transports[¶](https://docs.python.org/3/library/asyncio-protocol.html#write-only-transports "Link to this heading")

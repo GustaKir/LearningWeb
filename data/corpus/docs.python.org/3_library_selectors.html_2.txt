@@ -1,0 +1,59 @@
+Title: modify Method in Python's Selectors Module
+URL: https://docs.python.org/3/library/selectors.html
+Summary: The modify method allows changing the events or data attached to a registered file object in the selectors module. This method is more efficient than unregistering and registering the object again. It returns a new SelectorKey instance or raises a ValueError for invalid inputs, or a KeyError if the file object is not registered.
+---
+
+modify(_fileobj_ , _events_ , _data =None_)[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector.modify "Link to this definition")
+    
+Change a registered file object’s monitored events or attached data.
+This is equivalent to `BaseSelector.unregister(fileobj)` followed by `BaseSelector.register(fileobj, events, data)`, except that it can be implemented more efficiently.
+This returns a new [`SelectorKey`](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "selectors.SelectorKey") instance, or raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") in case of invalid event mask or file descriptor, or [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") if the file object is not registered. 
+
+_abstractmethod_ select(_timeout =None_)[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector.select "Link to this definition")
+    
+Wait until some registered file objects become ready, or the timeout expires.
+If `timeout > 0`, this specifies the maximum wait time, in seconds. If `timeout <= 0`, the call won’t block, and will report the currently ready file objects. If _timeout_ is `None`, the call will block until a monitored file object becomes ready.
+This returns a list of `(key, events)` tuples, one for each ready file object.
+_key_ is the [`SelectorKey`](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "selectors.SelectorKey") instance corresponding to a ready file object. _events_ is a bitmask of events ready on this file object.
+Note
+This method can return before any file object becomes ready or the timeout has elapsed if the current process receives a signal: in this case, an empty list will be returned.
+Changed in version 3.5: The selector is now retried with a recomputed timeout when interrupted by a signal if the signal handler did not raise an exception (see [**PEP 475**](https://peps.python.org/pep-0475/) for the rationale), instead of returning an empty list of events before the timeout. 
+
+close()[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector.close "Link to this definition")
+    
+Close the selector.
+This must be called to make sure that any underlying resource is freed. The selector shall not be used once it has been closed. 
+
+get_key(_fileobj_)[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector.get_key "Link to this definition")
+    
+Return the key associated with a registered file object.
+This returns the [`SelectorKey`](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "selectors.SelectorKey") instance associated to this file object, or raises [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") if the file object is not registered. 
+
+_abstractmethod_ get_map()[¶](https://docs.python.org/3/library/selectors.html#selectors.BaseSelector.get_map "Link to this definition")
+    
+Return a mapping of file objects to selector keys.
+This returns a [`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping "collections.abc.Mapping") instance mapping registered file objects to their associated [`SelectorKey`](https://docs.python.org/3/library/selectors.html#selectors.SelectorKey "selectors.SelectorKey") instance. 
+
+_class_ selectors.DefaultSelector[¶](https://docs.python.org/3/library/selectors.html#selectors.DefaultSelector "Link to this definition")
+    
+The default selector class, using the most efficient implementation available on the current platform. This should be the default choice for most users. 
+
+_class_ selectors.SelectSelector[¶](https://docs.python.org/3/library/selectors.html#selectors.SelectSelector "Link to this definition")
+    
+[`select.select()`](https://docs.python.org/3/library/select.html#select.select "select.select")-based selector. 
+
+_class_ selectors.PollSelector[¶](https://docs.python.org/3/library/selectors.html#selectors.PollSelector "Link to this definition")
+    
+[`select.poll()`](https://docs.python.org/3/library/select.html#select.poll "select.poll")-based selector. 
+
+_class_ selectors.EpollSelector[¶](https://docs.python.org/3/library/selectors.html#selectors.EpollSelector "Link to this definition")
+    
+[`select.epoll()`](https://docs.python.org/3/library/select.html#select.epoll "select.epoll")-based selector. 
+
+fileno()[¶](https://docs.python.org/3/library/selectors.html#selectors.EpollSelector.fileno "Link to this definition")
+    
+This returns the file descriptor used by the underlying [`select.epoll()`](https://docs.python.org/3/library/select.html#select.epoll "select.epoll") object. 
+
+_class_ selectors.DevpollSelector[¶](https://docs.python.org/3/library/selectors.html#selectors.DevpollSelector "Link to this definition")
+    
+[`select.devpoll()`](https://docs.python.org/3/library/select.html#select.devpoll "select.devpoll")-based selector.

@@ -1,0 +1,25 @@
+Title: Python 3.2 Multi-threading Improvements
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The Global Interpreter Lock (GIL) mechanism for managing concurrent Python threads has been rewritten to enable more predictable thread switching and reduce overhead from lock contention. The previous ‘check interval’ has been replaced with a tunable absolute duration, defaulting to 5 milliseconds, adjustable using `sys.setswitchinterval()`.
+---
+
+```
+
+(Moved from the Demo directory by Alexander Belopolsky in [bpo-10199](https://bugs.python.org/issue?@action=redirect&bpo=10199).)
+## Multi-threading[¶](https://docs.python.org/3/whatsnew/3.2.html#multi-threading "Link to this heading")
+  * The mechanism for serializing execution of concurrently running Python threads (generally known as the [GIL](https://docs.python.org/3/glossary.html#term-GIL) or Global Interpreter Lock) has been rewritten. Among the objectives were more predictable switching intervals and reduced overhead due to lock contention and the number of ensuing system calls. The notion of a “check interval” to allow thread switches has been abandoned and replaced by an absolute duration expressed in seconds. This parameter is tunable through [`sys.setswitchinterval()`](https://docs.python.org/3/library/sys.html#sys.setswitchinterval "sys.setswitchinterval"). It currently defaults to 5 milliseconds.
+Additional details about the implementation can be read from a [python-dev mailing-list message](https://mail.python.org/pipermail/python-dev/2009-October/093321.html) (however, “priority requests” as exposed in this message have not been kept for inclusion).
+(Contributed by Antoine Pitrou.)
+  * Regular and recursive locks now accept an optional _timeout_ argument to their [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Lock.acquire "threading.Lock.acquire") method. (Contributed by Antoine Pitrou; [bpo-7316](https://bugs.python.org/issue?@action=redirect&bpo=7316).)
+  * Similarly, [`threading.Semaphore.acquire()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.acquire "threading.Semaphore.acquire") also gained a _timeout_ argument. (Contributed by Torsten Landschoff; [bpo-850728](https://bugs.python.org/issue?@action=redirect&bpo=850728).)
+  * Regular and recursive lock acquisitions can now be interrupted by signals on platforms using Pthreads. This means that Python programs that deadlock while acquiring locks can be successfully killed by repeatedly sending SIGINT to the process (by pressing `Ctrl`+`C` in most shells). (Contributed by Reid Kleckner; [bpo-8844](https://bugs.python.org/issue?@action=redirect&bpo=8844).)
+
+
+## Optimizations[¶](https://docs.python.org/3/whatsnew/3.2.html#optimizations "Link to this heading")
+A number of small performance enhancements have been added:
+  * Python’s peephole optimizer now recognizes patterns such `x in {1, 2, 3}` as being a test for membership in a set of constants. The optimizer recasts the [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") as a [`frozenset`](https://docs.python.org/3/library/stdtypes.html#frozenset "frozenset") and stores the pre-built constant.
+Now that the speed penalty is gone, it is practical to start writing membership tests using set-notation. This style is both semantically clear and operationally fast:
+```
+extension = name.rpartition('.')[2]
+if extension in {'xml', 'html', 'xhtml', 'css'}:
+  handle(name)

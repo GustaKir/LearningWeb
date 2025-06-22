@@ -1,0 +1,28 @@
+Title: Yield Expressions in Python
+URL: https://docs.python.org/3/reference/expressions.html
+Summary: This section covers the syntax and usage of yield expressions in Python, including the components 'yield_atom', 'yield_from', and 'yield_expression'. It explains that yield expressions are used in generator functions and asynchronous generator functions, indicating that their usage is restricted to the body of a function definition.
+---
+
+```
+**yield_atom**    ::= "(" [yield_expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-yield_expression) ")"
+**yield_from**    ::= "yield" "from" [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression)
+**yield_expression** ::= "yield" [yield_list](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-yield_list) | [yield_from](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-yield_from)
+
+```
+
+The yield expression is used when defining a [generator](https://docs.python.org/3/glossary.html#term-generator) function or an [asynchronous generator](https://docs.python.org/3/glossary.html#term-asynchronous-generator) function and thus can only be used in the body of a function definition. Using a yield expression in a function’s body causes that function to be a generator function, and using it in an [`async def`](https://docs.python.org/3/reference/compound_stmts.html#async-def) function’s body causes that coroutine function to be an asynchronous generator function. For example:
+```
+defgen(): # defines a generator function
+  yield 123
+async defagen(): # defines an asynchronous generator function
+  yield 123
+
+```
+
+Due to their side effects on the containing scope, `yield` expressions are not permitted as part of the implicitly defined scopes used to implement comprehensions and generator expressions.
+Changed in version 3.8: Yield expressions prohibited in the implicitly nested scopes used to implement comprehensions and generator expressions.
+Generator functions are described below, while asynchronous generator functions are described separately in section [Asynchronous generator functions](https://docs.python.org/3/reference/expressions.html#asynchronous-generator-functions).
+When a generator function is called, it returns an iterator known as a generator. That generator then controls the execution of the generator function. The execution starts when one of the generator’s methods is called. At that time, the execution proceeds to the first yield expression, where it is suspended again, returning the value of [`yield_list`](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-yield_list) to the generator’s caller, or `None` if [`yield_list`](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-yield_list) is omitted. By suspended, we mean that all local state is retained, including the current bindings of local variables, the instruction pointer, the internal evaluation stack, and the state of any exception handling. When the execution is resumed by calling one of the generator’s methods, the function can proceed exactly as if the yield expression were just another external call. The value of the yield expression after resuming depends on the method which resumed the execution. If [`__next__()`](https://docs.python.org/3/reference/expressions.html#generator.__next__ "generator.__next__") is used (typically via either a [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) or the [`next()`](https://docs.python.org/3/library/functions.html#next "next") builtin) then the result is [`None`](https://docs.python.org/3/library/constants.html#None "None"). Otherwise, if [`send()`](https://docs.python.org/3/reference/expressions.html#generator.send "generator.send") is used, then the result will be the value passed in to that method.
+All of this makes generator functions quite similar to coroutines; they yield multiple times, they have more than one entry point and their execution can be suspended. The only difference is that a generator function cannot control where the execution should continue after it yields; the control is always transferred to the generator’s caller.
+Yield expressions are allowed anywhere in a [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) construct. If the generator is not resumed before it is finalized (by reaching a zero reference count or by being garbage collected), the generator-iterator’s [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close") method will be called, allowing any pending [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) clauses to execute.
+When `yield from <expr>` is used, the supplied expression must be an iterable. The values produced by iterating that iterable are passed directly to the caller of the current generator’s methods. Any values passed in with [`send()`](https://docs.python.org/3/reference/expressions.html#generator.send "generator.send") and any exceptions passed in with [`throw()`](https://docs.python.org/3/reference/expressions.html#generator.throw "generator.throw") are passed to the underlying iterator if it has the appropriate methods. If this is not the case, then [`send()`](https://docs.python.org/3/reference/expressions.html#generator.sen

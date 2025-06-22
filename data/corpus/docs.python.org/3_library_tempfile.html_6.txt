@@ -1,0 +1,71 @@
+Title: Understanding tempfile.tempdir in Python
+URL: https://docs.python.org/3/library/tempfile.html
+Summary: The `tempfile.tempdir` variable sets the default directory for temporary files in the tempfile module. It must not be a path-like object, and if set to None, it defaults according to the `gettempdir()` function. Caution is advised when using bytes values, as it can affect the return types of `mkstemp()` and `mkdtemp()`.
+---
+
+tempfile.tempdir[¶](https://docs.python.org/3/library/tempfile.html#tempfile.tempdir "Link to this definition")
+    
+When set to a value other than `None`, this variable defines the default value for the _dir_ argument to the functions defined in this module, including its type, bytes or str. It cannot be a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+If `tempdir` is `None` (the default) at any call to any of the above functions except [`gettempprefix()`](https://docs.python.org/3/library/tempfile.html#tempfile.gettempprefix "tempfile.gettempprefix") it is initialized following the algorithm described in [`gettempdir()`](https://docs.python.org/3/library/tempfile.html#tempfile.gettempdir "tempfile.gettempdir").
+Note
+Beware that if you set `tempdir` to a bytes value, there is a nasty side effect: The global default return type of [`mkstemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkstemp "tempfile.mkstemp") and [`mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp") changes to bytes when no explicit `prefix`, `suffix`, or `dir` arguments of type str are supplied. Please do not write code expecting or depending on this. This awkward behavior is maintained for compatibility with the historical implementation.
+## Examples[¶](https://docs.python.org/3/library/tempfile.html#examples "Link to this heading")
+Here are some examples of typical usage of the [`tempfile`](https://docs.python.org/3/library/tempfile.html#module-tempfile "tempfile: Generate temporary files and directories.") module:
+>>>```
+>>> importtempfile
+# create a temporary file and write some data to it
+>>> fp = tempfile.TemporaryFile()
+>>> fp.write(b'Hello world!')
+# read data from file
+>>> fp.seek(0)
+>>> fp.read()
+b'Hello world!'
+# close the file, it will be removed
+>>> fp.close()
+# create a temporary file using a context manager
+>>> with tempfile.TemporaryFile() as fp:
+...   fp.write(b'Hello world!')
+...   fp.seek(0)
+...   fp.read()
+b'Hello world!'
+>>>
+# file is now closed and removed
+# create a temporary file using a context manager
+# close the file, use the name to open the file again
+>>> with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+...   fp.write(b'Hello world!')
+...   fp.close()
+... # the file is closed, but not removed
+... # open the file again by using its name
+...   with open(fp.name, mode='rb') as f:
+...     f.read()
+b'Hello world!'
+>>>
+# file is now removed
+# create a temporary directory using the context manager
+>>> with tempfile.TemporaryDirectory() as tmpdirname:
+...   print('created temporary directory', tmpdirname)
+>>>
+# directory and contents have been removed
+
+```
+
+## Deprecated functions and variables[¶](https://docs.python.org/3/library/tempfile.html#deprecated-functions-and-variables "Link to this heading")
+A historical way to create temporary files was to first generate a file name with the [`mktemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mktemp "tempfile.mktemp") function and then create a file using this name. Unfortunately this is not secure, because a different process may create a file with this name in the time between the call to [`mktemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mktemp "tempfile.mktemp") and the subsequent attempt to create the file by the first process. The solution is to combine the two steps and create the file immediately. This approach is used by [`mkstemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkstemp "tempfile.mkstemp") and the other functions described above. 
+
+tempfile.mktemp(_suffix =''_, _prefix ='tmp'_, _dir =None_)[¶](https://docs.python.org/3/library/tempfile.html#tempfile.mktemp "Link to this definition")
+    
+Deprecated since version 2.3: Use [`mkstemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkstemp "tempfile.mkstemp") instead.
+Return an absolute pathname of a file that did not exist at the time the call is made. The _prefix_ , _suffix_ , and _dir_ arguments are similar to those of [`mkstemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkstemp "tempfile.mkstemp"), except that bytes file names, `suffix=None` and `prefix=None` are not supported.
+Warning
+Use of this function may introduce a security hole in your program. By the time you get around to doing anything with the file name it returns, someone else may have beaten you to the punch. [`mktemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mktemp "tempfile.mktemp") usage can be replaced easily with [`NamedTemporaryFile()`](https://docs.python.org/3/library/tempfile.html#tempfile.NamedTemporaryFile "tempfile.NamedTemporaryFile"), passing it the `delete=False` parameter:
+>>>```
+>>> f = NamedTemporaryFile(delete=False)
+>>> f.name
+'/tmp/tmptjujjt'
+>>> f.write(b"Hello World!\n")
+13
+>>> f.close()
+>>> os.unlink(f.name)
+>>> os.path.exists(f.name)
+False

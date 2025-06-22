@@ -1,0 +1,67 @@
+Title: C API Updates and Restorations in Python
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section details the restoration of several private C API functions, including the addition of `_PyThreadState_UncheckedGet()` as an alias and the revival of `_PyDict_GetItemStringWithError()`, along with other private functions that lack simple replacements, enhancing compatibility with libraries like numpy.
+---
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id129 "Link to this heading")
+  * [gh-112026](https://github.com/python/cpython/issues/112026): Add again the private `_PyThreadState_UncheckedGet()` function as an alias to the new public [`PyThreadState_GetUnchecked()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_GetUnchecked "PyThreadState_GetUnchecked") function. Patch by Victor Stinner.
+  * [gh-112026](https://github.com/python/cpython/issues/112026): Restore the removed `_PyDict_GetItemStringWithError()` function. It is used by numpy. Patch by Victor Stinner.
+  * [gh-112026](https://github.com/python/cpython/issues/112026): Restore removed private C API functions, macros and structures which have no simple replacement for now:
+    * _PyDict_GetItem_KnownHash()
+    * _PyDict_NewPresized()
+    * _PyHASH_BITS
+    * _PyHASH_IMAG
+    * _PyHASH_INF
+    * _PyHASH_MODULUS
+    * _PyHASH_MULTIPLIER
+    * _PyLong_Copy()
+    * _PyLong_FromDigits()
+    * _PyLong_New()
+    * _PyLong_Sign()
+    * _PyObject_CallMethodId()
+    * _PyObject_CallMethodNoArgs()
+    * _PyObject_CallMethodOneArg()
+    * _PyObject_CallOneArg()
+    * _PyObject_EXTRA_INIT
+    * _PyObject_FastCallDict()
+    * _PyObject_GetAttrId()
+    * _PyObject_Vectorcall()
+    * _PyObject_VectorcallMethod()
+    * _PyStack_AsDict()
+    * _PyThread_CurrentFrames()
+    * _PyUnicodeWriter structure
+    * _PyUnicodeWriter_Dealloc()
+    * _PyUnicodeWriter_Finish()
+    * _PyUnicodeWriter_Init()
+    * _PyUnicodeWriter_Prepare()
+    * _PyUnicodeWriter_PrepareKind()
+    * _PyUnicodeWriter_WriteASCIIString()
+    * _PyUnicodeWriter_WriteChar()
+    * _PyUnicodeWriter_WriteLatin1String()
+    * _PyUnicodeWriter_WriteStr()
+    * _PyUnicodeWriter_WriteSubstring()
+    * _PyUnicode_AsString()
+    * _PyUnicode_FromId()
+    * _PyVectorcall_Function()
+    * _Py_IDENTIFIER()
+    * _Py_c_abs()
+    * _Py_c_diff()
+    * _Py_c_neg()
+    * _Py_c_pow()
+    * _Py_c_prod()
+    * _Py_c_quot()
+    * _Py_c_sum()
+    * _Py_static_string()
+    * _Py_static_string_init()
+Patch by Victor Stinner.
+  * [gh-112026](https://github.com/python/cpython/issues/112026): Add again `<ctype.h>` and `<unistd.h>` includes in `Python.h`, but don’t include them in the limited C API version 3.13 and newer. Patch by Victor Stinner.
+  * [gh-111956](https://github.com/python/cpython/issues/111956): Add internal-only one-time initialization API: `_PyOnceFlag` and `_PyOnceFlag_CallOnce`.
+  * [gh-111262](https://github.com/python/cpython/issues/111262): Add [`PyDict_Pop()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_Pop "PyDict_Pop") and [`PyDict_PopString()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_PopString "PyDict_PopString") functions: remove a key from a dictionary and optionally return the removed value. This is similar to [`dict.pop()`](https://docs.python.org/3/library/stdtypes.html#dict.pop "dict.pop"), but without the default value and not raising [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") if the key missing. Patch by Stefan Behnel and Victor Stinner.
+  * [gh-111863](https://github.com/python/cpython/issues/111863): Rename `Py_NOGIL` to `Py_GIL_DISABLED`. Patch by Hugo van Kemenade.
+  * [gh-111138](https://github.com/python/cpython/issues/111138): Add [`PyList_Extend()`](https://docs.python.org/3/c-api/list.html#c.PyList_Extend "PyList_Extend") and [`PyList_Clear()`](https://docs.python.org/3/c-api/list.html#c.PyList_Clear "PyList_Clear") functions: similar to Python `list.extend()` and `list.clear()` methods. Patch by Victor Stinner.
+  * [gh-108765](https://github.com/python/cpython/issues/108765): On Windows, `Python.h` no longer includes the `<stddef.h>` standard header file. If needed, it should now be included explicitly. Patch by Victor Stinner.
+  * [gh-111569](https://github.com/python/cpython/issues/111569): Implement “Python Critical Sections” from [**PEP 703**](https://peps.python.org/pep-0703/). These are macros to help replace the GIL with per-object locks in the `--disable-gil` build of CPython. The macros are no-ops in the default build.
+  * [gh-111506](https://github.com/python/cpython/issues/111506): In the limited C API version 3.13, [`Py_SET_REFCNT()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_SET_REFCNT "Py_SET_REFCNT") function is now implemented as an opaque function call. Patch by Victor Stinner.
+  * [gh-108082](https://github.com/python/cpython/issues/108082): Add [`PyErr_FormatUnraisable()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_FormatUnraisable "PyErr_FormatUnraisable") function.
+  * [gh-110964](https://github.com/python/cpython/issues/110964): Move the undocumented private _PyArg functions and _PyArg_Parser structure to internal C API (`pycore_modsupport.h`). Patch by Victor Stinner.
+  * [gh-110815](https://github.com/python/cpython/issues/110815): Support non-ASCII keyword names in [`PyArg_ParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_Pa

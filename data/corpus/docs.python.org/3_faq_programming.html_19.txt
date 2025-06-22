@@ -1,0 +1,43 @@
+Title: Understanding Name Mangling in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: In Python, variables with double leading underscores are subject to name mangling, which alters their names to prevent accidental access from outside the class. Specifically, identifiers of the form `__spam` are replaced with `_classname__spam`, allowing internal access while requiring the mangled name for external access.
+---
+
+```
+
+The same approach works for all method definitions.
+### [I try to use __spam and I get an error about _SomeClassName__spam.](https://docs.python.org/3/faq/programming.html#id64)[¶](https://docs.python.org/3/faq/programming.html#i-try-to-use-spam-and-i-get-an-error-about-someclassname-spam "Link to this heading")
+Variable names with double leading underscores are “mangled” to provide a simple but effective way to define class private variables. Any identifier of the form `__spam` (at least two leading underscores, at most one trailing underscore) is textually replaced with `_classname__spam`, where `classname` is the current class name with any leading underscores stripped.
+The identifier can be used unchanged within the class, but to access it outside the class, the mangled name must be used:
+```
+classA:
+  def__one(self):
+    return 1
+  deftwo(self):
+    return 2 * self.__one()
+classB(A):
+  defthree(self):
+    return 3 * self._A__one()
+four = 4 * A()._A__one()
+
+```
+
+In particular, this does not guarantee privacy since an outside user can still deliberately access the private attribute; many Python programmers never bother to use private variable names at all.
+See also
+The [private name mangling specifications](https://docs.python.org/3/reference/expressions.html#private-name-mangling) for details and special cases.
+### [My class defines __del__ but it is not called when I delete the object.](https://docs.python.org/3/faq/programming.html#id65)[¶](https://docs.python.org/3/faq/programming.html#my-class-defines-del-but-it-is-not-called-when-i-delete-the-object "Link to this heading")
+There are several possible reasons for this.
+The [`del`](https://docs.python.org/3/reference/simple_stmts.html#del) statement does not necessarily call [`__del__()`](https://docs.python.org/3/reference/datamodel.html#object.__del__ "object.__del__") – it simply decrements the object’s reference count, and if this reaches zero `__del__()` is called.
+If your data structures contain circular links (e.g. a tree where each child has a parent reference and each parent has a list of children) the reference counts will never go back to zero. Once in a while Python runs an algorithm to detect such cycles, but the garbage collector might run some time after the last reference to your data structure vanishes, so your `__del__()` method may be called at an inconvenient and random time. This is inconvenient if you’re trying to reproduce a problem. Worse, the order in which object’s `__del__()` methods are executed is arbitrary. You can run [`gc.collect()`](https://docs.python.org/3/library/gc.html#gc.collect "gc.collect") to force a collection, but there _are_ pathological cases where objects will never be collected.
+Despite the cycle collector, it’s still a good idea to define an explicit `close()` method on objects to be called whenever you’re done with them. The `close()` method can then remove attributes that refer to subobjects. Don’t call `__del__()` directly – `__del__()` should call `close()` and `close()` should make sure that it can be called more than once for the same object.
+Another way to avoid cyclical references is to use the [`weakref`](https://docs.python.org/3/library/weakref.html#module-weakref "weakref: Support for weak references and weak dictionaries.") module, which allows you to point to objects without incrementing their reference count. Tree data structures, for instance, should use weak references for their parent and sibling references (if they need them!).
+Finally, if your `__del__()` method raises an exception, a warning message is printed to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr").
+### [How do I get a list of all instances of a given class?](https://docs.python.org/3/faq/programming.html#id66)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-get-a-list-of-all-instances-of-a-given-class "Link to this heading")
+Python does not keep track of all instances of a class (or of a built-in type). You can program the class’s constructor to keep track of all instances by keeping a list of weak references to each instance.
+### [Why does the result of `id()` appear to be not unique?](https://docs.python.org/3/faq/programming.html#id67)[¶](https://docs.python.org/3/faq/programming.html#why-does-the-result-of-id-appear-to-be-not-unique "Link to this heading")
+The [`id()`](https://docs.python.org/3/library/functions.html#id "id") builtin returns an integer that is guaranteed to be unique during the lifetime of the object. Since in CPython, this is the object’s memory address, it happens frequently that after an object is deleted from memory, the next freshly created object is allocated at the same position in memory. This is illustrated by this example:
+>>>```
+>>> id(1000)
+13901272
+>>> id(2000)
+13901272

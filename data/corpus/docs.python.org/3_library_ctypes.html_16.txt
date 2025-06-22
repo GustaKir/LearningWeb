@@ -1,0 +1,63 @@
+Title: Public Attributes of PyDLL in ctypes
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: This section outlines the public attributes available for the PyDLL class in the ctypes library, specifically the _handle (system handle for library access) and _name (name of the library). It also mentions how shared libraries can be loaded using LibraryLoader instances.
+---
+
+```
+
+The following public attributes are available, their name starts with an underscore to not clash with exported function names: 
+
+PyDLL._handle[¶](https://docs.python.org/3/library/ctypes.html#ctypes.PyDLL._handle "Link to this definition")
+    
+The system handle used to access the library. 
+
+PyDLL._name[¶](https://docs.python.org/3/library/ctypes.html#ctypes.PyDLL._name "Link to this definition")
+    
+The name of the library passed in the constructor.
+Shared libraries can also be loaded by using one of the prefabricated objects, which are instances of the [`LibraryLoader`](https://docs.python.org/3/library/ctypes.html#ctypes.LibraryLoader "ctypes.LibraryLoader") class, either by calling the [`LoadLibrary()`](https://docs.python.org/3/library/ctypes.html#ctypes.LibraryLoader.LoadLibrary "ctypes.LibraryLoader.LoadLibrary") method, or by retrieving the library as attribute of the loader instance. 
+
+_class_ ctypes.LibraryLoader(_dlltype_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.LibraryLoader "Link to this definition")
+    
+Class which loads shared libraries. _dlltype_ should be one of the [`CDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.CDLL "ctypes.CDLL"), [`PyDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.PyDLL "ctypes.PyDLL"), [`WinDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.WinDLL "ctypes.WinDLL"), or [`OleDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.OleDLL "ctypes.OleDLL") types.
+`__getattr__()` has special behavior: It allows loading a shared library by accessing it as attribute of a library loader instance. The result is cached, so repeated attribute accesses return the same library each time. 
+
+LoadLibrary(_name_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.LibraryLoader.LoadLibrary "Link to this definition")
+    
+Load a shared library into the process and return it. This method always returns a new instance of the library.
+These prefabricated library loaders are available: 
+
+ctypes.cdll
+    
+Creates [`CDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.CDLL "ctypes.CDLL") instances. 
+
+ctypes.windll
+    
+Creates [`WinDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.WinDLL "ctypes.WinDLL") instances.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows 
+
+ctypes.oledll
+    
+Creates [`OleDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.OleDLL "ctypes.OleDLL") instances.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows 
+
+ctypes.pydll
+    
+Creates [`PyDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.PyDLL "ctypes.PyDLL") instances.
+For accessing the C Python api directly, a ready-to-use Python shared library object is available: 
+
+ctypes.pythonapi
+    
+An instance of [`PyDLL`](https://docs.python.org/3/library/ctypes.html#ctypes.PyDLL "ctypes.PyDLL") that exposes Python C API functions as attributes. Note that all these functions are assumed to return C int, which is of course not always the truth, so you have to assign the correct `restype` attribute to use these functions.
+Loading a library through any of these objects raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `ctypes.dlopen` with string argument `name`, the name used to load the library.
+Accessing a function on a loaded library raises an auditing event `ctypes.dlsym` with arguments `library` (the library object) and `name` (the symbol’s name as a string or integer).
+In cases when only the library handle is available rather than the object, accessing a function raises an auditing event `ctypes.dlsym/handle` with arguments `handle` (the raw library handle) and `name`.
+### Foreign functions[¶](https://docs.python.org/3/library/ctypes.html#foreign-functions "Link to this heading")
+As explained in the previous section, foreign functions can be accessed as attributes of loaded shared libraries. The function objects created in this way by default accept any number of arguments, accept any ctypes data instances as arguments, and return the default result type specified by the library loader.
+They are instances of a private local class `_FuncPtr` (not exposed in `ctypes`) which inherits from the private [`_CFuncPtr`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr "ctypes._CFuncPtr") class:
+>>>```
+>>> importctypes
+>>> lib = ctypes.CDLL(None)
+>>> issubclass(lib._FuncPtr, ctypes._CFuncPtr)
+True
+>>> lib._FuncPtr is ctypes._CFuncPtr
+False

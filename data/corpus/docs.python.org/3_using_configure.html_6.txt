@@ -1,0 +1,57 @@
+Title: Python Configuration Options
+URL: https://docs.python.org/3/using/configure.html
+Summary: This section outlines the `--prefix` and `--exec-prefix` options for installation paths in Python configuration, detailing their default values, usage, and runtime retrieval methods. It also briefly mentions the `--disable-test-modules` option for excluding test modules from the build.
+---
+
+--prefix=PREFIX[¶](https://docs.python.org/3/using/configure.html#cmdoption-prefix "Link to this definition")
+    
+Install architecture-independent files in PREFIX. On Unix, it defaults to `/usr/local`.
+This value can be retrieved at runtime using [`sys.prefix`](https://docs.python.org/3/library/sys.html#sys.prefix "sys.prefix").
+As an example, one can use `--prefix="$HOME/.local/"` to install a Python in its home directory. 
+
+--exec-prefix=EPREFIX[¶](https://docs.python.org/3/using/configure.html#cmdoption-exec-prefix "Link to this definition")
+    
+Install architecture-dependent files in EPREFIX, defaults to [`--prefix`](https://docs.python.org/3/using/configure.html#cmdoption-prefix).
+This value can be retrieved at runtime using [`sys.exec_prefix`](https://docs.python.org/3/library/sys.html#sys.exec_prefix "sys.exec_prefix"). 
+
+--disable-test-modules[¶](https://docs.python.org/3/using/configure.html#cmdoption-disable-test-modules "Link to this definition")
+    
+Don’t build nor install test modules, like the [`test`](https://docs.python.org/3/library/test.html#module-test "test: Regression tests package containing the testing suite for Python.") package or the `_testcapi` extension module (built and installed by default).
+Added in version 3.10. 
+
+--with-ensurepip=[upgrade|install|no][¶](https://docs.python.org/3/using/configure.html#cmdoption-with-ensurepip "Link to this definition")
+    
+Select the [`ensurepip`](https://docs.python.org/3/library/ensurepip.html#module-ensurepip "ensurepip: Bootstrapping the "pip" installer into an existing Python installation or virtual environment.") command run on Python installation:
+  * `upgrade` (default): run `python -m ensurepip --altinstall --upgrade` command.
+  * `install`: run `python -m ensurepip --altinstall` command;
+  * `no`: don’t run ensurepip;
+
+
+Added in version 3.6.
+### 3.3.7. Performance options[¶](https://docs.python.org/3/using/configure.html#performance-options "Link to this heading")
+Configuring Python using `--enable-optimizations --with-lto` (PGO + LTO) is recommended for best performance. The experimental `--enable-bolt` flag can also be used to improve performance. 
+
+--enable-optimizations[¶](https://docs.python.org/3/using/configure.html#cmdoption-enable-optimizations "Link to this definition")
+    
+Enable Profile Guided Optimization (PGO) using [`PROFILE_TASK`](https://docs.python.org/3/using/configure.html#envvar-PROFILE_TASK) (disabled by default).
+The C compiler Clang requires `llvm-profdata` program for PGO. On macOS, GCC also requires it: GCC is just an alias to Clang on macOS.
+Disable also semantic interposition in libpython if `--enable-shared` and GCC is used: add `-fno-semantic-interposition` to the compiler and linker flags.
+Note
+During the build, you may encounter compiler warnings about profile data not being available for some source files. These warnings are harmless, as only a subset of the code is exercised during profile data acquisition. To disable these warnings on Clang, manually suppress them by adding `-Wno-profile-instr-unprofiled` to [`CFLAGS`](https://docs.python.org/3/using/configure.html#envvar-CFLAGS).
+Added in version 3.6.
+Changed in version 3.10: Use `-fno-semantic-interposition` on GCC. 
+
+PROFILE_TASK[¶](https://docs.python.org/3/using/configure.html#envvar-PROFILE_TASK "Link to this definition")
+    
+Environment variable used in the Makefile: Python command line arguments for the PGO generation task.
+Default: `-m test --pgo --timeout=$(TESTTIMEOUT)`.
+Added in version 3.8.
+Changed in version 3.13: Task failure is no longer ignored silently. 
+
+--with-lto=[full|thin|no|yes][¶](https://docs.python.org/3/using/configure.html#cmdoption-with-lto "Link to this definition")
+    
+Enable Link Time Optimization (LTO) in any build (disabled by default).
+The C compiler Clang requires `llvm-ar` for LTO (`ar` on macOS), as well as an LTO-aware linker (`ld.gold` or `lld`).
+Added in version 3.6.
+Added in version 3.11: To use ThinLTO feature, use `--with-lto=thin` on Clang.
+Changed in version 3.12: Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.

@@ -1,0 +1,34 @@
+Title: Changes to typing.Literal in Python 3.10
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: Python 3.10 introduces significant updates to `typing.Literal` in compliance with PEP 586. Key changes include parameter de-duplication, order-independent equality comparisons, type-respecting comparisons (e.g., `Literal[0]` is now not equal to `Literal[False]`), and enhancements to the type cache.
+---
+
+(Contributed by Bas van Beek in [bpo-41810](https://bugs.python.org/issue?@action=redirect&bpo=41810).)
+### typing[¶](https://docs.python.org/3/whatsnew/3.10.html#typing "Link to this heading")
+For major changes, see [New Features Related to Type Hints](https://docs.python.org/3/whatsnew/3.10.html#new-feat-related-type-hints).
+The behavior of [`typing.Literal`](https://docs.python.org/3/library/typing.html#typing.Literal "typing.Literal") was changed to conform with [**PEP 586**](https://peps.python.org/pep-0586/) and to match the behavior of static type checkers specified in the PEP.
+  1. `Literal` now de-duplicates parameters.
+  2. Equality comparisons between `Literal` objects are now order independent.
+  3. `Literal` comparisons now respect types. For example, `Literal[0] == Literal[False]` previously evaluated to `True`. It is now `False`. To support this change, the internally used type cache now supports differentiating types.
+  4. `Literal` objects will now raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception during equality comparisons if any of their parameters are not [hashable](https://docs.python.org/3/glossary.html#term-hashable). Note that declaring `Literal` with unhashable parameters will not throw an error:
+>>>```
+>>> fromtypingimport Literal
+>>> Literal[{0}]
+>>> Literal[{0}] == Literal[{False}]
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: unhashable type: 'set'
+
+```
+
+
+
+(Contributed by Yurii Karabas in [bpo-42345](https://bugs.python.org/issue?@action=redirect&bpo=42345).)
+Add new function [`typing.is_typeddict()`](https://docs.python.org/3/library/typing.html#typing.is_typeddict "typing.is_typeddict") to introspect if an annotation is a [`typing.TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict"). (Contributed by Patrick Reader in [bpo-41792](https://bugs.python.org/issue?@action=redirect&bpo=41792).)
+Subclasses of `typing.Protocol` which only have data variables declared will now raise a `TypeError` when checked with `isinstance` unless they are decorated with [`runtime_checkable()`](https://docs.python.org/3/library/typing.html#typing.runtime_checkable "typing.runtime_checkable"). Previously, these checks passed silently. Users should decorate their subclasses with the `runtime_checkable()` decorator if they want runtime protocols. (Contributed by Yurii Karabas in [bpo-38908](https://bugs.python.org/issue?@action=redirect&bpo=38908).)
+Importing from the `typing.io` and `typing.re` submodules will now emit [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning"). These submodules have been deprecated since Python 3.8 and will be removed in a future version of Python. Anything belonging to those submodules should be imported directly from [`typing`](https://docs.python.org/3/library/typing.html#module-typing "typing: Support for type hints \(see :pep:`484`\).") instead. (Contributed by Sebastian Rittau in [bpo-38291](https://bugs.python.org/issue?@action=redirect&bpo=38291).)
+### unittest[¶](https://docs.python.org/3/whatsnew/3.10.html#unittest "Link to this heading")
+Add new method [`assertNoLogs()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertNoLogs "unittest.TestCase.assertNoLogs") to complement the existing [`assertLogs()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs "unittest.TestCase.assertLogs"). (Contributed by Kit Yan Choi in [bpo-39385](https://bugs.python.org/issue?@action=redirect&bpo=39385).)
+### urllib.parse[¶](https://docs.python.org/3/whatsnew/3.10.html#urllib-parse "Link to this heading")
+Python versions earlier than Python 3.10 allowed using both `;` and `&` as query parameter separators in [`urllib.parse.parse_qs()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.parse_qs "urllib.parse.parse_qs") and [`urllib.parse.parse_qsl()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.parse_qsl "urllib.parse.parse_qsl"). Due to security concerns, and to conform with newer W3C recommendations, this has been changed to allow only a single separator key, with `&` as the default. This change also affects `cgi.parse()` and `cgi.parse_multipart()` as they use the affected functions internally. For more details, please see their respective documentation. (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in [bpo-42967](https://bugs.python.org/issue?@action=redirect&bpo=42967).)
+The presence of newline or tab characters in parts of a URL allows for some forms of attacks. Following the WHATWG specification that updates [**RFC 3986**](https://datatracker.ietf.org/doc/html/rfc3986.html), ASCII newline `\n`, `\r` and tab `\t` characters are stripped from the URL by the parser in [`urllib.parse`](https://docs.python.org/3/library/urllib.parse.html#module-urllib.parse "urllib.parse: Parse URLs into o

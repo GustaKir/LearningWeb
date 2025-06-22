@@ -1,0 +1,41 @@
+Title: What's New in Python 3.8
+URL: https://docs.python.org/3/whatsnew/3.8.html
+Summary: This section introduces a new class `Counter` that inherits from `dict`, highlighting the specific initialization method and the use of keyword arguments, referencing PEP 570 for detailed information. Additionally, it discusses the new `PYTHONPYCACHEPREFIX` environment variable that allows users to configure a parallel filesystem cache for compiled bytecode files, moving away from the default caching mechanism.
+---
+
+```
+classCounter(dict):
+  def__init__(self, iterable=None, /, **kwds):
+    # Note "iterable" is a possible keyword argument
+
+```
+
+See [**PEP 570**](https://peps.python.org/pep-0570/) for a full description.
+(Contributed by Pablo Galindo in [bpo-36540](https://bugs.python.org/issue?@action=redirect&bpo=36540).)
+### Parallel filesystem cache for compiled bytecode files[¶](https://docs.python.org/3/whatsnew/3.8.html#parallel-filesystem-cache-for-compiled-bytecode-files "Link to this heading")
+The new [`PYTHONPYCACHEPREFIX`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPYCACHEPREFIX) setting (also available as [`-X`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) `pycache_prefix`) configures the implicit bytecode cache to use a separate parallel filesystem tree, rather than the default `__pycache__` subdirectories within each source directory.
+The location of the cache is reported in [`sys.pycache_prefix`](https://docs.python.org/3/library/sys.html#sys.pycache_prefix "sys.pycache_prefix") ([`None`](https://docs.python.org/3/library/constants.html#None "None") indicates the default location in `__pycache__` subdirectories).
+(Contributed by Carl Meyer in [bpo-33499](https://bugs.python.org/issue?@action=redirect&bpo=33499).)
+### Debug build uses the same ABI as release build[¶](https://docs.python.org/3/whatsnew/3.8.html#debug-build-uses-the-same-abi-as-release-build "Link to this heading")
+Python now uses the same ABI whether it’s built in release or debug mode. On Unix, when Python is built in debug mode, it is now possible to load C extensions built in release mode and C extensions built using the stable ABI.
+Release builds and [debug builds](https://docs.python.org/3/using/configure.html#debug-build) are now ABI compatible: defining the `Py_DEBUG` macro no longer implies the `Py_TRACE_REFS` macro, which introduces the only ABI incompatibility. The `Py_TRACE_REFS` macro, which adds the [`sys.getobjects()`](https://docs.python.org/3/library/sys.html#sys.getobjects "sys.getobjects") function and the [`PYTHONDUMPREFS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONDUMPREFS) environment variable, can be set using the new [`./configure --with-trace-refs`](https://docs.python.org/3/using/configure.html#cmdoption-with-trace-refs) build option. (Contributed by Victor Stinner in [bpo-36465](https://bugs.python.org/issue?@action=redirect&bpo=36465).)
+On Unix, C extensions are no longer linked to libpython except on Android and Cygwin. It is now possible for a statically linked Python to load a C extension built using a shared library Python. (Contributed by Victor Stinner in [bpo-21536](https://bugs.python.org/issue?@action=redirect&bpo=21536).)
+On Unix, when Python is built in debug mode, import now also looks for C extensions compiled in release mode and for C extensions compiled with the stable ABI. (Contributed by Victor Stinner in [bpo-36722](https://bugs.python.org/issue?@action=redirect&bpo=36722).)
+To embed Python into an application, a new `--embed` option must be passed to `python3-config --libs --embed` to get `-lpython3.8` (link the application to libpython). To support both 3.8 and older, try `python3-config --libs --embed` first and fallback to `python3-config --libs` (without `--embed`) if the previous command fails.
+Add a pkg-config `python-3.8-embed` module to embed Python into an application: `pkg-config python-3.8-embed --libs` includes `-lpython3.8`. To support both 3.8 and older, try `pkg-config python-X.Y-embed --libs` first and fallback to `pkg-config python-X.Y --libs` (without `--embed`) if the previous command fails (replace `X.Y` with the Python version).
+On the other hand, `pkg-config python3.8 --libs` no longer contains `-lpython3.8`. C extensions must not be linked to libpython (except on Android and Cygwin, whose cases are handled by the script); this change is backward incompatible on purpose. (Contributed by Victor Stinner in [bpo-36721](https://bugs.python.org/issue?@action=redirect&bpo=36721).)
+### f-strings support `=` for self-documenting expressions and debugging[¶](https://docs.python.org/3/whatsnew/3.8.html#f-strings-support-for-self-documenting-expressions-and-debugging "Link to this heading")
+Added an `=` specifier to [f-string](https://docs.python.org/3/glossary.html#term-f-string)s. An f-string such as `f'{expr=}'` will expand to the text of the expression, an equal sign, then the representation of the evaluated expression. For example:
+>>>```
+>>> user = 'eric_idle'
+>>> member_since = date(1975, 7, 31)
+>>> f'{user=}{member_since=}'
+"user='eric_idle' member_since=datetime.date(1975, 7, 31)"
+
+```
+
+The usual [f-string format specifiers](https://docs.python.org/3/reference/lexical_analysis.html#f-strings) allow more control over how the result of the expression is displayed:
+>>>```
+>>> delta = date.today() - member_since
+>>> f'{user=!s}{delta.days=:,d}'
+'user=eric_idle delta.days=16,075'

@@ -1,0 +1,21 @@
+Title: PEP 538: Legacy C Locale Coercion
+URL: https://docs.python.org/3/whatsnew/3.7.html
+Summary: PEP 538 updates Python's default handling of text encoding on non-Windows platforms by coercing the legacy C locale to a UTF-8 based locale. This change, driven by ongoing challenges in the Python 3 series, is facilitated by the new `PYTHONCOERCECLOCALE` environment variable, enhancing compatibility with UTF-8 for better text processing.
+---
+
+```
+
+It will become the default in Python 3.10.
+See also 
+
+[**PEP 563**](https://peps.python.org/pep-0563/) – Postponed evaluation of annotations
+    
+PEP written and implemented by Łukasz Langa.
+### PEP 538: Legacy C Locale Coercion[¶](https://docs.python.org/3/whatsnew/3.7.html#pep-538-legacy-c-locale-coercion "Link to this heading")
+An ongoing challenge within the Python 3 series has been determining a sensible default strategy for handling the “7-bit ASCII” text encoding assumption currently implied by the use of the default C or POSIX locale on non-Windows platforms.
+[**PEP 538**](https://peps.python.org/pep-0538/) updates the default interpreter command line interface to automatically coerce that locale to an available UTF-8 based locale as described in the documentation of the new [`PYTHONCOERCECLOCALE`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONCOERCECLOCALE) environment variable. Automatically setting `LC_CTYPE` this way means that both the core interpreter and locale-aware C extensions (such as [`readline`](https://docs.python.org/3/library/readline.html#module-readline "readline: GNU readline support for Python. \(Unix\)")) will assume the use of UTF-8 as the default text encoding, rather than ASCII.
+The platform support definition in [**PEP 11**](https://peps.python.org/pep-0011/) has also been updated to limit full text handling support to suitably configured non-ASCII based locales.
+As part of this change, the default error handler for [`stdin`](https://docs.python.org/3/library/sys.html#sys.stdin "sys.stdin") and [`stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") is now `surrogateescape` (rather than `strict`) when using any of the defined coercion target locales (currently `C.UTF-8`, `C.utf8`, and `UTF-8`). The default error handler for [`stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") continues to be `backslashreplace`, regardless of locale.
+Locale coercion is silent by default, but to assist in debugging potentially locale related integration problems, explicit warnings (emitted directly on [`stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr")) can be requested by setting `PYTHONCOERCECLOCALE=warn`. This setting will also cause the Python runtime to emit a warning if the legacy C locale remains active when the core interpreter is initialized.
+While [**PEP 538**](https://peps.python.org/pep-0538/)’s locale coercion has the benefit of also affecting extension modules (such as GNU `readline`), as well as child processes (including those running non-Python applications and older versions of Python), it has the downside of requiring that a suitable target locale be present on the running system. To better handle the case where no suitable target locale is available (as occurs on RHEL/CentOS 7, for example), Python 3.7 also implements [PEP 540: Forced UTF-8 Runtime Mode](https://docs.python.org/3/whatsnew/3.7.html#whatsnew37-pep540).
+See also

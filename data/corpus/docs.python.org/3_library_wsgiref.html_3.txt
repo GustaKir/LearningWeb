@@ -1,0 +1,33 @@
+Title: WSGI Response Header Tools
+URL: https://docs.python.org/3/library/wsgiref.html
+Summary: This section introduces the `Headers` class from the `wsgiref.headers` module, which facilitates convenient manipulation of WSGI response headers with a mapping-like interface. It also provides an example of using `FileWrapper` with a `StringIO` object to handle file-like data.
+---
+
+```
+fromioimport StringIO
+fromwsgiref.utilimport FileWrapper
+# We're using a StringIO-buffer for as the file-like object
+filelike = StringIO("This is an example file-like object"*10)
+wrapper = FileWrapper(filelike, blksize=5)
+for chunk in wrapper:
+  print(chunk)
+
+```
+
+Changed in version 3.11: Support for [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") method has been removed.
+## [`wsgiref.headers`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.headers "wsgiref.headers: WSGI response header tools.") – WSGI response header tools[¶](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.headers "Link to this heading")
+This module provides a single class, [`Headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "wsgiref.headers.Headers"), for convenient manipulation of WSGI response headers using a mapping-like interface. 
+
+_class_ wsgiref.headers.Headers([_headers_])[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "Link to this definition")
+    
+Create a mapping-like object wrapping _headers_ , which must be a list of header name/value tuples as described in [**PEP 3333**](https://peps.python.org/pep-3333/). The default value of _headers_ is an empty list.
+[`Headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "wsgiref.headers.Headers") objects support typical mapping operations including [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__"), [`get()`](https://docs.python.org/3/library/stdtypes.html#dict.get "dict.get"), [`__setitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__setitem__ "object.__setitem__"), [`setdefault()`](https://docs.python.org/3/library/stdtypes.html#dict.setdefault "dict.setdefault"), [`__delitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__delitem__ "object.__delitem__") and [`__contains__()`](https://docs.python.org/3/reference/datamodel.html#object.__contains__ "object.__contains__"). For each of these methods, the key is the header name (treated case-insensitively), and the value is the first value associated with that header name. Setting a header deletes any existing values for that header, then adds a new value at the end of the wrapped header list. Headers’ existing order is generally maintained, with new headers added to the end of the wrapped list.
+Unlike a dictionary, [`Headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "wsgiref.headers.Headers") objects do not raise an error when you try to get or delete a key that isn’t in the wrapped header list. Getting a nonexistent header just returns `None`, and deleting a nonexistent header does nothing.
+[`Headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "wsgiref.headers.Headers") objects also support `keys()`, `values()`, and `items()` methods. The lists returned by `keys()` and `items()` can include the same key more than once if there is a multi-valued header. The `len()` of a [`Headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "wsgiref.headers.Headers") object is the same as the length of its `items()`, which is the same as the length of the wrapped header list. In fact, the `items()` method just returns a copy of the wrapped header list.
+Calling `bytes()` on a [`Headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "wsgiref.headers.Headers") object returns a formatted bytestring suitable for transmission as HTTP response headers. Each header is placed on a line with its value, separated by a colon and a space. Each line is terminated by a carriage return and line feed, and the bytestring is terminated with a blank line.
+In addition to their mapping interface and formatting features, [`Headers`](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers "wsgiref.headers.Headers") objects also have the following methods for querying and adding multi-valued headers, and for adding headers with MIME parameters: 
+
+get_all(_name_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.headers.Headers.get_all "Link to this definition")
+    
+Return a list of all the values for the named header.
+The returned list will be sorted in the order they appeared in the original header list or were added to this instance, and may contain duplicates. Any fields deleted and re-inserted are always appended to the header list. If no fields exist with the given name, returns an empty list.

@@ -1,0 +1,58 @@
+Title: FastAPI Events: Lifespan and Alternatives
+URL: https://fastapi.tiangolo.com/advanced/events/
+Summary: This section covers the concept of lifespan in FastAPI, detailing the lifespan function and asynchronous context managers. It also discusses deprecated alternative event methods, including startup and shutdown events, along with technical details and the handling of sub-applications.
+---
+
+Table of contents 
+  * [ Use Case  ](https://fastapi.tiangolo.com/advanced/events/#use-case)
+  * [ Lifespan  ](https://fastapi.tiangolo.com/advanced/events/#lifespan)
+    * [ Lifespan function  ](https://fastapi.tiangolo.com/advanced/events/#lifespan-function)
+    * [ Async Context Manager  ](https://fastapi.tiangolo.com/advanced/events/#async-context-manager)
+  * [ Alternative Events (deprecated)  ](https://fastapi.tiangolo.com/advanced/events/#alternative-events-deprecated)
+    * [ `startup` event  ](https://fastapi.tiangolo.com/advanced/events/#startup-event)
+    * [ `shutdown` event  ](https://fastapi.tiangolo.com/advanced/events/#shutdown-event)
+    * [ `startup` and `shutdown` together  ](https://fastapi.tiangolo.com/advanced/events/#startup-and-shutdown-together)
+  * [ Technical Details  ](https://fastapi.tiangolo.com/advanced/events/#technical-details)
+  * [ Sub Applications  ](https://fastapi.tiangolo.com/advanced/events/#sub-applications)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Advanced User Guide  ](https://fastapi.tiangolo.com/advanced/)
+
+
+# Lifespan Events[¶](https://fastapi.tiangolo.com/advanced/events/#lifespan-events "Permanent link")
+You can define logic (code) that should be executed before the application **starts up**. This means that this code will be executed **once** , **before** the application **starts receiving requests**.
+The same way, you can define logic (code) that should be executed when the application is **shutting down**. In this case, this code will be executed **once** , **after** having handled possibly **many requests**.
+Because this code is executed before the application **starts** taking requests, and right after it **finishes** handling requests, it covers the whole application **lifespan** (the word "lifespan" will be important in a second 😉).
+This can be very useful for setting up **resources** that you need to use for the whole app, and that are **shared** among requests, and/or that you need to **clean up** afterwards. For example, a database connection pool, or loading a shared machine learning model.
+## Use Case[¶](https://fastapi.tiangolo.com/advanced/events/#use-case "Permanent link")
+Let's start with an example **use case** and then see how to solve it with this.
+Let's imagine that you have some **machine learning models** that you want to use to handle requests. 🤖
+The same models are shared among requests, so, it's not one model per request, or one per user or something similar.
+Let's imagine that loading the model can **take quite some time** , because it has to read a lot of **data from disk**. So you don't want to do it for every request.
+You could load it at the top level of the module/file, but that would also mean that it would **load the model** even if you are just running a simple automated test, then that test would be **slow** because it would have to wait for the model to load before being able to run an independent part of the code.
+That's what we'll solve, let's load the model before the requests are handled, but only right before the application starts receiving requests, not while the code is being loaded.
+## Lifespan[¶](https://fastapi.tiangolo.com/advanced/events/#lifespan "Permanent link")
+You can define this _startup_ and _shutdown_ logic using the `lifespan` parameter of the `FastAPI` app, and a "context manager" (I'll show you what that is in a second).
+Let's start with an example and then see it in detail.
+We create an async function `lifespan()` with `yield` like this:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/events/#__tabbed_1_1)
+```
+fromcontextlibimport asynccontextmanager
+fromfastapiimport FastAPI
+deffake_answer_to_everything_ml_model(x: float):
+  return x * 42
+ml_models = {}
+@asynccontextmanager
+async deflifespan(app: FastAPI):
+  # Load the ML model
+  ml_models["answer_to_everything"] = fake_answer_to_everything_ml_model
+  yield
+  # Clean up the ML models and release the resources
+  ml_models.clear()
+app = FastAPI(lifespan=lifespan)
+@app.get("/predict")
+async defpredict(x: float):
+  result = ml_models["answer_to_everything"](x)
+  return {"result": result}

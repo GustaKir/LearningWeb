@@ -1,0 +1,137 @@
+Title: Using Yield for Dependency Injection in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/
+Summary: This FastAPI example demonstrates how to implement dependency injection using a generator function with `yield` to provide a username. It defines an endpoint to get item details based on item ID and checks ownership. If the item does not exist or the owner does not match, it raises an HTTP exception.
+---
+
+```
+fromfastapiimport Depends, FastAPI, HTTPException
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+data = {
+  "plumbus": {"description": "Freshly pickled plumbus", "owner": "Morty"},
+  "portal-gun": {"description": "Gun to create portals", "owner": "Rick"},
+}
+classOwnerError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except OwnerError as e:
+    raise HTTPException(status_code=400, detail=f"Owner error: {e}")
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: Annotated[str, Depends(get_username)]):
+  if item_id not in data:
+    raise HTTPException(status_code=404, detail="Item not found")
+  item = data[item_id]
+  if item["owner"] != username:
+    raise OwnerError(username)
+  return item
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI, HTTPException
+app = FastAPI()
+data = {
+  "plumbus": {"description": "Freshly pickled plumbus", "owner": "Morty"},
+  "portal-gun": {"description": "Gun to create portals", "owner": "Rick"},
+}
+classOwnerError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except OwnerError as e:
+    raise HTTPException(status_code=400, detail=f"Owner error: {e}")
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: str = Depends(get_username)):
+  if item_id not in data:
+    raise HTTPException(status_code=404, detail="Item not found")
+  item = data[item_id]
+  if item["owner"] != username:
+    raise OwnerError(username)
+  return item
+
+```
+
+An alternative you could use to catch exceptions (and possibly also raise another `HTTPException`) is to create a [Custom Exception Handler](https://fastapi.tiangolo.com/tutorial/handling-errors/#install-custom-exception-handlers).
+## Dependencies with `yield` and `except`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#dependencies-with-yield-and-except "Permanent link")
+If you catch an exception using `except` in a dependency with `yield` and you don't raise it again (or raise a new exception), FastAPI won't be able to notice there was an exception, the same way that would happen with regular Python:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_11_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI, HTTPException
+app = FastAPI()
+classInternalError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except InternalError:
+    print("Oops, we didn't raise again, Britney 😱")
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: Annotated[str, Depends(get_username)]):
+  if item_id == "portal-gun":
+    raise InternalError(
+      f"The portal gun is too dangerous to be owned by {username}"
+    )
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=404, detail="Item not found, there's only a plumbus here"
+    )
+  return item_id
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_12_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_12_2)
+```
+fromfastapiimport Depends, FastAPI, HTTPException
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classInternalError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except InternalError:
+    print("Oops, we didn't raise again, Britney 😱")
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: Annotated[str, Depends(get_username)]):
+  if item_id == "portal-gun":
+    raise InternalError(
+      f"The portal gun is too dangerous to be owned by {username}"
+    )
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=404, detail="Item not found, there's only a plumbus here"
+    )
+  return item_id
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI, HTTPException
+app = FastAPI()
+classInternalError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except InternalError:
+    print("Oops, we didn't raise again, Britney 😱")
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: str = Depends(get_username)):
+  if item_id == "portal-gun":
+    raise InternalError(
+      f"The portal gun is too dangerous to be owned by {username}"
+    )
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=404, detail="Item not found, there's only a plumbus here"
+    )
+  return item_id

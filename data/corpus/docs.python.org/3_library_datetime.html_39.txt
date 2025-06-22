@@ -1,0 +1,25 @@
+Title: Datetime Formatting Directives
+URL: https://docs.python.org/3/library/datetime.html
+Summary: This section details the `%z` and `%Z` directives in Python's datetime formatting. `%:z` adds a colon separator to the time zone offset, while `%Z` produces an empty string if `tzname()` returns None and only accepts certain values in `strptime()`, including locale-specific names and hard-coded values like `UTC` and `GMT`. Invalid values will raise a ValueError.
+---
+
+`%:z`
+    
+Behaves exactly as `%z`, but has a colon separator added between hours, minutes and seconds. 
+
+`%Z`
+    
+In [`strftime()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.strftime "datetime.datetime.strftime"), `%Z` is replaced by an empty string if [`tzname()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzname "datetime.datetime.tzname") returns `None`; otherwise `%Z` is replaced by the returned value, which must be a string.
+[`strptime()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime "datetime.datetime.strptime") only accepts certain values for `%Z`:
+    1. any value in `time.tzname` for your machine’s locale
+    2. the hard-coded values `UTC` and `GMT`
+So someone living in Japan may have `JST`, `UTC`, and `GMT` as valid values, but probably not `EST`. It will raise `ValueError` for invalid values.
+Changed in version 3.2: When the `%z` directive is provided to the [`strptime()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime "datetime.datetime.strptime") method, an aware [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") object will be produced. The `tzinfo` of the result will be set to a [`timezone`](https://docs.python.org/3/library/datetime.html#datetime.timezone "datetime.timezone") instance.
+  7. When used with the [`strptime()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime "datetime.datetime.strptime") method, `%U` and `%W` are only used in calculations when the day of the week and the calendar year (`%Y`) are specified.
+  8. Similar to `%U` and `%W`, `%V` is only used in calculations when the day of the week and the ISO year (`%G`) are specified in a [`strptime()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime "datetime.datetime.strptime") format string. Also note that `%G` and `%Y` are not interchangeable.
+  9. When used with the [`strptime()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime "datetime.datetime.strptime") method, the leading zero is optional for formats `%d`, `%m`, `%H`, `%I`, `%M`, `%S`, `%j`, `%U`, `%W`, and `%V`. Format `%y` does require a leading zero.
+  10. When parsing a month and day using [`strptime()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime "datetime.datetime.strptime"), always include a year in the format. If the value you need to parse lacks a year, append an explicit dummy leap year. Otherwise your code will raise an exception when it encounters leap day because the default year used by the parser is not a leap year. Users run into this bug every four years…
+>>>```
+>>> month_day = "02/29"
+>>> datetime.strptime(f"{month_day};1984", "%m/%d;%Y") # No leap year bug.
+datetime.datetime(1984, 2, 29, 0, 0)

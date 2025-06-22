@@ -1,0 +1,46 @@
+Title: HTTP Connections and Proxy Responses in Python 3
+URL: https://docs.python.org/3/library/http.client.html
+Summary: This section outlines changes and methods related to HTTP connections in Python's http.client library. Notably, version 3.12 updates the HTTP CONNECT tunneling to use HTTP/1.1, requiring mandatory `Host:` headers. The method HTTPConnection.get_proxy_response_headers() retrieves response headers from the proxy server, while HTTPConnection.connect() establishes a connection to the server upon request execution.
+---
+
+```
+
+Added in version 3.2.
+Changed in version 3.12: HTTP CONNECT tunnelling requests use protocol HTTP/1.1, upgraded from protocol HTTP/1.0. `Host:` HTTP headers are mandatory for HTTP/1.1, so one will be automatically generated and transmitted if not provided in the headers argument. 
+
+HTTPConnection.get_proxy_response_headers()[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.get_proxy_response_headers "Link to this definition")
+    
+Returns a dictionary with the headers of the response received from the proxy server to the CONNECT request.
+If the CONNECT request was not sent, the method returns `None`.
+Added in version 3.12. 
+
+HTTPConnection.connect()[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.connect "Link to this definition")
+    
+Connect to the server specified when the object was created. By default, this is called automatically when making a request if the client does not already have a connection.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `http.client.connect` with arguments `self`, `host`, `port`. 
+
+HTTPConnection.close()[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.close "Link to this definition")
+    
+Close the connection to the server. 
+
+HTTPConnection.blocksize[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.blocksize "Link to this definition")
+    
+Buffer size in bytes for sending a file-like message body.
+Added in version 3.7.
+As an alternative to using the [`request()`](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.request "http.client.HTTPConnection.request") method described above, you can also send your request step by step, by using the four functions below. 
+
+HTTPConnection.putrequest(_method_ , _url_ , _skip_host =False_, _skip_accept_encoding =False_)[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.putrequest "Link to this definition")
+    
+This should be the first call after the connection to the server has been made. It sends a line to the server consisting of the _method_ string, the _url_ string, and the HTTP version (`HTTP/1.1`). To disable automatic sending of `Host:` or `Accept-Encoding:` headers (for example to accept additional content encodings), specify _skip_host_ or _skip_accept_encoding_ with non-False values. 
+
+HTTPConnection.putheader(_header_ , _argument_[, _..._])[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.putheader "Link to this definition")
+    
+Send an [**RFC 822**](https://datatracker.ietf.org/doc/html/rfc822.html)-style header to the server. It sends a line to the server consisting of the header, a colon and a space, and the first argument. If more arguments are given, continuation lines are sent, each consisting of a tab and an argument. 
+
+HTTPConnection.endheaders(_message_body =None_, _*_ , _encode_chunked =False_)[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.endheaders "Link to this definition")
+    
+Send a blank line to the server, signalling the end of the headers. The optional _message_body_ argument can be used to pass a message body associated with the request.
+If _encode_chunked_ is `True`, the result of each iteration of _message_body_ will be chunk-encoded as specified in [**RFC 7230**](https://datatracker.ietf.org/doc/html/rfc7230.html), Section 3.3.1. How the data is encoded is dependent on the type of _message_body_. If _message_body_ implements the [buffer interface](https://docs.python.org/3/c-api/buffer.html#bufferobjects) the encoding will result in a single chunk. If _message_body_ is a [`collections.abc.Iterable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable "collections.abc.Iterable"), each iteration of _message_body_ will result in a chunk. If _message_body_ is a [file object](https://docs.python.org/3/glossary.html#term-file-object), each call to `.read()` will result in a chunk. The method automatically signals the end of the chunk-encoded data immediately after _message_body_.
+Note
+Due to the chunked encoding specification, empty chunks yielded by an iterator body will be ignored by the chunk-encoder. This is to avoid premature termination of the read of the request by the target server due to malformed encoding.
+Changed in version 3.6: Added chunked encoding support and the _encode_chunked_ parameter.

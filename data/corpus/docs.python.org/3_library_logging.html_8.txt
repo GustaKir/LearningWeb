@@ -1,0 +1,32 @@
+Title: Logging Handler Methods
+URL: https://docs.python.org/3/library/logging.html
+Summary: The chunk describes two methods of logging handlers: `handle()` and `handleError()`. The `handle()` method conditionally emits logging records based on attached filters and manages I/O thread lock during emission. The `handleError()` method is invoked to deal with exceptions during the emission process, with a focus on silently ignoring errors unless the `raiseExceptions` attribute is set to `True`.
+---
+
+handle(_record_)[¶](https://docs.python.org/3/library/logging.html#logging.Handler.handle "Link to this definition")
+    
+Conditionally emits the specified logging record, depending on filters which may have been added to the handler. Wraps the actual emission of the record with acquisition/release of the I/O thread lock. 
+
+handleError(_record_)[¶](https://docs.python.org/3/library/logging.html#logging.Handler.handleError "Link to this definition")
+    
+This method should be called from handlers when an exception is encountered during an [`emit()`](https://docs.python.org/3/library/logging.html#logging.Handler.emit "logging.Handler.emit") call. If the module-level attribute [`raiseExceptions`](https://docs.python.org/3/library/logging.html#logging.raiseExceptions "logging.raiseExceptions") is `False`, exceptions get silently ignored. This is what is mostly wanted for a logging system - most users will not care about errors in the logging system, they are more interested in application errors. You could, however, replace this with a custom handler if you wish. The specified record is the one which was being processed when the exception occurred. (The default value of [`raiseExceptions`](https://docs.python.org/3/library/logging.html#logging.raiseExceptions "logging.raiseExceptions") is `True`, as that is more useful during development). 
+
+format(_record_)[¶](https://docs.python.org/3/library/logging.html#logging.Handler.format "Link to this definition")
+    
+Do formatting for a record - if a formatter is set, use it. Otherwise, use the default formatter for the module. 
+
+emit(_record_)[¶](https://docs.python.org/3/library/logging.html#logging.Handler.emit "Link to this definition")
+    
+Do whatever it takes to actually log the specified logging record. This version is intended to be implemented by subclasses and so raises a [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError").
+Warning
+This method is called after a handler-level lock is acquired, which is released after this method returns. When you override this method, note that you should be careful when calling anything that invokes other parts of the logging API which might do locking, because that might result in a deadlock. Specifically:
+  * Logging configuration APIs acquire the module-level lock, and then individual handler-level locks as those handlers are configured.
+  * Many logging APIs lock the module-level lock. If such an API is called from this method, it could cause a deadlock if a configuration call is made on another thread, because that thread will try to acquire the module-level lock _before_ the handler-level lock, whereas this thread tries to acquire the module-level lock _after_ the handler-level lock (because in this method, the handler-level lock has already been acquired).
+
+
+For a list of handlers included as standard, see [`logging.handlers`](https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers "logging.handlers: Handlers for the logging module.").
+## Formatter Objects[¶](https://docs.python.org/3/library/logging.html#formatter-objects "Link to this heading") 
+
+_class_ logging.Formatter(_fmt =None_, _datefmt =None_, _style ='%'_, _validate =True_, _*_ , _defaults =None_)[¶](https://docs.python.org/3/library/logging.html#logging.Formatter "Link to this definition")
+    
+Responsible for converting a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") to an output string to be interpreted by a human or external system.

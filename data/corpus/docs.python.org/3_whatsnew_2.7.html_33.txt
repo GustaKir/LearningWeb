@@ -1,0 +1,35 @@
+Title: Enhancements to unittest in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: `unittest.main()` now allows an optional `exit` argument to prevent calling `sys.exit()`, beneficial for interactive use. Additionally, `TestResult` introduces new methods `startTestRun()` and `stopTestRun()` for better test run management.
+---
+
+[`unittest.main()`](https://docs.python.org/3/library/unittest.html#unittest.main "unittest.main") now takes an optional `exit` argument. If false, [`main()`](https://docs.python.org/3/library/unittest.html#unittest.main "unittest.main") doesn’t call [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit"), allowing [`main()`](https://docs.python.org/3/library/unittest.html#unittest.main "unittest.main") to be used from the interactive interpreter. (Contributed by J. Pablo Fernández; [bpo-3379](https://bugs.python.org/issue?@action=redirect&bpo=3379).)
+[`TestResult`](https://docs.python.org/3/library/unittest.html#unittest.TestResult "unittest.TestResult") has new [`startTestRun()`](https://docs.python.org/3/library/unittest.html#unittest.TestResult.startTestRun "unittest.TestResult.startTestRun") and [`stopTestRun()`](https://docs.python.org/3/library/unittest.html#unittest.TestResult.stopTestRun "unittest.TestResult.stopTestRun") methods that are called immediately before and after a test run. (Contributed by Robert Collins; [bpo-5728](https://bugs.python.org/issue?@action=redirect&bpo=5728).)
+With all these changes, the `unittest.py` was becoming awkwardly large, so the module was turned into a package and the code split into several files (by Benjamin Peterson). This doesn’t affect how the module is imported or used.
+See also 
+
+<https://web.archive.org/web/20210619163128/http://www.voidspace.org.uk/python/articles/unittest2.shtml>
+    
+Describes the new features, how to use them, and the rationale for various design decisions. (By Michael Foord.)
+### Updated module: ElementTree 1.3[¶](https://docs.python.org/3/whatsnew/2.7.html#updated-module-elementtree-1-3 "Link to this heading")
+The version of the ElementTree library included with Python was updated to version 1.3. Some of the new features are:
+  * The various parsing functions now take a _parser_ keyword argument giving an [`XMLParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser "xml.etree.ElementTree.XMLParser") instance that will be used. This makes it possible to override the file’s internal encoding:
+```
+p = ET.XMLParser(encoding='utf-8')
+t = ET.XML("""<root/>""", parser=p)
+
+```
+
+Errors in parsing XML now raise a [`ParseError`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.ParseError "xml.etree.ElementTree.ParseError") exception, whose instances have a `position` attribute containing a (_line_ , _column_) tuple giving the location of the problem.
+  * ElementTree’s code for converting trees to a string has been significantly reworked, making it roughly twice as fast in many cases. The [`ElementTree.write()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.ElementTree.write "xml.etree.ElementTree.ElementTree.write") and `Element.write()` methods now have a _method_ parameter that can be “xml” (the default), “html”, or “text”. HTML mode will output empty elements as `<empty></empty>` instead of `<empty/>`, and text mode will skip over elements and only output the text chunks. If you set the [`tag`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.tag "xml.etree.ElementTree.Element.tag") attribute of an element to `None` but leave its children in place, the element will be omitted when the tree is written out, so you don’t need to do more extensive rearrangement to remove a single element.
+Namespace handling has also been improved. All `xmlns:<whatever>` declarations are now output on the root element, not scattered throughout the resulting XML. You can set the default namespace for a tree by setting the `default_namespace` attribute and can register new prefixes with [`register_namespace()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.register_namespace "xml.etree.ElementTree.register_namespace"). In XML mode, you can use the true/false _xml_declaration_ parameter to suppress the XML declaration.
+  * New [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") method: [`extend()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.extend "xml.etree.ElementTree.Element.extend") appends the items from a sequence to the element’s children. Elements themselves behave like sequences, so it’s easy to move children from one element to another:
+```
+fromxml.etreeimport ElementTree as ET
+t = ET.XML("""<list>
+ <item>1</item> <item>2</item> <item>3</item>
+</list>""")
+new = ET.XML('<root/>')
+new.extend(t)
+# Outputs <root><item>1</item>...</root>
+print ET.tostring(new)

@@ -1,0 +1,57 @@
+Title: Streamlit Download Button Widget
+URL: https://docs.streamlit.io/develop/api-reference/widgets/st.download_button
+Summary: The download button widget in Streamlit allows users to download files with customizable options. Parameters include a unique key for identification, an optional tooltip for guidance, and an on-click action that determines the button's behavior upon interaction. The button can trigger a rerun or ignore the user interaction, enhancing user experience.
+---
+
+For more information about MIME types, see <https://www.iana.org/assignments/media-types/media-types.xhtml>.  
+key (str or int) |  An optional string or integer to use as the unique key for the widget. If this is omitted, a key will be generated for the widget based on its content. No two widgets may have the same key.  
+help (str or None) |  A tooltip that gets displayed when the button is hovered over. If this is `None` (default), no tooltip is displayed. The tooltip can optionally contain GitHub-flavored Markdown, including the Markdown directives described in the `body` parameter of `st.markdown`.  
+on_click (callable, "rerun", "ignore", or None) |  How the button should respond to user interaction. This controls whether or not the button triggers a rerun and if a callback function is called. This can be one of the following values:
+  * `"rerun"` (default): The user downloads the file and the app reruns. No callback function is called.
+  * `"ignore"`: The user downloads the file and the app doesn't rerun. No callback function is called.
+  * A `callable`: The user downloads the file and app reruns. The callable is called before the rest of the app.
+  * `None`: This is same as `on_click="rerun"`. This value exists for backwards compatibility and shouldn't be used.
+
+  
+args (tuple) |  An optional tuple of args to pass to the callback.  
+kwargs (dict) |  An optional dict of kwargs to pass to the callback.  
+type ("primary", "secondary", or "tertiary") |  An optional string that specifies the button type. This can be one of the following:
+  * `"primary"`: The button's background is the app's primary color for additional emphasis.
+  * `"secondary"` (default): The button's background coordinates with the app's background color for normal emphasis.
+  * `"tertiary"`: The button is plain text without a border or background for subtly.
+
+  
+icon (str or None) |  An optional emoji or icon to display next to the button label. If `icon` is `None` (default), no icon is displayed. If `icon` is a string, the following options are valid:
+  * A single-character emoji. For example, you can set `icon="🚨"` or `icon="🔥"`. Emoji short codes are not supported.
+  * An icon from the Material Symbols library (rounded style) in the format `":material/icon_name:"` where "icon_name" is the name of the icon in snake case. For example, `icon=":material/thumb_up:"` will display the Thumb Up icon. Find additional icons in the [Material Symbols ](https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Rounded) font library.
+
+  
+disabled (bool) |  An optional boolean that disables the download button if set to `True`. The default is `False`.  
+use_container_width (bool) |  Whether to expand the button's width to fill its parent container. If `use_container_width` is `False` (default), Streamlit sizes the button to fit its contents. If `use_container_width` is `True`, the width of the button matches its parent container. In both cases, if the contents of the button are wider than the parent container, the contents will line wrap.  
+Returns  
+(bool) | True if the button was clicked on the last run of the app, False otherwise.  
+#### Examples
+**Example 1: Download a dataframe as a CSV file**
+When working with a large dataframe, it's recommended to fetch your data with a cached function. When working with a download button, it's similarly recommended to convert your data into a downloadable format with a cached function. Caching ensures that the app reruns effeciently.
+```
+import streamlit as st
+import pandas as pd
+import numpy as np
+@st.cache_data
+def get_data():
+  df = pd.DataFrame(
+    np.random.randn(50, 20), columns=("col %d" % i for i in range(20))
+  )
+  return df
+@st.cache_data
+def convert_for_download(df):
+  return df.to_csv().encode("utf-8")
+df = get_data()
+csv = convert_for_download(df)
+st.download_button(
+  label="Download CSV",
+  data=csv,
+  file_name="data.csv",
+  mime="text/csv",
+  icon=":material/download:",
+)

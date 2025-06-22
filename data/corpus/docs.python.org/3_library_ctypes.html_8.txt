@@ -1,0 +1,90 @@
+Title: ctypes: Passing Structures and Unions in Python
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: The `ctypes` library does not support passing unions or structures with bit-fields by value to functions and recommends passing them by pointer instead. Additionally, structure and union fields are aligned as per C compiler defaults, but this behavior can be overridden using the `_pack_` class attribute to specify maximum alignment.
+---
+
+```
+
+Warning
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") does not support passing unions or structures with bit-fields to functions by value. While this may work on 32-bit x86, it’s not guaranteed by the library to work in the general case. Unions and structures with bit-fields should always be passed to functions by pointer.
+### Structure/union alignment and byte order[¶](https://docs.python.org/3/library/ctypes.html#structure-union-alignment-and-byte-order "Link to this heading")
+By default, Structure and Union fields are aligned in the same way the C compiler does it. It is possible to override this behavior by specifying a [`_pack_`](https://docs.python.org/3/library/ctypes.html#ctypes.Structure._pack_ "ctypes.Structure._pack_") class attribute in the subclass definition. This must be set to a positive integer and specifies the maximum alignment for the fields. This is what `#pragma pack(n)` also does in MSVC. It is also possible to set a minimum alignment for how the subclass itself is packed in the same way `#pragma align(n)` works in MSVC. This can be achieved by specifying a [`_align_`](https://docs.python.org/3/library/ctypes.html#ctypes.Structure._align_ "ctypes.Structure._align_") class attribute in the subclass definition.
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") uses the native byte order for Structures and Unions. To build structures with non-native byte order, you can use one of the [`BigEndianStructure`](https://docs.python.org/3/library/ctypes.html#ctypes.BigEndianStructure "ctypes.BigEndianStructure"), [`LittleEndianStructure`](https://docs.python.org/3/library/ctypes.html#ctypes.LittleEndianStructure "ctypes.LittleEndianStructure"), [`BigEndianUnion`](https://docs.python.org/3/library/ctypes.html#ctypes.BigEndianUnion "ctypes.BigEndianUnion"), and [`LittleEndianUnion`](https://docs.python.org/3/library/ctypes.html#ctypes.LittleEndianUnion "ctypes.LittleEndianUnion") base classes. These classes cannot contain pointer fields.
+### Bit fields in structures and unions[¶](https://docs.python.org/3/library/ctypes.html#bit-fields-in-structures-and-unions "Link to this heading")
+It is possible to create structures and unions containing bit fields. Bit fields are only possible for integer fields, the bit width is specified as the third item in the [`_fields_`](https://docs.python.org/3/library/ctypes.html#ctypes.Structure._fields_ "ctypes.Structure._fields_") tuples:
+>>>```
+>>> classInt(Structure):
+...   _fields_ = [("first_16", c_int, 16),
+...         ("second_16", c_int, 16)]
+...
+>>> print(Int.first_16)
+<Field type=c_long, ofs=0:0, bits=16>
+>>> print(Int.second_16)
+<Field type=c_long, ofs=0:16, bits=16>
+>>>
+
+```
+
+### Arrays[¶](https://docs.python.org/3/library/ctypes.html#arrays "Link to this heading")
+Arrays are sequences, containing a fixed number of instances of the same type.
+The recommended way to create array types is by multiplying a data type with a positive integer:
+```
+TenPointsArrayType = POINT * 10
+
+```
+
+Here is an example of a somewhat artificial data type, a structure containing 4 POINTs among other stuff:
+>>>```
+>>> fromctypesimport *
+>>> classPOINT(Structure):
+...   _fields_ = ("x", c_int), ("y", c_int)
+...
+>>> classMyStruct(Structure):
+...   _fields_ = [("a", c_int),
+...         ("b", c_float),
+...         ("point_array", POINT * 4)]
+>>>
+>>> print(len(MyStruct().point_array))
+4
+>>>
+
+```
+
+Instances are created in the usual way, by calling the class:
+```
+arr = TenPointsArrayType()
+for pt in arr:
+  print(pt.x, pt.y)
+
+```
+
+The above code print a series of `0 0` lines, because the array contents is initialized to zeros.
+Initializers of the correct type can also be specified:
+>>>```
+>>> fromctypesimport *
+>>> TenIntegers = c_int * 10
+>>> ii = TenIntegers(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+>>> print(ii)
+<c_long_Array_10 object at 0x...>
+>>> for i in ii: print(i, end=" ")
+...
+1 2 3 4 5 6 7 8 9 10
+>>>
+
+```
+
+### Pointers[¶](https://docs.python.org/3/library/ctypes.html#pointers "Link to this heading")
+Pointer instances are created by calling the [`pointer()`](https://docs.python.org/3/library/ctypes.html#ctypes.pointer "ctypes.pointer") function on a [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") type:
+>>>```
+>>> fromctypesimport *
+>>> i = c_int(42)
+>>> pi = pointer(i)
+>>>
+
+```
+
+Pointer instances have a [`contents`](https://docs.python.org/3/library/ctypes.html#ctypes._Pointer.contents "ctypes._Pointer.contents") attribute which returns the object to which the pointer points, the `i` object above:
+>>>```
+>>> pi.contents
+c_long(42)
+>>>

@@ -1,0 +1,80 @@
+Title: Streamlit Cache Resource Parameters
+URL: https://docs.streamlit.io/develop/api-reference/caching-and-state/st.cache_resource
+Summary: This document section describes parameters for the Streamlit `st.cache_resource` function, including `max_entries` for cache size management, `show_spinner` for UI feedback during cache misses, and `validate` for optional data validation on access. It notes the removal of widget replay functionality in version 1.38.
+---
+
+max_entries (int or None) |  The maximum number of entries to keep in the cache, or None for an unbounded cache. When a new entry is added to a full cache, the oldest cached entry will be removed. Defaults to None.  
+show_spinner (bool or str) |  Enable the spinner. Default is True to show a spinner when there is a "cache miss" and the cached resource is being created. If string, value of show_spinner param will be used for spinner text.  
+validate (callable or None) |  An optional validation function for cached data. `validate` is called each time the cached value is accessed. It receives the cached value as its only parameter and it must return a boolean. If `validate` returns False, the current cached value is discarded, and the decorated function is called to compute a new value. This is useful e.g. to check the health of database connections.  
+experimental_allow_widgets (bool) |  _delete_ The cached widget replay functionality was removed in 1.38. Please remove the `experimental_allow_widgets` parameter from your caching decorators. This parameter will be removed in a future version. Allow widgets to be used in the cached function. Defaults to False.  
+hash_funcs (dict or None) |  Mapping of types or fully qualified names to hash functions. This is used to override the behavior of the hasher inside Streamlit's caching mechanism: when the hasher encounters an object, it will first check to see if its type matches a key in this dict and, if so, will use the provided function to generate a hash for it. See below for an example of how this can be used.  
+#### Example
+```
+import streamlit as st
+@st.cache_resource
+def get_database_session(url):
+  # Create a database session object that points to the URL.
+  return session
+s1 = get_database_session(SESSION_URL_1)
+# Actually executes the function, since this is the first time it was
+# encountered.
+s2 = get_database_session(SESSION_URL_1)
+# Does not execute the function. Instead, returns its previously computed
+# value. This means that now the connection object in s1 is the same as in s2.
+s3 = get_database_session(SESSION_URL_2)
+# This is a different URL, so the function executes.
+```
+
+Copy
+By default, all parameters to a cache_resource function must be hashable. Any parameter whose name begins with `_` will not be hashed. You can use this as an "escape hatch" for parameters that are not hashable:
+```
+import streamlit as st
+@st.cache_resource
+def get_database_session(_sessionmaker, url):
+  # Create a database connection object that points to the URL.
+  return connection
+s1 = get_database_session(create_sessionmaker(), DATA_URL_1)
+# Actually executes the function, since this is the first time it was
+# encountered.
+s2 = get_database_session(create_sessionmaker(), DATA_URL_1)
+# Does not execute the function. Instead, returns its previously computed
+# value - even though the _sessionmaker parameter was different
+# in both calls.
+```
+
+Copy
+A cache_resource function's cache can be procedurally cleared:
+```
+import streamlit as st
+@st.cache_resource
+def get_database_session(_sessionmaker, url):
+  # Create a database connection object that points to the URL.
+  return connection
+fetch_and_clean_data.clear(_sessionmaker, "https://streamlit.io/")
+# Clear the cached entry for the arguments provided.
+get_database_session.clear()
+# Clear all cached entries for this function.
+```
+
+Copy
+To override the default hashing behavior, pass a custom hash function. You can do that by mapping a type (e.g. `Person`) to a hash function (`str`) like this:
+```
+import streamlit as st
+from pydantic import BaseModel
+class Person(BaseModel):
+  name: str
+@st.cache_resource(hash_funcs={Person: str})
+def get_person_name(person: Person):
+  return person.name
+```
+
+Copy
+Alternatively, you can map the type's fully-qualified name (e.g. `"__main__.Person"`) to the hash function instead:
+```
+import streamlit as st
+from pydantic import BaseModel
+class Person(BaseModel):
+  name: str
+@st.cache_resource(hash_funcs={"__main__.Person": str})
+def get_person_name(person: Person):
+  return person.name

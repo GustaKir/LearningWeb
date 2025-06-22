@@ -1,0 +1,66 @@
+Title: Improvements to the Random Module in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The `random` module has enhanced its integer methods to produce more uniform distributions. Previously, selections had a slight bias for non-power-of-two ranges. The updated approach makes multiple selections from a range up to the next power of two, ensuring unbiased results for functions like `randrange()`, `randint()`, `choice()`, and `shuffle()`.
+---
+
+### random[¶](https://docs.python.org/3/whatsnew/3.2.html#random "Link to this heading")
+The integer methods in the [`random`](https://docs.python.org/3/library/random.html#module-random "random: Generate pseudo-random numbers with various common distributions.") module now do a better job of producing uniform distributions. Previously, they computed selections with `int(n*random())` which had a slight bias whenever _n_ was not a power of two. Now, multiple selections are made from a range up to the next power of two and a selection is kept only when it falls within the range `0 <= x < n`. The functions and methods affected are [`randrange()`](https://docs.python.org/3/library/random.html#random.randrange "random.randrange"), [`randint()`](https://docs.python.org/3/library/random.html#random.randint "random.randint"), [`choice()`](https://docs.python.org/3/library/random.html#random.choice "random.choice"), [`shuffle()`](https://docs.python.org/3/library/random.html#random.shuffle "random.shuffle") and [`sample()`](https://docs.python.org/3/library/random.html#random.sample "random.sample").
+(Contributed by Raymond Hettinger; [bpo-9025](https://bugs.python.org/issue?@action=redirect&bpo=9025).)
+### poplib[¶](https://docs.python.org/3/whatsnew/3.2.html#poplib "Link to this heading")
+[`POP3_SSL`](https://docs.python.org/3/library/poplib.html#poplib.POP3_SSL "poplib.POP3_SSL") class now accepts a _context_ parameter, which is a [`ssl.SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") object allowing bundling SSL configuration options, certificates and private keys into a single (potentially long-lived) structure.
+(Contributed by Giampaolo Rodolà; [bpo-8807](https://bugs.python.org/issue?@action=redirect&bpo=8807).)
+### asyncore[¶](https://docs.python.org/3/whatsnew/3.2.html#asyncore "Link to this heading")
+`asyncore.dispatcher` now provides a `handle_accepted()` method returning a `(sock, addr)` pair which is called when a connection has actually been established with a new remote endpoint. This is supposed to be used as a replacement for old `handle_accept()` and avoids the user to call `accept()` directly.
+(Contributed by Giampaolo Rodolà; [bpo-6706](https://bugs.python.org/issue?@action=redirect&bpo=6706).)
+### tempfile[¶](https://docs.python.org/3/whatsnew/3.2.html#tempfile "Link to this heading")
+The [`tempfile`](https://docs.python.org/3/library/tempfile.html#module-tempfile "tempfile: Generate temporary files and directories.") module has a new context manager, [`TemporaryDirectory`](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryDirectory "tempfile.TemporaryDirectory") which provides easy deterministic cleanup of temporary directories:
+```
+with tempfile.TemporaryDirectory() as tmpdirname:
+  print('created temporary dir:', tmpdirname)
+
+```
+
+(Contributed by Neil Schemenauer and Nick Coghlan; [bpo-5178](https://bugs.python.org/issue?@action=redirect&bpo=5178).)
+### inspect[¶](https://docs.python.org/3/whatsnew/3.2.html#inspect "Link to this heading")
+  * The [`inspect`](https://docs.python.org/3/library/inspect.html#module-inspect "inspect: Extract information and source code from live objects.") module has a new function [`getgeneratorstate()`](https://docs.python.org/3/library/inspect.html#inspect.getgeneratorstate "inspect.getgeneratorstate") to easily identify the current state of a generator-iterator:
+>>>```
+>>> frominspectimport getgeneratorstate
+>>> defgen():
+...   yield 'demo'
+...
+>>> g = gen()
+>>> getgeneratorstate(g)
+'GEN_CREATED'
+>>> next(g)
+'demo'
+>>> getgeneratorstate(g)
+'GEN_SUSPENDED'
+>>> next(g, None)
+>>> getgeneratorstate(g)
+'GEN_CLOSED'
+
+```
+
+(Contributed by Rodolpho Eckhardt and Nick Coghlan, [bpo-10220](https://bugs.python.org/issue?@action=redirect&bpo=10220).)
+  * To support lookups without the possibility of activating a dynamic attribute, the [`inspect`](https://docs.python.org/3/library/inspect.html#module-inspect "inspect: Extract information and source code from live objects.") module has a new function, [`getattr_static()`](https://docs.python.org/3/library/inspect.html#inspect.getattr_static "inspect.getattr_static"). Unlike [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr"), this is a true read-only search, guaranteed not to change state while it is searching:
+>>>```
+>>> classA:
+...   @property
+...   deff(self):
+...     print('Running')
+...     return 10
+...
+>>> a = A()
+>>> getattr(a, 'f')
+Running
+10
+>>> inspect.getattr_static(a, 'f')
+<property object at 0x1022bd788>
+
+```
+
+
+
+> (Contributed by Michael Foord.)
+### pydoc[¶](https://docs.python.org/3/whatsnew/3.2.html#pydoc "Link to this heading")
+The [`pydoc`](https://docs.python.org/3/library/pydoc.html#module-pydoc "pydoc: Documentation generator and online help system.") module now provides a much-improved web server interface, as well as a new command-line option `-b` to automatically open a browser window to display that server:

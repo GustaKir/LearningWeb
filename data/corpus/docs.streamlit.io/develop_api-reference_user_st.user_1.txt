@@ -1,0 +1,86 @@
+Title: st.experimental_user - Streamlit API Reference
+URL: https://docs.streamlit.io/develop/api-reference/user/st.user
+Summary: The 'st.experimental_user' is a read-only, dict-like object designed to access information about the current user in a Streamlit app. It is marked as an experimental feature and may be subject to changes. The functionality of 'st.experimental_user' is influenced by the host platform, falling back to a local configuration if not properly set up.
+---
+
+_priority_high_
+#### Important
+This is an experimental feature. Experimental features and their APIs may change or be removed at any time. To learn more, click [here](https://docs.streamlit.io/develop/quick-reference/prerelease#experimental-features).
+## [](https://docs.streamlit.io/develop/api-reference/user/st.user#stexperimental_user)st.experimental_user
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+A read-only, dict-like object for accessing information about the current user.
+`st.experimental_user` is dependent on the host platform running your Streamlit app. If the host platform has not configured the function, it will behave as in a locally running app.
+When authentication is configured in `secrets.toml`, Streamlit will parse the OpenID Connect (OIDC) identity token and copy the attributes to `st.experimental_user`. Check your provider's documentation for their available attributes (known as claims).
+When authentication is not configured, `st.experimental_user` has no attributes.
+You can access values via key or attribute notation. For example, use `st.experimental_user["email"]` or `st.experimental_user.email` to access the `email` attribute.
+Important
+Identity tokens include an issuance and expiration time. Streamlit does not implicitly check these. If you want to automatically expire a user's authentication, check these values manually and programmatically log out your user (`st.logout()`) when needed.
+Class description[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/user_info.py#L370 "View st.experimental_user source code on GitHub")  
+---  
+st.experimental_user()  
+Methods  
+[to_dict](https://docs.streamlit.io/develop/api-reference/user/st.user#experimental_userto_dict)() |  Get user info as a dictionary.  
+Attributes  
+is_logged_in (bool) |  Whether a user is logged in. For a locally running app, this attribute is only available when authentication (`st.login()`) is configured in `secrets.toml`. Otherwise, it does not exist.  
+#### Examples
+**Example 1: Google's identity token**
+If you configure a basic Google OIDC connection as shown in Example 1 of `st.login()`, the following data is available in `st.experimental_user`. Streamlit adds the `is_logged_in` attribute. Additional attributes may be available depending on the configuration of the user's Google account. For more information about Google's identity tokens, see [Obtain user information from the ID token](https://developers.google.com/identity/openid-connect/openid-connect#obtainuserinfo) in Google's docs.
+Your app code:
+```
+import streamlit as st
+if st.experimental_user.is_logged_in:
+  st.write(st.experimental_user)
+```
+
+Copy
+Displayed data when a user is logged in:
+```
+{
+  "is_logged_in":true
+  "iss":"https://accounts.google.com"
+  "azp":"{client_id}.apps.googleusercontent.com"
+  "aud":"{client_id}.apps.googleusercontent.com"
+  "sub":"{unique_user_id}"
+  "email":"{user}@gmail.com"
+  "email_verified":true
+  "at_hash":"{access_token_hash}"
+  "nonce":"{nonce_string}"
+  "name":"{full_name}"
+  "picture":"https://lh3.googleusercontent.com/a/{content_path}"
+  "given_name":"{given_name}"
+  "family_name":"{family_name}"
+  "iat":{issued_time}
+  "exp":{expiration_time}
+}
+```
+
+Copy
+**Example 2: Microsoft's identity token**
+If you configure a basic Microsoft OIDC connection as shown in Example 2 of `st.login()`, the following data is available in `st.experimental_user`. For more information about Microsoft's identity tokens, see [ID token claims reference](https://learn.microsoft.com/en-us/entra/identity-platform/id-token-claims-reference) in Microsoft's docs.
+Your app code:
+```
+import streamlit as st
+if st.experimental_user.is_logged_in:
+  st.write(st.experimental_user)
+```
+
+Copy
+Displayed data when a user is logged in:
+```
+{
+  "is_logged_in":true
+  "ver":"2.0"
+  "iss":"https://login.microsoftonline.com/{tenant_id}/v2.0"
+  "sub":"{application_user_id}"
+  "aud":"{application_id}"
+  "exp":{expiration_time}
+  "iat":{issued_time}
+  "nbf":{start_time}
+  "name":"{full_name}"
+  "preferred_username":"{username}"
+  "oid":"{user_GUID}"
+  "email":"{email}"
+  "tid":"{tenant_id}"
+  "nonce":"{nonce_string}"
+  "aio":"{opaque_string}"
+}

@@ -1,0 +1,18 @@
+Title: Python 2.0 String Features
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: Python strings remain immutable, with methods returning new strings instead of modifying the original. The old string module is maintained for compatibility, while new methods like `startswith()` and `endswith()` provide improved functionality. The `join()` method also allows concatenation of a sequence of strings.
+---
+
+```
+
+One thing that hasn’t changed, a noteworthy April Fools’ joke notwithstanding, is that Python strings are immutable. Thus, the string methods return new strings, and do not modify the string on which they operate.
+The old [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") module is still around for backwards compatibility, but it mostly acts as a front-end to the new string methods.
+Two methods which have no parallel in pre-2.0 versions, although they did exist in JPython for quite some time, are `startswith()` and `endswith()`. `s.startswith(t)` is equivalent to `s[:len(t)] == t`, while `s.endswith(t)` is equivalent to `s[-len(t):] == t`.
+One other method which deserves special mention is `join()`. The `join()` method of a string receives one parameter, a sequence of strings, and is equivalent to the `string.join()` function from the old [`string`](https://docs.python.org/3/library/string.html#module-string "string: Common string operations.") module, with the arguments reversed. In other words, `s.join(seq)` is equivalent to the old `string.join(seq, s)`.
+## Garbage Collection of Cycles[¶](https://docs.python.org/3/whatsnew/2.0.html#garbage-collection-of-cycles "Link to this heading")
+The C implementation of Python uses reference counting to implement garbage collection. Every Python object maintains a count of the number of references pointing to itself, and adjusts the count as references are created or destroyed. Once the reference count reaches zero, the object is no longer accessible, since you need to have a reference to an object to access it, and if the count is zero, no references exist any longer.
+Reference counting has some pleasant properties: it’s easy to understand and implement, and the resulting implementation is portable, fairly fast, and reacts well with other libraries that implement their own memory handling schemes. The major problem with reference counting is that it sometimes doesn’t realise that objects are no longer accessible, resulting in a memory leak. This happens when there are cycles of references.
+Consider the simplest possible cycle, a class instance which has a reference to itself:
+```
+instance = SomeClass()
+instance.myself = instance

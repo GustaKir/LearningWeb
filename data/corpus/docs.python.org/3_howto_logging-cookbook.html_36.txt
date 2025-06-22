@@ -1,0 +1,132 @@
+Title: Logging Cookbook: Command-Line Interface Example
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section provides an example of using Python's argparse module to create a command-line interface for managing services with logging functionality. It includes commands to start, stop, and restart services with configurable logging levels.
+---
+
+```
+importargparse
+importimportlib
+importlogging
+importos
+importsys
+defmain(args=None):
+  scriptname = os.path.basename(__file__)
+  parser = argparse.ArgumentParser(scriptname)
+  levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+  parser.add_argument('--log-level', default='INFO', choices=levels)
+  subparsers = parser.add_subparsers(dest='command',
+                    help='Available commands:')
+  start_cmd = subparsers.add_parser('start', help='Start a service')
+  start_cmd.add_argument('name', metavar='NAME',
+              help='Name of service to start')
+  stop_cmd = subparsers.add_parser('stop',
+                   help='Stop one or more services')
+  stop_cmd.add_argument('names', metavar='NAME', nargs='+',
+             help='Name of service to stop')
+  restart_cmd = subparsers.add_parser('restart',
+                    help='Restart one or more services')
+  restart_cmd.add_argument('names', metavar='NAME', nargs='+',
+               help='Name of service to restart')
+  options = parser.parse_args()
+  # the code to dispatch commands could all be in this file. For the purposes
+  # of illustration only, we implement each command in a separate module.
+  try:
+    mod = importlib.import_module(options.command)
+    cmd = getattr(mod, 'command')
+  except (ImportError, AttributeError):
+    print('Unable to find the code for command \'%s\'' % options.command)
+    return 1
+  # Could get fancy here and load configuration from file or dictionary
+  logging.basicConfig(level=options.log_level,
+            format='%(levelname)s%(name)s%(message)s')
+  cmd(options)
+if __name__ == '__main__':
+  sys.exit(main())
+
+```
+
+And the `start`, `stop` and `restart` commands can be implemented in separate modules, like so for starting:
+```
+# start.py
+importlogging
+logger = logging.getLogger(__name__)
+defcommand(options):
+  logger.debug('About to start %s', options.name)
+  # actually do the command processing here ...
+  logger.info('Started the \'%s\' service.', options.name)
+
+```
+
+and thus for stopping:
+```
+# stop.py
+importlogging
+logger = logging.getLogger(__name__)
+defcommand(options):
+  n = len(options.names)
+  if n == 1:
+    plural = ''
+    services = '\'%s\'' % options.names[0]
+  else:
+    plural = 's'
+    services = ', '.join('\'%s\'' % name for name in options.names)
+    i = services.rfind(', ')
+    services = services[:i] + ' and ' + services[i + 2:]
+  logger.debug('About to stop %s', services)
+  # actually do the command processing here ...
+  logger.info('Stopped the %s service%s.', services, plural)
+
+```
+
+and similarly for restarting:
+```
+# restart.py
+importlogging
+logger = logging.getLogger(__name__)
+defcommand(options):
+  n = len(options.names)
+  if n == 1:
+    plural = ''
+    services = '\'%s\'' % options.names[0]
+  else:
+    plural = 's'
+    services = ', '.join('\'%s\'' % name for name in options.names)
+    i = services.rfind(', ')
+    services = services[:i] + ' and ' + services[i + 2:]
+  logger.debug('About to restart %s', services)
+  # actually do the command processing here ...
+  logger.info('Restarted the %s service%s.', services, plural)
+
+```
+
+If we run this application with the default log level, we get output like this:
+```
+$ pythonapp.pystartfoo
+INFO start Started the 'foo' service.
+$ pythonapp.pystopfoobar
+INFO stop Stopped the 'foo' and 'bar' services.
+$ pythonapp.pyrestartfoobarbaz
+INFO restart Restarted the 'foo', 'bar' and 'baz' services.
+
+```
+
+The first word is the logging level, and the second word is the module or package name of the place where the event was logged.
+If we change the logging level, then we can change the information sent to the log. For example, if we want more information:
+```
+$ pythonapp.py--log-levelDEBUGstartfoo
+DEBUG start About to start foo
+INFO start Started the 'foo' service.
+$ pythonapp.py--log-levelDEBUGstopfoobar
+DEBUG stop About to stop 'foo' and 'bar'
+INFO stop Stopped the 'foo' and 'bar' services.
+$ pythonapp.py--log-levelDEBUGrestartfoobarbaz
+DEBUG restart About to restart 'foo', 'bar' and 'baz'
+INFO restart Restarted the 'foo', 'bar' and 'baz' services.
+
+```
+
+And if we want less:
+```
+$ pythonapp.py--log-levelWARNINGstartfoo
+$ pythonapp.py--log-levelWARNINGstopfoobar
+$ pythonapp.py--log-levelWARNINGrestartfoobarbaz

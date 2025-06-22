@@ -1,0 +1,24 @@
+Title: Introduction to tzinfo Class in Python's datetime Module
+URL: https://docs.python.org/3/library/datetime.html
+Summary: The `tzinfo` class is an abstract base class for time zone information in Python's datetime module. It should not be instantiated directly; instead, a subclass should be defined to capture specific time zone details. Instances of this subclass can be used with `datetime` and `time` object constructors.
+---
+
+```
+
+## [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") Objects[¶](https://docs.python.org/3/library/datetime.html#tzinfo-objects "Link to this heading") 
+
+_class_ datetime.tzinfo[¶](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "Link to this definition")
+    
+This is an abstract base class, meaning that this class should not be instantiated directly. Define a subclass of [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") to capture information about a particular time zone.
+An instance of (a concrete subclass of) [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") can be passed to the constructors for [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") and [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") objects. The latter objects view their attributes as being in local time, and the [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") object supports methods revealing offset of local time from UTC, the name of the time zone, and DST offset, all relative to a date or time object passed to them.
+You need to derive a concrete subclass, and (at least) supply implementations of the standard [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") methods needed by the [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") methods you use. The `datetime` module provides [`timezone`](https://docs.python.org/3/library/datetime.html#datetime.timezone "datetime.timezone"), a simple concrete subclass of [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") which can represent time zones with fixed offset from UTC such as UTC itself or North American EST and EDT.
+Special requirement for pickling: A [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") subclass must have an [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") method that can be called with no arguments, otherwise it can be pickled but possibly not unpickled again. This is a technical requirement that may be relaxed in the future.
+A concrete subclass of [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") may need to implement the following methods. Exactly which methods are needed depends on the uses made of aware `datetime` objects. If in doubt, simply implement all of them. 
+
+tzinfo.utcoffset(_dt_)[¶](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.utcoffset "Link to this definition")
+    
+Return offset of local time from UTC, as a [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") object that is positive east of UTC. If local time is west of UTC, this should be negative.
+This represents the _total_ offset from UTC; for example, if a [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") object represents both time zone and DST adjustments, [`utcoffset()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.utcoffset "datetime.tzinfo.utcoffset") should return their sum. If the UTC offset isn’t known, return `None`. Else the value returned must be a [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") object strictly between `-timedelta(hours=24)` and `timedelta(hours=24)` (the magnitude of the offset must be less than one day). Most implementations of [`utcoffset()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.utcoffset "datetime.tzinfo.utcoffset") will probably look like one of these two:
+```
+return CONSTANT         # fixed-offset class
+return CONSTANT + self.dst(dt) # daylight-aware class

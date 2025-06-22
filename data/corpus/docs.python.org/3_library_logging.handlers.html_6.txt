@@ -1,0 +1,38 @@
+Title: TimedRotatingFileHandler Class in Python Logging
+URL: https://docs.python.org/3/library/logging.handlers.html
+Summary: The `TimedRotatingFileHandler` class in the Python logging module creates a handler that writes log messages to a file, rotating the file based on time intervals specified by the `when` and `interval` parameters. The handler supports different types of intervals such as seconds, minutes, hours, and days, with an option to define when the rotation occurs.
+---
+
+_class_ logging.handlers.TimedRotatingFileHandler(_filename_ , _when ='h'_, _interval =1_, _backupCount =0_, _encoding =None_, _delay =False_, _utc =False_, _atTime =None_, _errors =None_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler "Link to this definition")
+    
+Returns a new instance of the [`TimedRotatingFileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler "logging.handlers.TimedRotatingFileHandler") class. The specified file is opened and used as the stream for logging. On rotating it also sets the filename suffix. Rotating happens based on the product of _when_ and _interval_.
+You can use the _when_ to specify the type of _interval_. The list of possible values is below. Note that they are not case sensitive.
+Value | Type of interval | If/how _atTime_ is used  
+---|---|---  
+`'S'` | Seconds | Ignored  
+`'M'` | Minutes | Ignored  
+`'H'` | Hours | Ignored  
+`'D'` | Days | Ignored  
+`'W0'-'W6'` | Weekday (0=Monday) | Used to compute initial rollover time  
+`'midnight'` | Roll over at midnight, if _atTime_ not specified, else at time _atTime_ | Used to compute initial rollover time  
+When using weekday-based rotation, specify ‘W0’ for Monday, ‘W1’ for Tuesday, and so on up to ‘W6’ for Sunday. In this case, the value passed for _interval_ isn’t used.
+The system will save old log files by appending extensions to the filename. The extensions are date-and-time based, using the strftime format `%Y-%m-%d_%H-%M-%S` or a leading portion thereof, depending on the rollover interval.
+When computing the next rollover time for the first time (when the handler is created), the last modification time of an existing log file, or else the current time, is used to compute when the next rotation will occur.
+If the _utc_ argument is true, times in UTC will be used; otherwise local time is used.
+If _backupCount_ is nonzero, at most _backupCount_ files will be kept, and if more would be created when rollover occurs, the oldest one is deleted. The deletion logic uses the interval to determine which files to delete, so changing the interval may leave old files lying around.
+If _delay_ is true, then file opening is deferred until the first call to [`emit()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler.emit "logging.handlers.TimedRotatingFileHandler.emit").
+If _atTime_ is not `None`, it must be a `datetime.time` instance which specifies the time of day when rollover occurs, for the cases where rollover is set to happen “at midnight” or “on a particular weekday”. Note that in these cases, the _atTime_ value is effectively used to compute the _initial_ rollover, and subsequent rollovers would be calculated via the normal interval calculation.
+If _errors_ is specified, it’s used to determine how encoding errors are handled.
+Note
+Calculation of the initial rollover time is done when the handler is initialised. Calculation of subsequent rollover times is done only when rollover occurs, and rollover occurs only when emitting output. If this is not kept in mind, it might lead to some confusion. For example, if an interval of “every minute” is set, that does not mean you will always see log files with times (in the filename) separated by a minute; if, during application execution, logging output is generated more frequently than once a minute, _then_ you can expect to see log files with times separated by a minute. If, on the other hand, logging messages are only output once every five minutes (say), then there will be gaps in the file times corresponding to the minutes where no output (and hence no rollover) occurred.
+Changed in version 3.4: _atTime_ parameter was added.
+Changed in version 3.6: As well as string values, [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") objects are also accepted for the _filename_ argument.
+Changed in version 3.9: The _errors_ parameter was added. 
+
+doRollover()[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler.doRollover "Link to this definition")
+    
+Does a rollover, as described above. 
+
+emit(_record_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler.emit "Link to this definition")
+    
+Outputs the record to the file, catering for rollover as described above.

@@ -1,0 +1,42 @@
+Title: Using Caching in Streamlit Apps
+URL: https://docs.streamlit.io/get-started/tutorials/create-an-app
+Summary: This section emphasizes the importance of caching long-running computations in Streamlit using `@st.cache_data`. It also advises inspecting raw data by adding a subheader and printing it to the app for better understanding before further processing.
+---
+
+While these limitations are important to keep in mind, they tend not to be an issue a surprising amount of the time. Those times, this cache is really transformational.
+_star_
+#### Tip
+Whenever you have a long-running computation in your code, consider refactoring it so you can use `@st.cache_data`, if possible. Please read [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching) for more details.
+Now that you know how caching with Streamlit works, let’s get back to the Uber pickup data.
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#inspect-the-raw-data)Inspect the raw data
+It's always a good idea to take a look at the raw data you're working with before you start working with it. Let's add a subheader and a printout of the raw data to the app:
+`st.subheader('Raw data') st.write(data) `
+In the [Basic concepts](https://docs.streamlit.io/get-started/fundamentals/main-concepts) guide you learned that [`st.write`](https://docs.streamlit.io/develop/api-reference/write-magic/st.write) will render almost anything you pass to it. In this case, you're passing in a dataframe and it's rendering as an interactive table.
+[`st.write`](https://docs.streamlit.io/develop/api-reference/write-magic/st.write) tries to do the right thing based on the data type of the input. If it isn't doing what you expect you can use a specialized command like [`st.dataframe`](https://docs.streamlit.io/develop/api-reference/data/st.dataframe) instead. For a full list, see [API reference](https://docs.streamlit.io/develop/api-reference).
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#draw-a-histogram)Draw a histogram
+Now that you've had a chance to take a look at the dataset and observe what's available, let's take things a step further and draw a histogram to see what Uber's busiest hours are in New York City.
+  1. To start, let's add a subheader just below the raw data section:
+`st.subheader('Number of pickups by hour') `
+  2. Use NumPy to generate a histogram that breaks down pickup times binned by hour:
+`hist_values = np.histogram(   data[DATE_COLUMN].dt.hour, bins=24, range=(0,24))[0] `
+  3. Now, let's use Streamlit's [`st.bar_chart()`](https://docs.streamlit.io/develop/api-reference/charts/st.bar_chart) method to draw this histogram.
+`st.bar_chart(hist_values) `
+  4. Save your script. This histogram should show up in your app right away. After a quick review, it looks like the busiest time is 17:00 (5 P.M.).
+
+
+To draw this diagram we used Streamlit's native `bar_chart()` method, but it's important to know that Streamlit supports more complex charting libraries like Altair, Bokeh, Plotly, Matplotlib and more. For a full list, see [supported charting libraries](https://docs.streamlit.io/develop/api-reference/charts).
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#plot-data-on-a-map)Plot data on a map
+Using a histogram with Uber's dataset helped us determine what the busiest times are for pickups, but what if we wanted to figure out where pickups were concentrated throughout the city. While you could use a bar chart to show this data, it wouldn't be easy to interpret unless you were intimately familiar with latitudinal and longitudinal coordinates in the city. To show pickup concentration, let's use Streamlit [`st.map()`](https://docs.streamlit.io/develop/api-reference/charts/st.map) function to overlay the data on a map of New York City.
+  1. Add a subheader for the section:
+`st.subheader('Map of all pickups') `
+  2. Use the `st.map()` function to plot the data:
+`st.map(data) `
+  3. Save your script. The map is fully interactive. Give it a try by panning or zooming in a bit.
+
+
+After drawing your histogram, you determined that the busiest hour for Uber pickups was 17:00. Let's redraw the map to show the concentration of pickups at 17:00.
+  1. Locate the following code snippet:
+`st.subheader('Map of all pickups') st.map(data) `
+  2. Replace it with:
+`hour_to_filter = 17 filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter] st.subheader(f'Map of all pickups at {hour_to_filter}:00') st.map(filtered_data) `
+  3. You should see the data update instantly.

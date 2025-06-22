@@ -1,0 +1,25 @@
+Title: __objclass__ and Descriptors in Python Data Model
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: The `__objclass__` attribute helps specify the defining class of an object, aiding runtime introspection. It is important for callables to indicate the expected type for positional arguments. Additionally, descriptors are explained as objects with ‘binding behavior’, offering a way to manage attribute access in the Python data model.
+---
+
+object.__objclass__[¶](https://docs.python.org/3/reference/datamodel.html#object.__objclass__ "Link to this definition")
+    
+The attribute `__objclass__` is interpreted by the [`inspect`](https://docs.python.org/3/library/inspect.html#module-inspect "inspect: Extract information and source code from live objects.") module as specifying the class where this object was defined (setting this appropriately can assist in runtime introspection of dynamic class attributes). For callables, it may indicate that an instance of the given type (or a subclass) is expected or required as the first positional argument (for example, CPython sets this attribute for unbound methods that are implemented in C).
+#### 3.3.2.3. Invoking Descriptors[¶](https://docs.python.org/3/reference/datamodel.html#invoking-descriptors "Link to this heading")
+In general, a descriptor is an object attribute with “binding behavior”, one whose attribute access has been overridden by methods in the descriptor protocol: [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__"), [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__"), and [`__delete__()`](https://docs.python.org/3/reference/datamodel.html#object.__delete__ "object.__delete__"). If any of those methods are defined for an object, it is said to be a descriptor.
+The default behavior for attribute access is to get, set, or delete the attribute from an object’s dictionary. For instance, `a.x` has a lookup chain starting with `a.__dict__['x']`, then `type(a).__dict__['x']`, and continuing through the base classes of `type(a)` excluding metaclasses.
+However, if the looked-up value is an object defining one of the descriptor methods, then Python may override the default behavior and invoke the descriptor method instead. Where this occurs in the precedence chain depends on which descriptor methods were defined and how they were called.
+The starting point for descriptor invocation is a binding, `a.x`. How the arguments are assembled depends on `a`: 
+
+Direct Call
+    
+The simplest and least common call is when user code directly invokes a descriptor method: `x.__get__(a)`. 
+
+Instance Binding
+    
+If binding to an object instance, `a.x` is transformed into the call: `type(a).__dict__['x'].__get__(a, type(a))`. 
+
+Class Binding
+    
+If binding to a class, `A.x` is transformed into the call: `A.__dict__['x'].__get__(None, A)`.

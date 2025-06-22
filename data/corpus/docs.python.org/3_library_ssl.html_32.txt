@@ -1,0 +1,53 @@
+Title: Creating a Server-Side SSL Socket in Python
+URL: https://docs.python.org/3/library/ssl.html
+Summary: This section explains how to establish a secure connection using SSL in Python. It details the process of accepting a client connection with `accept()` and wrapping the new socket with `SSLContext.wrap_socket()` to create an SSL socket. It also outlines reading data from the connection stream until the client ends the interaction.
+---
+
+```
+
+When a client connects, you’ll call `accept()` on the socket to get the new socket from the other end, and use the context’s [`SSLContext.wrap_socket()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_socket "ssl.SSLContext.wrap_socket") method to create a server-side SSL socket for the connection:
+```
+while True:
+  newsocket, fromaddr = bindsocket.accept()
+  connstream = context.wrap_socket(newsocket, server_side=True)
+  try:
+    deal_with_client(connstream)
+  finally:
+    connstream.shutdown(socket.SHUT_RDWR)
+    connstream.close()
+
+```
+
+Then you’ll read data from the `connstream` and do something with it till you are finished with the client (or the client is finished with you):
+```
+defdeal_with_client(connstream):
+  data = connstream.recv(1024)
+  # empty data means the client is finished with us
+  while data:
+    if not do_something(connstream, data):
+      # we'll assume do_something returns False
+      # when we're finished with client
+      break
+    data = connstream.recv(1024)
+  # finished with client
+
+```
+
+And go back to listening for new client connections (of course, a real server would probably handle each client connection in a separate thread, or put the sockets in [non-blocking mode](https://docs.python.org/3/library/ssl.html#ssl-nonblocking) and use an event loop).
+## Notes on non-blocking sockets[¶](https://docs.python.org/3/library/ssl.html#notes-on-non-blocking-sockets "Link to this heading")
+SSL sockets behave slightly different than regular sockets in non-blocking mode. When working with non-blocking sockets, there are thus several things you need to be aware of:
+  * Most [`SSLSocket`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket "ssl.SSLSocket") methods will raise either [`SSLWantWriteError`](https://docs.python.org/3/library/ssl.html#ssl.SSLWantWriteError "ssl.SSLWantWriteError") or [`SSLWantReadError`](https://docs.python.org/3/library/ssl.html#ssl.SSLWantReadError "ssl.SSLWantReadError") instead of [`BlockingIOError`](https://docs.python.org/3/library/exceptions.html#BlockingIOError "BlockingIOError") if an I/O operation would block. [`SSLWantReadError`](https://docs.python.org/3/library/ssl.html#ssl.SSLWantReadError "ssl.SSLWantReadError") will be raised if a read operation on the underlying socket is necessary, and [`SSLWantWriteError`](https://docs.python.org/3/library/ssl.html#ssl.SSLWantWriteError "ssl.SSLWantWriteError") for a write operation on the underlying socket. Note that attempts to _write_ to an SSL socket may require _reading_ from the underlying socket first, and attempts to _read_ from the SSL socket may require a prior _write_ to the underlying socket.
+Changed in version 3.5: In earlier Python versions, the `SSLSocket.send()` method returned zero instead of raising [`SSLWantWriteError`](https://docs.python.org/3/library/ssl.html#ssl.SSLWantWriteError "ssl.SSLWantWriteError") or [`SSLWantReadError`](https://docs.python.org/3/library/ssl.html#ssl.SSLWantReadError "ssl.SSLWantReadError").
+  * Calling [`select()`](https://docs.python.org/3/library/select.html#select.select "select.select") tells you that the OS-level socket can be read from (or written to), but it does not imply that there is sufficient data at the upper SSL layer. For example, only part of an SSL frame might have arrived. Therefore, you must be ready to handle `SSLSocket.recv()` and `SSLSocket.send()` failures, and retry after another call to [`select()`](https://docs.python.org/3/library/select.html#select.select "select.select").
+  * Conversely, since the SSL layer has its own framing, a SSL socket may still have data available for reading without [`select()`](https://docs.python.org/3/library/select.html#select.select "select.select") being aware of it. Therefore, you should first call `SSLSocket.recv()` to drain any potentially available data, and then only block on a [`select()`](https://docs.python.org/3/library/select.html#select.select "select.select") call if still necessary.
+(of course, similar provisions apply when using other primitives such as [`poll()`](https://docs.python.org/3/library/select.html#select.poll "select.poll"), or those in the [`selectors`](https://docs.python.org/3/library/selectors.html#module-selectors "selectors: High-level I/O multiplexing.") module)
+  * The SSL handshake itself will be non-blocking: the [`SSLSocket.do_handshake()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.do_handshake "ssl.SSLSocket.do_handshake") method has to be retried until it returns successfully. Here is a synopsis using [`select()`](https://docs.python.org/3/library/select.html#select.select "select.select") to wait for the socket’s readiness:
+```
+while True:
+  try:
+    sock.do_handshake()
+    break
+  except ssl.SSLWantReadError:
+    select.select([sock], [], [])
+  except ssl.SSLWantWriteError:
+    select.select([], [sock], [])

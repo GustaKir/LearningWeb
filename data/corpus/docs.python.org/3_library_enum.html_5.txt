@@ -1,0 +1,135 @@
+Title: Python Enum Module Documentation
+URL: https://docs.python.org/3/library/enum.html
+Summary: The note explains that using `auto` with `IntEnum` generates integers starting from 1. It also mentions enhancements in version 3.11 where the `__str__()` method adheres to `int.__str__()` for better constant replacement support. Additionally, `StrEnum` is introduced as a variant of `Enum` where members are strings, allowing for string operations.
+---
+
+```
+
+Note
+Using [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") with [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") results in integers of increasing value, starting with `1`.
+Changed in version 3.11: [`__str__()`](https://docs.python.org/3/reference/datamodel.html#object.__str__ "object.__str__") is now `int.__str__()` to better support the _replacement of existing constants_ use-case. [`__format__()`](https://docs.python.org/3/reference/datamodel.html#object.__format__ "object.__format__") was already `int.__format__()` for that same reason. 
+
+_class_ enum.StrEnum[¶](https://docs.python.org/3/library/enum.html#enum.StrEnum "Link to this definition")
+    
+`StrEnum` is the same as [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum"), but its members are also strings and can be used in most of the same places that a string can be used. The result of any string operation performed on or with a _StrEnum_ member is not part of the enumeration.
+Note
+There are places in the stdlib that check for an exact [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") instead of a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") subclass (i.e. `type(unknown) == str` instead of `isinstance(unknown, str)`), and in those locations you will need to use `str(StrEnum.member)`.
+Note
+Using [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") with [`StrEnum`](https://docs.python.org/3/library/enum.html#enum.StrEnum "enum.StrEnum") results in the lower-cased member name as the value.
+Note
+[`__str__()`](https://docs.python.org/3/reference/datamodel.html#object.__str__ "object.__str__") is `str.__str__()` to better support the _replacement of existing constants_ use-case. [`__format__()`](https://docs.python.org/3/reference/datamodel.html#object.__format__ "object.__format__") is likewise `str.__format__()` for that same reason.
+Added in version 3.11. 
+
+_class_ enum.Flag[¶](https://docs.python.org/3/library/enum.html#enum.Flag "Link to this definition")
+    
+`Flag` is the same as [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum"), but its members support the bitwise operators `&` (_AND_), `|` (_OR_), `^` (_XOR_), and `~` (_INVERT_); the results of those operations are (aliases of) members of the enumeration. 
+
+__contains__(_self_ , _value_)[¶](https://docs.python.org/3/library/enum.html#enum.Flag.__contains__ "Link to this definition")
+    
+Returns _True_ if value is in self:
+>>>```
+>>> fromenumimport Flag, auto
+>>> classColor(Flag):
+...   RED = auto()
+...   GREEN = auto()
+...   BLUE = auto()
+...
+>>> purple = Color.RED | Color.BLUE
+>>> white = Color.RED | Color.GREEN | Color.BLUE
+>>> Color.GREEN in purple
+False
+>>> Color.GREEN in white
+True
+>>> purple in white
+True
+>>> white in purple
+False
+
+```
+
+
+__iter__(self):
+    
+Returns all contained non-alias members:
+>>>```
+>>> list(Color.RED)
+[<Color.RED: 1>]
+>>> list(purple)
+[<Color.RED: 1>, <Color.BLUE: 4>]
+
+```
+
+Added in version 3.11. 
+
+__len__(self):
+    
+Returns number of members in flag:
+>>>```
+>>> len(Color.GREEN)
+1
+>>> len(white)
+3
+
+```
+
+Added in version 3.11. 
+
+__bool__(self):
+    
+Returns _True_ if any members in flag, _False_ otherwise:
+>>>```
+>>> bool(Color.GREEN)
+True
+>>> bool(white)
+True
+>>> black = Color(0)
+>>> bool(black)
+False
+
+```
+
+
+__or__(_self_ , _other_)[¶](https://docs.python.org/3/library/enum.html#enum.Flag.__or__ "Link to this definition")
+    
+Returns current flag binary or’ed with other:
+>>>```
+>>> Color.RED | Color.GREEN
+<Color.RED|GREEN: 3>
+
+```
+
+
+__and__(_self_ , _other_)[¶](https://docs.python.org/3/library/enum.html#enum.Flag.__and__ "Link to this definition")
+    
+Returns current flag binary and’ed with other:
+>>>```
+>>> purple & white
+<Color.RED|BLUE: 5>
+>>> purple & Color.GREEN
+<Color: 0>
+
+```
+
+
+__xor__(_self_ , _other_)[¶](https://docs.python.org/3/library/enum.html#enum.Flag.__xor__ "Link to this definition")
+    
+Returns current flag binary xor’ed with other:
+>>>```
+>>> purple ^ white
+<Color.GREEN: 2>
+>>> purple ^ Color.GREEN
+<Color.RED|GREEN|BLUE: 7>
+
+```
+
+
+__invert__(self):
+    
+Returns all the flags in _type(self)_ that are not in _self_ :
+>>>```
+>>> ~white
+<Color: 0>
+>>> ~purple
+<Color.GREEN: 2>
+>>> ~Color.RED
+<Color.GREEN|BLUE: 6>

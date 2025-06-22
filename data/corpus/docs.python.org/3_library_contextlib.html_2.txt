@@ -1,0 +1,47 @@
+Title: Using Generators with Context Managers in Python
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: The document explains that a decorated function must return a generator-iterator that yields a single value, which can be bound to a variable in a 'with' statement's 'as' clause. Upon yielding, the associated block executes, and after it finishes, the generator resumes. If an exception is raised in the block, it is reraised within the generator, allowing for error handling and cleanup using try-except-finally constructs.
+---
+
+```
+
+The function being decorated must return a [generator](https://docs.python.org/3/glossary.html#term-generator)-iterator when called. This iterator must yield exactly one value, which will be bound to the targets in the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement’s `as` clause, if any.
+At the point where the generator yields, the block nested in the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement is executed. The generator is then resumed after the block is exited. If an unhandled exception occurs in the block, it is reraised inside the generator at the point where the yield occurred. Thus, you can use a [`try`](https://docs.python.org/3/reference/compound_stmts.html#try)…[`except`](https://docs.python.org/3/reference/compound_stmts.html#except)…[`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) statement to trap the error (if any), or ensure that some cleanup takes place. If an exception is trapped merely in order to log it or to perform some action (rather than to suppress it entirely), the generator must reraise that exception. Otherwise the generator context manager will indicate to the `with` statement that the exception has been handled, and execution will resume with the statement immediately following the `with` statement.
+[`contextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager "contextlib.contextmanager") uses [`ContextDecorator`](https://docs.python.org/3/library/contextlib.html#contextlib.ContextDecorator "contextlib.ContextDecorator") so the context managers it creates can be used as decorators as well as in [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statements. When used as a decorator, a new generator instance is implicitly created on each function call (this allows the otherwise “one-shot” context managers created by [`contextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager "contextlib.contextmanager") to meet the requirement that context managers support multiple invocations in order to be used as decorators).
+Changed in version 3.2: Use of [`ContextDecorator`](https://docs.python.org/3/library/contextlib.html#contextlib.ContextDecorator "contextlib.ContextDecorator"). 
+
+@contextlib.asynccontextmanager[¶](https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager "Link to this definition")
+    
+Similar to [`contextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager "contextlib.contextmanager"), but creates an [asynchronous context manager](https://docs.python.org/3/reference/datamodel.html#async-context-managers).
+This function is a [decorator](https://docs.python.org/3/glossary.html#term-decorator) that can be used to define a factory function for [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) statement asynchronous context managers, without needing to create a class or separate [`__aenter__()`](https://docs.python.org/3/reference/datamodel.html#object.__aenter__ "object.__aenter__") and [`__aexit__()`](https://docs.python.org/3/reference/datamodel.html#object.__aexit__ "object.__aexit__") methods. It must be applied to an [asynchronous generator](https://docs.python.org/3/glossary.html#term-asynchronous-generator) function.
+A simple example:
+```
+fromcontextlibimport asynccontextmanager
+@asynccontextmanager
+async defget_connection():
+  conn = await acquire_db_connection()
+  try:
+    yield conn
+  finally:
+    await release_db_connection(conn)
+async defget_all_users():
+  async with get_connection() as conn:
+    return conn.query('SELECT ...')
+
+```
+
+Added in version 3.7.
+Context managers defined with [`asynccontextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager "contextlib.asynccontextmanager") can be used either as decorators or with [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) statements:
+```
+importtime
+fromcontextlibimport asynccontextmanager
+@asynccontextmanager
+async deftimeit():
+  now = time.monotonic()
+  try:
+    yield
+  finally:
+    print(f'it took {time.monotonic()-now}s to run')
+@timeit()
+async defmain():
+  # ... async code ...

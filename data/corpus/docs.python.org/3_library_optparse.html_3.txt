@@ -1,0 +1,53 @@
+Title: Differences Between optparse and argparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section compares the behavior of `optparse` and `argparse` in processing command-line options and arguments. It highlights key differences in handling non-option arguments and parameter combinations, such as how specific inputs are interpreted regarding required values for options.
+---
+
+```
+
+The most obvious difference is that in the `optparse` version, the non-option arguments are processed separately by the application after the option processing is complete. In the `argparse` version, positional arguments are declared and processed in the same way as the named options.
+However, the `argparse` version will also handle some parameter combination differently from the way the `optparse` version would handle them. For example (amongst other differences):
+  * supplying `-o -v` gives `output="-v"` and `verbose=False` when using `optparse`, but a usage error with `argparse` (complaining that no value has been supplied for `-o/--output`, since `-v` is interpreted as meaning the verbosity flag)
+  * similarly, supplying `-o --` gives `output="--"` and `args=()` when using `optparse`, but a usage error with `argparse` (also complaining that no value has been supplied for `-o/--output`, since `--` is interpreted as terminating the option processing and treating all remaining values as positional arguments)
+  * supplying `-o=foo` gives `output="=foo"` when using `optparse`, but gives `output="foo"` with `argparse` (since `=` is special cased as an alternative separator for option parameter values)
+
+
+Whether these differing behaviors in the `argparse` version are considered desirable or a problem will depend on the specific command line application use case.
+See also
+[click](https://pypi.org/project/click/) is a third party argument processing library (originally based on `optparse`), which allows command line applications to be developed as a set of decorated command implementation functions.
+Other third party libraries, such as [typer](https://pypi.org/project/typer/) or [msgspec-click](https://pypi.org/project/msgspec-click/), allow command line interfaces to be specified in ways that more effectively integrate with static checking of Python type annotations.
+## Introduction[¶](https://docs.python.org/3/library/optparse.html#introduction "Link to this heading")
+[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") is a more convenient, flexible, and powerful library for parsing command-line options than the minimalist [`getopt`](https://docs.python.org/3/library/getopt.html#module-getopt "getopt: Portable parser for command line options; support both short and long option names.") module. [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") uses a more declarative style of command-line parsing: you create an instance of [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser"), populate it with options, and parse the command line. [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") allows users to specify options in the conventional GNU/POSIX syntax, and additionally generates usage and help messages for you.
+Here’s an example of using [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") in a simple script:
+```
+fromoptparseimport OptionParser
+...
+parser = OptionParser()
+parser.add_option("-f", "--file", dest="filename",
+         help="write report to FILE", metavar="FILE")
+parser.add_option("-q", "--quiet",
+         action="store_false", dest="verbose", default=True,
+         help="don't print status messages to stdout")
+(options, args) = parser.parse_args()
+
+```
+
+With these few lines of code, users of your script can now do the “usual thing” on the command-line, for example:
+```
+<yourscript> --file=outfile -q
+
+```
+
+As it parses the command line, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") sets attributes of the `options` object returned by [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args") based on user-supplied command-line values. When [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args") returns from parsing this command line, `options.filename` will be `"outfile"` and `options.verbose` will be `False`. [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") supports both long and short options, allows short options to be merged together, and allows options to be associated with their arguments in a variety of ways. Thus, the following command lines are all equivalent to the above example:
+```
+<yourscript> -f outfile --quiet
+<yourscript> --quiet --file outfile
+<yourscript> -q -foutfile
+<yourscript> -qfoutfile
+
+```
+
+Additionally, users can run one of the following
+```
+<yourscript> -h
+<yourscript> --help

@@ -1,0 +1,44 @@
+Title: Defining the 'Correct' Stage in Streamlit Chat Apps
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses
+Summary: This section explains how to implement the 'correct' stage in a Streamlit chat application. When the session state indicates 'correct', users can address and correct errors from previous validations. The process involves highlighting errors sequentially and providing options to accept results or navigate to other stages. Key coding steps include using conditional blocks and displaying a disabled chat input for user interaction.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#define-the-correct-stage)Define the `"correct"` stage
+When `st.session_state.stage` is `"correct"`, the user can correct or accept the errors identified in `st.session_state.validation`. With each script run, the app focuses the user on the first error in the list. When the user addresses an error, the error is removed from the list, and the next error is highlighted in the next script run. This continues until all errors are removed. Then, the user can accept the result, return to the `"validate"` stage, or go to the `"rewrite"` stage.
+  1. Start a conditional block for the `"correct"` stage:
+`elif st.session_state.stage == "correct": `
+  2. For visual consistency, display a disabled chat input:
+`  st.chat_input("Accept, correct, or rewrite the answer above.", disabled=True) `
+  3. For coding convenience, retrieve the validation information from Session State and save it into variables:
+`  response_sentences = st.session_state.validation["sentences"]   validation_list = st.session_state.validation["valid"] `
+  4. Use your helper function to highlight the sentences with errors. Use gray for the highlight:
+`  highlighted_sentences = add_highlights(     response_sentences, validation_list, "gray", "gray" ) `
+In a following step, to focus the user on one error, you'll change the highlight color for one sentence.
+  5. Check whether there are any errors in `validation_list`. If there are errors, get the index of the first one, and replace the Markdown highlight for the associated sentence:
+` if not all(validation_list):     focus = validation_list.index(False)     highlighted_sentences[focus] = ":red[:red" + highlighted_sentences[focus][11:] `
+`highlighted_sentences[focus]` begins with `":gray[:gray-background["`. Therefore, `highlighted_sentences[focus][11:]` removes the first eleven characters so you can prepend `":red[:red"` instead.
+  6. Set a fallback value for `focus` for when there are no errors:
+` else:     focus = None `
+  7. In a chat message container, display the highlighted response. To separate the response from the buttons that follow, add a divider:
+` with st.chat_message("assistant"):     st.markdown(" ".join(highlighted_sentences))     st.divider() `
+  8. Start a conditional block: if there are errors, display a text input prefilled with the first error. This is the error you highlighted in red:
+` if focus is not None:       new_sentence = st.text_input( "Replacement text:", value=response_sentences[focus] ) `
+`value=response_sentences[focus]` prefills the text input with the sentence associated to `focus`. The user can edit it or replace the text entirely. You'll also add a button so they can choose to remove it instead.
+  9. To display buttons in a row, create two columns:
+`      cols = st.columns(2) `
+  10. In the first column, start a conditional block, and display a primary-type button labeled "Update." Disable the button if the text input is empty:
+` if cols[0].button( "Update", type="primary", disabled=len(new_sentence.strip()) < 1 ): `
+  11. Within the conditional block, update the sentence and its validation:
+`        st.session_state.validation["sentences"][focus] = (           new_sentence.strip(". ") + "." )         st.session_state.validation["valid"][focus] = True `
+  12. Update the complete response in `st.session_state.pending` with the new, resultant response, and rerun the app:
+`        st.session_state.pending = " ".join(           st.session_state.validation["sentences"] )         st.rerun() `
+If the user clicks the "**Update** " button, the app will rerun and execute this conditional block. At the end of this block, the app will rerun again and continue in the `"correct"` stage with the next error highlighted.
+  13. In the second column, start a conditional block, and display a button labeled "Remove." Within the conditional block, pop the sentence and validation information out of their lists in Session State:
+` if cols[1].button("Remove"):         st.session_state.validation["sentences"].pop(focus)         st.session_state.validation["valid"].pop(focus) `
+  14. Update the complete response in `st.session_state.pending` with the new, resultant response, and rerun the app:
+`        st.session_state.pending = " ".join(           st.session_state.validation["sentences"] )         st.rerun() `
+If the user clicks the "**Remove** " button, the app will rerun and execute this conditional block. At the end of this block, the app will rerun again and continue in the `"correct"` stage with the next error highlighted.
+  15. Start an `else` block for when there are no errors. To display buttons in a row, create two columns:
+` else:       cols = st.columns(2) `
+After a user has resolved all the errors, they need to confirm the final result. Instead of "**Update** " and "**Remove** " buttons, you'll display "**Accept** " and "**Re-validate** " buttons.
+  16. In the first column, start

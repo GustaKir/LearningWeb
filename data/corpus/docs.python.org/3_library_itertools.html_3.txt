@@ -1,0 +1,101 @@
+Title: itertools.chain in Python
+URL: https://docs.python.org/3/library/itertools.html
+Summary: The `itertools.chain` function creates an iterator that combines multiple iterables, returning elements from each one sequentially until all are exhausted. An alternate method, `chain.from_iterable`, allows for chaining a single iterable argument evaluated lazily. Changes were made in versions 3.12 and 3.13, including the addition of the _strict_ option.
+---
+
+```
+
+Added in version 3.12.
+Changed in version 3.13: Added the _strict_ option. 
+
+itertools.chain(_* iterables_)[¶](https://docs.python.org/3/library/itertools.html#itertools.chain "Link to this definition")
+    
+Make an iterator that returns elements from the first iterable until it is exhausted, then proceeds to the next iterable, until all of the iterables are exhausted. This combines multiple data sources into a single iterator. Roughly equivalent to:
+```
+defchain(*iterables):
+  # chain('ABC', 'DEF') → A B C D E F
+  for iterable in iterables:
+    yield from iterable
+
+```
+
+
+_classmethod_ chain.from_iterable(_iterable_)[¶](https://docs.python.org/3/library/itertools.html#itertools.chain.from_iterable "Link to this definition")
+    
+Alternate constructor for [`chain()`](https://docs.python.org/3/library/itertools.html#itertools.chain "itertools.chain"). Gets chained inputs from a single iterable argument that is evaluated lazily. Roughly equivalent to:
+```
+deffrom_iterable(iterables):
+  # chain.from_iterable(['ABC', 'DEF']) → A B C D E F
+  for iterable in iterables:
+    yield from iterable
+
+```
+
+
+itertools.combinations(_iterable_ , _r_)[¶](https://docs.python.org/3/library/itertools.html#itertools.combinations "Link to this definition")
+    
+Return _r_ length subsequences of elements from the input _iterable_.
+The output is a subsequence of [`product()`](https://docs.python.org/3/library/itertools.html#itertools.product "itertools.product") keeping only entries that are subsequences of the _iterable_. The length of the output is given by [`math.comb()`](https://docs.python.org/3/library/math.html#math.comb "math.comb") which computes `n! / r! / (n - r)!` when `0 ≤ r ≤ n` or zero when `r > n`.
+The combination tuples are emitted in lexicographic order according to the order of the input _iterable_. If the input _iterable_ is sorted, the output tuples will be produced in sorted order.
+Elements are treated as unique based on their position, not on their value. If the input elements are unique, there will be no repeated values within each combination.
+Roughly equivalent to:
+```
+defcombinations(iterable, r):
+  # combinations('ABCD', 2) → AB AC AD BC BD CD
+  # combinations(range(4), 3) → 012 013 023 123
+  pool = tuple(iterable)
+  n = len(pool)
+  if r > n:
+    return
+  indices = list(range(r))
+  yield tuple(pool[i] for i in indices)
+  while True:
+    for i in reversed(range(r)):
+      if indices[i] != i + n - r:
+        break
+    else:
+      return
+    indices[i] += 1
+    for j in range(i+1, r):
+      indices[j] = indices[j-1] + 1
+    yield tuple(pool[i] for i in indices)
+
+```
+
+
+itertools.combinations_with_replacement(_iterable_ , _r_)[¶](https://docs.python.org/3/library/itertools.html#itertools.combinations_with_replacement "Link to this definition")
+    
+Return _r_ length subsequences of elements from the input _iterable_ allowing individual elements to be repeated more than once.
+The output is a subsequence of [`product()`](https://docs.python.org/3/library/itertools.html#itertools.product "itertools.product") that keeps only entries that are subsequences (with possible repeated elements) of the _iterable_. The number of subsequence returned is `(n + r - 1)! / r! / (n - 1)!` when `n > 0`.
+The combination tuples are emitted in lexicographic order according to the order of the input _iterable_. if the input _iterable_ is sorted, the output tuples will be produced in sorted order.
+Elements are treated as unique based on their position, not on their value. If the input elements are unique, the generated combinations will also be unique.
+Roughly equivalent to:
+```
+defcombinations_with_replacement(iterable, r):
+  # combinations_with_replacement('ABC', 2) → AA AB AC BB BC CC
+  pool = tuple(iterable)
+  n = len(pool)
+  if not n and r:
+    return
+  indices = [0] * r
+  yield tuple(pool[i] for i in indices)
+  while True:
+    for i in reversed(range(r)):
+      if indices[i] != n - 1:
+        break
+    else:
+      return
+    indices[i:] = [indices[i] + 1] * (r - i)
+    yield tuple(pool[i] for i in indices)
+
+```
+
+Added in version 3.1. 
+
+itertools.compress(_data_ , _selectors_)[¶](https://docs.python.org/3/library/itertools.html#itertools.compress "Link to this definition")
+    
+Make an iterator that returns elements from _data_ where the corresponding element in _selectors_ is true. Stops when either the _data_ or _selectors_ iterables have been exhausted. Roughly equivalent to:
+```
+defcompress(data, selectors):
+  # compress('ABCDEF', [1,0,1,0,1,1]) → A C E F
+  return (datum for datum, selector in zip(data, selectors) if selector)

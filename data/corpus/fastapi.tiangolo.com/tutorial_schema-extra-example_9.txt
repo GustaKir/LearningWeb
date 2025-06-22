@@ -1,0 +1,158 @@
+Title: Using Extra Examples in FastAPI Schema
+URL: https://fastapi.tiangolo.com/tutorial/schema-extra-example/
+Summary: This document outlines how to utilize additional examples in FastAPI for API endpoints. It provides an example of a PUT request for updating an item, showcasing how to use Pydantic models with OpenAPI to define normal, converted, and invalid scenarios for item data validation.
+---
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Annotated[
+    Item,
+    Body(
+      openapi_examples={
+        "normal": {
+          "summary": "A normal example",
+          "description": "A **normal** item works correctly.",
+          "value": {
+            "name": "Foo",
+            "description": "A very nice Item",
+            "price": 35.4,
+            "tax": 3.2,
+          },
+        },
+        "converted": {
+          "summary": "An example with converted data",
+          "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+          "value": {
+            "name": "Bar",
+            "price": "35.4",
+          },
+        },
+        "invalid": {
+          "summary": "Invalid data is rejected with an error",
+          "value": {
+            "name": "Baz",
+            "price": "thirty five point four",
+          },
+        },
+      },
+    ),
+  ],
+):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Item = Body(
+    openapi_examples={
+      "normal": {
+        "summary": "A normal example",
+        "description": "A **normal** item works correctly.",
+        "value": {
+          "name": "Foo",
+          "description": "A very nice Item",
+          "price": 35.4,
+          "tax": 3.2,
+        },
+      },
+      "converted": {
+        "summary": "An example with converted data",
+        "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+        "value": {
+          "name": "Bar",
+          "price": "35.4",
+        },
+      },
+      "invalid": {
+        "summary": "Invalid data is rejected with an error",
+        "value": {
+          "name": "Baz",
+          "price": "thirty five point four",
+        },
+      },
+    },
+  ),
+):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Item = Body(
+    openapi_examples={
+      "normal": {
+        "summary": "A normal example",
+        "description": "A **normal** item works correctly.",
+        "value": {
+          "name": "Foo",
+          "description": "A very nice Item",
+          "price": 35.4,
+          "tax": 3.2,
+        },
+      },
+      "converted": {
+        "summary": "An example with converted data",
+        "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+        "value": {
+          "name": "Bar",
+          "price": "35.4",
+        },
+      },
+      "invalid": {
+        "summary": "Invalid data is rejected with an error",
+        "value": {
+          "name": "Baz",
+          "price": "thirty five point four",
+        },
+      },
+    },
+  ),
+):
+  results = {"item_id": item_id, "item": item}
+  return results

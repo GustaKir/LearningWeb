@@ -1,0 +1,25 @@
+Title: Understanding Mutations and Concurrency in Streamlit Caching
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: This section defines key concepts of mutations and concurrency in the context of Streamlit caching. Mutations refer to changes made to the return values of cached functions after they are called, while concurrency occurs when multiple sessions simultaneously trigger these mutations. Caution is advised, as mutating cached data can lead to exceptions and potential data corruption.
+---
+
+So let's dive in a bit deeper.
+First, we should clearly define what we mean by mutations and concurrency:
+  * By **mutations** , we mean any changes made to a cached function's return value _after_ that function has been called. I.e. something like this:
+`@st.cache_data def create_list():   l = [1, 2, 3] l = create_list() # 👈 Call the function l[0] = 2 # 👈 Mutate its return value `
+  * By **concurrency** , we mean that multiple sessions can cause these mutations at the same time. Streamlit is a web framework that needs to handle many users and sessions connecting to an app. If two people view an app at the same time, they will both cause the Python script to rerun, which may manipulate cached return objects at the same time – concurrently.
+
+
+Mutating cached return objects can be dangerous. It can lead to exceptions in your app and even corrupt your data (which can be worse than a crashed app!). Below, we'll first explain the copying behavior of `st.cache_data` and show how it can avoid mutation issues. Then, we'll show how concurrent mutations can lead to data corruption and how to prevent it.
+#### [](https://docs.streamlit.io/develop/concepts/architecture/caching#copying-behavior)Copying behavior
+`st.cache_data` creates a copy of the cached return value each time the function is called. This avoids most mutations and concurrency issues. To understand it in detail, let's go back to the [Uber ridesharing example](https://docs.streamlit.io/develop/concepts/architecture/caching#usage) from the section on `st.cache_data` above. We are making two modifications to it:
+  1. We are using `st.cache_resource` instead of `st.cache_data`. `st.cache_resource` does **not** create a copy of the cached object, so we can see what happens without the copying behavior.
+  2. After loading the data, we manipulate the returned DataFrame (in place!) by dropping the column `"Lat"`.
+
+
+Here's the code:
+`@st.cache_resource # 👈 Turn off copying behavior def load_data(url):   df = pd.read_csv(url) return df df = load_data("https://raw.githubusercontent.com/plotly/datasets/master/uber-rides-data1.csv") st.dataframe(df) df.drop(columns=['Lat'], inplace=True) # 👈 Mutate the dataframe inplace st.button("Rerun") `
+Let's run it and see what happens! The first run should work fine. But in the second run, you see an exception: `KeyError: "['Lat'] not found in axis"`. Why is that happening? Let's go step by step:
+  * On the first run, Streamlit runs `load_data` and stores the resulting DataFrame in the cache. Since we're using `st.cache_resource`, it does **not** create a copy but stores the original DataFrame.
+  * Then we drop the column `"Lat"` from the DataFrame. Note that this is dropping the column from the _original_ DataFrame stored in the cache. We are manipulating it!
+  * On the second run, Streamlit returns that exact same manipulated DataFrame from the cache. It does not have the column `"Lat"` anymore! So our call to `df.drop` results in an exception. Pandas cannot drop a column that doesn't exist.

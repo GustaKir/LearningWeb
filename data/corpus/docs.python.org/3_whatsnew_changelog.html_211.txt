@@ -1,0 +1,25 @@
+Title: Python 3.11 Changelog Overview
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section of the Python 3.11 changelog details improvements and bugfixes in the Tools/Demos and C API categories, including fixes for varargs handling in the Argument Clinic and updates regarding the `PyBUF_*` constants and the buffer API.
+---
+
+### Tools/Demos[¶](https://docs.python.org/3/whatsnew/changelog.html#id194 "Link to this heading")
+  * [gh-64490](https://github.com/python/cpython/issues/64490): Argument Clinic varargs bugfixes
+    * Fix out-of-bounds error in `_PyArg_UnpackKeywordsWithVararg()`.
+    * Fix incorrect check which allowed more than one varargs in clinic.py.
+    * Fix miscalculation of `noptargs` in generated code.
+    * Do not generate `noptargs` when there is a vararg argument and no optional argument.
+
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id195 "Link to this heading")
+  * [gh-98680](https://github.com/python/cpython/issues/98680): `PyBUF_*` constants were marked as part of Limited API of Python 3.11+. These were available in 3.11.0 with [`Py_LIMITED_API`](https://docs.python.org/3/c-api/stable.html#c.Py_LIMITED_API "Py_LIMITED_API") defined for 3.11, and are necessary to use the buffer API.
+  * [gh-99612](https://github.com/python/cpython/issues/99612): Fix [`PyUnicode_DecodeUTF8Stateful()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_DecodeUTF8Stateful "PyUnicode_DecodeUTF8Stateful") for ASCII-only data: `*consumed` was not set.
+  * [gh-47146](https://github.com/python/cpython/issues/47146): The `structmember.h` header is deprecated. Its non-deprecated contents are now available just by including `Python.h`, with a `Py_` prefix added if it was missing. (Deprecated contents are [`T_OBJECT`](https://docs.python.org/3/c-api/structures.html#c.T_OBJECT "T_OBJECT"), [`T_NONE`](https://docs.python.org/3/c-api/structures.html#c.T_NONE "T_NONE"), and no-op flags.) Patch by Petr Viktorin, based on earlier work by Alexander Belopolsky and Matthias Braun.
+
+
+## Python 3.12.0 alpha 2[¶](https://docs.python.org/3/whatsnew/changelog.html#python-3-12-0-alpha-2 "Link to this heading")
+_Release date: 2022-11-14_
+### Security[¶](https://docs.python.org/3/whatsnew/changelog.html#id196 "Link to this heading")
+  * [gh-98433](https://github.com/python/cpython/issues/98433): The IDNA codec decoder used on DNS hostnames by [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.") or [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") related name resolution functions no longer involves a quadratic algorithm. This prevents a potential CPU denial of service if an out-of-spec excessive length hostname involving bidirectional characters were decoded. Some protocols such as [`urllib`](https://docs.python.org/3/library/urllib.html#module-urllib "urllib") http `3_xx_`redirects potentially allow for an attacker to supply such a name.
+Individual labels within an IDNA encoded DNS name will now raise an error early during IDNA decoding if they are longer than 1024 unicode characters given that each decoded DNS label must be 63 or fewer characters and the entire decoded DNS name is limited to 255. Only an application presenting a hostname or label consisting primarily of [**RFC 3454**](https://datatracker.ietf.org/doc/html/rfc3454.html) section 3.1 “Nothing” characters to be removed would run into of this new limit. See also [**RFC 5894**](https://datatracker.ietf.org/doc/html/rfc5894.html) section 6 and [**RFC 3491**](https://datatracker.ietf.org/doc/html/rfc3491.html).
+  * [gh-98739](https://github.com/python/cpython/issues/98739): Update bundled libexpat to 2.5.0

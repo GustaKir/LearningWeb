@@ -1,0 +1,76 @@
+Title: Python Intrinsic Functions and Pseudo-Instructions
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section outlines various intrinsic functions associated with operands in Python, detailing their functionality, such as creating type variables with bounds or constraints and handling exception groups. Additionally, it mentions that some opcodes are pseudo-instructions used by the compiler but do not appear in the final bytecode.
+---
+
+```
+
+The operand determines which intrinsic function is called:
+Operand | Description  
+---|---  
+`INTRINSIC_2_INVALID` | Not valid  
+`INTRINSIC_PREP_RERAISE_STAR` | Calculates the [`ExceptionGroup`](https://docs.python.org/3/library/exceptions.html#ExceptionGroup "ExceptionGroup") to raise from a `try-except*`.  
+`INTRINSIC_TYPEVAR_WITH_BOUND` | Creates a [`typing.TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") with a bound.  
+`INTRINSIC_TYPEVAR_WITH_CONSTRAINTS` | Creates a [`typing.TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") with constraints.  
+`INTRINSIC_SET_FUNCTION_TYPE_PARAMS` | Sets the `__type_params__` attribute of a function.  
+Added in version 3.12.
+**Pseudo-instructions**
+These opcodes do not appear in Python bytecode. They are used by the compiler but are replaced by real opcodes or removed before bytecode is generated. 
+
+SETUP_FINALLY(_target_)[¶](https://docs.python.org/3/library/dis.html#opcode-SETUP_FINALLY "Link to this definition")
+    
+Set up an exception handler for the following code block. If an exception occurs, the value stack level is restored to its current state and control is transferred to the exception handler at `target`. 
+
+SETUP_CLEANUP(_target_)[¶](https://docs.python.org/3/library/dis.html#opcode-SETUP_CLEANUP "Link to this definition")
+    
+Like `SETUP_FINALLY`, but in case of an exception also pushes the last instruction (`lasti`) to the stack so that `RERAISE` can restore it. If an exception occurs, the value stack level and the last instruction on the frame are restored to their current state, and control is transferred to the exception handler at `target`. 
+
+SETUP_WITH(_target_)[¶](https://docs.python.org/3/library/dis.html#opcode-SETUP_WITH "Link to this definition")
+    
+Like `SETUP_CLEANUP`, but in case of an exception one more item is popped from the stack before control is transferred to the exception handler at `target`.
+This variant is used in [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) and [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) constructs, which push the return value of the context manager’s [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") or [`__aenter__()`](https://docs.python.org/3/reference/datamodel.html#object.__aenter__ "object.__aenter__") to the stack. 
+
+POP_BLOCK[¶](https://docs.python.org/3/library/dis.html#opcode-POP_BLOCK "Link to this definition")
+    
+Marks the end of the code block associated with the last `SETUP_FINALLY`, `SETUP_CLEANUP` or `SETUP_WITH`. 
+
+JUMP[¶](https://docs.python.org/3/library/dis.html#opcode-JUMP "Link to this definition")
+
+
+JUMP_NO_INTERRUPT[¶](https://docs.python.org/3/library/dis.html#opcode-JUMP_NO_INTERRUPT "Link to this definition")
+    
+Undirected relative jump instructions which are replaced by their directed (forward/backward) counterparts by the assembler. 
+
+LOAD_CLOSURE(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_CLOSURE "Link to this definition")
+    
+Pushes a reference to the cell contained in slot `i` of the “fast locals” storage.
+Note that `LOAD_CLOSURE` is replaced with `LOAD_FAST` in the assembler.
+Changed in version 3.13: This opcode is now a pseudo-instruction. 
+
+LOAD_METHOD[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_METHOD "Link to this definition")
+    
+Optimized unbound method lookup. Emitted as a `LOAD_ATTR` opcode with a flag set in the arg.
+## Opcode collections[¶](https://docs.python.org/3/library/dis.html#opcode-collections "Link to this heading")
+These collections are provided for automatic introspection of bytecode instructions:
+Changed in version 3.12: The collections now contain pseudo instructions and instrumented instructions as well. These are opcodes with values `>= MIN_PSEUDO_OPCODE` and `>= MIN_INSTRUMENTED_OPCODE`. 
+
+dis.opname[¶](https://docs.python.org/3/library/dis.html#dis.opname "Link to this definition")
+    
+Sequence of operation names, indexable using the bytecode. 
+
+dis.opmap[¶](https://docs.python.org/3/library/dis.html#dis.opmap "Link to this definition")
+    
+Dictionary mapping operation names to bytecodes. 
+
+dis.cmp_op[¶](https://docs.python.org/3/library/dis.html#dis.cmp_op "Link to this definition")
+    
+Sequence of all compare operation names. 
+
+dis.hasarg[¶](https://docs.python.org/3/library/dis.html#dis.hasarg "Link to this definition")
+    
+Sequence of bytecodes that use their argument.
+Added in version 3.12. 
+
+dis.hasconst[¶](https://docs.python.org/3/library/dis.html#dis.hasconst "Link to this definition")
+    
+Sequence of bytecodes that access a constant.

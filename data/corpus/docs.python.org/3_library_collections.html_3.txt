@@ -1,0 +1,92 @@
+Title: Using ChainMap in Python Collections
+URL: https://docs.python.org/3/library/collections.html
+Summary: This section describes how to create and manipulate context dictionaries using the ChainMap class in Python. It demonstrates creating root and child contexts, accessing and modifying nested values, and methods for inspecting context details such as length and items.
+---
+
+```
+c = ChainMap()    # Create root context
+d = c.new_child()   # Create nested child context
+e = c.new_child()   # Child of c, independent from d
+e.maps[0]       # Current context dictionary -- like Python's locals()
+e.maps[-1]      # Root context -- like Python's globals()
+e.parents       # Enclosing context chain -- like Python's nonlocals
+d['x'] = 1      # Set value in current context
+d['x']        # Get first key in the chain of contexts
+del d['x']      # Delete from current context
+list(d)        # All nested values
+k in d        # Check all nested values
+len(d)        # Number of nested values
+d.items()       # All nested items
+dict(d)        # Flatten into a regular dictionary
+
+```
+
+The [`ChainMap`](https://docs.python.org/3/library/collections.html#collections.ChainMap "collections.ChainMap") class only makes updates (writes and deletions) to the first mapping in the chain while lookups will search the full chain. However, if deep writes and deletions are desired, it is easy to make a subclass that updates keys found deeper in the chain:
+```
+classDeepChainMap(ChainMap):
+  'Variant of ChainMap that allows direct updates to inner scopes'
+  def__setitem__(self, key, value):
+    for mapping in self.maps:
+      if key in mapping:
+        mapping[key] = value
+        return
+    self.maps[0][key] = value
+  def__delitem__(self, key):
+    for mapping in self.maps:
+      if key in mapping:
+        del mapping[key]
+        return
+    raise KeyError(key)
+>>> d = DeepChainMap({'zebra': 'black'}, {'elephant': 'blue'}, {'lion': 'yellow'})
+>>> d['lion'] = 'orange'     # update an existing key two levels down
+>>> d['snake'] = 'red'      # new keys get added to the topmost dict
+>>> del d['elephant']      # remove an existing key one level down
+>>> d              # display result
+DeepChainMap({'zebra': 'black', 'snake': 'red'}, {}, {'lion': 'orange'})
+
+```
+
+## [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") objects[¶](https://docs.python.org/3/library/collections.html#counter-objects "Link to this heading")
+A counter tool is provided to support convenient and rapid tallies. For example:
+>>>```
+>>> # Tally occurrences of words in a list
+>>> cnt = Counter()
+>>> for word in ['red', 'blue', 'red', 'green', 'blue', 'blue']:
+...   cnt[word] += 1
+...
+>>> cnt
+Counter({'blue': 3, 'red': 2, 'green': 1})
+>>> # Find the ten most common words in Hamlet
+>>> importre
+>>> words = re.findall(r'\w+', open('hamlet.txt').read().lower())
+>>> Counter(words).most_common(10)
+[('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
+ ('you', 554), ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
+
+```
+
+
+_class_ collections.Counter([_iterable-or-mapping_])[¶](https://docs.python.org/3/library/collections.html#collections.Counter "Link to this definition")
+    
+A [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") is a [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") subclass for counting [hashable](https://docs.python.org/3/glossary.html#term-hashable) objects. It is a collection where elements are stored as dictionary keys and their counts are stored as dictionary values. Counts are allowed to be any integer value including zero or negative counts. The [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") class is similar to bags or multisets in other languages.
+Elements are counted from an _iterable_ or initialized from another _mapping_ (or counter):
+>>>```
+>>> c = Counter()              # a new, empty counter
+>>> c = Counter('gallahad')         # a new counter from an iterable
+>>> c = Counter({'red': 4, 'blue': 2})   # a new counter from a mapping
+>>> c = Counter(cats=4, dogs=8)       # a new counter from keyword args
+
+```
+
+Counter objects have a dictionary interface except that they return a zero count for missing items instead of raising a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError"):
+>>>```
+>>> c = Counter(['eggs', 'ham'])
+>>> c['bacon']               # count of a missing element is zero
+0
+
+```
+
+Setting a count to zero does not remove an element from a counter. Use `del` to remove it entirely:
+>>>```
+>>> c['sausage'] = 0            # counter entry with a zero count
+>>> del c['sausage']            # del actually removes the entry

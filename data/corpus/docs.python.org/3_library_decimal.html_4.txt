@@ -1,0 +1,72 @@
+Title: Decimal Contexts and Operations
+URL: https://docs.python.org/3/library/decimal.html
+Summary: This section demonstrates the use of different decimal contexts in Python's decimal library, including setting precision and rounding modes. It shows examples of performing division, handling division by zero, and the importance of clearing signal flags for monitoring exceptional conditions during computations.
+---
+
+```
+>>> myothercontext = Context(prec=60, rounding=ROUND_HALF_DOWN)
+>>> setcontext(myothercontext)
+>>> Decimal(1) / Decimal(7)
+Decimal('0.142857142857142857142857142857142857142857142857142857142857')
+>>> ExtendedContext
+Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999, Emax=999999,
+    capitals=1, clamp=0, flags=[], traps=[])
+>>> setcontext(ExtendedContext)
+>>> Decimal(1) / Decimal(7)
+Decimal('0.142857143')
+>>> Decimal(42) / Decimal(0)
+Decimal('Infinity')
+>>> setcontext(BasicContext)
+>>> Decimal(42) / Decimal(0)
+Traceback (most recent call last):
+ File "<pyshell#143>", line 1, in -toplevel-
+Decimal(42) / Decimal(0)
+DivisionByZero: x / 0
+
+```
+
+Contexts also have signal flags for monitoring exceptional conditions encountered during computations. The flags remain set until explicitly cleared, so it is best to clear the flags before each set of monitored computations by using the [`clear_flags()`](https://docs.python.org/3/library/decimal.html#decimal.Context.clear_flags "decimal.Context.clear_flags") method.
+>>>```
+>>> setcontext(ExtendedContext)
+>>> getcontext().clear_flags()
+>>> Decimal(355) / Decimal(113)
+Decimal('3.14159292')
+>>> getcontext()
+Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999, Emax=999999,
+    capitals=1, clamp=0, flags=[Inexact, Rounded], traps=[])
+
+```
+
+The _flags_ entry shows that the rational approximation to pi was rounded (digits beyond the context precision were thrown away) and that the result is inexact (some of the discarded digits were non-zero).
+Individual traps are set using the dictionary in the `traps` attribute of a context:
+>>>```
+>>> setcontext(ExtendedContext)
+>>> Decimal(1) / Decimal(0)
+Decimal('Infinity')
+>>> getcontext().traps[DivisionByZero] = 1
+>>> Decimal(1) / Decimal(0)
+Traceback (most recent call last):
+ File "<pyshell#112>", line 1, in -toplevel-
+Decimal(1) / Decimal(0)
+DivisionByZero: x / 0
+
+```
+
+Most programs adjust the current context only once, at the beginning of the program. And, in many applications, data is converted to [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") with a single cast inside a loop. With context set and decimals created, the bulk of the program manipulates the data no differently than with other Python numeric types.
+## Decimal objects[¶](https://docs.python.org/3/library/decimal.html#decimal-objects "Link to this heading") 
+
+_class_ decimal.Decimal(_value ='0'_, _context =None_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Decimal "Link to this definition")
+    
+Construct a new [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") object based from _value_.
+_value_ can be an integer, string, tuple, [`float`](https://docs.python.org/3/library/functions.html#float "float"), or another [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") object. If no _value_ is given, returns `Decimal('0')`. If _value_ is a string, it should conform to the decimal numeric string syntax after leading and trailing whitespace characters, as well as underscores throughout, are removed:
+```
+sign      ::= '+' | '-'
+digit     ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+indicator   ::= 'e' | 'E'
+digits     ::= digit [digit]...
+decimal-part  ::= digits '.' [digits] | ['.'] digits
+exponent-part ::= indicator [sign] digits
+infinity    ::= 'Infinity' | 'Inf'
+nan      ::= 'NaN' [digits] | 'sNaN' [digits]
+numeric-value ::= decimal-part [exponent-part] | infinity
+numeric-string ::= [sign] numeric-value | [sign] nan

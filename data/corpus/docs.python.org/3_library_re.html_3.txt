@@ -1,0 +1,43 @@
+Title: Regular Expression Basics in Python
+URL: https://docs.python.org/3/library/re.html
+Summary: This section discusses the use of backslashes in regular expressions to escape special characters or signal special sequences. It emphasizes the importance of using raw strings to avoid confusion with Python's own escape sequences. Additionally, it introduces the use of square brackets to denote a set of characters, including individual characters and character ranges.
+---
+
+`\`
+    
+Either escapes special characters (permitting you to match characters like `'*'`, `'?'`, and so forth), or signals a special sequence; special sequences are discussed below.
+If you’re not using a raw string to express the pattern, remember that Python also uses the backslash as an escape sequence in string literals; if the escape sequence isn’t recognized by Python’s parser, the backslash and subsequent character are included in the resulting string. However, if Python would recognize the resulting sequence, the backslash should be repeated twice. This is complicated and hard to understand, so it’s highly recommended that you use raw strings for all but the simplest expressions. 
+
+`[]`
+    
+Used to indicate a set of characters. In a set:
+  * Characters can be listed individually, e.g. `[amk]` will match `'a'`, `'m'`, or `'k'`.
+
+
+  * Ranges of characters can be indicated by giving two characters and separating them by a `'-'`, for example `[a-z]` will match any lowercase ASCII letter, `[0-5][0-9]` will match all the two-digits numbers from `00` to `59`, and `[0-9A-Fa-f]` will match any hexadecimal digit. If `-` is escaped (e.g. `[a\-z]`) or if it’s placed as the first or last character (e.g. `[-a]` or `[a-]`), it will match a literal `'-'`.
+  * Special characters except backslash lose their special meaning inside sets. For example, `[(+*)]` will match any of the literal characters `'('`, `'+'`, `'*'`, or `')'`.
+
+
+  * Backslash either escapes characters which have special meaning in a set such as `'-'`, `']'`, `'^'` and `'\\'` itself or signals a special sequence which represents a single character such as `\xa0` or `\n` or a character class such as `\w` or `\S` (defined below). Note that `\b` represents a single “backspace” character, not a word boundary as outside a set, and numeric escapes such as `\1` are always octal escapes, not group references. Special sequences which do not match a single character such as `\A` and `\Z` are not allowed.
+
+
+  * Characters that are not within a range can be matched by _complementing_ the set. If the first character of the set is `'^'`, all the characters that are _not_ in the set will be matched. For example, `[^5]` will match any character except `'5'`, and `[^^]` will match any character except `'^'`. `^` has no special meaning if it’s not the first character in the set.
+  * To match a literal `']'` inside a set, precede it with a backslash, or place it at the beginning of the set. For example, both `[()[\]{}]` and `[]()[{}]` will match a right bracket, as well as left bracket, braces, and parentheses.
+
+
+  * Support of nested sets and set operations as in [Unicode Technical Standard #18](https://unicode.org/reports/tr18/) might be added in the future. This would change the syntax, so to facilitate this change a [`FutureWarning`](https://docs.python.org/3/library/exceptions.html#FutureWarning "FutureWarning") will be raised in ambiguous cases for the time being. That includes sets starting with a literal `'['` or containing literal character sequences `'--'`, `'&&'`, `'~~'`, and `'||'`. To avoid a warning escape them with a backslash.
+
+
+Changed in version 3.7: [`FutureWarning`](https://docs.python.org/3/library/exceptions.html#FutureWarning "FutureWarning") is raised if a character set contains constructs that will change semantically in the future. 
+
+`|`
+    
+`A|B`, where _A_ and _B_ can be arbitrary REs, creates a regular expression that will match either _A_ or _B_. An arbitrary number of REs can be separated by the `'|'` in this way. This can be used inside groups (see below) as well. As the target string is scanned, REs separated by `'|'` are tried from left to right. When one pattern completely matches, that branch is accepted. This means that once _A_ matches, _B_ will not be tested further, even if it would produce a longer overall match. In other words, the `'|'` operator is never greedy. To match a literal `'|'`, use `\|`, or enclose it inside a character class, as in `[|]`. 
+
+`(...)`
+    
+Matches whatever regular expression is inside the parentheses, and indicates the start and end of a group; the contents of a group can be retrieved after a match has been performed, and can be matched later in the string with the `\number` special sequence, described below. To match the literals `'('` or `')'`, use `\(` or `\)`, or enclose them inside a character class: `[(]`, `[)]`. 
+
+`(?...)`
+    
+This is an extension notation (a `'?'` following a `'('` is not meaningful otherwise). The first character after the `'?'` determines what the meaning and further syntax of the construct is. Extensions usually do not create a new group; `(?P<name>...)` is the only exception to this rule. Following are the currently supported extensions.

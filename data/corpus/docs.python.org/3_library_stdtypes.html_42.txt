@@ -1,0 +1,93 @@
+Title: Memoryview Improvements in Python
+URL: https://docs.python.org/3/library/stdtypes.html
+Summary: This section details changes made to memoryviews in Python across versions 3.3 to 3.5, including slicing capabilities, hashability for specific formats, automatic registration with collections.abc.Sequence, and enhanced indexing with tuples. It also touches upon the equality comparison with PEP 3118 exporters.
+---
+
+```
+
+Changed in version 3.3: One-dimensional memoryviews can now be sliced. One-dimensional memoryviews with formats ‘B’, ‘b’ or ‘c’ are now [hashable](https://docs.python.org/3/glossary.html#term-hashable).
+Changed in version 3.4: memoryview is now registered automatically with [`collections.abc.Sequence`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence "collections.abc.Sequence")
+Changed in version 3.5: memoryviews can now be indexed with tuple of integers.
+[`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview") has several methods: 
+
+__eq__(_exporter_)[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.__eq__ "Link to this definition")
+    
+A memoryview and a [**PEP 3118**](https://peps.python.org/pep-3118/) exporter are equal if their shapes are equivalent and if all corresponding values are equal when the operands’ respective format codes are interpreted using [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") syntax.
+For the subset of [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") format strings currently supported by [`tolist()`](https://docs.python.org/3/library/stdtypes.html#memoryview.tolist "memoryview.tolist"), `v` and `w` are equal if `v.tolist() == w.tolist()`:
+>>>```
+>>> importarray
+>>> a = array.array('I', [1, 2, 3, 4, 5])
+>>> b = array.array('d', [1.0, 2.0, 3.0, 4.0, 5.0])
+>>> c = array.array('b', [5, 3, 1])
+>>> x = memoryview(a)
+>>> y = memoryview(b)
+>>> x == a == y == b
+True
+>>> x.tolist() == a.tolist() == y.tolist() == b.tolist()
+True
+>>> z = y[::-2]
+>>> z == c
+True
+>>> z.tolist() == c.tolist()
+True
+
+```
+
+If either format string is not supported by the [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") module, then the objects will always compare as unequal (even if the format strings and buffer contents are identical):
+>>>```
+>>> fromctypesimport BigEndianStructure, c_long
+>>> classBEPoint(BigEndianStructure):
+...   _fields_ = [("x", c_long), ("y", c_long)]
+...
+>>> point = BEPoint(100, 200)
+>>> a = memoryview(point)
+>>> b = memoryview(point)
+>>> a == point
+False
+>>> a == b
+False
+
+```
+
+Note that, as with floating-point numbers, `v is w` does _not_ imply `v == w` for memoryview objects.
+Changed in version 3.3: Previous versions compared the raw memory disregarding the item format and the logical array structure. 
+
+tobytes(_order ='C'_)[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.tobytes "Link to this definition")
+    
+Return the data in the buffer as a bytestring. This is equivalent to calling the [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") constructor on the memoryview.
+>>>```
+>>> m = memoryview(b"abc")
+>>> m.tobytes()
+b'abc'
+>>> bytes(m)
+b'abc'
+
+```
+
+For non-contiguous arrays the result is equal to the flattened list representation with all elements converted to bytes. [`tobytes()`](https://docs.python.org/3/library/stdtypes.html#memoryview.tobytes "memoryview.tobytes") supports all format strings, including those that are not in [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") module syntax.
+Added in version 3.8: _order_ can be {‘C’, ‘F’, ‘A’}. When _order_ is ‘C’ or ‘F’, the data of the original array is converted to C or Fortran order. For contiguous views, ‘A’ returns an exact copy of the physical memory. In particular, in-memory Fortran order is preserved. For non-contiguous views, the data is converted to C first. _order=None_ is the same as _order=’C’_. 
+
+hex([_sep_[, _bytes_per_sep_]])[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.hex "Link to this definition")
+    
+Return a string object containing two hexadecimal digits for each byte in the buffer.
+>>>```
+>>> m = memoryview(b"abc")
+>>> m.hex()
+'616263'
+
+```
+
+Added in version 3.5.
+Changed in version 3.8: Similar to [`bytes.hex()`](https://docs.python.org/3/library/stdtypes.html#bytes.hex "bytes.hex"), [`memoryview.hex()`](https://docs.python.org/3/library/stdtypes.html#memoryview.hex "memoryview.hex") now supports optional _sep_ and _bytes_per_sep_ parameters to insert separators between bytes in the hex output. 
+
+tolist()[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.tolist "Link to this definition")
+    
+Return the data in the buffer as a list of elements.
+>>>```
+>>> memoryview(b'abc').tolist()
+[97, 98, 99]
+>>> importarray
+>>> a = array.array('d', [1.1, 2.2, 3.3])
+>>> m = memoryview(a)
+>>> m.tolist()
+[1.1, 2.2, 3.3]

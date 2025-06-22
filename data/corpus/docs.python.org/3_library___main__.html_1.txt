@@ -1,0 +1,73 @@
+Title: __main__ Module in Python
+URL: https://docs.python.org/3/library/__main__.html
+Summary: The chunk discusses the behavior of Python modules when executed as the main program. It explains how to run scripts from the command line, including directly from standard input and using the `-c` argument. It highlights that the top-level module's `__name__` is set to `'__main__'`, enabling conditional code execution based on this value.
+---
+
+```
+$ python-mtarfile
+usage: tarfile.py [-h] [-v] (...)
+
+```
+
+  * Python code read by the Python interpreter from standard input:
+```
+$ echo"import this"|python
+The Zen of Python, by Tim Peters
+Beautiful is better than ugly.
+Explicit is better than implicit.
+...
+
+```
+
+  * Python code passed to the Python interpreter with the [`-c`](https://docs.python.org/3/using/cmdline.html#cmdoption-c) argument:
+```
+$ python-c"import this"
+The Zen of Python, by Tim Peters
+Beautiful is better than ugly.
+Explicit is better than implicit.
+...
+
+```
+
+
+
+In each of these situations, the top-level module’s `__name__` is set to `'__main__'`.
+As a result, a module can discover whether or not it is running in the top-level environment by checking its own `__name__`, which allows a common idiom for conditionally executing code when the module is not initialized from an import statement:
+```
+if __name__ == '__main__':
+  # Execute when the module is not initialized from an import statement.
+  ...
+
+```
+
+See also
+For a more detailed look at how `__name__` is set in all situations, see the tutorial section [Modules](https://docs.python.org/3/tutorial/modules.html#tut-modules).
+### Idiomatic Usage[¶](https://docs.python.org/3/library/__main__.html#idiomatic-usage "Link to this heading")
+Some modules contain code that is intended for script use only, like parsing command-line arguments or fetching data from standard input. If a module like this was imported from a different module, for example to unit test it, the script code would unintentionally execute as well.
+This is where using the `if __name__ == '__main__'` code block comes in handy. Code within this block won’t run unless the module is executed in the top-level environment.
+Putting as few statements as possible in the block below `if __name__ == '__main__'` can improve code clarity and correctness. Most often, a function named `main` encapsulates the program’s primary behavior:
+```
+# echo.py
+importshlex
+importsys
+defecho(phrase: str) -> None:
+"""A dummy wrapper around print."""
+  # for demonstration purposes, you can imagine that there is some
+  # valuable and reusable logic inside this function
+  print(phrase)
+defmain() -> int:
+"""Echo the input arguments to standard output"""
+  phrase = shlex.join(sys.argv)
+  echo(phrase)
+  return 0
+if __name__ == '__main__':
+  sys.exit(main()) # next section explains the use of sys.exit
+
+```
+
+Note that if the module didn’t encapsulate code inside the `main` function but instead put it directly within the `if __name__ == '__main__'` block, the `phrase` variable would be global to the entire module. This is error-prone as other functions within the module could be unintentionally using the global variable instead of a local name. A `main` function solves this problem.
+Using a `main` function has the added benefit of the `echo` function itself being isolated and importable elsewhere. When `echo.py` is imported, the `echo` and `main` functions will be defined, but neither of them will be called, because `__name__ != '__main__'`.
+### Packaging Considerations[¶](https://docs.python.org/3/library/__main__.html#packaging-considerations "Link to this heading")
+`main` functions are often used to create command-line tools by specifying them as entry points for console scripts. When this is done, [pip](https://pip.pypa.io/) inserts the function call into a template script, where the return value of `main` is passed into [`sys.exit()`](https://docs.python.org/3/library/sys.html#sys.exit "sys.exit"). For example:
+```
+sys.exit(main())

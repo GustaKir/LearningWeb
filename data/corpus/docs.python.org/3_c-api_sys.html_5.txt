@@ -1,0 +1,36 @@
+Title: PySys_Audit Function
+URL: https://docs.python.org/3/c-api/sys.html
+Summary: The `PySys_Audit` function raises an auditing event with any active hooks and returns zero on success, or a non-zero value with an exception on failure. It requires a non-NULL event string, and if hooks exist, it constructs a tuple from the provided format and arguments. The function cannot use the `N` format due to potential reference leaks.
+---
+
+intPySys_Audit(constchar*event, constchar*format, ...)[¶](https://docs.python.org/3/c-api/sys.html#c.PySys_Audit "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Raise an auditing event with any active hooks. Return zero for success and non-zero with an exception set on failure.
+The _event_ string argument must not be _NULL_.
+If any hooks have been added, _format_ and other arguments will be used to construct a tuple to pass. Apart from `N`, the same format characters as used in [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") are available. If the built value is not a tuple, it will be added into a single-element tuple.
+The `N` format option must not be used. It consumes a reference, but since there is no way to know whether arguments to this function will be consumed, using it may cause reference leaks.
+Note that `#` format characters should always be treated as [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t"), regardless of whether `PY_SSIZE_T_CLEAN` was defined.
+[`sys.audit()`](https://docs.python.org/3/library/sys.html#sys.audit "sys.audit") performs the same function from Python code.
+See also [`PySys_AuditTuple()`](https://docs.python.org/3/c-api/sys.html#c.PySys_AuditTuple "PySys_AuditTuple").
+Added in version 3.8.
+Changed in version 3.8.2: Require [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") for `#` format characters. Previously, an unavoidable deprecation warning was raised. 
+
+intPySys_AuditTuple(constchar*event, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*args)[¶](https://docs.python.org/3/c-api/sys.html#c.PySys_AuditTuple "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Similar to [`PySys_Audit()`](https://docs.python.org/3/c-api/sys.html#c.PySys_Audit "PySys_Audit"), but pass arguments as a Python object. _args_ must be a [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple"). To pass no arguments, _args_ can be _NULL_.
+Added in version 3.13. 
+
+intPySys_AddAuditHook([Py_AuditHookFunction](https://docs.python.org/3/c-api/sys.html#c.Py_AuditHookFunction "Py_AuditHookFunction")hook, void*userData)[¶](https://docs.python.org/3/c-api/sys.html#c.PySys_AddAuditHook "Link to this definition")
+    
+Append the callable _hook_ to the list of active auditing hooks. Return zero on success and non-zero on failure. If the runtime has been initialized, also set an error on failure. Hooks added through this API are called for all interpreters created by the runtime.
+The _userData_ pointer is passed into the hook function. Since hook functions may be called from different runtimes, this pointer should not refer directly to Python state.
+This function is safe to call before [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize"). When called after runtime initialization, existing audit hooks are notified and may silently abort the operation by raising an error subclassed from [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") (other errors will not be silenced).
+The hook function is always called with the GIL held by the Python interpreter that raised the event.
+See [**PEP 578**](https://peps.python.org/pep-0578/) for a detailed description of auditing. Functions in the runtime and standard library that raise events are listed in the [audit events table](https://docs.python.org/3/library/audit_events.html#audit-events). Details are in each function’s documentation.
+If the interpreter is initialized, this function raises an auditing event `sys.addaudithook` with no arguments. If any existing hooks raise an exception derived from [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception"), the new hook will not be added and the exception is cleared. As a result, callers cannot assume that their hook has been added unless they control all existing hooks. 
+
+typedefint(*Py_AuditHookFunction)(constchar*event,[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*args,void*userData)[¶](https://docs.python.org/3/c-api/sys.html#c.Py_AuditHookFunction "Link to this definition")
+    
+The type of the hook function. _event_ is the C string event argument passed to [`PySys_Audit()`](https://docs.python.org/3/c-api/sys.html#c.PySys_Audit "PySys_Audit") or [`PySys_AuditTuple()`](https://docs.python.org/3/c-api/sys.html#c.PySys_AuditTuple "PySys_AuditTuple"). _args_ is guaranteed to be a [`PyTupleObject`](https://docs.python.org/3/c-api/tuple.html#c.PyTupleObject "PyTupleObject"). _userData_ is the argument passed to PySys_AddAuditHook().
+Added in version 3.8.
+# Process Control[¶](https://docs.python.org/3/c-api/sys.html#process-control "Link to this heading")

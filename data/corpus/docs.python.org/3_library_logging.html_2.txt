@@ -1,0 +1,35 @@
+Title: Logger Propagation in Python Logging
+URL: https://docs.python.org/3/library/logging.html
+Summary: This section explains the 'propagate' attribute of loggers in Python's logging module. If set to true, log events will be passed to ancestor loggers' handlers, while false prevents such propagation. An example demonstrates how log messages flow through a hierarchy of loggers.
+---
+
+propagate[¶](https://docs.python.org/3/library/logging.html#logging.Logger.propagate "Link to this definition")
+    
+If this attribute evaluates to true, events logged to this logger will be passed to the handlers of higher level (ancestor) loggers, in addition to any handlers attached to this logger. Messages are passed directly to the ancestor loggers’ handlers - neither the level nor filters of the ancestor loggers in question are considered.
+If this evaluates to false, logging messages are not passed to the handlers of ancestor loggers.
+Spelling it out with an example: If the propagate attribute of the logger named `A.B.C` evaluates to true, any event logged to `A.B.C` via a method call such as `logging.getLogger('A.B.C').error(...)` will [subject to passing that logger’s level and filter settings] be passed in turn to any handlers attached to loggers named `A.B`, `A` and the root logger, after first being passed to any handlers attached to `A.B.C`. If any logger in the chain `A.B.C`, `A.B`, `A` has its `propagate` attribute set to false, then that is the last logger whose handlers are offered the event to handle, and propagation stops at that point.
+The constructor sets this attribute to `True`.
+Note
+If you attach a handler to a logger _and_ one or more of its ancestors, it may emit the same record multiple times. In general, you should not need to attach a handler to more than one logger - if you just attach it to the appropriate logger which is highest in the logger hierarchy, then it will see all events logged by all descendant loggers, provided that their propagate setting is left set to `True`. A common scenario is to attach handlers only to the root logger, and to let propagation take care of the rest. 
+
+handlers[¶](https://docs.python.org/3/library/logging.html#logging.Logger.handlers "Link to this definition")
+    
+The list of handlers directly attached to this logger instance.
+Note
+This attribute should be treated as read-only; it is normally changed via the [`addHandler()`](https://docs.python.org/3/library/logging.html#logging.Logger.addHandler "logging.Logger.addHandler") and [`removeHandler()`](https://docs.python.org/3/library/logging.html#logging.Logger.removeHandler "logging.Logger.removeHandler") methods, which use locks to ensure thread-safe operation. 
+
+disabled[¶](https://docs.python.org/3/library/logging.html#logging.Logger.disabled "Link to this definition")
+    
+This attribute disables handling of any events. It is set to `False` in the initializer, and only changed by logging configuration code.
+Note
+This attribute should be treated as read-only. 
+
+setLevel(_level_)[¶](https://docs.python.org/3/library/logging.html#logging.Logger.setLevel "Link to this definition")
+    
+Sets the threshold for this logger to _level_. Logging messages which are less severe than _level_ will be ignored; logging messages which have severity _level_ or higher will be emitted by whichever handler or handlers service this logger, unless a handler’s level has been set to a higher severity level than _level_.
+When a logger is created, the level is set to [`NOTSET`](https://docs.python.org/3/library/logging.html#logging.NOTSET "logging.NOTSET") (which causes all messages to be processed when the logger is the root logger, or delegation to the parent when the logger is a non-root logger). Note that the root logger is created with level [`WARNING`](https://docs.python.org/3/library/logging.html#logging.WARNING "logging.WARNING").
+The term ‘delegation to the parent’ means that if a logger has a level of NOTSET, its chain of ancestor loggers is traversed until either an ancestor with a level other than NOTSET is found, or the root is reached.
+If an ancestor is found with a level other than NOTSET, then that ancestor’s level is treated as the effective level of the logger where the ancestor search began, and is used to determine how a logging event is handled.
+If the root is reached, and it has a level of NOTSET, then all messages will be processed. Otherwise, the root’s level will be used as the effective level.
+See [Logging Levels](https://docs.python.org/3/library/logging.html#levels) for a list of levels.
+Changed in version 3.2: The _level_ parameter now accepts a string representation of the level such as ‘INFO’ as an alternative to the integer constants such as [`INFO`](https://docs.python.org/3/library/logging.html#logging.INFO "logging.INFO"). Note, however, that levels are internally stored as integers, and methods such as e.g. [`getEffectiveLevel()`](https://docs.python.org/3/library/logging.html#logging.Logger.getEffectiveLevel "logging.Logger.getEffectiveLevel") and [`isEnabledFor()`](https://docs.python.org/3/library/logging.html#logging.Logger.isEnabledFor "logging.Logger.isEnabledFor") will return/expect to be passed integers.

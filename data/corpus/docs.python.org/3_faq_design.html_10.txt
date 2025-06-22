@@ -1,0 +1,26 @@
+Title: Enforcing Interface Specifications in Python
+URL: https://docs.python.org/3/faq/design.html
+Summary: This section discusses how to specify and enforce interface specifications in Python using the `abc` module introduced in Python 2.6. It highlights the importance of interface enforcement for large programs and explains how to define Abstract Base Classes (ABCs) and check implementations using `isinstance()` and `issubclass()`.
+---
+
+```
+
+## [How do you specify and enforce an interface spec in Python?](https://docs.python.org/3/faq/design.html#id24)[¶](https://docs.python.org/3/faq/design.html#how-do-you-specify-and-enforce-an-interface-spec-in-python "Link to this heading")
+An interface specification for a module as provided by languages such as C++ and Java describes the prototypes for the methods and functions of the module. Many feel that compile-time enforcement of interface specifications helps in the construction of large programs.
+Python 2.6 adds an [`abc`](https://docs.python.org/3/library/abc.html#module-abc "abc: Abstract base classes according to :pep:`3119`.") module that lets you define Abstract Base Classes (ABCs). You can then use [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") and [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass") to check whether an instance or a class implements a particular ABC. The [`collections.abc`](https://docs.python.org/3/library/collections.abc.html#module-collections.abc "collections.abc: Abstract base classes for containers") module defines a set of useful ABCs such as [`Iterable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable "collections.abc.Iterable"), [`Container`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Container "collections.abc.Container"), and [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping "collections.abc.MutableMapping").
+For Python, many of the advantages of interface specifications can be obtained by an appropriate test discipline for components.
+A good test suite for a module can both provide a regression test and serve as a module interface specification and a set of examples. Many Python modules can be run as a script to provide a simple “self test.” Even modules which use complex external interfaces can often be tested in isolation using trivial “stub” emulations of the external interface. The [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") and [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") modules or third-party test frameworks can be used to construct exhaustive test suites that exercise every line of code in a module.
+An appropriate testing discipline can help build large complex applications in Python as well as having interface specifications would. In fact, it can be better because an interface specification cannot test certain properties of a program. For example, the `list.append()` method is expected to add new elements to the end of some internal list; an interface specification cannot test that your `list.append()` implementation will actually do this correctly, but it’s trivial to check this property in a test suite.
+Writing test suites is very helpful, and you might want to design your code to make it easily tested. One increasingly popular technique, test-driven development, calls for writing parts of the test suite first, before you write any of the actual code. Of course Python allows you to be sloppy and not write test cases at all.
+## [Why is there no goto?](https://docs.python.org/3/faq/design.html#id25)[¶](https://docs.python.org/3/faq/design.html#why-is-there-no-goto "Link to this heading")
+In the 1970s people realized that unrestricted goto could lead to messy “spaghetti” code that was hard to understand and revise. In a high-level language, it is also unneeded as long as there are ways to branch (in Python, with [`if`](https://docs.python.org/3/reference/compound_stmts.html#if) statements and [`or`](https://docs.python.org/3/reference/expressions.html#or), [`and`](https://docs.python.org/3/reference/expressions.html#and), and [`if`](https://docs.python.org/3/reference/compound_stmts.html#if)/[`else`](https://docs.python.org/3/reference/compound_stmts.html#else) expressions) and loop (with [`while`](https://docs.python.org/3/reference/compound_stmts.html#while) and [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) statements, possibly containing [`continue`](https://docs.python.org/3/reference/simple_stmts.html#continue) and [`break`](https://docs.python.org/3/reference/simple_stmts.html#break)).
+One can also use exceptions to provide a “structured goto” that works even across function calls. Many feel that exceptions can conveniently emulate all reasonable uses of the `go` or `goto` constructs of C, Fortran, and other languages. For example:
+```
+classlabel(Exception): pass # declare a label
+try:
+  ...
+  if condition: raise label() # goto label
+  ...
+except label: # where to goto
+  pass
+...

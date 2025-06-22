@@ -1,0 +1,71 @@
+Title: Autospeccing in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: Autospeccing enhances the `mock` feature by restricting mock objects to the API of a specified original object. It ensures that mocks have the same call signatures as the original, raising `TypeError` for incorrect calls. This feature addresses issues arising from API changes during code refactoring, providing a more robust testing environment.
+---
+
+```
+
+### Autospeccing[¶](https://docs.python.org/3/library/unittest.mock.html#autospeccing "Link to this heading")
+Autospeccing is based on the existing `spec` feature of mock. It limits the api of mocks to the api of an original object (the spec), but it is recursive (implemented lazily) so that attributes of mocks only have the same api as the attributes of the spec. In addition mocked functions / methods have the same call signature as the original so they raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if they are called incorrectly.
+Before I explain how auto-speccing works, here’s why it is needed.
+[`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") is a very powerful and flexible object, but it suffers from a flaw which is general to mocking. If you refactor some of your code, rename members and so on, any tests for code that is still using the _old api_ but uses mocks instead of the real objects will still pass. This means your tests can all pass even though your code is broken.
+Changed in version 3.5: Before 3.5, tests with a typo in the word assert would silently pass when they should raise an error. You can still achieve this behavior by passing `unsafe=True` to Mock.
+Note that this is another reason why you need integration tests as well as unit tests. Testing everything in isolation is all fine and dandy, but if you don’t test how your units are “wired together” there is still lots of room for bugs that tests might have caught.
+[`unittest.mock`](https://docs.python.org/3/library/unittest.mock.html#module-unittest.mock "unittest.mock: Mock object library.") already provides a feature to help with this, called speccing. If you use a class or instance as the `spec` for a mock then you can only access attributes on the mock that exist on the real class:
+>>>```
+>>> fromurllibimport request
+>>> mock = Mock(spec=request.Request)
+>>> mock.assret_called_with # Intentional typo!
+Traceback (most recent call last):
+...
+AttributeError: Mock object has no attribute 'assret_called_with'
+
+```
+
+The spec only applies to the mock itself, so we still have the same issue with any methods on the mock:
+>>>```
+>>> mock.has_data()
+<mock.Mock object at 0x...>
+>>> mock.has_data.assret_called_with() # Intentional typo!
+
+```
+
+Auto-speccing solves this problem. You can either pass `autospec=True` to [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") / [`patch.object()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.object "unittest.mock.patch.object") or use the [`create_autospec()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.create_autospec "unittest.mock.create_autospec") function to create a mock with a spec. If you use the `autospec=True` argument to [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") then the object that is being replaced will be used as the spec object. Because the speccing is done “lazily” (the spec is created as attributes on the mock are accessed) you can use it with very complex or deeply nested objects (like modules that import modules that import modules) without a big performance hit.
+Here’s an example of it in use:
+>>>```
+>>> fromurllibimport request
+>>> patcher = patch('__main__.request', autospec=True)
+>>> mock_request = patcher.start()
+>>> request is mock_request
+True
+>>> mock_request.Request
+<MagicMock name='request.Request' spec='Request' id='...'>
+
+```
+
+You can see that `request.Request` has a spec. `request.Request` takes two arguments in the constructor (one of which is _self_). Here’s what happens if we try to call it incorrectly:
+>>>```
+>>> req = request.Request()
+Traceback (most recent call last):
+...
+TypeError: <lambda>() takes at least 2 arguments (1 given)
+
+```
+
+The spec also applies to instantiated classes (i.e. the return value of specced mocks):
+>>>```
+>>> req = request.Request('foo')
+>>> req
+<NonCallableMagicMock name='request.Request()' spec='Request' id='...'>
+
+```
+
+`Request` objects are not callable, so the return value of instantiating our mocked out `request.Request` is a non-callable mock. With the spec in place any typos in our asserts will raise the correct error:
+>>>```
+>>> req.add_header('spam', 'eggs')
+<MagicMock name='request.Request().add_header()' id='...'>
+>>> req.add_header.assret_called_with # Intentional typo!
+Traceback (most recent call last):
+...
+AttributeError: Mock object has no attribute 'assret_called_with'
+>>> req.add_header.assert_called_with('spam', 'eggs')

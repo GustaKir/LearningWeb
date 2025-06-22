@@ -1,0 +1,82 @@
+Title: Asyncio StreamWriter Methods
+URL: https://docs.python.org/3/library/asyncio-stream.html
+Summary: This section describes key methods of the `StreamWriter` class in Python's `asyncio` module, including `can_write_eof()` to check for EOF support, `write_eof()` to close the write end of the stream, and `get_extra_info()` for accessing additional transport information.
+---
+
+```
+
+
+can_write_eof()[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.can_write_eof "Link to this definition")
+    
+Return `True` if the underlying transport supports the [`write_eof()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write_eof "asyncio.StreamWriter.write_eof") method, `False` otherwise. 
+
+write_eof()[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write_eof "Link to this definition")
+    
+Close the write end of the stream after the buffered write data is flushed. 
+
+transport[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.transport "Link to this definition")
+    
+Return the underlying asyncio transport. 
+
+get_extra_info(_name_ , _default =None_)[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.get_extra_info "Link to this definition")
+    
+Access optional transport information; see [`BaseTransport.get_extra_info()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info "asyncio.BaseTransport.get_extra_info") for details. 
+
+_async_ drain()[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.drain "Link to this definition")
+    
+Wait until it is appropriate to resume writing to the stream. Example:
+```
+writer.write(data)
+await writer.drain()
+
+```
+
+This is a flow control method that interacts with the underlying IO write buffer. When the size of the buffer reaches the high watermark, _drain()_ blocks until the size of the buffer is drained down to the low watermark and writing can be resumed. When there is nothing to wait for, the [`drain()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.drain "asyncio.StreamWriter.drain") returns immediately. 
+
+_async_ start_tls(_sslcontext_ , _*_ , _server_hostname =None_, _ssl_handshake_timeout =None_, _ssl_shutdown_timeout =None_)[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.start_tls "Link to this definition")
+    
+Upgrade an existing stream-based connection to TLS.
+Parameters:
+  * _sslcontext_ : a configured instance of [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext").
+  * _server_hostname_ : sets or overrides the host name that the target server’s certificate will be matched against.
+  * _ssl_handshake_timeout_ is the time in seconds to wait for the TLS handshake to complete before aborting the connection. `60.0` seconds if `None` (default).
+  * _ssl_shutdown_timeout_ is the time in seconds to wait for the SSL shutdown to complete before aborting the connection. `30.0` seconds if `None` (default).
+
+
+Added in version 3.11.
+Changed in version 3.12: Added the _ssl_shutdown_timeout_ parameter. 
+
+is_closing()[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.is_closing "Link to this definition")
+    
+Return `True` if the stream is closed or in the process of being closed.
+Added in version 3.7. 
+
+_async_ wait_closed()[¶](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.wait_closed "Link to this definition")
+    
+Wait until the stream is closed.
+Should be called after [`close()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.close "asyncio.StreamWriter.close") to wait until the underlying connection is closed, ensuring that all data has been flushed before e.g. exiting the program.
+Added in version 3.7.
+## Examples[¶](https://docs.python.org/3/library/asyncio-stream.html#examples "Link to this heading")
+### TCP echo client using streams[¶](https://docs.python.org/3/library/asyncio-stream.html#tcp-echo-client-using-streams "Link to this heading")
+TCP echo client using the [`asyncio.open_connection()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.open_connection "asyncio.open_connection") function:
+```
+importasyncio
+async deftcp_echo_client(message):
+  reader, writer = await asyncio.open_connection(
+    '127.0.0.1', 8888)
+  print(f'Send: {message!r}')
+  writer.write(message.encode())
+  await writer.drain()
+  data = await reader.read(100)
+  print(f'Received: {data.decode()!r}')
+  print('Close the connection')
+  writer.close()
+  await writer.wait_closed()
+asyncio.run(tcp_echo_client('Hello World!'))
+
+```
+
+See also
+The [TCP echo client protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-example-tcp-echo-client-protocol) example uses the low-level [`loop.create_connection()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_connection "asyncio.loop.create_connection") method.
+### TCP echo server using streams[¶](https://docs.python.org/3/library/asyncio-stream.html#tcp-echo-server-using-streams "Link to this heading")
+TCP echo server using the [`asyncio.start_server()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.start_server "asyncio.start_server") function:

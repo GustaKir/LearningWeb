@@ -1,0 +1,47 @@
+Title: Caching in Streamlit Architecture
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: This document explore the caching aspects of Streamlit's architecture, including minimal examples, basic usage, and specific caching decorators like st.cache_data and st.cache_resource. It also discusses their behaviors, usage scenarios, and provides examples to illustrate effective caching strategies.
+---
+
+1. Contents
+  2. [Minimal example](https://docs.streamlit.io/develop/concepts/architecture/caching#minimal-example)
+  3. [Basic usage](https://docs.streamlit.io/develop/concepts/architecture/caching#basic-usage)
+  4. [st.cache_data](https://docs.streamlit.io/develop/concepts/architecture/caching#stcache_data)
+  5. [Usage](https://docs.streamlit.io/develop/concepts/architecture/caching#usage)
+  6. [Behavior](https://docs.streamlit.io/develop/concepts/architecture/caching#behavior)
+  7. [Examples](https://docs.streamlit.io/develop/concepts/architecture/caching#examples)
+  8. [st.cache_resource](https://docs.streamlit.io/develop/concepts/architecture/caching#stcache_resource)
+  9. [Usage](https://docs.streamlit.io/develop/concepts/architecture/caching#usage-1)
+  10. [Behavior](https://docs.streamlit.io/develop/concepts/architecture/caching#behavior-1)
+  11. [Examples](https://docs.streamlit.io/develop/concepts/architecture/caching#examples-1)
+  12. [Deciding which caching decorator to use](https://docs.streamlit.io/develop/concepts/architecture/caching#deciding-which-caching-decorator-to-use)
+  13. [Advanced usage](https://docs.streamlit.io/develop/concepts/architecture/caching#advanced-usage)
+  14. [Controlling cache size and duration](https://docs.streamlit.io/develop/concepts/architecture/caching#controlling-cache-size-and-duration)
+  15. [Customizing the spinner](https://docs.streamlit.io/develop/concepts/architecture/caching#customizing-the-spinner)
+  16. [Excluding input parameters](https://docs.streamlit.io/develop/concepts/architecture/caching#excluding-input-parameters)
+  17. [The hash_funcs parameter](https://docs.streamlit.io/develop/concepts/architecture/caching#the-hash_funcs-parameter)
+  18. [Example 1: Hashing a custom class](https://docs.streamlit.io/develop/concepts/architecture/caching#example-1-hashing-a-custom-class)
+  19. [Example 2: Hashing a Pydantic model](https://docs.streamlit.io/develop/concepts/architecture/caching#example-2-hashing-a-pydantic-model)
+  20. [Example 3: Hashing a ML model](https://docs.streamlit.io/develop/concepts/architecture/caching#example-3-hashing-a-ml-model)
+  21. [Example 4: Overriding Streamlit's default hashing mechanism](https://docs.streamlit.io/develop/concepts/architecture/caching#example-4-overriding-streamlits-default-hashing-mechanism)
+  22. [Static elements](https://docs.streamlit.io/develop/concepts/architecture/caching#static-elements)
+  23. [Input widgets](https://docs.streamlit.io/develop/concepts/architecture/caching#input-widgets)
+  24. [Dealing with large data](https://docs.streamlit.io/develop/concepts/architecture/caching#dealing-with-large-data)
+  25. [Mutation and concurrency issues](https://docs.streamlit.io/develop/concepts/architecture/caching#mutation-and-concurrency-issues)
+  26. [Copying behavior](https://docs.streamlit.io/develop/concepts/architecture/caching#copying-behavior)
+  27. [Concurrency issues](https://docs.streamlit.io/develop/concepts/architecture/caching#concurrency-issues)
+  28. [Migrating from st.cache](https://docs.streamlit.io/develop/concepts/architecture/caching#migrating-from-stcache)
+
+
+# [](https://docs.streamlit.io/develop/concepts/architecture/caching#caching-overview)Caching overview
+Streamlit runs your script from top to bottom at every user interaction or code change. This execution model makes development super easy. But it comes with two major challenges:
+  1. Long-running functions run again and again, which slows down your app.
+  2. Objects get recreated again and again, which makes it hard to persist them across reruns or sessions.
+
+
+But don't worry! Streamlit lets you tackle both issues with its built-in caching mechanism. Caching stores the results of slow function calls, so they only need to run once. This makes your app much faster and helps with persisting objects across reruns. Cached values are available to all users of your app. If you need to save results that should only be accessible within a session, use [Session State](https://docs.streamlit.io/develop/concepts/architecture/session-state) instead.
+Table of contents _expand_more_
+  1. [Minimal example](https://docs.streamlit.io/develop/concepts/architecture/caching#minimal-example)
+  2. [Basic usage](https://docs.streamlit.io/develop/concepts/architecture/caching#basic-usage)
+  3. [Advanced usage](https://docs.streamlit.io/develop/concepts/architecture/caching#advanced-usage)
+  4. [Migrating from st.cache](https://docs.streamlit.io/develop/concepts/architecture/caching#migrating-from-stcache)

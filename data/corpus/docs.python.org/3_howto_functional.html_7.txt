@@ -1,0 +1,70 @@
+Title: Using Yield Expressions in Generators
+URL: https://docs.python.org/3/howto/functional.html
+Summary: It is recommended to always use parentheses around a 'yield' expression when working with its returned value, even though they are not always necessary. PEP 342 outlines the rules for when parentheses are required. Additionally, values can be sent into a generator using the 'send(value)' method, which allows the generator to resume execution and retrieve the sent value.
+---
+
+```
+
+I recommend that you **always** put parentheses around a `yield` expression when you’re doing something with the returned value, as in the above example. The parentheses aren’t always necessary, but it’s easier to always add them instead of having to remember when they’re needed.
+([**PEP 342**](https://peps.python.org/pep-0342/) explains the exact rules, which are that a `yield`-expression must always be parenthesized except when it occurs at the top-level expression on the right-hand side of an assignment. This means you can write `val = yield i` but have to use parentheses when there’s an operation, as in `val = (yield i) + 12`.)
+Values are sent into a generator by calling its [`send(value)`](https://docs.python.org/3/reference/expressions.html#generator.send "generator.send") method. This method resumes the generator’s code and the `yield` expression returns the specified value. If the regular [`__next__()`](https://docs.python.org/3/reference/expressions.html#generator.__next__ "generator.__next__") method is called, the `yield` returns `None`.
+Here’s a simple counter that increments by 1 and allows changing the value of the internal counter.
+```
+defcounter(maximum):
+  i = 0
+  while i < maximum:
+    val = (yield i)
+    # If value provided, change counter
+    if val is not None:
+      i = val
+    else:
+      i += 1
+
+```
+
+And here’s an example of changing the counter:
+>>>```
+>>> it = counter(10)
+>>> next(it)
+0
+>>> next(it)
+1
+>>> it.send(8)
+8
+>>> next(it)
+9
+>>> next(it)
+Traceback (most recent call last):
+ File "t.py", line 15, in <module>
+it.next()
+StopIteration
+
+```
+
+Because `yield` will often be returning `None`, you should always check for this case. Don’t just use its value in expressions unless you’re sure that the [`send()`](https://docs.python.org/3/reference/expressions.html#generator.send "generator.send") method will be the only method used to resume your generator function.
+In addition to [`send()`](https://docs.python.org/3/reference/expressions.html#generator.send "generator.send"), there are two other methods on generators:
+  * [`throw(value)`](https://docs.python.org/3/reference/expressions.html#generator.throw "generator.throw") is used to raise an exception inside the generator; the exception is raised by the `yield` expression where the generator’s execution is paused.
+  * [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close") raises a [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") exception inside the generator to terminate the iteration. On receiving this exception, the generator’s code must either raise [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") or [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"); catching the exception and doing anything else is illegal and will trigger a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError"). [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close") will also be called by Python’s garbage collector when the generator is garbage-collected.
+If you need to run cleanup code when a [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") occurs, I suggest using a `try: ... finally:` suite instead of catching [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit").
+
+
+The cumulative effect of these changes is to turn generators from one-way producers of information into both producers and consumers.
+Generators also become **coroutines** , a more generalized form of subroutines. Subroutines are entered at one point and exited at another point (the top of the function, and a `return` statement), but coroutines can be entered, exited, and resumed at many different points (the `yield` statements).
+## Built-in functions[¶](https://docs.python.org/3/howto/functional.html#built-in-functions "Link to this heading")
+Let’s look in more detail at built-in functions often used with iterators.
+Two of Python’s built-in functions, [`map()`](https://docs.python.org/3/library/functions.html#map "map") and [`filter()`](https://docs.python.org/3/library/functions.html#filter "filter") duplicate the features of generator expressions: 
+
+[`map(f, iterA, iterB, ...)`](https://docs.python.org/3/library/functions.html#map "map") returns an iterator over the sequence
+    
+`f(iterA[0], iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...`.
+>>>```
+>>> defupper(s):
+...   return s.upper()
+
+```
+
+>>>```
+>>> list(map(upper, ['sentence', 'fragment']))
+['SENTENCE', 'FRAGMENT']
+>>> [upper(s) for s in ['sentence', 'fragment']]
+['SENTENCE', 'FRAGMENT']

@@ -1,0 +1,104 @@
+Title: SocketServer wfile Attribute
+URL: https://docs.python.org/3/library/socketserver.html
+Summary: The 'wfile' attribute in the DatagramRequestHandler class is a file object used for writing replies, supporting the io.BufferedIOBase writable interface since version 3.6.
+---
+
+wfile[¶](https://docs.python.org/3/library/socketserver.html#socketserver.DatagramRequestHandler.wfile "Link to this definition")
+    
+A file object to which the reply is written. Support the [`io.BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") writable interface
+Changed in version 3.6: [`wfile`](https://docs.python.org/3/library/socketserver.html#socketserver.DatagramRequestHandler.wfile "socketserver.DatagramRequestHandler.wfile") also supports the [`io.BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") writable interface.
+## Examples[¶](https://docs.python.org/3/library/socketserver.html#examples "Link to this heading")
+### [`socketserver.TCPServer`](https://docs.python.org/3/library/socketserver.html#socketserver.TCPServer "socketserver.TCPServer") Example[¶](https://docs.python.org/3/library/socketserver.html#socketserver-tcpserver-example "Link to this heading")
+This is the server side:
+```
+importsocketserver
+classMyTCPHandler(socketserver.BaseRequestHandler):
+"""
+  The request handler class for our server.
+  It is instantiated once per connection to the server, and must
+  override the handle() method to implement communication to the
+  client.
+  """
+  defhandle(self):
+    # self.request is the TCP socket connected to the client
+    pieces = [b'']
+    total = 0
+    while b'\n' not in pieces[-1] and total < 10_000:
+      pieces.append(self.request.recv(2000))
+      total += len(pieces[-1])
+    self.data = b''.join(pieces)
+    print(f"Received from {self.client_address[0]}:")
+    print(self.data.decode("utf-8"))
+    # just send back the same data, but upper-cased
+    self.request.sendall(self.data.upper())
+    # after we return, the socket will be closed.
+if __name__ == "__main__":
+  HOST, PORT = "localhost", 9999
+  # Create the server, binding to localhost on port 9999
+  with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
+    # Activate the server; this will keep running until you
+    # interrupt the program with Ctrl-C
+    server.serve_forever()
+
+```
+
+An alternative request handler class that makes use of streams (file-like objects that simplify communication by providing the standard file interface):
+```
+classMyTCPHandler(socketserver.StreamRequestHandler):
+  defhandle(self):
+    # self.rfile is a file-like object created by the handler.
+    # We can now use e.g. readline() instead of raw recv() calls.
+    # We limit ourselves to 10000 bytes to avoid abuse by the sender.
+    self.data = self.rfile.readline(10000).rstrip()
+    print(f"{self.client_address[0]} wrote:")
+    print(self.data.decode("utf-8"))
+    # Likewise, self.wfile is a file-like object used to write back
+    # to the client
+    self.wfile.write(self.data.upper())
+
+```
+
+The difference is that the `readline()` call in the second handler will call `recv()` multiple times until it encounters a newline character, while the the first handler had to use a `recv()` loop to accumulate data until a newline itself. If it had just used a single `recv()` without the loop it would just have returned what has been received so far from the client. TCP is stream based: data arrives in the order it was sent, but there no correlation between client `send()` or `sendall()` calls and the number of `recv()` calls on the server required to receive it.
+This is the client side:
+```
+importsocket
+importsys
+HOST, PORT = "localhost", 9999
+data = " ".join(sys.argv[1:])
+# Create a socket (SOCK_STREAM means a TCP socket)
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+  # Connect to server and send data
+  sock.connect((HOST, PORT))
+  sock.sendall(bytes(data, "utf-8"))
+  sock.sendall(b"\n")
+  # Receive data from the server and shut down
+  received = str(sock.recv(1024), "utf-8")
+print("Sent:  ", data)
+print("Received:", received)
+
+```
+
+The output of the example should look something like this:
+Server:
+```
+$ pythonTCPServer.py
+127.0.0.1 wrote:
+b'hello world with TCP'
+127.0.0.1 wrote:
+b'python is nice'
+
+```
+
+Client:
+```
+$ pythonTCPClient.pyhelloworldwithTCP
+Sent:   hello world with TCP
+Received: HELLO WORLD WITH TCP
+$ pythonTCPClient.pypythonisnice
+Sent:   python is nice
+Received: PYTHON IS NICE
+
+```
+
+### [`socketserver.UDPServer`](https://docs.python.org/3/library/socketserver.html#socketserver.UDPServer "socketserver.UDPServer") Example[¶](https://docs.python.org/3/library/socketserver.html#socketserver-udpserver-example "Link to this heading")
+This is the server side:

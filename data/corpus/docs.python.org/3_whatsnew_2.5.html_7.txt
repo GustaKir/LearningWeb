@@ -1,0 +1,59 @@
+Title: PEP 343: The ‘with’ Statement
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This section introduces the 'with' statement, a new control-flow structure that simplifies code for resource management, replacing the need for 'try...finally' blocks. It outlines the basic structure of the statement and sets the stage for discussing implementation details and creating context manager objects.
+---
+
+<https://web.archive.org/web/20160321211320/http://www.sidhe.org/~dan/blog/archives/000178.html>
+    
+An explanation of coroutines from a Perl point of view, written by Dan Sugalski.
+## PEP 343: The ‘with’ statement[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-343-the-with-statement "Link to this heading")
+The ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement clarifies code that previously would use `try...finally` blocks to ensure that clean-up code is executed. In this section, I’ll discuss the statement as it will commonly be used. In the next section, I’ll examine the implementation details and show how to write objects for use with this statement.
+The ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement is a new control-flow structure whose basic structure is:
+```
+with expression [as variable]:
+  with-block
+
+```
+
+The expression is evaluated, and it should result in an object that supports the context management protocol (that is, has [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") and [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") methods.
+The object’s [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") is called before _with-block_ is executed and therefore can run set-up code. It also may return a value that is bound to the name _variable_ , if given. (Note carefully that _variable_ is _not_ assigned the result of _expression_.)
+After execution of the _with-block_ is finished, the object’s [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method is called, even if the block raised an exception, and can therefore run clean-up code.
+To enable the statement in Python 2.5, you need to add the following directive to your module:
+```
+from__future__import with_statement
+
+```
+
+The statement will always be enabled in Python 2.6.
+Some standard Python objects now support the context management protocol and can be used with the ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement. File objects are one example:
+```
+with open('/etc/passwd', 'r') as f:
+  for line in f:
+    print line
+    ... more processing code ...
+
+```
+
+After this statement has executed, the file object in _f_ will have been automatically closed, even if the [`for`](https://docs.python.org/3/reference/compound_stmts.html#for) loop raised an exception part-way through the block.
+Note
+In this case, _f_ is the same object created by [`open()`](https://docs.python.org/3/library/functions.html#open "open"), because [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") returns _self_.
+The [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module’s locks and condition variables also support the ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement:
+```
+lock = threading.Lock()
+with lock:
+  # Critical section of code
+  ...
+
+```
+
+The lock is acquired before the block is executed and always released once the block is complete.
+The new `localcontext()` function in the [`decimal`](https://docs.python.org/3/library/decimal.html#module-decimal "decimal: Implementation of the General Decimal Arithmetic Specification.") module makes it easy to save and restore the current decimal context, which encapsulates the desired precision and rounding characteristics for computations:
+```
+fromdecimalimport Decimal, Context, localcontext
+# Displays with default precision of 28 digits
+v = Decimal('578')
+print v.sqrt()
+with localcontext(Context(prec=16)):
+  # All code in this block uses a precision of 16 digits.
+  # The original context is restored on exiting the block.
+  print v.sqrt()

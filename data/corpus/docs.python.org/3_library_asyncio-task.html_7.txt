@@ -1,0 +1,75 @@
+Title: Asyncio Task Execution Example
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: This code example demonstrates how to use asyncio to concurrently compute factorials for different tasks. Three factorial computations are scheduled using asyncio.gather, allowing for asynchronous execution and output of progress as each task completes.
+---
+
+```
+importasyncio
+async deffactorial(name, number):
+  f = 1
+  for i in range(2, number + 1):
+    print(f"Task {name}: Compute factorial({number}), currently i={i}...")
+    await asyncio.sleep(1)
+    f *= i
+  print(f"Task {name}: factorial({number}) = {f}")
+  return f
+async defmain():
+  # Schedule three calls *concurrently*:
+  L = await asyncio.gather(
+    factorial("A", 2),
+    factorial("B", 3),
+    factorial("C", 4),
+  )
+  print(L)
+asyncio.run(main())
+# Expected output:
+#
+#   Task A: Compute factorial(2), currently i=2...
+#   Task B: Compute factorial(3), currently i=2...
+#   Task C: Compute factorial(4), currently i=2...
+#   Task A: factorial(2) = 2
+#   Task B: Compute factorial(3), currently i=3...
+#   Task C: Compute factorial(4), currently i=3...
+#   Task B: factorial(3) = 6
+#   Task C: Compute factorial(4), currently i=4...
+#   Task C: factorial(4) = 24
+#   [2, 6, 24]
+
+```
+
+Note
+If _return_exceptions_ is false, cancelling gather() after it has been marked done won’t cancel any submitted awaitables. For instance, gather can be marked done after propagating an exception to the caller, therefore, calling `gather.cancel()` after catching an exception (raised by one of the awaitables) from gather won’t cancel any other awaitables.
+Changed in version 3.7: If the _gather_ itself is cancelled, the cancellation is propagated regardless of _return_exceptions_.
+Changed in version 3.10: Removed the _loop_ parameter.
+Deprecated since version 3.10: Deprecation warning is emitted if no positional arguments are provided or not all positional arguments are Future-like objects and there is no running event loop.
+## [Eager Task Factory](https://docs.python.org/3/library/asyncio-task.html#id9)[¶](https://docs.python.org/3/library/asyncio-task.html#eager-task-factory "Link to this heading") 
+
+asyncio.eager_task_factory(_loop_ , _coro_ , _*_ , _name =None_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.eager_task_factory "Link to this definition")
+    
+A task factory for eager task execution.
+When using this factory (via [`loop.set_task_factory(asyncio.eager_task_factory)`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.set_task_factory "asyncio.loop.set_task_factory")), coroutines begin execution synchronously during [`Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") construction. Tasks are only scheduled on the event loop if they block. This can be a performance improvement as the overhead of loop scheduling is avoided for coroutines that complete synchronously.
+A common example where this is beneficial is coroutines which employ caching or memoization to avoid actual I/O when possible.
+Note
+Immediate execution of the coroutine is a semantic change. If the coroutine returns or raises, the task is never scheduled to the event loop. If the coroutine execution blocks, the task is scheduled to the event loop. This change may introduce behavior changes to existing applications. For example, the application’s task execution order is likely to change.
+Added in version 3.12. 
+
+asyncio.create_eager_task_factory(_custom_task_constructor_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_eager_task_factory "Link to this definition")
+    
+Create an eager task factory, similar to [`eager_task_factory()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.eager_task_factory "asyncio.eager_task_factory"), using the provided _custom_task_constructor_ when creating a new task instead of the default [`Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task").
+_custom_task_constructor_ must be a _callable_ with the signature matching the signature of [`Task.__init__`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task"). The callable must return a [`asyncio.Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task")-compatible object.
+This function returns a _callable_ intended to be used as a task factory of an event loop via [`loop.set_task_factory(factory)`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.set_task_factory "asyncio.loop.set_task_factory")).
+Added in version 3.12.
+## [Shielding From Cancellation](https://docs.python.org/3/library/asyncio-task.html#id10)[¶](https://docs.python.org/3/library/asyncio-task.html#shielding-from-cancellation "Link to this heading") 
+
+_awaitable _asyncio.shield(_aw_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.shield "Link to this definition")
+    
+Protect an [awaitable object](https://docs.python.org/3/library/asyncio-task.html#asyncio-awaitables) from being [`cancelled`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.cancel "asyncio.Task.cancel").
+If _aw_ is a coroutine it is automatically scheduled as a Task.
+The statement:
+```
+task = asyncio.create_task(something())
+res = await shield(task)
+
+```
+
+is equivalent to:

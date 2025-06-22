@@ -1,0 +1,65 @@
+Title: Enabling SQLite Extension Loading in Python
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: The `enable_load_extension` method allows the SQLite engine to load extensions from shared libraries when set to True. This feature is not enabled by default in the `sqlite3` module, especially on platforms like macOS, where SQLite may be compiled without it. Enabling this feature requires passing the appropriate configuration option.
+---
+
+enable_load_extension(_enabled_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.enable_load_extension "Link to this definition")
+    
+Enable the SQLite engine to load SQLite extensions from shared libraries if _enabled_ is `True`; else, disallow loading SQLite extensions. SQLite extensions can define new functions, aggregates or whole new virtual table implementations. One well-known extension is the fulltext-search extension distributed with SQLite.
+Note
+The `sqlite3` module is not built with loadable extension support by default, because some platforms (notably macOS) have SQLite libraries which are compiled without this feature. To get loadable extension support, you must pass the [`--enable-loadable-sqlite-extensions`](https://docs.python.org/3/using/configure.html#cmdoption-enable-loadable-sqlite-extensions) option to **configure**.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `sqlite3.enable_load_extension` with arguments `connection`, `enabled`.
+Added in version 3.2.
+Changed in version 3.10: Added the `sqlite3.enable_load_extension` auditing event.
+```
+con.enable_load_extension(True)
+# Load the fulltext search extension
+con.execute("select load_extension('./fts3.so')")
+# alternatively you can load the extension using an API call:
+# con.load_extension("./fts3.so")
+# disable extension loading again
+con.enable_load_extension(False)
+# example from SQLite wiki
+con.execute("CREATE VIRTUAL TABLE recipe USING fts3(name, ingredients)")
+con.executescript("""
+  INSERT INTO recipe (name, ingredients) VALUES('broccoli stew', 'broccoli peppers cheese tomatoes');
+  INSERT INTO recipe (name, ingredients) VALUES('pumpkin stew', 'pumpkin onions garlic celery');
+  INSERT INTO recipe (name, ingredients) VALUES('broccoli pie', 'broccoli cheese onions flour');
+  INSERT INTO recipe (name, ingredients) VALUES('pumpkin pie', 'pumpkin sugar flour butter');
+  """)
+for row in con.execute("SELECT rowid, name, ingredients FROM recipe WHERE name MATCH 'pie'"):
+  print(row)
+
+```
+
+
+load_extension(_path_ , _/_ , _*_ , _entrypoint =None_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.load_extension "Link to this definition")
+    
+Load an SQLite extension from a shared library. Enable extension loading with [`enable_load_extension()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.enable_load_extension "sqlite3.Connection.enable_load_extension") before calling this method. 
+
+Parameters:
+    
+  * **path** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – The path to the SQLite extension.
+  * **entrypoint** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str") _|__None_) – Entry point name. If `None` (the default), SQLite will come up with an entry point name of its own; see the SQLite docs [Loading an Extension](https://www.sqlite.org/loadext.html#loading_an_extension) for details.
+
+
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `sqlite3.load_extension` with arguments `connection`, `path`.
+Added in version 3.2.
+Changed in version 3.10: Added the `sqlite3.load_extension` auditing event.
+Changed in version 3.12: Added the _entrypoint_ parameter. 
+
+iterdump(_*_ , _filter =None_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.iterdump "Link to this definition")
+    
+Return an [iterator](https://docs.python.org/3/glossary.html#term-iterator) to dump the database as SQL source code. Useful when saving an in-memory database for later restoration. Similar to the `.dump` command in the **sqlite3** shell. 
+
+Parameters:
+    
+**filter** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str") _|__None_) – An optional `LIKE` pattern for database objects to dump, e.g. `prefix_%`. If `None` (the default), all database objects will be included.
+Example:
+```
+# Convert file example.db to SQL dump file dump.sql
+con = sqlite3.connect('example.db')
+with open('dump.sql', 'w') as f:
+  for line in con.iterdump():
+    f.write('%s\n' % line)
+con.close()

@@ -1,0 +1,103 @@
+Title: Setting Attributes and Calling Base Class Methods in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This document discusses how to implement the `__setattr__()` method in Python classes to avoid infinite recursion by using `object.__setattr__()` for attribute assignment. It also explains that attributes can be set directly by manipulating `self.__dict__`. Furthermore, it introduces the use of the `super()` function to call methods from a base class in derived classes.
+---
+
+```
+
+Many [`__setattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__setattr__ "object.__setattr__") implementations call `object.__setattr__()` to set an attribute on self without causing infinite recursion:
+```
+classX:
+  def__setattr__(self, name, value):
+    # Custom logic here...
+    object.__setattr__(self, name, value)
+
+```
+
+Alternatively, it is possible to set attributes by inserting entries into [`self.__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") directly.
+### [How do I call a method defined in a base class from a derived class that extends it?](https://docs.python.org/3/faq/programming.html#id60)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-call-a-method-defined-in-a-base-class-from-a-derived-class-that-extends-it "Link to this heading")
+Use the built-in [`super()`](https://docs.python.org/3/library/functions.html#super "super") function:
+```
+classDerived(Base):
+  defmeth(self):
+    super().meth() # calls Base.meth
+
+```
+
+In the example, [`super()`](https://docs.python.org/3/library/functions.html#super "super") will automatically determine the instance from which it was called (the `self` value), look up the [method resolution order](https://docs.python.org/3/glossary.html#term-method-resolution-order) (MRO) with `type(self).__mro__`, and return the next in line after `Derived` in the MRO: `Base`.
+### [How can I organize my code to make it easier to change the base class?](https://docs.python.org/3/faq/programming.html#id61)[¶](https://docs.python.org/3/faq/programming.html#how-can-i-organize-my-code-to-make-it-easier-to-change-the-base-class "Link to this heading")
+You could assign the base class to an alias and derive from the alias. Then all you have to change is the value assigned to the alias. Incidentally, this trick is also handy if you want to decide dynamically (e.g. depending on availability of resources) which base class to use. Example:
+```
+classBase:
+  ...
+BaseAlias = Base
+classDerived(BaseAlias):
+  ...
+
+```
+
+### [How do I create static class data and static class methods?](https://docs.python.org/3/faq/programming.html#id62)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-create-static-class-data-and-static-class-methods "Link to this heading")
+Both static data and static methods (in the sense of C++ or Java) are supported in Python.
+For static data, simply define a class attribute. To assign a new value to the attribute, you have to explicitly use the class name in the assignment:
+```
+classC:
+  count = 0  # number of times C.__init__ called
+  def__init__(self):
+    C.count = C.count + 1
+  defgetcount(self):
+    return C.count # or return self.count
+
+```
+
+`c.count` also refers to `C.count` for any `c` such that `isinstance(c, C)` holds, unless overridden by `c` itself or by some class on the base-class search path from `c.__class__` back to `C`.
+Caution: within a method of C, an assignment like `self.count = 42` creates a new and unrelated instance named “count” in `self`’s own dict. Rebinding of a class-static data name must always specify the class whether inside a method or not:
+```
+C.count = 314
+
+```
+
+Static methods are possible:
+```
+classC:
+  @staticmethod
+  defstatic(arg1, arg2, arg3):
+    # No 'self' parameter!
+    ...
+
+```
+
+However, a far more straightforward way to get the effect of a static method is via a simple module-level function:
+```
+defgetcount():
+  return C.count
+
+```
+
+If your code is structured so as to define one class (or tightly related class hierarchy) per module, this supplies the desired encapsulation.
+### [How can I overload constructors (or methods) in Python?](https://docs.python.org/3/faq/programming.html#id63)[¶](https://docs.python.org/3/faq/programming.html#how-can-i-overload-constructors-or-methods-in-python "Link to this heading")
+This answer actually applies to all methods, but the question usually comes up first in the context of constructors.
+In C++ you’d write
+```
+classC{
+C(){cout<<"No arguments\n";}
+C(inti){cout<<"Argument is "<<i<<"\n";}
+}
+
+```
+
+In Python you have to write a single constructor that catches all cases using default arguments. For example:
+```
+classC:
+  def__init__(self, i=None):
+    if i is None:
+      print("No arguments")
+    else:
+      print("Argument is", i)
+
+```
+
+This is not entirely equivalent, but close enough in practice.
+You could also try a variable-length argument list, e.g.
+```
+def__init__(self, *args):
+  ...

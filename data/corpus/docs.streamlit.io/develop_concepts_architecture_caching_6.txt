@@ -1,0 +1,29 @@
+Title: Streamlit Caching Overview
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: This section discusses the caching functions in Streamlit, emphasizing the use of `st.cache_data` for most Python data types and use cases. It provides a table indicating typical return types for various operations, all of which align with `st.cache_data`, while noting that `st.cache_resource` is suitable for specific scenarios.
+---
+
+From the types listed above, it should be obvious that most objects in Python are “data." That's also why `st.cache_data` is the correct command for almost all use cases. `st.cache_resource` is a more exotic command that you should only use in specific situations.
+Or if you're lazy and don't want to think too much, look up your use case or return type in the table below 😉:
+Use case| Typical return types| Caching decorator  
+---|---|---  
+Reading a CSV file with pd.read_csv| pandas.DataFrame| st.cache_data  
+Reading a text file| str, list of str| st.cache_data  
+Transforming pandas dataframes| pandas.DataFrame, pandas.Series| st.cache_data  
+Computing with numpy arrays| numpy.ndarray| st.cache_data  
+Simple computations with basic types| str, int, float, …| st.cache_data  
+Querying a database| pandas.DataFrame| st.cache_data  
+Querying an API| pandas.DataFrame, str, dict| st.cache_data  
+Running an ML model (inference)| pandas.DataFrame, str, int, dict, list| st.cache_data  
+Creating or processing images| PIL.Image.Image, numpy.ndarray| st.cache_data  
+Creating charts| matplotlib.figure.Figure, plotly.graph_objects.Figure, altair.Chart| st.cache_data (but some libraries require st.cache_resource, since the chart object is not serializable – make sure not to mutate the chart after creation!)  
+Lazy computations| polars.LazyFrame| st.cache_resource (but may be better to use st.cache_data on the collected results)  
+Loading ML models| transformers.Pipeline, torch.nn.Module, tensorflow.keras.Model| st.cache_resource  
+Initializing database connections| pyodbc.Connection, sqlalchemy.engine.base.Engine, psycopg2.connection, mysql.connector.MySQLConnection, sqlite3.Connection| st.cache_resource  
+Opening persistent file handles| _io.TextIOWrapper| st.cache_resource  
+Opening persistent threads| threading.thread| st.cache_resource  
+## [](https://docs.streamlit.io/develop/concepts/architecture/caching#advanced-usage)Advanced usage
+### [](https://docs.streamlit.io/develop/concepts/architecture/caching#controlling-cache-size-and-duration)Controlling cache size and duration
+If your app runs for a long time and constantly caches functions, you might run into two problems:
+  1. The app runs out of memory because the cache is too large.
+  2. Objects in the cache become stale, e.g. because you cached old data from a database.

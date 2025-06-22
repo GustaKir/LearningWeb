@@ -1,0 +1,69 @@
+Title: Module Initialization for Threading Extensions
+URL: https://docs.python.org/3/howto/free-threading-extensions.html
+Summary: This section discusses how extension modules must indicate support for running with the Global Interpreter Lock (GIL) disabled. It differentiates between multi-phase and single-phase initialization methods, specifically detailing the use of the `Py_mod_gil` slot in multi-phase initialized extensions.
+---
+
+```
+
+## Module Initialization[¶](https://docs.python.org/3/howto/free-threading-extensions.html#module-initialization "Link to this heading")
+Extension modules need to explicitly indicate that they support running with the GIL disabled; otherwise importing the extension will raise a warning and enable the GIL at runtime.
+There are two ways to indicate that an extension module supports running with the GIL disabled depending on whether the extension uses multi-phase or single-phase initialization.
+### Multi-Phase Initialization[¶](https://docs.python.org/3/howto/free-threading-extensions.html#multi-phase-initialization "Link to this heading")
+Extensions that use multi-phase initialization (i.e., [`PyModuleDef_Init()`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef_Init "PyModuleDef_Init")) should add a [`Py_mod_gil`](https://docs.python.org/3/c-api/module.html#c.Py_mod_gil "Py_mod_gil") slot in the module definition. If your extension supports older versions of CPython, you should guard the slot with a [`PY_VERSION_HEX`](https://docs.python.org/3/c-api/apiabiversion.html#c.PY_VERSION_HEX "PY_VERSION_HEX") check.
+```
+staticstructPyModuleDef_Slotmodule_slots[]={
+...
+#if PY_VERSION_HEX >= 0x030D0000
+{Py_mod_gil,Py_MOD_GIL_NOT_USED},
+#endif
+{0,NULL}
+};
+staticstructPyModuleDefmoduledef={
+PyModuleDef_HEAD_INIT,
+.m_slots=module_slots,
+...
+};
+
+```
+
+### Single-Phase Initialization[¶](https://docs.python.org/3/howto/free-threading-extensions.html#single-phase-initialization "Link to this heading")
+Extensions that use single-phase initialization (i.e., [`PyModule_Create()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Create "PyModule_Create")) should call [`PyUnstable_Module_SetGIL()`](https://docs.python.org/3/c-api/module.html#c.PyUnstable_Module_SetGIL "PyUnstable_Module_SetGIL") to indicate that they support running with the GIL disabled. The function is only defined in the free-threaded build, so you should guard the call with `#ifdef Py_GIL_DISABLED` to avoid compilation errors in the regular build.
+```
+staticstructPyModuleDefmoduledef={
+PyModuleDef_HEAD_INIT,
+...
+};
+PyMODINIT_FUNC
+PyInit_mymodule(void)
+{
+PyObject*m=PyModule_Create(&moduledef);
+if(m==NULL){
+returnNULL;
+}
+#ifdef Py_GIL_DISABLED
+PyUnstable_Module_SetGIL(m,Py_MOD_GIL_NOT_USED);
+#endif
+returnm;
+}
+
+```
+
+## General API Guidelines[¶](https://docs.python.org/3/howto/free-threading-extensions.html#general-api-guidelines "Link to this heading")
+Most of the C API is thread-safe, but there are some exceptions.
+  * **Struct Fields** : Accessing fields in Python C API objects or structs directly is not thread-safe if the field may be concurrently modified.
+  * **Macros** : Accessor macros like [`PyList_GET_ITEM`](https://docs.python.org/3/c-api/list.html#c.PyList_GET_ITEM "PyList_GET_ITEM") and [`PyList_SET_ITEM`](https://docs.python.org/3/c-api/list.html#c.PyList_SET_ITEM "PyList_SET_ITEM") do not perform any error checking or locking. These macros are not thread-safe if the container object may be modified concurrently.
+  * **Borrowed References** : C API functions that return [borrowed references](https://docs.python.org/3/glossary.html#term-borrowed-reference) may not be thread-safe if the containing object is modified concurrently. See the section on [borrowed references](https://docs.python.org/3/howto/free-threading-extensions.html#id2) for more information.
+
+
+### Container Thread Safety[¶](https://docs.python.org/3/howto/free-threading-extensions.html#container-thread-safety "Link to this heading")
+Containers like [`PyListObject`](https://docs.python.org/3/c-api/list.html#c.PyListObject "PyListObject"), [`PyDictObject`](https://docs.python.org/3/c-api/dict.html#c.PyDictObject "PyDictObject"), and [`PySetObject`](https://docs.python.org/3/c-api/set.html#c.PySetObject "PySetObject") perform internal locking in the free-threaded build. For example, the [`PyList_Append()`](https://docs.python.org/3/c-api/list.html#c.PyList_Append "PyList_Append") will lock the list before appending an item.
+#### `PyDict_Next`[¶](https://docs.python.org/3/howto/free-threading-extensions.html#pydict-next "Link to this heading")
+A notable exception is [`PyDict_Next()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_Next "PyDict_Next"), which does not lock the dictionary. You should use [`Py_BEGIN_CRITICAL_SECTION`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_CRITICAL_SECTION "Py_BEGIN_CRITICAL_SECTION") to protect the dictionary while iterating over it if the dictionary may be concurrently modified:
+```
+Py_BEGIN_CRITICAL_SECTION(dict);
+PyObject*key,*value;
+Py_ssize_tpos=0;
+while(PyDict_Next(dict,&pos,&key,&value)){
+...
+}
+Py_END_CRITICAL_SECTION();

@@ -1,0 +1,36 @@
+Title: Python 3.13.0 Alpha 6 Release Notes
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: Release date: 2024-04-09. Key updates include a refactoring of the instruction sequence data structure and the introduction of a unified 16-bit backoff counter for adaptive specialization and optimization. Changes in Tier 2 counters include eliminating dynamic thresholds and a new starting point for the `JUMP_BACKWARD` counter.
+---
+
+## Python 3.13.0 alpha 6[¶](https://docs.python.org/3/whatsnew/changelog.html#python-3-13-0-alpha-6 "Link to this heading")
+_Release date: 2024-04-09_
+### Core and Builtins[¶](https://docs.python.org/3/whatsnew/changelog.html#id82 "Link to this heading")
+  * [gh-117494](https://github.com/python/cpython/issues/117494): Refactored the instruction sequence data structure out of compile.c into instruction_sequence.c.
+  * [gh-116968](https://github.com/python/cpython/issues/116968): Introduce a unified 16-bit backoff counter type (`_Py_BackoffCounter`), shared between the Tier 1 adaptive specializer and the Tier 2 optimizer. The API used for adaptive specialization counters is changed but the behavior is (supposed to be) identical.
+The behavior of the Tier 2 counters is changed:
+    * There are no longer dynamic thresholds (we never varied these).
+    * All counters now use the same exponential backoff.
+    * The counter for `JUMP_BACKWARD` starts counting down from 16.
+    * The `temperature` in side exits starts counting down from 64.
+  * [gh-117431](https://github.com/python/cpython/issues/117431): Improve the performance of the following [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") and [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") methods by adapting them to the [`METH_FASTCALL`](https://docs.python.org/3/c-api/structures.html#c.METH_FASTCALL "METH_FASTCALL") calling convention:
+    * `endswith()`
+    * `startswith()`
+  * [gh-117431](https://github.com/python/cpython/issues/117431): Improve the performance of the following [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") methods by adapting them to the [`METH_FASTCALL`](https://docs.python.org/3/c-api/structures.html#c.METH_FASTCALL "METH_FASTCALL") calling convention:
+    * [`count()`](https://docs.python.org/3/library/stdtypes.html#str.count "str.count")
+    * [`endswith()`](https://docs.python.org/3/library/stdtypes.html#str.endswith "str.endswith")
+    * [`find()`](https://docs.python.org/3/library/stdtypes.html#str.find "str.find")
+    * [`index()`](https://docs.python.org/3/library/stdtypes.html#str.index "str.index")
+    * [`rfind()`](https://docs.python.org/3/library/stdtypes.html#str.rfind "str.rfind")
+    * [`rindex()`](https://docs.python.org/3/library/stdtypes.html#str.rindex "str.rindex")
+    * [`startswith()`](https://docs.python.org/3/library/stdtypes.html#str.startswith "str.startswith")
+  * [gh-117411](https://github.com/python/cpython/issues/117411): Move `PyFutureFeatures` to an internal header and make it private.
+  * [gh-109120](https://github.com/python/cpython/issues/109120): Added handle of incorrect star expressions, e.g `f(3, *)`. Patch by Grigoryev Semyon
+  * [gh-117266](https://github.com/python/cpython/issues/117266): Fix crashes for certain user-created subclasses of [`ast.AST`](https://docs.python.org/3/library/ast.html#ast.AST "ast.AST"). Such classes are now expected to set the `_field_types` attribute.
+  * [gh-99108](https://github.com/python/cpython/issues/99108): Updated the [`hashlib`](https://docs.python.org/3/library/hashlib.html#module-hashlib "hashlib: Secure hash and message digest algorithms.") built-in [HACL* project](https://github.com/hacl-star/hacl-star) C code from upstream that we use for many implementations when they are not present via OpenSSL in a given build. This also avoids the rare potential for a C symbol name one definition rule linking issue.
+  * [gh-117108](https://github.com/python/cpython/issues/117108): Change the old space bit of objects in the young generation from 0 to gcstate->visited, so that any objects created during GC will have the old bit set correctly if they get moved into the old generation.
+  * [gh-117108](https://github.com/python/cpython/issues/117108): The cycle GC now chooses the size of increments based on the total heap size, instead of the rate of object creation. This ensures that it can keep up with growing heaps.
+  * [gh-116735](https://github.com/python/cpython/issues/116735): For `INSTRUMENTED_CALL_FUNCTION_EX`, set `arg0` to `sys.monitoring.MISSING` instead of `None` for [`CALL`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-CALL) event.
+  * [gh-113964](https://github.com/python/cpython/issues/113964): Starting new threads and process creation through [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") are now only prevented once all non-daemon threads exit.
+  * [gh-116626](https://github.com/python/cpython/issues/116626): Ensure `INSTRUMENTED_CALL_FUNCTION_EX` always emits [`CALL`](https://docs.python.org/3/library/sys.monitoring.html#monitoring-event-CALL)
+  * [gh-116554](https://github.com/python/cpython/issues/116554): `list.sort()` now exploits more cases of partial ordering, particularly those with long descending runs with sub-runs of equal values. Those are recognized as single runs now (previously, each block of repeated value

@@ -1,0 +1,136 @@
+Title: Subclassing QueueHandler and QueueListener - a pynng Example
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section introduces how to implement a listener and handler using pynng, a Python binding for NNG. It includes code snippets for subclassing QueueListener to create an NNGSocketListener, demonstrating its use in a logging context.
+---
+
+```
+
+## Subclassing QueueHandler and QueueListener- a `pynng` example[¶](https://docs.python.org/3/howto/logging-cookbook.html#subclassing-queuehandler-and-queuelistener-a-pynng-example "Link to this heading")
+In a similar way to the above section, we can implement a listener and handler using [pynng](https://pypi.org/project/pynng/), which is a Python binding to [NNG](https://nng.nanomsg.org/), billed as a spiritual successor to ZeroMQ. The following snippets illustrate – you can test them in an environment which has `pynng` installed. Just for variety, we present the listener first.
+### Subclass `QueueListener`[¶](https://docs.python.org/3/howto/logging-cookbook.html#id3 "Link to this heading")
+```
+# listener.py
+importjson
+importlogging
+importlogging.handlers
+importpynng
+DEFAULT_ADDR = "tcp://localhost:13232"
+interrupted = False
+classNNGSocketListener(logging.handlers.QueueListener):
+  def__init__(self, uri, /, *handlers, **kwargs):
+    # Have a timeout for interruptability, and open a
+    # subscriber socket
+    socket = pynng.Sub0(listen=uri, recv_timeout=500)
+    # The b'' subscription matches all topics
+    topics = kwargs.pop('topics', None) or b''
+    socket.subscribe(topics)
+    # We treat the socket as a queue
+    super().__init__(socket, *handlers, **kwargs)
+  defdequeue(self, block):
+    data = None
+    # Keep looping while not interrupted and no data received over the
+    # socket
+    while not interrupted:
+      try:
+        data = self.queue.recv(block=block)
+        break
+      except pynng.Timeout:
+        pass
+      except pynng.Closed: # sometimes happens when you hit Ctrl-C
+        break
+    if data is None:
+      return None
+    # Get the logging event sent from a publisher
+    event = json.loads(data.decode('utf-8'))
+    return logging.makeLogRecord(event)
+  defenqueue_sentinel(self):
+    # Not used in this implementation, as the socket isn't really a
+    # queue
+    pass
+logging.getLogger('pynng').propagate = False
+listener = NNGSocketListener(DEFAULT_ADDR, logging.StreamHandler(), topics=b'')
+listener.start()
+print('Press Ctrl-C to stop.')
+try:
+  while True:
+    pass
+except KeyboardInterrupt:
+  interrupted = True
+finally:
+  listener.stop()
+
+```
+
+### Subclass `QueueHandler`[¶](https://docs.python.org/3/howto/logging-cookbook.html#id4 "Link to this heading")
+```
+# sender.py
+importjson
+importlogging
+importlogging.handlers
+importtime
+importrandom
+importpynng
+DEFAULT_ADDR = "tcp://localhost:13232"
+classNNGSocketHandler(logging.handlers.QueueHandler):
+  def__init__(self, uri):
+    socket = pynng.Pub0(dial=uri, send_timeout=500)
+    super().__init__(socket)
+  defenqueue(self, record):
+    # Send the record as UTF-8 encoded JSON
+    d = dict(record.__dict__)
+    data = json.dumps(d)
+    self.queue.send(data.encode('utf-8'))
+  defclose(self):
+    self.queue.close()
+logging.getLogger('pynng').propagate = False
+handler = NNGSocketHandler(DEFAULT_ADDR)
+# Make sure the process ID is in the output
+logging.basicConfig(level=logging.DEBUG,
+          handlers=[logging.StreamHandler(), handler],
+          format='%(levelname)-8s%(name)10s%(process)6s%(message)s')
+levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+     logging.CRITICAL)
+logger_names = ('myapp', 'myapp.lib1', 'myapp.lib2')
+msgno = 1
+while True:
+  # Just randomly select some loggers and levels and log away
+  level = random.choice(levels)
+  logger = logging.getLogger(random.choice(logger_names))
+  logger.log(level, 'Message no. %5d' % msgno)
+  msgno += 1
+  delay = random.random() * 2 + 0.5
+  time.sleep(delay)
+
+```
+
+You can run the above two snippets in separate command shells. If we run the listener in one shell and run the sender in two separate shells, we should see something like the following. In the first sender shell:
+```
+$ pythonsender.py
+DEBUG     myapp  613 Message no.   1
+WARNING myapp.lib2  613 Message no.   2
+CRITICAL myapp.lib2  613 Message no.   3
+WARNING myapp.lib2  613 Message no.   4
+CRITICAL myapp.lib1  613 Message no.   5
+DEBUG     myapp  613 Message no.   6
+CRITICAL myapp.lib1  613 Message no.   7
+INFO   myapp.lib1  613 Message no.   8
+(and so on)
+
+```
+
+In the second sender shell:
+```
+$ pythonsender.py
+INFO   myapp.lib2  657 Message no.   1
+CRITICAL myapp.lib2  657 Message no.   2
+CRITICAL   myapp  657 Message no.   3
+CRITICAL myapp.lib1  657 Message no.   4
+INFO   myapp.lib1  657 Message no.   5
+WARNING myapp.lib2  657 Message no.   6
+CRITICAL   myapp  657 Message no.   7
+DEBUG  myapp.lib1  657 Message no.   8
+(and so on)
+
+```
+
+In the listener shell:

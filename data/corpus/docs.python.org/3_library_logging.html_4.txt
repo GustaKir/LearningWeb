@@ -1,0 +1,22 @@
+Title: Logging: Understanding Traceback and Stacklevel
+URL: https://docs.python.org/3/library/logging.html
+Summary: This section explains the `stacklevel` parameter in logging, which allows skipping stack frames to record the caller's information instead of the logging helper function. It also mentions the `extra` keyword argument for passing a dictionary to populate the LogRecord's attributes.
+---
+
+```
+
+This mimics the `Traceback (most recent call last):` which is used when displaying exception frames.
+The third optional keyword argument is _stacklevel_ , which defaults to `1`. If greater than 1, the corresponding number of stack frames are skipped when computing the line number and function name set in the [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") created for the logging event. This can be used in logging helpers so that the function name, filename and line number recorded are not the information for the helper function/method, but rather its caller. The name of this parameter mirrors the equivalent one in the [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module.
+The fourth keyword argument is _extra_ which can be used to pass a dictionary which is used to populate the [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") of the [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") created for the logging event with user-defined attributes. These custom attributes can then be used as you like. For example, they could be incorporated into logged messages. For example:
+```
+FORMAT = '%(asctime)s%(clientip)-15s%(user)-8s%(message)s'
+logging.basicConfig(format=FORMAT)
+d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
+logger = logging.getLogger('tcpserver')
+logger.warning('Protocol problem: %s', 'connection reset', extra=d)
+
+```
+
+would print something like
+```
+2006-02-08 22:20:02,165 192.168.0.1 fbloggs Protocol problem: connection reset

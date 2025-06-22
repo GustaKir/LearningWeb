@@ -1,0 +1,43 @@
+Title: Reference Tracer API in Python C API
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This section describes the `PyRefTracer_GetTracer` function, which retrieves the registered reference tracer function and its associated opaque data pointer. It defines the conditions for its use, including the necessity of holding the GIL and indicates that it was added in version 3.13. Additionally, it notes that certain functions are intended for use by advanced debugging tools.
+---
+
+[PyRefTracer](https://docs.python.org/3/c-api/init.html#c.PyRefTracer "PyRefTracer")PyRefTracer_GetTracer(void**data)[¶](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_GetTracer "Link to this definition")
+    
+Get the registered reference tracer function and the value of the opaque data pointer that was registered when [`PyRefTracer_SetTracer()`](https://docs.python.org/3/c-api/init.html#c.PyRefTracer_SetTracer "PyRefTracer_SetTracer") was called. If no tracer was registered this function will return NULL and will set the **data** pointer to NULL.
+The GIL must be held when calling this function.
+Added in version 3.13.
+## Advanced Debugger Support[¶](https://docs.python.org/3/c-api/init.html#advanced-debugger-support "Link to this heading")
+These functions are only intended to be used by advanced debugging tools. 
+
+[PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*PyInterpreterState_Head()[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_Head "Link to this definition")
+    
+Return the interpreter state object at the head of the list of all such objects. 
+
+[PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*PyInterpreterState_Main()[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_Main "Link to this definition")
+    
+Return the main interpreter state object. 
+
+[PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*PyInterpreterState_Next([PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*interp)[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_Next "Link to this definition")
+    
+Return the next interpreter state object after _interp_ from the list of all such objects. 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyInterpreterState_ThreadHead([PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*interp)[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_ThreadHead "Link to this definition")
+    
+Return the pointer to the first [`PyThreadState`](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState") object in the list of threads associated with the interpreter _interp_. 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyThreadState_Next([PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*tstate)[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState_Next "Link to this definition")
+    
+Return the next thread state object after _tstate_ from the list of all such objects belonging to the same [`PyInterpreterState`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState") object.
+## Thread Local Storage Support[¶](https://docs.python.org/3/c-api/init.html#thread-local-storage-support "Link to this heading")
+The Python interpreter provides low-level support for thread-local storage (TLS) which wraps the underlying native TLS implementation to support the Python-level thread local storage API ([`threading.local`](https://docs.python.org/3/library/threading.html#threading.local "threading.local")). The CPython C level APIs are similar to those offered by pthreads and Windows: use a thread key and functions to associate a void* value per thread.
+The GIL does _not_ need to be held when calling these functions; they supply their own locking.
+Note that `Python.h` does not include the declaration of the TLS APIs, you need to include `pythread.h` to use thread-local storage.
+Note
+None of these API functions handle memory management on behalf of the void* values. You need to allocate and deallocate them yourself. If the void* values happen to be [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*, these functions don’t do refcount operations on them either.
+### Thread Specific Storage (TSS) API[¶](https://docs.python.org/3/c-api/init.html#thread-specific-storage-tss-api "Link to this heading")
+TSS API is introduced to supersede the use of the existing TLS API within the CPython interpreter. This API uses a new type [`Py_tss_t`](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t") instead of int to represent thread keys.
+Added in version 3.7.
+See also
+“A New C-API for Thread-Local Storage in CPython” ([**PEP 539**](https://peps.python.org/pep-0539/))

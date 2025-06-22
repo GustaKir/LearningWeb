@@ -1,0 +1,54 @@
+Title: Challenges of Using Raw Unicode Representations
+URL: https://docs.python.org/3/howto/unicode.html
+Summary: The document discusses the limitations of using straightforward byte representations for Unicode, highlighting issues such as lack of portability, inefficient space usage due to excessive zero bytes, and incompatibility with existing C functions. It concludes that these factors lead to a preference for more efficient encodings like UTF-8.
+---
+
+```
+
+This representation is straightforward but using it presents a number of problems.
+  1. It’s not portable; different processors order the bytes differently.
+  2. It’s very wasteful of space. In most texts, the majority of the code points are less than 127, or less than 255, so a lot of space is occupied by `0x00` bytes. The above string takes 24 bytes compared to the 6 bytes needed for an ASCII representation. Increased RAM usage doesn’t matter too much (desktop computers have gigabytes of RAM, and strings aren’t usually that large), but expanding our usage of disk and network bandwidth by a factor of 4 is intolerable.
+  3. It’s not compatible with existing C functions such as `strlen()`, so a new family of wide string functions would need to be used.
+
+
+Therefore this encoding isn’t used very much, and people instead choose other encodings that are more efficient and convenient, such as UTF-8.
+UTF-8 is one of the most commonly used encodings, and Python often defaults to using it. UTF stands for “Unicode Transformation Format”, and the ‘8’ means that 8-bit values are used in the encoding. (There are also UTF-16 and UTF-32 encodings, but they are less frequently used than UTF-8.) UTF-8 uses the following rules:
+  1. If the code point is < 128, it’s represented by the corresponding byte value.
+  2. If the code point is >= 128, it’s turned into a sequence of two, three, or four bytes, where each byte of the sequence is between 128 and 255.
+
+
+UTF-8 has several convenient properties:
+  1. It can handle any Unicode code point.
+  2. A Unicode string is turned into a sequence of bytes that contains embedded zero bytes only where they represent the null character (U+0000). This means that UTF-8 strings can be processed by C functions such as `strcpy()` and sent through protocols that can’t handle zero bytes for anything other than end-of-string markers.
+  3. A string of ASCII text is also valid UTF-8 text.
+  4. UTF-8 is fairly compact; the majority of commonly used characters can be represented with one or two bytes.
+  5. If bytes are corrupted or lost, it’s possible to determine the start of the next UTF-8-encoded code point and resynchronize. It’s also unlikely that random 8-bit data will look like valid UTF-8.
+  6. UTF-8 is a byte oriented encoding. The encoding specifies that each character is represented by a specific sequence of one or more bytes. This avoids the byte-ordering issues that can occur with integer and word oriented encodings, like UTF-16 and UTF-32, where the sequence of bytes varies depending on the hardware on which the string was encoded.
+
+
+### References[¶](https://docs.python.org/3/howto/unicode.html#references "Link to this heading")
+The [Unicode Consortium site](https://www.unicode.org) has character charts, a glossary, and PDF versions of the Unicode specification. Be prepared for some difficult reading. [A chronology](https://www.unicode.org/history/) of the origin and development of Unicode is also available on the site.
+On the Computerphile Youtube channel, Tom Scott briefly [discusses the history of Unicode and UTF-8](https://www.youtube.com/watch?v=MijmeoH9LT4) (9 minutes 36 seconds).
+To help understand the standard, Jukka Korpela has written [an introductory guide](https://jkorpela.fi/unicode/guide.html) to reading the Unicode character tables.
+Another [good introductory article](https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/) was written by Joel Spolsky. If this introduction didn’t make things clear to you, you should try reading this alternate article before continuing.
+Wikipedia entries are often helpful; see the entries for “[character encoding](https://en.wikipedia.org/wiki/Character_encoding)” and [UTF-8](https://en.wikipedia.org/wiki/UTF-8), for example.
+## Python’s Unicode Support[¶](https://docs.python.org/3/howto/unicode.html#python-s-unicode-support "Link to this heading")
+Now that you’ve learned the rudiments of Unicode, we can look at Python’s Unicode features.
+### The String Type[¶](https://docs.python.org/3/howto/unicode.html#the-string-type "Link to this heading")
+Since Python 3.0, the language’s [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") type contains Unicode characters, meaning any string created using `"unicode rocks!"`, `'unicode rocks!'`, or the triple-quoted string syntax is stored as Unicode.
+The default encoding for Python source code is UTF-8, so you can simply include a Unicode character in a string literal:
+```
+try:
+  with open('/tmp/input.txt', 'r') as f:
+    ...
+except OSError:
+  # 'File not found' error message.
+  print("Fichier non trouvé")
+
+```
+
+Side note: Python 3 also supports using Unicode characters in identifiers:
+```
+répertoire = "/tmp/records.log"
+with open(répertoire, "w") as f:
+  f.write("test\n")

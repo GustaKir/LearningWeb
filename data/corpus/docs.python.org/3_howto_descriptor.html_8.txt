@@ -1,0 +1,24 @@
+Title: Invocation of Descriptors in Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section discusses how descriptors are invoked during attribute lookups in Python classes, detailing the steps for both class and super lookups. It explains the role of `type.__getattribute__()` and how it interacts with the method resolution order, along with references to the C implementation for further detail.
+---
+
+```
+
+### [Invocation from a class](https://docs.python.org/3/howto/descriptor.html#id18)[¶](https://docs.python.org/3/howto/descriptor.html#invocation-from-a-class "Link to this heading")
+The logic for a dotted lookup such as `A.x` is in `type.__getattribute__()`. The steps are similar to those for `object.__getattribute__()` but the instance dictionary lookup is replaced by a search through the class’s [method resolution order](https://docs.python.org/3/glossary.html#term-method-resolution-order).
+If a descriptor is found, it is invoked with `desc.__get__(None, A)`.
+The full C implementation can be found in `type_getattro()` and `_PyType_Lookup()` in [Objects/typeobject.c](https://github.com/python/cpython/tree/3.13/Objects/typeobject.c).
+### [Invocation from super](https://docs.python.org/3/howto/descriptor.html#id19)[¶](https://docs.python.org/3/howto/descriptor.html#invocation-from-super "Link to this heading")
+The logic for super’s dotted lookup is in the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") method for object returned by [`super()`](https://docs.python.org/3/library/functions.html#super "super").
+A dotted lookup such as `super(A, obj).m` searches `obj.__class__.__mro__` for the base class `B` immediately following `A` and then returns `B.__dict__['m'].__get__(obj, A)`. If not a descriptor, `m` is returned unchanged.
+The full C implementation can be found in `super_getattro()` in [Objects/typeobject.c](https://github.com/python/cpython/tree/3.13/Objects/typeobject.c). A pure Python equivalent can be found in [Guido’s Tutorial](https://www.python.org/download/releases/2.2.3/descrintro/#cooperation).
+### [Summary of invocation logic](https://docs.python.org/3/howto/descriptor.html#id20)[¶](https://docs.python.org/3/howto/descriptor.html#summary-of-invocation-logic "Link to this heading")
+The mechanism for descriptors is embedded in the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") methods for [`object`](https://docs.python.org/3/library/functions.html#object "object"), [`type`](https://docs.python.org/3/library/functions.html#type "type"), and [`super()`](https://docs.python.org/3/library/functions.html#super "super").
+The important points to remember are:
+  * Descriptors are invoked by the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") method.
+  * Classes inherit this machinery from [`object`](https://docs.python.org/3/library/functions.html#object "object"), [`type`](https://docs.python.org/3/library/functions.html#type "type"), or [`super()`](https://docs.python.org/3/library/functions.html#super "super").
+  * Overriding [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") prevents automatic descriptor calls because all the descriptor logic is in that method.
+  * `object.__getattribute__()` and `type.__getattribute__()` make different calls to [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__"). The first includes the instance and may include the class. The second puts in `None` for the instance and always includes the class.
+  * Data descriptors always override instance dictionaries.
+  * Non-data descriptors may be overridden by instance dictionaries.

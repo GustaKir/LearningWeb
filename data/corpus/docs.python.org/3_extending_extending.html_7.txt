@@ -1,0 +1,51 @@
+Title: Using PyObject_CallObject in Python C API
+URL: https://docs.python.org/3/extending/extending.html
+Summary: The `PyObject_CallObject()` function returns a reference to a Python object, with its behavior being reference-count-neutral concerning its arguments. It utilizes a new tuple for the argument list, which is decremented immediately post-call. The return value is either a new object or an existing one with an incremented reference count.
+---
+
+```
+
+[`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject") returns a Python object pointer: this is the return value of the Python function. [`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject") is “reference-count-neutral” with respect to its arguments. In the example a new tuple was created to serve as the argument list, which is [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF")-ed immediately after the [`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject") call.
+The return value of [`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject") is “new”: either it is a brand new object, or it is an existing object whose reference count has been incremented. So, unless you want to save it in a global variable, you should somehow [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF") the result, even (especially!) if you are not interested in its value.
+Before you do this, however, it is important to check that the return value isn’t `NULL`. If it is, the Python function terminated by raising an exception. If the C code that called [`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject") is called from Python, it should now return an error indication to its Python caller, so the interpreter can print a stack trace, or the calling Python code can handle the exception. If this is not possible or desirable, the exception should be cleared by calling [`PyErr_Clear()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Clear "PyErr_Clear"). For example:
+```
+if(result==NULL)
+returnNULL;/* Pass error back */
+...useresult...
+Py_DECREF(result);
+
+```
+
+Depending on the desired interface to the Python callback function, you may also have to provide an argument list to [`PyObject_CallObject()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallObject "PyObject_CallObject"). In some cases the argument list is also provided by the Python program, through the same interface that specified the callback function. It can then be saved and used in the same manner as the function object. In other cases, you may have to construct a new tuple to pass as the argument list. The simplest way to do this is to call [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue"). For example, if you want to pass an integral event code, you might use the following code:
+```
+PyObject*arglist;
+...
+arglist=Py_BuildValue("(l)",eventcode);
+result=PyObject_CallObject(my_callback,arglist);
+Py_DECREF(arglist);
+if(result==NULL)
+returnNULL;/* Pass error back */
+/* Here maybe use the result */
+Py_DECREF(result);
+
+```
+
+Note the placement of `Py_DECREF(arglist)` immediately after the call, before the error check! Also note that strictly speaking this code is not complete: [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") may run out of memory, and this should be checked.
+You may also call a function with keyword arguments by using [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call"), which supports arguments and keyword arguments. As in the above example, we use [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") to construct the dictionary.
+```
+PyObject*dict;
+...
+dict=Py_BuildValue("{s:i}","name",val);
+result=PyObject_Call(my_callback,NULL,dict);
+Py_DECREF(dict);
+if(result==NULL)
+returnNULL;/* Pass error back */
+/* Here maybe use the result */
+Py_DECREF(result);
+
+```
+
+## 1.7. Extracting Parameters in Extension Functions[¶](https://docs.python.org/3/extending/extending.html#extracting-parameters-in-extension-functions "Link to this heading")
+The [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") function is declared as follows:
+```
+intPyArg_ParseTuple(PyObject*arg,constchar*format,...);

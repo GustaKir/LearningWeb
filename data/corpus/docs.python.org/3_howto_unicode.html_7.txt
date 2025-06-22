@@ -1,0 +1,36 @@
+Title: Understanding Byte Order Marks (BOM) in Unicode
+URL: https://docs.python.org/3/howto/unicode.html
+Summary: This section explains the function of the Unicode character U+FEFF as a byte-order mark (BOM) for indicating byte order in file encodings like UTF-16. It discusses variants that specify byte ordering and the use of BOM in UTF-8 files, advising the use of 'utf-8-sig' codec for reading UTF-8 files with a BOM.
+---
+
+```
+
+The Unicode character `U+FEFF` is used as a byte-order mark (BOM), and is often written as the first character of a file in order to assist with autodetection of the file’s byte ordering. Some encodings, such as UTF-16, expect a BOM to be present at the start of a file; when such an encoding is used, the BOM will be automatically written as the first character and will be silently dropped when the file is read. There are variants of these encodings, such as ‘utf-16-le’ and ‘utf-16-be’ for little-endian and big-endian encodings, that specify one particular byte ordering and don’t skip the BOM.
+In some areas, it is also convention to use a “BOM” at the start of UTF-8 encoded files; the name is misleading since UTF-8 is not byte-order dependent. The mark simply announces that the file is encoded in UTF-8. For reading such files, use the ‘utf-8-sig’ codec to automatically skip the mark if present.
+### Unicode filenames[¶](https://docs.python.org/3/howto/unicode.html#unicode-filenames "Link to this heading")
+Most of the operating systems in common use today support filenames that contain arbitrary Unicode characters. Usually this is implemented by converting the Unicode string into some encoding that varies depending on the system. Today Python is converging on using UTF-8: Python on MacOS has used UTF-8 for several versions, and Python 3.6 switched to using UTF-8 on Windows as well. On Unix systems, there will only be a [filesystem encoding](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler). if you’ve set the `LANG` or `LC_CTYPE` environment variables; if you haven’t, the default encoding is again UTF-8.
+The [`sys.getfilesystemencoding()`](https://docs.python.org/3/library/sys.html#sys.getfilesystemencoding "sys.getfilesystemencoding") function returns the encoding to use on your current system, in case you want to do the encoding manually, but there’s not much reason to bother. When opening a file for reading or writing, you can usually just provide the Unicode string as the filename, and it will be automatically converted to the right encoding for you:
+```
+filename = 'filename\u4500abc'
+with open(filename, 'w') as f:
+  f.write('blah\n')
+
+```
+
+Functions in the [`os`](https://docs.python.org/3/library/os.html#module-os "os: Miscellaneous operating system interfaces.") module such as [`os.stat()`](https://docs.python.org/3/library/os.html#os.stat "os.stat") will also accept Unicode filenames.
+The [`os.listdir()`](https://docs.python.org/3/library/os.html#os.listdir "os.listdir") function returns filenames, which raises an issue: should it return the Unicode version of filenames, or should it return bytes containing the encoded versions? [`os.listdir()`](https://docs.python.org/3/library/os.html#os.listdir "os.listdir") can do both, depending on whether you provided the directory path as bytes or a Unicode string. If you pass a Unicode string as the path, filenames will be decoded using the filesystem’s encoding and a list of Unicode strings will be returned, while passing a byte path will return the filenames as bytes. For example, assuming the default [filesystem encoding](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler) is UTF-8, running the following program:
+```
+fn = 'filename\u4500abc'
+f = open(fn, 'w')
+f.close()
+importos
+print(os.listdir(b'.'))
+print(os.listdir('.'))
+
+```
+
+will produce the following output:
+```
+$ pythonlistdir-test.py
+[b'filename\xe4\x94\x80abc', ...]
+['filename\u4500abc', ...]

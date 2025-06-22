@@ -1,0 +1,37 @@
+Title: zlib.decompress() Function
+URL: https://docs.python.org/3/library/zlib.html
+Summary: The zlib.decompress() function decompresses bytes from the input data, returning the uncompressed result. It has parameters for window size (_wbits_) and buffer size (_bufsize_), with the former impacting the expected format of the data. An error is raised for any issues during decompression.
+---
+
+zlib.decompress(_data_ , _/_ , _wbits =MAX_WBITS_, _bufsize =DEF_BUF_SIZE_)[¶](https://docs.python.org/3/library/zlib.html#zlib.decompress "Link to this definition")
+    
+Decompresses the bytes in _data_ , returning a bytes object containing the uncompressed data. The _wbits_ parameter depends on the format of _data_ , and is discussed further below. If _bufsize_ is given, it is used as the initial size of the output buffer. Raises the [`error`](https://docs.python.org/3/library/zlib.html#zlib.error "zlib.error") exception if any error occurs.
+The _wbits_ parameter controls the size of the history buffer (or “window size”), and what header and trailer format is expected. It is similar to the parameter for [`compressobj()`](https://docs.python.org/3/library/zlib.html#zlib.compressobj "zlib.compressobj"), but accepts more ranges of values:
+  * +8 to +15: The base-two logarithm of the window size. The input must include a zlib header and trailer.
+  * 0: Automatically determine the window size from the zlib header. Only supported since zlib 1.2.3.5.
+  * −8 to −15: Uses the absolute value of _wbits_ as the window size logarithm. The input must be a raw stream with no header or trailer.
+  * +24 to +31 = 16 + (8 to 15): Uses the low 4 bits of the value as the window size logarithm. The input must include a gzip header and trailer.
+  * +40 to +47 = 32 + (8 to 15): Uses the low 4 bits of the value as the window size logarithm, and automatically accepts either the zlib or gzip format.
+
+
+When decompressing a stream, the window size must not be smaller than the size originally used to compress the stream; using a too-small value may result in an [`error`](https://docs.python.org/3/library/zlib.html#zlib.error "zlib.error") exception. The default _wbits_ value corresponds to the largest window size and requires a zlib header and trailer to be included.
+_bufsize_ is the initial size of the buffer used to hold decompressed data. If more space is required, the buffer size will be increased as needed, so you don’t have to get this value exactly right; tuning it will only save a few calls to `malloc()`.
+Changed in version 3.6: _wbits_ and _bufsize_ can be used as keyword arguments. 
+
+zlib.decompressobj(_wbits=MAX_WBITS_[, _zdict_])[¶](https://docs.python.org/3/library/zlib.html#zlib.decompressobj "Link to this definition")
+    
+Returns a decompression object, to be used for decompressing data streams that won’t fit into memory at once.
+The _wbits_ parameter controls the size of the history buffer (or the “window size”), and what header and trailer format is expected. It has the same meaning as [described for decompress()](https://docs.python.org/3/library/zlib.html#decompress-wbits).
+The _zdict_ parameter specifies a predefined compression dictionary. If provided, this must be the same dictionary as was used by the compressor that produced the data that is to be decompressed.
+Note
+If _zdict_ is a mutable object (such as a [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray")), you must not modify its contents between the call to [`decompressobj()`](https://docs.python.org/3/library/zlib.html#zlib.decompressobj "zlib.decompressobj") and the first call to the decompressor’s `decompress()` method.
+Changed in version 3.3: Added the _zdict_ parameter.
+Compression objects support the following methods: 
+
+Compress.compress(_data_)[¶](https://docs.python.org/3/library/zlib.html#zlib.Compress.compress "Link to this definition")
+    
+Compress _data_ , returning a bytes object containing compressed data for at least part of the data in _data_. This data should be concatenated to the output produced by any preceding calls to the [`compress()`](https://docs.python.org/3/library/zlib.html#zlib.compress "zlib.compress") method. Some input may be kept in internal buffers for later processing. 
+
+Compress.flush([_mode_])[¶](https://docs.python.org/3/library/zlib.html#zlib.Compress.flush "Link to this definition")
+    
+All pending input is processed, and a bytes object containing the remaining compressed output is returned. _mode_ can be selected from the constants `Z_NO_FLUSH`, `Z_PARTIAL_FLUSH`, `Z_SYNC_FLUSH`, `Z_FULL_FLUSH`, `Z_BLOCK` (zlib 1.2.3.4), or `Z_FINISH`, defaulting to `Z_FINISH`. Except `Z_FINISH`, all constants allow compressing further bytestrings of data, while `Z_FINISH` finishes the compressed stream and prevents compressing any more data. After calling [`flush()`](https://docs.python.org/3/library/zlib.html#zlib.Compress.flush "zlib.Compress.flush") with _mode_ set to `Z_FINISH`, the [`compress()`](https://docs.python.org/3/library/zlib.html#zlib.compress "zlib.compress") method cannot be called again; the only realistic action is to delete the object.

@@ -1,0 +1,42 @@
+Title: Using Async Functions in FastAPI
+URL: https://fastapi.tiangolo.com/async/
+Summary: This section explains how `await` is used inside `async def` functions in FastAPI and clarifies how to call the first `async` function, which is the path operation function in FastAPI. It also mentions that users can write their own async code independent of FastAPI, highlighting the compatibility of Starlette and FastAPI with AnyIO.
+---
+
+```
+
+### More technical details[¶](https://fastapi.tiangolo.com/async/#more-technical-details "Permanent link")
+You might have noticed that `await` can only be used inside of functions defined with `async def`.
+But at the same time, functions defined with `async def` have to be "awaited". So, functions with `async def` can only be called inside of functions defined with `async def` too.
+So, about the egg and the chicken, how do you call the first `async` function?
+If you are working with **FastAPI** you don't have to worry about that, because that "first" function will be your _path operation function_ , and FastAPI will know how to do the right thing.
+But if you want to use `async` / `await` without FastAPI, you can do it as well.
+### Write your own async code[¶](https://fastapi.tiangolo.com/async/#write-your-own-async-code "Permanent link")
+Starlette (and **FastAPI**) are based on [AnyIO](https://anyio.readthedocs.io/en/stable/), which makes it compatible with both Python's standard library [asyncio](https://docs.python.org/3/library/asyncio-task.html) and [Trio](https://trio.readthedocs.io/en/stable/).
+In particular, you can directly use [AnyIO](https://anyio.readthedocs.io/en/stable/) for your advanced concurrency use cases that require more advanced patterns in your own code.
+And even if you were not using FastAPI, you could also write your own async applications with [AnyIO](https://anyio.readthedocs.io/en/stable/) to be highly compatible and get its benefits (e.g. _structured concurrency_).
+I created another library on top of AnyIO, as a thin layer on top, to improve a bit the type annotations and get better **autocompletion** , **inline errors** , etc. It also has a friendly introduction and tutorial to help you **understand** and write **your own async code** : [Asyncer](https://asyncer.tiangolo.com/). It would be particularly useful if you need to **combine async code with regular** (blocking/synchronous) code.
+### Other forms of asynchronous code[¶](https://fastapi.tiangolo.com/async/#other-forms-of-asynchronous-code "Permanent link")
+This style of using `async` and `await` is relatively new in the language.
+But it makes working with asynchronous code a lot easier.
+This same syntax (or almost identical) was also included recently in modern versions of JavaScript (in Browser and NodeJS).
+But before that, handling asynchronous code was quite more complex and difficult.
+In previous versions of Python, you could have used threads or [Gevent](https://www.gevent.org/). But the code is way more complex to understand, debug, and think about.
+In previous versions of NodeJS / Browser JavaScript, you would have used "callbacks". Which leads to [callback hell](http://callbackhell.com/).
+## Coroutines[¶](https://fastapi.tiangolo.com/async/#coroutines "Permanent link")
+**Coroutine** is just the very fancy term for the thing returned by an `async def` function. Python knows that it is something like a function, that it can start and that it will end at some point, but that it might be paused ⏸ internally too, whenever there is an `await` inside of it.
+But all this functionality of using asynchronous code with `async` and `await` is many times summarized as using "coroutines". It is comparable to the main key feature of Go, the "Goroutines".
+## Conclusion[¶](https://fastapi.tiangolo.com/async/#conclusion "Permanent link")
+Let's see the same phrase from above:
+> Modern versions of Python have support for **"asynchronous code"** using something called **"coroutines"** , with **`async`and`await`** syntax.
+That should make more sense now. ✨
+All that is what powers FastAPI (through Starlette) and what makes it have such an impressive performance.
+## Very Technical Details[¶](https://fastapi.tiangolo.com/async/#very-technical-details "Permanent link")
+Warning
+You can probably skip this.
+These are very technical details of how **FastAPI** works underneath.
+If you have quite some technical knowledge (coroutines, threads, blocking, etc.) and are curious about how FastAPI handles `async def` vs normal `def`, go ahead.
+### Path operation functions[¶](https://fastapi.tiangolo.com/async/#path-operation-functions "Permanent link")
+When you declare a _path operation function_ with normal `def` instead of `async def`, it is run in an external threadpool that is then awaited, instead of being called directly (as it would block the server).
+If you are coming from another async framework that does not work in the way described above and you are used to defining trivial compute-only _path operation functions_ with plain `def` for a tiny performance gain (about 100 nanoseconds), please note that in **FastAPI** the effect would be quite opposite. In these cases, it's better to use `async def` unless your _path operation functions_ use code that performs blocking I/O.
+Still, in both situations, chances are that **FastAPI** will [still be faster](https://fastapi.tiangolo.com/#performance) than (or at least comparable to) your previous

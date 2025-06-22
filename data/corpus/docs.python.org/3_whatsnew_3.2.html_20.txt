@@ -1,0 +1,50 @@
+Title: Improvements to zipfile.ZipExtFile in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The zipfile.ZipExtFile class was internally restructured for enhanced performance. The new implementation is significantly faster and compatible with io.BufferedReader for additional speed improvements. It also resolves issues related to interleaved read and readline calls providing incorrect results.
+---
+
+```
+
+(Contributed by Anand B. Pillai in [bpo-3488](https://bugs.python.org/issue?@action=redirect&bpo=3488); and by Antoine Pitrou, Nir Aides and Brian Curtin in [bpo-9962](https://bugs.python.org/issue?@action=redirect&bpo=9962), [bpo-1675951](https://bugs.python.org/issue?@action=redirect&bpo=1675951), [bpo-7471](https://bugs.python.org/issue?@action=redirect&bpo=7471) and [bpo-2846](https://bugs.python.org/issue?@action=redirect&bpo=2846).)
+Also, the [`zipfile.ZipExtFile`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.open "zipfile.ZipFile.open") class was reworked internally to represent files stored inside an archive. The new implementation is significantly faster and can be wrapped in an [`io.BufferedReader`](https://docs.python.org/3/library/io.html#io.BufferedReader "io.BufferedReader") object for more speedups. It also solves an issue where interleaved calls to _read_ and _readline_ gave the wrong results.
+(Patch submitted by Nir Aides in [bpo-7610](https://bugs.python.org/issue?@action=redirect&bpo=7610).)
+### tarfile[¶](https://docs.python.org/3/whatsnew/3.2.html#tarfile "Link to this heading")
+The [`TarFile`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile "tarfile.TarFile") class can now be used as a context manager. In addition, its [`add()`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.add "tarfile.TarFile.add") method has a new option, _filter_ , that controls which files are added to the archive and allows the file metadata to be edited.
+The new _filter_ option replaces the older, less flexible _exclude_ parameter which is now deprecated. If specified, the optional _filter_ parameter needs to be a [keyword argument](https://docs.python.org/3/glossary.html#term-keyword-argument). The user-supplied filter function accepts a [`TarInfo`](https://docs.python.org/3/library/tarfile.html#tarfile.TarInfo "tarfile.TarInfo") object and returns an updated [`TarInfo`](https://docs.python.org/3/library/tarfile.html#tarfile.TarInfo "tarfile.TarInfo") object, or if it wants the file to be excluded, the function can return `None`:
+>>>```
+>>> importtarfile,glob
+>>> defmyfilter(tarinfo):
+...   if tarinfo.isfile():       # only save real files
+...     tarinfo.uname = 'monty'   # redact the user name
+...     return tarinfo
+>>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') as tf:
+...   for filename in glob.glob('*.txt'):
+...     tf.add(filename, filter=myfilter)
+...   tf.list()
+-rw-r--r-- monty/501    902 2011-01-26 17:59:11 annotations.txt
+-rw-r--r-- monty/501    123 2011-01-26 17:59:11 general_questions.txt
+-rw-r--r-- monty/501    3514 2011-01-26 17:59:11 prion.txt
+-rw-r--r-- monty/501    124 2011-01-26 17:59:11 py_todo.txt
+-rw-r--r-- monty/501    1399 2011-01-26 17:59:11 semaphore_notes.txt
+
+```
+
+(Proposed by Tarek Ziadé and implemented by Lars Gustäbel in [bpo-6856](https://bugs.python.org/issue?@action=redirect&bpo=6856).)
+### hashlib[¶](https://docs.python.org/3/whatsnew/3.2.html#hashlib "Link to this heading")
+The [`hashlib`](https://docs.python.org/3/library/hashlib.html#module-hashlib "hashlib: Secure hash and message digest algorithms.") module has two new constant attributes listing the hashing algorithms guaranteed to be present in all implementations and those available on the current implementation:
+>>>```
+>>> importhashlib
+>>> hashlib.algorithms_guaranteed
+{'sha1', 'sha224', 'sha384', 'sha256', 'sha512', 'md5'}
+>>> hashlib.algorithms_available
+{'md2', 'SHA256', 'SHA512', 'dsaWithSHA', 'mdc2', 'SHA224', 'MD4', 'sha256',
+'sha512', 'ripemd160', 'SHA1', 'MDC2', 'SHA', 'SHA384', 'MD2',
+'ecdsa-with-SHA1','md4', 'md5', 'sha1', 'DSA-SHA', 'sha224',
+'dsaEncryption', 'DSA', 'RIPEMD160', 'sha', 'MD5', 'sha384'}
+
+```
+
+(Suggested by Carl Chenet in [bpo-7418](https://bugs.python.org/issue?@action=redirect&bpo=7418).)
+### ast[¶](https://docs.python.org/3/whatsnew/3.2.html#ast "Link to this heading")
+The [`ast`](https://docs.python.org/3/library/ast.html#module-ast "ast: Abstract Syntax Tree classes and manipulation.") module has a wonderful a general-purpose tool for safely evaluating expression strings using the Python literal syntax. The [`ast.literal_eval()`](https://docs.python.org/3/library/ast.html#ast.literal_eval "ast.literal_eval") function serves as a secure alternative to the builtin [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") function which is easily abused. Python 3.2 adds [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") and [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") literals to the list of supported types: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and `None`.
+>>>

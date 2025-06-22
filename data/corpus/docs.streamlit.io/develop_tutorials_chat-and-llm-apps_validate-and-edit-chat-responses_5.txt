@@ -1,0 +1,37 @@
+Title: Defining the 'Validate' Stage in Chat Apps
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses
+Summary: This section outlines how to implement the 'validate' stage in a chat application using Streamlit. It involves setting up a conditional block to validate user responses, displaying a disabled chat input for user direction, and utilizing helper functions to highlight errors in the responses, ensuring clarity and consistency in user interaction.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#define-the-validate-stage)Define the `"validate"` stage
+When `st.session_state.stage` is `"validate"`, the app will validate the pending response and display the results to the user. The user will then choose how to proceed (accept, correct, or rewrite the response).
+  1. Start a conditional block for the `"validate"` stage:
+`elif st.session_state.stage == "validate": `
+You can use `if` or `elif` for each of the stages. Everywhere you update the stage in Session State, you will immediately rerun the app. Therefore, you'll never execute two different stages in the same script run.
+  2. For visual consistency, display a disabled chat input:
+`  st.chat_input("Accept, correct, or rewrite the answer above.", disabled=True) `
+For the user's clarity, use placeholder text to direct them to review the pending response.
+  3. Parse the response and highlight any errors using your helper functions:
+`  response_sentences, validation_list = validate(st.session_state.pending)   highlighted_sentences = add_highlights(response_sentences, validation_list) `
+  4. Join the highlighted sentences into a single string, and display them in a chat message container. To separate the response from the buttons that follow, add a divider:
+` with st.chat_message("assistant"):     st.markdown(" ".join(highlighted_sentences))     st.divider() `
+  5. To display buttons in a row, create three columns:
+`    cols = st.columns(3) `
+  6. In the first column, start a conditional block, and display a primary-type button labeled "Correct errors." Disable the button if there are no detected errors:
+` if cols[0].button( "Correct errors", type="primary", disabled=all(validation_list) ): `
+  7. Within the conditional block, save the validation information into Session State, update the stage, and then rerun the app:
+`      st.session_state.validation = { "sentences": response_sentences, "valid": validation_list, }       st.session_state.stage = "correct"       st.rerun() `
+If the user clicks the "**Correct errors** " button, the app will rerun and execute this block. At the end of this block, the app will rerun again and enter the `"correct"` stage.
+  8. In the second column, start a conditional block, and display a button labeled "Accept:"
+` if cols[1].button("Accept"): `
+  9. Within the conditional block, save the pending message into the chat history, and clear the pending and validation information from Session State:
+`      st.session_state.history.append( {"role": "assistant", "content": st.session_state.pending} )       st.session_state.pending = None       st.session_state.validation = {} `
+  10. Update the stage to `"user"`, and rerun the app:
+`      st.session_state.stage = "user"       st.rerun() `
+If the user clicks the "**Accept** " button, the app will rerun and execute this block. At the end of this block, the app will rerun again and return to the `"user"` stage.
+  11. In the third column, start a conditional block, and display a tertiary-type button labeled "Rewrite answer:"
+` if cols[2].button("Rewrite answer", type="tertiary"): `
+  12. Within the conditional block, update the stage to `"rewrite"` and rerun the app:
+`      st.session_state.stage = "rewrite"       st.rerun() `
+If the user clicks the "**Rewrite answer** " button, the app will rerun and execute this conditional block. At the end of this block, the app will rerun again and enter the `"rewrite"` stage.
+You don't need to save any information into `st.session_state.validation` because the `"rewrite"` stage does not use this information.

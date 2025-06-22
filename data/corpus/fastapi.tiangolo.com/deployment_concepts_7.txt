@@ -1,0 +1,34 @@
+Title: Handling Application Restarts and Errors in FastAPI
+URL: https://fastapi.tiangolo.com/deployment/concepts/
+Summary: This section discusses the importance of ensuring that FastAPI applications are restarted after failures. It acknowledges that mistakes and hidden bugs are common in software development. FastAPI effectively manages small errors by isolating them to the specific request that caused the issue, resulting in a 500 Internal Server Error for the client.
+---
+
+I'll give you more concrete examples in the next chapters.
+## Restarts[¶](https://fastapi.tiangolo.com/deployment/concepts/#restarts "Permanent link")
+Similar to making sure your application is run on startup, you probably also want to make sure it is **restarted** after failures.
+### We Make Mistakes[¶](https://fastapi.tiangolo.com/deployment/concepts/#we-make-mistakes "Permanent link")
+We, as humans, make **mistakes** , all the time. Software almost _always_ has **bugs** hidden in different places. 🐛
+And we as developers keep improving the code as we find those bugs and as we implement new features (possibly adding new bugs too 😅).
+### Small Errors Automatically Handled[¶](https://fastapi.tiangolo.com/deployment/concepts/#small-errors-automatically-handled "Permanent link")
+When building web APIs with FastAPI, if there's an error in our code, FastAPI will normally contain it to the single request that triggered the error. 🛡
+The client will get a **500 Internal Server Error** for that request, but the application will continue working for the next requests instead of just crashing completely.
+### Bigger Errors - Crashes[¶](https://fastapi.tiangolo.com/deployment/concepts/#bigger-errors-crashes "Permanent link")
+Nevertheless, there might be cases where we write some code that **crashes the entire application** making Uvicorn and Python crash. 💥
+And still, you would probably not want the application to stay dead because there was an error in one place, you probably want it to **continue running** at least for the _path operations_ that are not broken.
+### Restart After Crash[¶](https://fastapi.tiangolo.com/deployment/concepts/#restart-after-crash "Permanent link")
+But in those cases with really bad errors that crash the running **process** , you would want an external component that is in charge of **restarting** the process, at least a couple of times...
+Tip
+...Although if the whole application is just **crashing immediately** it probably doesn't make sense to keep restarting it forever. But in those cases, you will probably notice it during development, or at least right after deployment.
+So let's focus on the main cases, where it could crash entirely in some particular cases **in the future** , and it still makes sense to restart it.
+You would probably want to have the thing in charge of restarting your application as an **external component** , because by that point, the same application with Uvicorn and Python already crashed, so there's nothing in the same code of the same app that could do anything about it.
+### Example Tools to Restart Automatically[¶](https://fastapi.tiangolo.com/deployment/concepts/#example-tools-to-restart-automatically "Permanent link")
+In most cases, the same tool that is used to **run the program on startup** is also used to handle automatic **restarts**.
+For example, this could be handled by:
+  * Docker
+  * Kubernetes
+  * Docker Compose
+  * Docker in Swarm Mode
+  * Systemd
+  * Supervisor
+  * Handled internally by a cloud provider as part of their services
+  * Others...

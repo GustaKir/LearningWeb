@@ -1,0 +1,77 @@
+Title: subprocess module - Function Signature and Behavior
+URL: https://docs.python.org/3/library/subprocess.html
+Summary: This section explains the function signature of a subprocess function similar to 'run()' and notes a key behavior difference when passing 'input=None'. It mentions that the function returns output as encoded bytes, which may require decoding at the application level, and introduces options to modify this behavior.
+---
+
+```
+
+The arguments shown above are merely some common ones. The full function signature is largely the same as that of [`run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run") - most arguments are passed directly through to that interface. One API deviation from [`run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run") behavior exists: passing `input=None` will behave the same as `input=b''` (or `input=''`, depending on other arguments) rather than using the parent’s standard input file handle.
+By default, this function will return the data as encoded bytes. The actual encoding of the output data may depend on the command being invoked, so the decoding to text will often need to be handled at the application level.
+This behaviour may be overridden by setting _text_ , _encoding_ , _errors_ , or _universal_newlines_ to `True` as described in [Frequently Used Arguments](https://docs.python.org/3/library/subprocess.html#frequently-used-arguments) and [`run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run").
+To also capture standard error in the result, use `stderr=subprocess.STDOUT`:
+>>>```
+>>> subprocess.check_output(
+...   "ls non_existent_file; exit 0",
+...   stderr=subprocess.STDOUT,
+...   shell=True)
+'ls: non_existent_file: No such file or directory\n'
+
+```
+
+Added in version 3.1.
+Changed in version 3.3: _timeout_ was added.
+Changed in version 3.4: Support for the _input_ keyword argument was added.
+Changed in version 3.6: _encoding_ and _errors_ were added. See [`run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run") for details.
+Added in version 3.7: _text_ was added as a more readable alias for _universal_newlines_.
+Changed in version 3.12: Changed Windows shell search order for `shell=True`. The current directory and `%PATH%` are replaced with `%COMSPEC%` and `%SystemRoot%\System32\cmd.exe`. As a result, dropping a malicious program named `cmd.exe` into a current directory no longer works.
+## Replacing Older Functions with the [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") Module[¶](https://docs.python.org/3/library/subprocess.html#replacing-older-functions-with-the-subprocess-module "Link to this heading")
+In this section, “a becomes b” means that b can be used as a replacement for a.
+Note
+All “a” functions in this section fail (more or less) silently if the executed program cannot be found; the “b” replacements raise [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") instead.
+In addition, the replacements using [`check_output()`](https://docs.python.org/3/library/subprocess.html#subprocess.check_output "subprocess.check_output") will fail with a [`CalledProcessError`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError "subprocess.CalledProcessError") if the requested operation produces a non-zero return code. The output is still available as the [`output`](https://docs.python.org/3/library/subprocess.html#subprocess.CalledProcessError.output "subprocess.CalledProcessError.output") attribute of the raised exception.
+In the following examples, we assume that the relevant functions have already been imported from the [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") module.
+### Replacing **/bin/sh** shell command substitution[¶](https://docs.python.org/3/library/subprocess.html#replacing-bin-sh-shell-command-substitution "Link to this heading")
+```
+output=$(mycmdmyarg)
+
+```
+
+becomes:
+```
+output = check_output(["mycmd", "myarg"])
+
+```
+
+### Replacing shell pipeline[¶](https://docs.python.org/3/library/subprocess.html#replacing-shell-pipeline "Link to this heading")
+```
+output=$(dmesg|grephda)
+
+```
+
+becomes:
+```
+p1 = Popen(["dmesg"], stdout=PIPE)
+p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
+p1.stdout.close() # Allow p1 to receive a SIGPIPE if p2 exits.
+output = p2.communicate()[0]
+
+```
+
+The `p1.stdout.close()` call after starting the p2 is important in order for p1 to receive a SIGPIPE if p2 exits before p1.
+Alternatively, for trusted input, the shell’s own pipeline support may still be used directly:
+```
+output=$(dmesg|grephda)
+
+```
+
+becomes:
+```
+output = check_output("dmesg | grep hda", shell=True)
+
+```
+
+### Replacing [`os.system()`](https://docs.python.org/3/library/os.html#os.system "os.system")[¶](https://docs.python.org/3/library/subprocess.html#replacing-os-system "Link to this heading")
+```
+sts = os.system("mycmd" + " myarg")
+# becomes
+retcode = call("mycmd" + " myarg", shell=True)

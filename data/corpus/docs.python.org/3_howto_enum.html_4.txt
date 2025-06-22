@@ -1,0 +1,87 @@
+Title: Enumeration Member Rules in Python
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section outlines the rules for defining attributes in an enumeration in Python. It specifies that names with single underscores at both ends are reserved, while all other attributes become enumeration members except for special methods, descriptors, and names in the _ignore_ list. It also notes that if __new__() or __init__() is defined, enum member values will be passed to these methods.
+---
+
+```
+
+The rules for what is allowed are as follows: names that start and end with a single underscore are reserved by enum and cannot be used; all other attributes defined within an enumeration will become members of this enumeration, with the exception of special methods ([`__str__()`](https://docs.python.org/3/reference/datamodel.html#object.__str__ "object.__str__"), [`__add__()`](https://docs.python.org/3/reference/datamodel.html#object.__add__ "object.__add__"), etc.), descriptors (methods are also descriptors), and variable names listed in [`_ignore_`](https://docs.python.org/3/library/enum.html#enum.Enum._ignore_ "enum.Enum._ignore_").
+Note: if your enumeration defines [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") and/or [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__"), any value(s) given to the enum member will be passed into those methods. See [Planet](https://docs.python.org/3/howto/enum.html#planet) for an example.
+Note
+The [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method, if defined, is used during creation of the Enum members; it is then replaced by Enum’s [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") which is used after class creation for lookup of existing members. See [When to use __new__() vs. __init__()](https://docs.python.org/3/howto/enum.html#new-vs-init) for more details.
+## Restricted Enum subclassing[¶](https://docs.python.org/3/howto/enum.html#restricted-enum-subclassing "Link to this heading")
+A new [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") class must have one base enum class, up to one concrete data type, and as many [`object`](https://docs.python.org/3/library/functions.html#object "object")-based mixin classes as needed. The order of these base classes is:
+```
+classEnumName([mix-in, ...,] [data-type,] base-enum):
+  pass
+
+```
+
+Also, subclassing an enumeration is allowed only if the enumeration does not define any members. So this is forbidden:
+>>>```
+>>> classMoreColor(Color):
+...   PINK = 17
+...
+Traceback (most recent call last):
+...
+TypeError: <enum 'MoreColor'> cannot extend <enum 'Color'>
+
+```
+
+But this is allowed:
+>>>```
+>>> classFoo(Enum):
+...   defsome_behavior(self):
+...     pass
+...
+>>> classBar(Foo):
+...   HAPPY = 1
+...   SAD = 2
+...
+
+```
+
+Allowing subclassing of enums that define members would lead to a violation of some important invariants of types and instances. On the other hand, it makes sense to allow sharing some common behavior between a group of enumerations. (See [OrderedEnum](https://docs.python.org/3/howto/enum.html#orderedenum) for an example.)
+## Dataclass support[¶](https://docs.python.org/3/howto/enum.html#dataclass-support "Link to this heading")
+When inheriting from a [`dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass"), the [`__repr__()`](https://docs.python.org/3/library/enum.html#enum.Enum.__repr__ "enum.Enum.__repr__") omits the inherited class’ name. For example:
+>>>```
+>>> fromdataclassesimport dataclass, field
+>>> @dataclass
+... classCreatureDataMixin:
+...   size: str
+...   legs: int
+...   tail: bool = field(repr=False, default=True)
+...
+>>> classCreature(CreatureDataMixin, Enum):
+...   BEETLE = 'small', 6
+...   DOG = 'medium', 4
+...
+>>> Creature.DOG
+<Creature.DOG: size='medium', legs=4>
+
+```
+
+Use the [`dataclass()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass") argument `repr=False` to use the standard [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr").
+Changed in version 3.12: Only the dataclass fields are shown in the value area, not the dataclass’ name.
+Note
+Adding [`dataclass()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass") decorator to [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") and its subclasses is not supported. It will not raise any errors, but it will produce very strange results at runtime, such as members being equal to each other:
+>>>```
+>>> @dataclass        # don't do this: it does not make any sense
+... classColor(Enum):
+...   RED = 1
+...   BLUE = 2
+...
+>>> Color.RED is Color.BLUE
+False
+>>> Color.RED == Color.BLUE # problem is here: they should not be equal
+True
+
+```
+
+## Pickling[¶](https://docs.python.org/3/howto/enum.html#pickling "Link to this heading")
+Enumerations can be pickled and unpickled:
+>>>```
+>>> fromtest.test_enumimport Fruit
+>>> frompickleimport dumps, loads
+>>> Fruit.TOMATO is loads(dumps(Fruit.TOMATO))
+True

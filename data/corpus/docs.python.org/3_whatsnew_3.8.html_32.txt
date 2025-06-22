@@ -1,0 +1,41 @@
+Title: Python 3.8 Changes: Deprecation and Extension Types
+URL: https://docs.python.org/3/whatsnew/3.8.html
+Summary: Python 3.8 introduces the `Py_DEPRECATED()` macro for MSVC, requiring its placement before the symbol name. Additionally, it clarifies the handling of binary compatibility for extension types, mandating that exported `PyTypeObject` must include all current expected slots, including `tp_finalize`.
+---
+
+```
+
+(Contributed by Eddie Elizondo in [bpo-35810](https://bugs.python.org/issue?@action=redirect&bpo=35810).)
+  * The [`Py_DEPRECATED()`](https://docs.python.org/3/c-api/intro.html#c.Py_DEPRECATED "Py_DEPRECATED") macro has been implemented for MSVC. The macro now must be placed before the symbol name.
+Example:
+```
+Py_DEPRECATED(3.8)PyAPI_FUNC(int)Py_OldFunction(void);
+
+```
+
+(Contributed by Zackery Spytz in [bpo-33407](https://bugs.python.org/issue?@action=redirect&bpo=33407).)
+  * The interpreter does not pretend to support binary compatibility of extension types across feature releases, anymore. A [`PyTypeObject`](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject") exported by a third-party extension module is supposed to have all the slots expected in the current Python version, including [`tp_finalize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_finalize "PyTypeObject.tp_finalize") ([`Py_TPFLAGS_HAVE_FINALIZE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_FINALIZE "Py_TPFLAGS_HAVE_FINALIZE") is not checked anymore before reading [`tp_finalize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_finalize "PyTypeObject.tp_finalize")).
+(Contributed by Antoine Pitrou in [bpo-32388](https://bugs.python.org/issue?@action=redirect&bpo=32388).)
+  * The functions `PyNode_AddChild()` and `PyParser_AddToken()` now accept two additional `int` arguments _end_lineno_ and _end_col_offset_.
+  * The `libpython38.a` file to allow MinGW tools to link directly against `python38.dll` is no longer included in the regular Windows distribution. If you require this file, it may be generated with the `gendef` and `dlltool` tools, which are part of the MinGW binutils package:
+```
+gendef-python38.dll>tmp.def
+dlltool--dllnamepython38.dll--deftmp.def--output-liblibpython38.a
+
+```
+
+The location of an installed `pythonXY.dll` will depend on the installation options and the version and language of Windows. See [Using Python on Windows](https://docs.python.org/3/using/windows.html#using-on-windows) for more information. The resulting library should be placed in the same directory as `pythonXY.lib`, which is generally the `libs` directory under your Python installation.
+(Contributed by Steve Dower in [bpo-37351](https://bugs.python.org/issue?@action=redirect&bpo=37351).)
+
+
+### CPython bytecode changes[¶](https://docs.python.org/3/whatsnew/3.8.html#cpython-bytecode-changes "Link to this heading")
+  * The interpreter loop has been simplified by moving the logic of unrolling the stack of blocks into the compiler. The compiler emits now explicit instructions for adjusting the stack of values and calling the cleaning-up code for [`break`](https://docs.python.org/3/reference/simple_stmts.html#break), [`continue`](https://docs.python.org/3/reference/simple_stmts.html#continue) and [`return`](https://docs.python.org/3/reference/simple_stmts.html#return).
+Removed opcodes `BREAK_LOOP`, `CONTINUE_LOOP`, `SETUP_LOOP` and `SETUP_EXCEPT`. Added new opcodes `ROT_FOUR`, `BEGIN_FINALLY`, `CALL_FINALLY` and `POP_FINALLY`. Changed the behavior of `END_FINALLY` and `WITH_CLEANUP_START`.
+(Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in [bpo-17611](https://bugs.python.org/issue?@action=redirect&bpo=17611).)
+  * Added new opcode [`END_ASYNC_FOR`](https://docs.python.org/3/library/dis.html#opcode-END_ASYNC_FOR) for handling exceptions raised when awaiting a next item in an [`async for`](https://docs.python.org/3/reference/compound_stmts.html#async-for) loop. (Contributed by Serhiy Storchaka in [bpo-33041](https://bugs.python.org/issue?@action=redirect&bpo=33041).)
+  * The [`MAP_ADD`](https://docs.python.org/3/library/dis.html#opcode-MAP_ADD) now expects the value as the first element in the stack and the key as the second element. This change was made so the key is always evaluated before the value in dictionary comprehensions, as proposed by [**PEP 572**](https://peps.python.org/pep-0572/). (Contributed by Jörn Heissler in [bpo-35224](https://bugs.python.org/issue?@action=redirect&bpo=35224).)
+
+
+### Demos and Tools[¶](https://docs.python.org/3/whatsnew/3.8.html#demos-and-tools "Link to this heading")
+Added a benchmark script for timing various ways to access variables: `Tools/scripts/var_access_benchmark.py`. (Contributed by Raymond Hettinger in [bpo-35884](https://bugs.python.org/issue?@action=redirect&bpo=35884).)
+Here’s a summary of performance improvements since Python 3.3:

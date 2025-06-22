@@ -1,0 +1,82 @@
+Title: Using Streamlit's @st.cache_data for Caching Data
+URL: https://docs.streamlit.io/develop/api-reference/caching-and-state/st.cache_data
+Summary: This document explains how to use the @st.cache_data decorator in Streamlit to fetch and clean data from a URL. It describes how the caching mechanism works, demonstrating that repeated function calls with the same parameters will return cached results without re-execution. It also includes information on setting the 'persist' parameter to cache data on disk and notes that parameters must be hashable, with the option to bypass this for certain parameters.
+---
+
+```
+import streamlit as st
+@st.cache_data
+def fetch_and_clean_data(url):
+  # Fetch data from URL here, and then clean it up.
+  return data
+d1 = fetch_and_clean_data(DATA_URL_1)
+# Actually executes the function, since this is the first time it was
+# encountered.
+d2 = fetch_and_clean_data(DATA_URL_1)
+# Does not execute the function. Instead, returns its previously computed
+# value. This means that now the data in d1 is the same as in d2.
+d3 = fetch_and_clean_data(DATA_URL_2)
+# This is a different URL, so the function executes.
+```
+
+Copy
+To set the `persist` parameter, use this command as follows:
+```
+import streamlit as st
+@st.cache_data(persist="disk")
+def fetch_and_clean_data(url):
+  # Fetch data from URL here, and then clean it up.
+  return data
+```
+
+Copy
+By default, all parameters to a cached function must be hashable. Any parameter whose name begins with `_` will not be hashed. You can use this as an "escape hatch" for parameters that are not hashable:
+```
+import streamlit as st
+@st.cache_data
+def fetch_and_clean_data(_db_connection, num_rows):
+  # Fetch data from _db_connection here, and then clean it up.
+  return data
+connection = make_database_connection()
+d1 = fetch_and_clean_data(connection, num_rows=10)
+# Actually executes the function, since this is the first time it was
+# encountered.
+another_connection = make_database_connection()
+d2 = fetch_and_clean_data(another_connection, num_rows=10)
+# Does not execute the function. Instead, returns its previously computed
+# value - even though the _database_connection parameter was different
+# in both calls.
+```
+
+Copy
+A cached function's cache can be procedurally cleared:
+```
+import streamlit as st
+@st.cache_data
+def fetch_and_clean_data(_db_connection, num_rows):
+  # Fetch data from _db_connection here, and then clean it up.
+  return data
+fetch_and_clean_data.clear(_db_connection, 50)
+# Clear the cached entry for the arguments provided.
+fetch_and_clean_data.clear()
+# Clear all cached entries for this function.
+```
+
+Copy
+To override the default hashing behavior, pass a custom hash function. You can do that by mapping a type (e.g. `datetime.datetime`) to a hash function (`lambda dt: dt.isoformat()`) like this:
+```
+import streamlit as st
+import datetime
+@st.cache_data(hash_funcs={datetime.datetime: lambda dt: dt.isoformat()})
+def convert_to_utc(dt: datetime.datetime):
+  return dt.astimezone(datetime.timezone.utc)
+```
+
+Copy
+Alternatively, you can map the type's fully-qualified name (e.g. `"datetime.datetime"`) to the hash function instead:
+```
+import streamlit as st
+import datetime
+@st.cache_data(hash_funcs={"datetime.datetime": lambda dt: dt.isoformat()})
+def convert_to_utc(dt: datetime.datetime):
+  return dt.astimezone(datetime.timezone.utc)

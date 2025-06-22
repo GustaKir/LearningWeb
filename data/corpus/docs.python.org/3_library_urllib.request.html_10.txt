@@ -1,0 +1,35 @@
+Title: OpenerDirector.error Method
+URL: https://docs.python.org/3/library/urllib.request.html
+Summary: The OpenerDirector.error method handles protocol-specific errors by invoking registered error handlers, particularly for the HTTP protocol, which uses response codes to determine the handler. This method operates in conjunction with the urlopen() returns and exceptions. The opening of URLs involves three stages, dictated by the order of handler method calls, including request pre-processing.
+---
+
+OpenerDirector.error(_proto_ , _* args_)[¶](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector.error "Link to this definition")
+    
+Handle an error of the given protocol. This will call the registered error handlers for the given protocol with the given arguments (which are protocol specific). The HTTP protocol is a special case which uses the HTTP response code to determine the specific error handler; refer to the `http_error_<type>()` methods of the handler classes.
+Return values and exceptions raised are the same as those of [`urlopen()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen "urllib.request.urlopen").
+OpenerDirector objects open URLs in three stages:
+The order in which these methods are called within each stage is determined by sorting the handler instances.
+  1. Every handler with a method named like `<protocol>_request()` has that method called to pre-process the request.
+  2. Handlers with a method named like `<protocol>_open()` are called to handle the request. This stage ends when a handler either returns a non-[`None`](https://docs.python.org/3/library/constants.html#None "None") value (ie. a response), or raises an exception (usually [`URLError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.URLError "urllib.error.URLError")). Exceptions are allowed to propagate.
+In fact, the above algorithm is first tried for methods named [`default_open()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler.default_open "urllib.request.BaseHandler.default_open"). If all such methods return [`None`](https://docs.python.org/3/library/constants.html#None "None"), the algorithm is repeated for methods named like `<protocol>_open()`. If all such methods return [`None`](https://docs.python.org/3/library/constants.html#None "None"), the algorithm is repeated for methods named [`unknown_open()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler.unknown_open "urllib.request.BaseHandler.unknown_open").
+Note that the implementation of these methods may involve calls of the parent [`OpenerDirector`](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector "urllib.request.OpenerDirector") instance’s [`open()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector.open "urllib.request.OpenerDirector.open") and [`error()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector.error "urllib.request.OpenerDirector.error") methods.
+  3. Every handler with a method named like `<protocol>_response()` has that method called to post-process the response.
+
+
+## BaseHandler Objects[¶](https://docs.python.org/3/library/urllib.request.html#basehandler-objects "Link to this heading")
+[`BaseHandler`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler "urllib.request.BaseHandler") objects provide a couple of methods that are directly useful, and others that are meant to be used by derived classes. These are intended for direct use: 
+
+BaseHandler.add_parent(_director_)[¶](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler.add_parent "Link to this definition")
+    
+Add a director as parent. 
+
+BaseHandler.close()[¶](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler.close "Link to this definition")
+    
+Remove any parents.
+The following attribute and methods should only be used by classes derived from [`BaseHandler`](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler "urllib.request.BaseHandler").
+Note
+The convention has been adopted that subclasses defining `<protocol>_request()` or `<protocol>_response()` methods are named `*Processor`; all others are named `*Handler`. 
+
+BaseHandler.parent[¶](https://docs.python.org/3/library/urllib.request.html#urllib.request.BaseHandler.parent "Link to this definition")
+    
+A valid [`OpenerDirector`](https://docs.python.org/3/library/urllib.request.html#urllib.request.OpenerDirector "urllib.request.OpenerDirector"), which can be used to open using a different protocol, or handle errors.

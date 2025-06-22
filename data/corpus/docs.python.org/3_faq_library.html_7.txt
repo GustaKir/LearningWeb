@@ -1,0 +1,20 @@
+Title: File and Directory Management in Python
+URL: https://docs.python.org/3/faq/library.html
+Summary: This section explains how to manage files and directories in Python using the `os` and `shutil` modules. It covers creating and removing directories with `os.mkdir()`, `os.rmdir()`, and `shutil.rmtree()`, as well as renaming files with `os.rename()`. Additionally, it describes truncating files using `f.truncate()` and `os.ftruncate()`.
+---
+
+simply the name of the Unix system call for this function.
+To remove a directory, use [`os.rmdir()`](https://docs.python.org/3/library/os.html#os.rmdir "os.rmdir"); use [`os.mkdir()`](https://docs.python.org/3/library/os.html#os.mkdir "os.mkdir") to create one. `os.makedirs(path)` will create any intermediate directories in `path` that don’t exist. `os.removedirs(path)` will remove intermediate directories as long as they’re empty; if you want to delete an entire directory tree and its contents, use [`shutil.rmtree()`](https://docs.python.org/3/library/shutil.html#shutil.rmtree "shutil.rmtree").
+To rename a file, use `os.rename(old_path, new_path)`.
+To truncate a file, open it using `f = open(filename, "rb+")`, and use `f.truncate(offset)`; offset defaults to the current seek position. There’s also `os.ftruncate(fd, offset)` for files opened with [`os.open()`](https://docs.python.org/3/library/os.html#os.open "os.open"), where _fd_ is the file descriptor (a small integer).
+The [`shutil`](https://docs.python.org/3/library/shutil.html#module-shutil "shutil: High-level file operations, including copying.") module also contains a number of functions to work on files including [`copyfile()`](https://docs.python.org/3/library/shutil.html#shutil.copyfile "shutil.copyfile"), [`copytree()`](https://docs.python.org/3/library/shutil.html#shutil.copytree "shutil.copytree"), and [`rmtree()`](https://docs.python.org/3/library/shutil.html#shutil.rmtree "shutil.rmtree").
+### [How do I copy a file?](https://docs.python.org/3/faq/library.html#id21)[¶](https://docs.python.org/3/faq/library.html#how-do-i-copy-a-file "Link to this heading")
+The [`shutil`](https://docs.python.org/3/library/shutil.html#module-shutil "shutil: High-level file operations, including copying.") module contains a [`copyfile()`](https://docs.python.org/3/library/shutil.html#shutil.copyfile "shutil.copyfile") function. Note that on Windows NTFS volumes, it does not copy [alternate data streams](https://en.wikipedia.org/wiki/NTFS#Alternate_data_stream_\(ADS\)) nor [resource forks](https://en.wikipedia.org/wiki/Resource_fork) on macOS HFS+ volumes, though both are now rarely used. It also doesn’t copy file permissions and metadata, though using [`shutil.copy2()`](https://docs.python.org/3/library/shutil.html#shutil.copy2 "shutil.copy2") instead will preserve most (though not all) of it.
+### [How do I read (or write) binary data?](https://docs.python.org/3/faq/library.html#id22)[¶](https://docs.python.org/3/faq/library.html#how-do-i-read-or-write-binary-data "Link to this heading")
+To read or write complex binary data formats, it’s best to use the [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") module. It allows you to take a string containing binary data (usually numbers) and convert it to Python objects; and vice versa.
+For example, the following code reads two 2-byte integers and one 4-byte integer in big-endian format from a file:
+```
+importstruct
+with open(filename, "rb") as f:
+  s = f.read(8)
+  x, y, z = struct.unpack(">hhl", s)

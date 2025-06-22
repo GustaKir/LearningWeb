@@ -1,0 +1,33 @@
+Title: signal.sigwait Function
+URL: https://docs.python.org/3/library/signal.html
+Summary: The signal.sigwait function suspends the execution of the calling thread until one of the specified signals in the given signal set is delivered, removes the signal from the pending list, and returns the signal number. It is available on Unix systems.
+---
+
+signal.sigwait(_sigset_)[¶](https://docs.python.org/3/library/signal.html#signal.sigwait "Link to this definition")
+    
+Suspend execution of the calling thread until the delivery of one of the signals specified in the signal set _sigset_. The function accepts the signal (removes it from the pending list of signals), and returns the signal number.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+See the man page _[sigwait(3)](https://manpages.debian.org/sigwait\(3\))_ for further information.
+See also [`pause()`](https://docs.python.org/3/library/signal.html#signal.pause "signal.pause"), [`pthread_sigmask()`](https://docs.python.org/3/library/signal.html#signal.pthread_sigmask "signal.pthread_sigmask"), [`sigpending()`](https://docs.python.org/3/library/signal.html#signal.sigpending "signal.sigpending"), [`sigwaitinfo()`](https://docs.python.org/3/library/signal.html#signal.sigwaitinfo "signal.sigwaitinfo") and [`sigtimedwait()`](https://docs.python.org/3/library/signal.html#signal.sigtimedwait "signal.sigtimedwait").
+Added in version 3.3. 
+
+signal.sigwaitinfo(_sigset_)[¶](https://docs.python.org/3/library/signal.html#signal.sigwaitinfo "Link to this definition")
+    
+Suspend execution of the calling thread until the delivery of one of the signals specified in the signal set _sigset_. The function accepts the signal and removes it from the pending list of signals. If one of the signals in _sigset_ is already pending for the calling thread, the function will return immediately with information about that signal. The signal handler is not called for the delivered signal. The function raises an [`InterruptedError`](https://docs.python.org/3/library/exceptions.html#InterruptedError "InterruptedError") if it is interrupted by a signal that is not in _sigset_.
+The return value is an object representing the data contained in the `siginfo_t` structure, namely: `si_signo`, `si_code`, `si_errno`, `si_pid`, `si_uid`, `si_status`, `si_band`.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+See the man page _[sigwaitinfo(2)](https://manpages.debian.org/sigwaitinfo\(2\))_ for further information.
+See also [`pause()`](https://docs.python.org/3/library/signal.html#signal.pause "signal.pause"), [`sigwait()`](https://docs.python.org/3/library/signal.html#signal.sigwait "signal.sigwait") and [`sigtimedwait()`](https://docs.python.org/3/library/signal.html#signal.sigtimedwait "signal.sigtimedwait").
+Added in version 3.3.
+Changed in version 3.5: The function is now retried if interrupted by a signal not in _sigset_ and the signal handler does not raise an exception (see [**PEP 475**](https://peps.python.org/pep-0475/) for the rationale). 
+
+signal.sigtimedwait(_sigset_ , _timeout_)[¶](https://docs.python.org/3/library/signal.html#signal.sigtimedwait "Link to this definition")
+    
+Like [`sigwaitinfo()`](https://docs.python.org/3/library/signal.html#signal.sigwaitinfo "signal.sigwaitinfo"), but takes an additional _timeout_ argument specifying a timeout. If _timeout_ is specified as `0`, a poll is performed. Returns [`None`](https://docs.python.org/3/library/constants.html#None "None") if a timeout occurs.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+See the man page _[sigtimedwait(2)](https://manpages.debian.org/sigtimedwait\(2\))_ for further information.
+See also [`pause()`](https://docs.python.org/3/library/signal.html#signal.pause "signal.pause"), [`sigwait()`](https://docs.python.org/3/library/signal.html#signal.sigwait "signal.sigwait") and [`sigwaitinfo()`](https://docs.python.org/3/library/signal.html#signal.sigwaitinfo "signal.sigwaitinfo").
+Added in version 3.3.
+Changed in version 3.5: The function is now retried with the recomputed _timeout_ if interrupted by a signal not in _sigset_ and the signal handler does not raise an exception (see [**PEP 475**](https://peps.python.org/pep-0475/) for the rationale).
+## Examples[¶](https://docs.python.org/3/library/signal.html#examples "Link to this heading")
+Here is a minimal example program. It uses the [`alarm()`](https://docs.python.org/3/library/signal.html#signal.alarm "signal.alarm") function to limit the time spent waiting to open a file; this is useful if the file is for a serial device that may not be turned on, which would normally cause the [`os.open()`](https://docs.python.org/3/library/os.html#os.open "os.open") to hang indefinitely. The solution is to set a 5-second alarm before opening the file; if the operation takes too long, the alarm signal will be sent, and the handler raises an exception.

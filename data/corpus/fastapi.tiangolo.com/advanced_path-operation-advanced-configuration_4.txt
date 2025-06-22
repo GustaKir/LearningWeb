@@ -1,0 +1,84 @@
+Title: Advanced Path Operation Configuration in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/
+Summary: This document covers advanced configurations for path operations in FastAPI, including setting a custom operationId, excluding operations from OpenAPI, creating detailed descriptions using docstrings, handling additional responses, and utilizing OpenAPI extensions.
+---
+
+Table of contents 
+  * [ OpenAPI operationId  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#openapi-operationid)
+    * [ Using the _path operation function_ name as the operationId  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#using-the-path-operation-function-name-as-the-operationid)
+  * [ Exclude from OpenAPI  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#exclude-from-openapi)
+  * [ Advanced description from docstring  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#advanced-description-from-docstring)
+  * [ Additional Responses  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#additional-responses)
+  * [ OpenAPI Extra  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#openapi-extra)
+    * [ OpenAPI Extensions  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#openapi-extensions)
+    * [ Custom OpenAPI _path operation_ schema  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#custom-openapi-path-operation-schema)
+    * [ Custom OpenAPI content type  ](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#custom-openapi-content-type)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Advanced User Guide  ](https://fastapi.tiangolo.com/advanced/)
+
+
+# Path Operation Advanced Configuration[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#path-operation-advanced-configuration "Permanent link")
+## OpenAPI operationId[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#openapi-operationid "Permanent link")
+Warning
+If you are not an "expert" in OpenAPI, you probably don't need this.
+You can set the OpenAPI `operationId` to be used in your _path operation_ with the parameter `operation_id`.
+You would have to make sure that it is unique for each operation.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/", operation_id="some_specific_id_you_define")
+async defread_items():
+  return [{"item_id": "Foo"}]
+
+```
+
+### Using the _path operation function_ name as the operationId[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#using-the-path-operation-function-name-as-the-operationid "Permanent link")
+If you want to use your APIs' function names as `operationId`s, you can iterate over all of them and override each _path operation's_ `operation_id` using their `APIRoute.name`.
+You should do it after adding all your _path operations_.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_2_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.routingimport APIRoute
+app = FastAPI()
+@app.get("/items/")
+async defread_items():
+  return [{"item_id": "Foo"}]
+defuse_route_names_as_operation_ids(app: FastAPI) -> None:
+"""
+  Simplify operation IDs so that generated API clients have simpler function
+  names.
+  Should be called only after all routes have been added.
+  """
+  for route in app.routes:
+    if isinstance(route, APIRoute):
+      route.operation_id = route.name # in this case, 'read_items'
+use_route_names_as_operation_ids(app)
+
+```
+
+Tip
+If you manually call `app.openapi()`, you should update the `operationId`s before that.
+Warning
+If you do this, you have to make sure each one of your _path operation functions_ has a unique name.
+Even if they are in different modules (Python files).
+## Exclude from OpenAPI[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#exclude-from-openapi "Permanent link")
+To exclude a _path operation_ from the generated OpenAPI schema (and thus, from the automatic documentation systems), use the parameter `include_in_schema` and set it to `False`:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/", include_in_schema=False)
+async defread_items():
+  return [{"item_id": "Foo"}]
+
+```
+
+## Advanced description from docstring[¶](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#advanced-description-from-docstring "Permanent link")
+You can limit the lines used from the docstring of a _path operation function_ for OpenAPI.
+Adding an `\f` (an escaped "form feed" character) causes **FastAPI** to truncate the output used for OpenAPI at this point.
+It won't show up in the documentation, but other tools (such as Sphinx) will be able to use the rest.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/path-operation-advanced-configuration/#__tabbed_4_1)

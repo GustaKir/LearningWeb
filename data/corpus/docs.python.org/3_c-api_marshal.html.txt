@@ -1,0 +1,58 @@
+Title: Python C API: Marshal
+URL: https://docs.python.org/3/c-api/marshal.html
+Summary: This section discusses the Python C API related to the marshal module, which is used for reading and writing Python object structures in a binary format. It is intended for internal use and is not recommended for general data serialization.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+#### Previous topic
+[Importing Modules](https://docs.python.org/3/c-api/import.html "previous chapter")
+#### Next topic
+[Parsing arguments and building values](https://docs.python.org/3/c-api/arg.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/c-api/marshal.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/c-api/arg.html "Parsing arguments and building values") |
+  * [previous](https://docs.python.org/3/c-api/import.html "Importing Modules") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python/C API Reference Manual](https://docs.python.org/3/c-api/index.html) »
+  * [Utilities](https://docs.python.org/3/c-api/utilities.html) »
+  * [Data marshalling support](https://docs.python.org/3/c-api/marshal.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Data marshalling support[¶](https://docs.python.org/3/c-api/marshal.html#data-marshalling-support "Link to this heading")
+These routines allow C code to work with serialized objects using the same data format as the [`marshal`](https://docs.python.org/3/library/marshal.html#module-marshal "marshal: Convert Python objects to streams of bytes and back \(with different constraints\).") module. There are functions to write data into the serialization format, and additional functions that can be used to read the data back. Files used to store marshalled data must be opened in binary mode.
+Numeric values are stored with the least significant byte first.
+The module supports two versions of the data format: version 0 is the historical version, version 1 shares interned strings in the file, and upon unmarshalling. Version 2 uses a binary format for floating-point numbers. `Py_MARSHAL_VERSION` indicates the current file format (currently 2). 
+
+voidPyMarshal_WriteLongToFile(longvalue, FILE*file, intversion)[¶](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_WriteLongToFile "Link to this definition")
+    
+Marshal a long integer, _value_ , to _file_. This will only write the least-significant 32 bits of _value_ ; regardless of the size of the native long type. _version_ indicates the file format.
+This function can fail, in which case it sets the error indicator. Use [`PyErr_Occurred()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Occurred "PyErr_Occurred") to check for that. 
+
+voidPyMarshal_WriteObjectToFile([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value, FILE*file, intversion)[¶](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_WriteObjectToFile "Link to this definition")
+    
+Marshal a Python object, _value_ , to _file_. _version_ indicates the file format.
+This function can fail, in which case it sets the error indicator. Use [`PyErr_Occurred()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Occurred "PyErr_Occurred") to check for that. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyMarshal_WriteObjectToString([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value, intversion)[¶](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_WriteObjectToString "Link to this definition")
+    _Return value: New reference._
+Return a bytes object containing the marshalled representation of _value_. _version_ indicates the file format.
+The following functions allow marshalled values to be read back in. 
+
+longPyMarshal_ReadLongFromFile(FILE*file)[¶](https://docs.python.org/3/c-api/marshal.html#c.PyMarshal_ReadLongFromFile "Link to this definition")
+    
+Return a C long from the data stream in a FILE* opened for reading. Only a 32-bit value can be read in using this function, regardless of the native size of long.
+On error, sets the appropriate exception ([`EOFError`](https://docs.python.org/3/library/exceptions.html#EOFError "EOFError")) and returns `-1`.

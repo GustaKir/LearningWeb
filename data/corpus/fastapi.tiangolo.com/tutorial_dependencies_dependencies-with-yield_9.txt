@@ -1,0 +1,37 @@
+Title: Handling Responses and Exceptions in FastAPI Dependencies
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/
+Summary: This section explains that only one response is sent to the client from a FastAPI path operation and outlines the process for handling exceptions within dependencies using 'yield'. It emphasizes the importance of re-raising exceptions for proper handling and mentions the applicability of custom exception handlers.
+---
+
+```
+
+Info
+Only **one response** will be sent to the client. It might be one of the error responses or it will be the response from the _path operation_.
+After one of those responses is sent, no other response can be sent.
+Tip
+This diagram shows `HTTPException`, but you could also raise any other exception that you catch in a dependency with `yield` or with a [Custom Exception Handler](https://fastapi.tiangolo.com/tutorial/handling-errors/#install-custom-exception-handlers).
+If you raise any exception, it will be passed to the dependencies with yield, including `HTTPException`. In most cases you will want to re-raise that same exception or a new one from the dependency with `yield` to make sure it's properly handled.
+## Dependencies with `yield`, `HTTPException`, `except` and Background Tasks[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#dependencies-with-yield-httpexception-except-and-background-tasks "Permanent link")
+Warning
+You most probably don't need these technical details, you can skip this section and continue below.
+These details are useful mainly if you were using a version of FastAPI prior to 0.106.0 and used resources from dependencies with `yield` in background tasks.
+### Dependencies with `yield` and `except`, Technical Details[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#dependencies-with-yield-and-except-technical-details "Permanent link")
+Before FastAPI 0.110.0, if you used a dependency with `yield`, and then you captured an exception with `except` in that dependency, and you didn't raise the exception again, the exception would be automatically raised/forwarded to any exception handlers or the internal server error handler.
+This was changed in version 0.110.0 to fix unhandled memory consumption from forwarded exceptions without a handler (internal server errors), and to make it consistent with the behavior of regular Python code.
+### Background Tasks and Dependencies with `yield`, Technical Details[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#background-tasks-and-dependencies-with-yield-technical-details "Permanent link")
+Before FastAPI 0.106.0, raising exceptions after `yield` was not possible, the exit code in dependencies with `yield` was executed _after_ the response was sent, so [Exception Handlers](https://fastapi.tiangolo.com/tutorial/handling-errors/#install-custom-exception-handlers) would have already run.
+This was designed this way mainly to allow using the same objects "yielded" by dependencies inside of background tasks, because the exit code would be executed after the background tasks were finished.
+Nevertheless, as this would mean waiting for the response to travel through the network while unnecessarily holding a resource in a dependency with yield (for example a database connection), this was changed in FastAPI 0.106.0.
+Tip
+Additionally, a background task is normally an independent set of logic that should be handled separately, with its own resources (e.g. its own database connection).
+So, this way you will probably have cleaner code.
+If you used to rely on this behavior, now you should create the resources for background tasks inside the background task itself, and use internally only data that doesn't depend on the resources of dependencies with `yield`.
+For example, instead of using the same database session, you would create a new database session inside of the background task, and you would obtain the objects from the database using this new session. And then instead of passing the object from the database as a parameter to the background task function, you would pass the ID of that object and then obtain the object again inside the background task function.
+## Context Managers[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#context-managers "Permanent link")
+### What are "Context Managers"[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#what-are-context-managers "Permanent link")
+"Context Managers" are any of those Python objects that you can use in a `with` statement.
+For example, [you can use `with` to read a file](https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files):
+```
+with open("./somefile.txt") as f:
+  contents = f.read()
+  print(contents)

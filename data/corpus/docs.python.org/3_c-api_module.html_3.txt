@@ -1,0 +1,38 @@
+Title: Module State and Memory Management in Python C API
+URL: https://docs.python.org/3/c-api/module.html
+Summary: The document discusses how module state can be managed in a per-module memory area accessed via `PyModule_GetState()`, which supports sub-interpreters. The memory allocation is determined by the `m_size` attribute during module creation and is released upon module deallocation. A negative `m_size` indicates that the module has global state and is not safe for sub-interpreters, while a non-negative value signifies reinitializable modules with specified memory requirements.
+---
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")m_size[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_size "Link to this definition")
+    
+Module state may be kept in a per-module memory area that can be retrieved with [`PyModule_GetState()`](https://docs.python.org/3/c-api/module.html#c.PyModule_GetState "PyModule_GetState"), rather than in static globals. This makes modules safe for use in multiple sub-interpreters.
+This memory area is allocated based on _m_size_ on module creation, and freed when the module object is deallocated, after the [`m_free`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_free "PyModuleDef.m_free") function has been called, if present.
+Setting `m_size` to `-1` means that the module does not support sub-interpreters, because it has global state.
+Setting it to a non-negative value means that the module can be re-initialized and specifies the additional amount of memory it requires for its state. Non-negative `m_size` is required for multi-phase initialization.
+See [**PEP 3121**](https://peps.python.org/pep-3121/) for more details. 
+
+[PyMethodDef](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef "PyMethodDef")*m_methods[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_methods "Link to this definition")
+    
+A pointer to a table of module-level functions, described by [`PyMethodDef`](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef "PyMethodDef") values. Can be `NULL` if no functions are present. 
+
+[PyModuleDef_Slot](https://docs.python.org/3/c-api/module.html#c.PyModuleDef_Slot "PyModuleDef_Slot")*m_slots[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_slots "Link to this definition")
+    
+An array of slot definitions for multi-phase initialization, terminated by a `{0, NULL}` entry. When using single-phase initialization, _m_slots_ must be `NULL`.
+Changed in version 3.5: Prior to version 3.5, this member was always set to `NULL`, and was defined as:
+> 
+
+[inquiry](https://docs.python.org/3/c-api/gcsupport.html#c.inquiry "inquiry")m_reload[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_slots.m_reload "Link to this definition")
+
+
+[traverseproc](https://docs.python.org/3/c-api/gcsupport.html#c.traverseproc "traverseproc")m_traverse[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_traverse "Link to this definition")
+    
+A traversal function to call during GC traversal of the module object, or `NULL` if not needed.
+This function is not called if the module state was requested but is not allocated yet. This is the case immediately after the module is created and before the module is executed ([`Py_mod_exec`](https://docs.python.org/3/c-api/module.html#c.Py_mod_exec "Py_mod_exec") function). More precisely, this function is not called if [`m_size`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_size "PyModuleDef.m_size") is greater than 0 and the module state (as returned by [`PyModule_GetState()`](https://docs.python.org/3/c-api/module.html#c.PyModule_GetState "PyModule_GetState")) is `NULL`.
+Changed in version 3.9: No longer called before the module state is allocated. 
+
+[inquiry](https://docs.python.org/3/c-api/gcsupport.html#c.inquiry "inquiry")m_clear[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_clear "Link to this definition")
+    
+A clear function to call during GC clearing of the module object, or `NULL` if not needed.
+This function is not called if the module state was requested but is not allocated yet. This is the case immediately after the module is created and before the module is executed ([`Py_mod_exec`](https://docs.python.org/3/c-api/module.html#c.Py_mod_exec "Py_mod_exec") function). More precisely, this function is not called if [`m_size`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_size "PyModuleDef.m_size") is greater than 0 and the module state (as returned by [`PyModule_GetState()`](https://docs.python.org/3/c-api/module.html#c.PyModule_GetState "PyModule_GetState")) is `NULL`.
+Like [`PyTypeObject.tp_clear`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_clear "PyTypeObject.tp_clear"), this function is not _always_ called before a module is deallocated. For example, when reference counting is enough to determine that an object is no longer used, the cyclic garbage collector is not involved and [`m_free`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_free "PyModuleDef.m_free") is called directly.
+Changed in version 3.9: No longer called before the module state is allocated.

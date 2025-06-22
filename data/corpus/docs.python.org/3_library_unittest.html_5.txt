@@ -1,0 +1,58 @@
+Title: Introduction to Unit Testing in Python
+URL: https://docs.python.org/3/library/unittest.html
+Summary: This chunk introduces unit testing in Python using the `unittest` framework. It demonstrates a simple test case for verifying the size of a widget and explains the use of assert methods to identify failures and errors in tests. It also hints at organizing repetitive setup code using the `setUp()` method.
+---
+
+```
+importunittest
+classDefaultWidgetSizeTestCase(unittest.TestCase):
+  deftest_default_widget_size(self):
+    widget = Widget('The widget')
+    self.assertEqual(widget.size(), (50, 50))
+
+```
+
+Note that in order to test something, we use one of the [assert* methods](https://docs.python.org/3/library/unittest.html#assert-methods) provided by the [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") base class. If the test fails, an exception will be raised with an explanatory message, and [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") will identify the test case as a _failure_. Any other exceptions will be treated as _errors_.
+Tests can be numerous, and their set-up can be repetitive. Luckily, we can factor out set-up code by implementing a method called [`setUp()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUp "unittest.TestCase.setUp"), which the testing framework will automatically call for every single test we run:
+```
+importunittest
+classWidgetTestCase(unittest.TestCase):
+  defsetUp(self):
+    self.widget = Widget('The widget')
+  deftest_default_widget_size(self):
+    self.assertEqual(self.widget.size(), (50,50),
+             'incorrect default size')
+  deftest_widget_resize(self):
+    self.widget.resize(100,150)
+    self.assertEqual(self.widget.size(), (100,150),
+             'wrong size after resize')
+
+```
+
+Note
+The order in which the various tests will be run is determined by sorting the test method names with respect to the built-in ordering for strings.
+If the [`setUp()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUp "unittest.TestCase.setUp") method raises an exception while the test is running, the framework will consider the test to have suffered an error, and the test method will not be executed.
+Similarly, we can provide a [`tearDown()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.tearDown "unittest.TestCase.tearDown") method that tidies up after the test method has been run:
+```
+importunittest
+classWidgetTestCase(unittest.TestCase):
+  defsetUp(self):
+    self.widget = Widget('The widget')
+  deftearDown(self):
+    self.widget.dispose()
+
+```
+
+If [`setUp()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUp "unittest.TestCase.setUp") succeeded, [`tearDown()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.tearDown "unittest.TestCase.tearDown") will be run whether the test method succeeded or not.
+Such a working environment for the testing code is called a _test fixture_. A new TestCase instance is created as a unique test fixture used to execute each individual test method. Thus [`setUp()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUp "unittest.TestCase.setUp"), [`tearDown()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.tearDown "unittest.TestCase.tearDown"), and `__init__()` will be called once per test.
+It is recommended that you use TestCase implementations to group tests together according to the features they test. [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") provides a mechanism for this: the _test suite_ , represented by [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.")’s [`TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite") class. In most cases, calling [`unittest.main()`](https://docs.python.org/3/library/unittest.html#unittest.main "unittest.main") will do the right thing and collect all the module’s test cases for you and execute them.
+However, should you want to customize the building of your test suite, you can do it yourself:
+```
+defsuite():
+  suite = unittest.TestSuite()
+  suite.addTest(WidgetTestCase('test_default_widget_size'))
+  suite.addTest(WidgetTestCase('test_widget_resize'))
+  return suite
+if __name__ == '__main__':
+  runner = unittest.TextTestRunner()
+  runner.run(suite())

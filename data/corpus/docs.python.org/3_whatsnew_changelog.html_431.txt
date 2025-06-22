@@ -1,0 +1,19 @@
+Title: Python 3 Changelog: Bug Fixes and Improvements
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section highlights several important bug fixes, including a solution for a random crash at exit with daemon threads by directly accessing the `_PyRuntime` variable. It also addresses a potential `SystemError` in `math` functions when argument conversion fails and resolves a race condition in thread ID generation associated with `PyGILState_Ensure()`.
+---
+
+d()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread") random crash at exit with daemon threads. It now accesses the `_PyRuntime` variable directly instead of using `tstate->interp->runtime`, since `tstate` can be a dangling pointer after [`Py_Finalize()`](https://docs.python.org/3/c-api/init.html#c.Py_Finalize "Py_Finalize") has been called. Moreover, the daemon thread now exits before trying to take the GIL.
+  * [bpo-39871](https://bugs.python.org/issue?@action=redirect&bpo=39871): Fix a possible [`SystemError`](https://docs.python.org/3/library/exceptions.html#SystemError "SystemError") in `math.{atan2,copysign,remainder}()` when the first argument cannot be converted to a [`float`](https://docs.python.org/3/library/functions.html#float "float"). Patch by Zackery Spytz.
+  * [bpo-39776](https://bugs.python.org/issue?@action=redirect&bpo=39776): Fix race condition where threads created by PyGILState_Ensure() could get a duplicate id.
+This affects consumers of tstate->id like the contextvar caching machinery, which could return invalid cached objects under heavy thread load (observed in embedded scenarios).
+  * [bpo-39778](https://bugs.python.org/issue?@action=redirect&bpo=39778): Fixed a crash due to incorrect handling of weak references in `collections.OrderedDict` classes. Patch by Pablo Galindo.
+  * [bpo-1635741](https://bugs.python.org/issue?@action=redirect&bpo=1635741): Port audioop extension module to multiphase initialization ([**PEP 489**](https://peps.python.org/pep-0489/)).
+  * [bpo-39702](https://bugs.python.org/issue?@action=redirect&bpo=39702): Relax [decorator](https://docs.python.org/3/glossary.html#term-decorator) grammar restrictions to allow any valid expression ([**PEP 614**](https://peps.python.org/pep-0614/)).
+  * [bpo-38091](https://bugs.python.org/issue?@action=redirect&bpo=38091): Tweak import deadlock detection code to not deadlock itself.
+  * [bpo-1635741](https://bugs.python.org/issue?@action=redirect&bpo=1635741): Port _locale extension module to multiphase initialization ([**PEP 489**](https://peps.python.org/pep-0489/)).
+  * [bpo-39087](https://bugs.python.org/issue?@action=redirect&bpo=39087): Optimize [`PyUnicode_AsUTF8()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF8 "PyUnicode_AsUTF8") and [`PyUnicode_AsUTF8AndSize()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsUTF8AndSize "PyUnicode_AsUTF8AndSize") slightly when they need to create internal UTF-8 cache.
+  * [bpo-39520](https://bugs.python.org/issue?@action=redirect&bpo=39520): Fix unparsing of ext slices with no items (`foo[:,]`). Patch by Batuhan Taskaya.
+  * [bpo-39220](https://bugs.python.org/issue?@action=redirect&bpo=39220): Do not optimize annotations if ‘from __future__ import annotations’ is used. Patch by Pablo Galindo.
+  * [bpo-35712](https://bugs.python.org/issue?@action=redirect&bpo=35712): Using [`NotImplemented`](https://docs.python.org/3/library/constants.html#NotImplemented "NotImplemented") in a boolean context has been deprecated. Patch contributed by Josh Rosenberg.
+  * [bpo-22490](https://bugs.python.org/issue?@action=redirect&bpo=22490): Don’t leak environment variable `__PYVENV_LAUNCHER__` into the interpreter session on macOS.

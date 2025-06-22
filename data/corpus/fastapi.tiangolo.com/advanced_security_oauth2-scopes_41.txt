@@ -1,0 +1,35 @@
+Title: OAuth2 Scopes in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/
+Summary: This document discusses implementing OAuth2 token authentication in FastAPI. It includes examples of logging in to obtain an access token, fetching the current user's data, and reading user-specific items using defined scopes for authorization.
+---
+
+ogin_for_access_token(
+  form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> Token:
+  user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+  if not user:
+    raise HTTPException(status_code=400, detail="Incorrect username or password")
+  access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+  access_token = create_access_token(
+    data={"sub": user.username, "scopes": form_data.scopes},
+    expires_delta=access_token_expires,
+  )
+  return Token(access_token=access_token, token_type="bearer")
+@app.get("/users/me/", response_model=User)
+async defread_users_me(
+  current_user: Annotated[User, Depends(get_current_active_user)],
+):
+  return current_user
+@app.get("/users/me/items/")
+async defread_own_items(
+  current_user: Annotated[User, Security(get_current_active_user, scopes=["items"])],
+):
+  return [{"item_id": "Foo", "owner": current_user.username}]
+@app.get("/status/")
+async defread_system_status(current_user: Annotated[User, Depends(get_current_user)]):
+  return {"status": "ok"}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_12_1)[Python 3.8+](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_12_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_12_3)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_12_4)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_12_5)

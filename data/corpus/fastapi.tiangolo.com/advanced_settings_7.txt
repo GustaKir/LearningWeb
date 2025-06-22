@@ -1,0 +1,111 @@
+Title: Testing Dependency Overrides in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/settings/
+Summary: This section details how to use dependency overrides in FastAPI to test application settings. It demonstrates creating a TestClient, overriding the get_settings function to provide a custom admin email, and validating the setup with a test case. Additionally, it introduces reading settings from a `.env` file for dynamic configuration.
+---
+
+```
+fromfastapi.testclientimport TestClient
+from.configimport Settings
+from.mainimport app, get_settings
+client = TestClient(app)
+defget_settings_override():
+  return Settings(admin_email="testing_admin@example.com")
+app.dependency_overrides[get_settings] = get_settings_override
+deftest_app():
+  response = client.get("/info")
+  data = response.json()
+  assert data == {
+    "app_name": "Awesome API",
+    "admin_email": "testing_admin@example.com",
+    "items_per_user": 50,
+  }
+
+```
+
+In the dependency override we set a new value for the `admin_email` when creating the new `Settings` object, and then we return that new object.
+Then we can test that it is used.
+## Reading a `.env` file[¶](https://fastapi.tiangolo.com/advanced/settings/#reading-a-env-file "Permanent link")
+If you have many settings that possibly change a lot, maybe in different environments, it might be useful to put them on a file and then read them from it as if they were environment variables.
+This practice is common enough that it has a name, these environment variables are commonly placed in a file `.env`, and the file is called a "dotenv".
+Tip
+A file starting with a dot (`.`) is a hidden file in Unix-like systems, like Linux and macOS.
+But a dotenv file doesn't really have to have that exact filename.
+Pydantic has support for reading from these types of files using an external library. You can read more at [Pydantic Settings: Dotenv (.env) support](https://docs.pydantic.dev/latest/concepts/pydantic_settings/#dotenv-env-support).
+Tip
+For this to work, you need to `pip install python-dotenv`.
+### The `.env` file[¶](https://fastapi.tiangolo.com/advanced/settings/#the-env-file "Permanent link")
+You could have a `.env` file with:
+```
+ADMIN_EMAIL="deadpool@example.com"
+APP_NAME="ChimichangApp"
+
+```
+
+### Read settings from `.env`[¶](https://fastapi.tiangolo.com/advanced/settings/#read-settings-from-env "Permanent link")
+And then update your `config.py` with:
+[Pydantic v2](https://fastapi.tiangolo.com/advanced/settings/#__tabbed_11_1)[Pydantic v1](https://fastapi.tiangolo.com/advanced/settings/#__tabbed_11_2)
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/settings/#__tabbed_12_1)
+```
+frompydantic_settingsimport BaseSettings, SettingsConfigDict
+classSettings(BaseSettings):
+  app_name: str = "Awesome API"
+  admin_email: str
+  items_per_user: int = 50
+  model_config = SettingsConfigDict(env_file=".env")
+
+```
+
+Tip
+The `model_config` attribute is used just for Pydantic configuration. You can read more at [Pydantic: Concepts: Configuration](https://docs.pydantic.dev/latest/concepts/config/).
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/settings/#__tabbed_13_1)
+```
+frompydanticimport BaseSettings
+classSettings(BaseSettings):
+  app_name: str = "Awesome API"
+  admin_email: str
+  items_per_user: int = 50
+  classConfig:
+    env_file = ".env"
+
+```
+
+Tip
+The `Config` class is used just for Pydantic configuration. You can read more at [Pydantic Model Config](https://docs.pydantic.dev/1.10/usage/model_config/).
+Info
+In Pydantic version 1 the configuration was done in an internal class `Config`, in Pydantic version 2 it's done in an attribute `model_config`. This attribute takes a `dict`, and to get autocompletion and inline errors you can import and use `SettingsConfigDict` to define that `dict`.
+Here we define the config `env_file` inside of your Pydantic `Settings` class, and set the value to the filename with the dotenv file we want to use.
+### Creating the `Settings` only once with `lru_cache`[¶](https://fastapi.tiangolo.com/advanced/settings/#creating-the-settings-only-once-with-lru_cache "Permanent link")
+Reading a file from disk is normally a costly (slow) operation, so you probably want to do it only once and then reuse the same settings object, instead of reading it for each request.
+But every time we do:
+```
+Settings()
+
+```
+
+a new `Settings` object would be created, and at creation it would read the `.env` file again.
+If the dependency function was just like:
+```
+defget_settings():
+  return Settings()
+
+```
+
+we would create that object for each request, and we would be reading the `.env` file for each request. ⚠️
+But as we are using the `@lru_cache` decorator on top, the `Settings` object will be created only once, the first time it's called. ✔️
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/settings/#__tabbed_14_1)
+```
+fromfunctoolsimport lru_cache
+fromfastapiimport Depends, FastAPI
+fromtyping_extensionsimport Annotated
+from.import config
+app = FastAPI()
+@lru_cache
+defget_settings():
+  return config.Settings()
+@app.get("/info")
+async definfo(settings: Annotated[config.Settings, Depends(get_settings)]):
+  return {
+    "app_name": settings.app_name,
+    "admin_email": settings.admin_email,
+    "items_per_user": settings.items_per_user,
+  }

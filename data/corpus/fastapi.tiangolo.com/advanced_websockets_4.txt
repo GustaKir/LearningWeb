@@ -1,0 +1,96 @@
+Title: WebSockets in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/websockets/
+Summary: This section of the FastAPI documentation covers how to install and use WebSockets, including creating a WebSocket, sending and receiving messages, handling multiple clients, and managing disconnections. It also includes guidance on using dependencies within WebSocket connections.
+---
+
+Table of contents 
+  * [ Install `WebSockets` ](https://fastapi.tiangolo.com/advanced/websockets/#install-websockets)
+  * [ WebSockets client  ](https://fastapi.tiangolo.com/advanced/websockets/#websockets-client)
+    * [ In production  ](https://fastapi.tiangolo.com/advanced/websockets/#in-production)
+  * [ Create a `websocket` ](https://fastapi.tiangolo.com/advanced/websockets/#create-a-websocket)
+  * [ Await for messages and send messages  ](https://fastapi.tiangolo.com/advanced/websockets/#await-for-messages-and-send-messages)
+  * [ Try it  ](https://fastapi.tiangolo.com/advanced/websockets/#try-it)
+  * [ Using `Depends` and others  ](https://fastapi.tiangolo.com/advanced/websockets/#using-depends-and-others)
+    * [ Try the WebSockets with dependencies  ](https://fastapi.tiangolo.com/advanced/websockets/#try-the-websockets-with-dependencies)
+  * [ Handling disconnections and multiple clients  ](https://fastapi.tiangolo.com/advanced/websockets/#handling-disconnections-and-multiple-clients)
+  * [ More info  ](https://fastapi.tiangolo.com/advanced/websockets/#more-info)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Advanced User Guide  ](https://fastapi.tiangolo.com/advanced/)
+
+
+# WebSockets[¶](https://fastapi.tiangolo.com/advanced/websockets/#websockets "Permanent link")
+You can use [WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) with **FastAPI**.
+## Install `WebSockets`[¶](https://fastapi.tiangolo.com/advanced/websockets/#install-websockets "Permanent link")
+Make sure you create a [virtual environment](https://fastapi.tiangolo.com/virtual-environments/), activate it, and install `websockets`:
+```
+
+fast →[](https://fastapi.tiangolo.com/advanced/websockets/)
+
+```
+
+## WebSockets client[¶](https://fastapi.tiangolo.com/advanced/websockets/#websockets-client "Permanent link")
+### In production[¶](https://fastapi.tiangolo.com/advanced/websockets/#in-production "Permanent link")
+In your production system, you probably have a frontend created with a modern framework like React, Vue.js or Angular.
+And to communicate using WebSockets with your backend you would probably use your frontend's utilities.
+Or you might have a native mobile application that communicates with your WebSocket backend directly, in native code.
+Or you might have any other way to communicate with the WebSocket endpoint.
+But for this example, we'll use a very simple HTML document with some JavaScript, all inside a long string.
+This, of course, is not optimal and you wouldn't use it for production.
+In production you would have one of the options above.
+But it's the simplest way to focus on the server-side of WebSockets and have a working example:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/websockets/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI, WebSocket
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <form action="" onsubmit="sendMessage(event)">
+      <input type="text" id="messageText" autocomplete="off"/>
+      <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
+    <script>
+      var ws = new WebSocket("ws://localhost:8000/ws");
+      ws.onmessage = function(event) {
+        var messages = document.getElementById('messages')
+        var message = document.createElement('li')
+        var content = document.createTextNode(event.data)
+        message.appendChild(content)
+        messages.appendChild(message)
+      };
+      function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+      }
+    </script>
+  </body>
+</html>
+"""
+@app.get("/")
+async defget():
+  return HTMLResponse(html)
+@app.websocket("/ws")
+async defwebsocket_endpoint(websocket: WebSocket):
+  await websocket.accept()
+  while True:
+    data = await websocket.receive_text()
+    await websocket.send_text(f"Message text was: {data}")
+
+```
+
+## Create a `websocket`[¶](https://fastapi.tiangolo.com/advanced/websockets/#create-a-websocket "Permanent link")
+In your **FastAPI** application, create a `websocket`:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/websockets/#__tabbed_2_1)

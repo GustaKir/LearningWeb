@@ -1,0 +1,81 @@
+Title: Changes to f-strings in Python 3.12
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: Python 3.12 introduces significant updates to f-strings, allowing for arbitrary nesting of f-strings which was previously limited. Additionally, f-strings can now span multiple lines and include inline comments, enhancing readability and flexibility.
+---
+
+```
+
+Note that before this change there was no explicit limit in how f-strings can be nested, but the fact that string quotes cannot be reused inside the expression component of f-strings made it impossible to nest f-strings arbitrarily. In fact, this is the most nested f-string that could be written:
+>>>```
+>>> f"""{f'''{f'{f"{1+1}"}'}'''}"""
+'2'
+
+```
+
+As now f-strings can contain any valid Python expression inside expression components, it is now possible to nest f-strings arbitrarily:
+>>>```
+>>> f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"
+'2'
+
+```
+
+  * Multi-line expressions and comments: In Python 3.11, f-string expressions must be defined in a single line, even if the expression within the f-string could normally span multiple lines (like literal lists being defined over multiple lines), making them harder to read. In Python 3.12 you can now define f-strings spanning multiple lines, and add inline comments:
+```
+>>> f"This is the playlist: {", ".join([
+...   'Take me back to Eden', # My, my, those eyes like fire
+...   'Alkaline',       # Not acid nor alkaline
+...   'Ascensionism'      # Take to the broken skies at last
+... ])}"
+'This is the playlist: Take me back to Eden, Alkaline, Ascensionism'
+
+```
+
+  * Backslashes and unicode characters: before Python 3.12 f-string expressions couldn’t contain any `\` character. This also affected unicode [escape sequences](https://docs.python.org/3/reference/lexical_analysis.html#escape-sequences) (such as `\N{snowman}`) as these contain the `\N` part that previously could not be part of expression components of f-strings. Now, you can define expressions like this:
+>>>```
+>>> print(f"This is the playlist: {"\n".join(songs)}")
+This is the playlist: Take me back to Eden
+Alkaline
+Ascensionism
+>>> print(f"This is the playlist: {"\N{BLACK HEART SUIT}".join(songs)}")
+This is the playlist: Take me back to Eden♥Alkaline♥Ascensionism
+
+```
+
+
+
+See [**PEP 701**](https://peps.python.org/pep-0701/) for more details.
+As a positive side-effect of how this feature has been implemented (by parsing f-strings with [**the PEG parser**](https://peps.python.org/pep-0617/)), now error messages for f-strings are more precise and include the exact location of the error. For example, in Python 3.11, the following f-string raises a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError"):
+>>>```
+>>> my_string = f"{xzy}" + f"{1+1}"
+ File "<stdin>", line 1
+(x z y)
+^^^
+SyntaxError: f-string: invalid syntax. Perhaps you forgot a comma?
+
+```
+
+but the error message doesn’t include the exact location of the error within the line and also has the expression artificially surrounded by parentheses. In Python 3.12, as f-strings are parsed with the PEG parser, error messages can be more precise and show the entire line:
+>>>```
+>>> my_string = f"{xzy}" + f"{1+1}"
+ File "<stdin>", line 1
+my_string = f"{xzy}" + f"{1+1}"
+^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+```
+
+(Contributed by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou, Cristián Maureira-Fredes and Marta Gómez in [gh-102856](https://github.com/python/cpython/issues/102856). PEP written by Pablo Galindo, Batuhan Taskaya, Lysandros Nikolaou and Marta Gómez).
+### PEP 684: A Per-Interpreter GIL[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-684-a-per-interpreter-gil "Link to this heading")
+[**PEP 684**](https://peps.python.org/pep-0684/) introduces a per-interpreter [GIL](https://docs.python.org/3/glossary.html#term-global-interpreter-lock), so that sub-interpreters may now be created with a unique GIL per interpreter. This allows Python programs to take full advantage of multiple CPU cores. This is currently only available through the C-API, though a Python API is [**anticipated for 3.13**](https://peps.python.org/pep-0554/).
+Use the new [`Py_NewInterpreterFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_NewInterpreterFromConfig "Py_NewInterpreterFromConfig") function to create an interpreter with its own GIL:
+```
+PyInterpreterConfigconfig={
+.check_multi_interp_extensions=1,
+.gil=PyInterpreterConfig_OWN_GIL,
+};
+PyThreadState*tstate=NULL;
+PyStatusstatus=Py_NewInterpreterFromConfig(&tstate,&config);
+if(PyStatus_Exception(status)){
+return-1;
+}
+/* The new interpreter is now active in the current thread. */

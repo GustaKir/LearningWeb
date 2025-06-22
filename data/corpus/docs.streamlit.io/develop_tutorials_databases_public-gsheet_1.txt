@@ -1,0 +1,43 @@
+Title: Connecting Streamlit to a Public Google Sheet
+URL: https://docs.streamlit.io/develop/tutorials/databases/public-gsheet
+Summary: This document outlines the steps to connect a Streamlit application to a public Google Sheet, including prerequisites, creating a Google Sheet with link sharing, adding the Sheet's URL to local app secrets, and writing the Streamlit app.
+---
+
+1. Contents
+  2. [Introduction](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#introduction)
+  3. [Prerequisites](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#prerequisites)
+  4. [Create a Google Sheet and turn on link sharing](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#create-a-google-sheet-and-turn-on-link-sharing)
+  5. [Add the Sheets URL to your local app secrets](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#add-the-sheets-url-to-your-local-app-secrets)
+  6. [Write your Streamlit app](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#write-your-streamlit-app)
+  7. [Connecting to a Google Sheet from Community Cloud](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#connecting-to-a-google-sheet-from-community-cloud)
+
+
+# [](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#connect-streamlit-to-a-public-google-sheet)Connect Streamlit to a public Google Sheet
+## [](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#introduction)Introduction
+This guide explains how to securely access a public Google Sheet from Streamlit. It uses [st.connection](https://docs.streamlit.io/develop/api-reference/connections/st.connection), [Streamlit GSheetsConnection](https://github.com/streamlit/gsheets-connection), and Streamlit's [Secrets management](https://docs.streamlit.io/develop/concepts/connections/secrets-management).
+This method requires you to enable link sharing for your Google Sheet. While the sharing link will not appear in your code (and actually acts as sort of a password!), someone with the link can get all the data in the Sheet. If you don't want this, follow the (more complicated) guide to [Connect Streamlit to a private Google Sheet](https://docs.streamlit.io/private-gsheet).
+### [](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#prerequisites)Prerequisites
+This tutorial requires `streamlit>=1.28` and `st-gsheets-connection` in your Python environment.
+## [](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#create-a-google-sheet-and-turn-on-link-sharing)Create a Google Sheet and turn on link sharing
+If you already have a Sheet that you want to access, you can [skip to the next step](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#add-the-sheets-url-to-your-local-app-secrets). See Google's documentation on how to [share spreadsheets](https://support.google.com/docs/answer/9331169?hl=en#6.1) for more information.
+Create a spreadsheet with this example data and create a share link. The link should have "Anyone with the link" set as a "Viewer."
+name| pet  
+---|---  
+Mary| dog  
+John| cat  
+Robert| bird  
+![screenshot 1](https://docs.streamlit.io/images/databases/public-gsheet-1.png)![screenshot 1](https://docs.streamlit.io/images/databases/public-gsheet-2.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#add-the-sheets-url-to-your-local-app-secrets)Add the Sheets URL to your local app secrets
+Your local Streamlit app will read secrets from a file `.streamlit/secrets.toml` in your app's root directory. Create this file if it doesn't exist yet and add the share link of your Google Sheet to it as shown below:
+`# .streamlit/secrets.toml [connections.gsheets] spreadsheet = "https://docs.google.com/spreadsheets/d/xxxxxxx/edit#gid=0" `
+_priority_high_
+#### Important
+Add this file to `.gitignore` and don't commit it to your GitHub repo!
+## [](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet#write-your-streamlit-app)Write your Streamlit app
+Copy the code below to your Streamlit app and run it.
+`# streamlit_app.py import streamlit as st from streamlit_gsheets import GSheetsConnection # Create a connection object. conn = st.connection("gsheets", type=GSheetsConnection) df = conn.read() # Print results. for row in df.itertuples():   st.write(f"{row.name} has a :{row.pet}:") `
+See `st.connection` above? This handles secrets retrieval, setup, query caching and retries. By default, `.read()` results are cached without expiring. You can pass optional parameters to `.read()` to customize your connection. For example, you can specify the name of a worksheet, cache expiration time, or pass-through parameters for [`pandas.read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html) like this:
+`df = conn.read(   worksheet="Sheet1",   ttl="10m",   usecols=[0, 1],   nrows=3, ) `
+In this case, we set `ttl="10m"` to ensure the query result is cached for no longer than 10 minutes. You can also set `ttl=0` to disable caching. Learn more in [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching). We've declared optional parameters `usecols=[0,1]` and `nrows=3` for `pandas` to use under the hood.
+If everything worked out (and you used the example table we created above), your app should look like this:
+![Finished app screenshot](https://

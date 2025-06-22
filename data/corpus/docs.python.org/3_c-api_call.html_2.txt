@@ -1,0 +1,28 @@
+Title: Keyword Arguments and Vectorcall in Python C API
+URL: https://docs.python.org/3/c-api/call.html
+Summary: This section discusses the _kwnames_ tuple, which contains keyword argument names required to be unique strings, and can be NULL if there are no keyword arguments. It also describes the PY_VECTORCALL_ARGUMENTS_OFFSET constant, which allows changes to specific argument values during vector calls, emphasizing the requirement to restore those values before returning.
+---
+
+_kwnames_ is a tuple containing the names of the keyword arguments;
+    
+in other words, the keys of the kwargs dict. These names must be strings (instances of `str` or a subclass) and they must be unique. If there are no keyword arguments, then _kwnames_ can instead be _NULL_.
+
+
+
+PY_VECTORCALL_ARGUMENTS_OFFSET[¶](https://docs.python.org/3/c-api/call.html#c.PY_VECTORCALL_ARGUMENTS_OFFSET "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+If this flag is set in a vectorcall _nargsf_ argument, the callee is allowed to temporarily change `args[-1]`. In other words, _args_ points to argument 1 (not 0) in the allocated vector. The callee must restore the value of `args[-1]` before returning.
+For [`PyObject_VectorcallMethod()`](https://docs.python.org/3/c-api/call.html#c.PyObject_VectorcallMethod "PyObject_VectorcallMethod"), this flag means instead that `args[0]` may be changed.
+Whenever they can do so cheaply (without additional allocation), callers are encouraged to use [`PY_VECTORCALL_ARGUMENTS_OFFSET`](https://docs.python.org/3/c-api/call.html#c.PY_VECTORCALL_ARGUMENTS_OFFSET "PY_VECTORCALL_ARGUMENTS_OFFSET"). Doing so will allow callables such as bound methods to make their onward calls (which include a prepended _self_ argument) very efficiently.
+Added in version 3.8.
+To call an object that implements vectorcall, use a [call API](https://docs.python.org/3/c-api/call.html#capi-call) function as with any other callable. [`PyObject_Vectorcall()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Vectorcall "PyObject_Vectorcall") will usually be most efficient.
+### Recursion Control[¶](https://docs.python.org/3/c-api/call.html#recursion-control "Link to this heading")
+When using _tp_call_ , callees do not need to worry about [recursion](https://docs.python.org/3/c-api/exceptions.html#recursion): CPython uses [`Py_EnterRecursiveCall()`](https://docs.python.org/3/c-api/exceptions.html#c.Py_EnterRecursiveCall "Py_EnterRecursiveCall") and [`Py_LeaveRecursiveCall()`](https://docs.python.org/3/c-api/exceptions.html#c.Py_LeaveRecursiveCall "Py_LeaveRecursiveCall") for calls made using _tp_call_.
+For efficiency, this is not the case for calls done using vectorcall: the callee should use _Py_EnterRecursiveCall_ and _Py_LeaveRecursiveCall_ if needed.
+### Vectorcall Support API[¶](https://docs.python.org/3/c-api/call.html#vectorcall-support-api "Link to this heading") 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")PyVectorcall_NARGS(size_tnargsf)[¶](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_NARGS "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+Given a vectorcall _nargsf_ argument, return the actual number of arguments. Currently equivalent to:
+```
+(Py_ssize_t)(nargsf&~PY_VECTORCALL_ARGUMENTS_OFFSET)

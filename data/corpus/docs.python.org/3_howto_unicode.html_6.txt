@@ -1,0 +1,40 @@
+Title: Regular Expressions and Unicode in Python
+URL: https://docs.python.org/3/howto/unicode.html
+Summary: This section explains how Python's regular expression module handles Unicode characters. It describes how the behavior of ``, `	`, and `
+` can change with the `re.ASCII` flag, illustrating the differences in matching Thai numerals versus ASCII characters. It also provides references for further reading on Python's Unicode support.
+---
+
+```
+
+When executed, `\d+` will match the Thai numerals and print them out. If you supply the [`re.ASCII`](https://docs.python.org/3/library/re.html#re.ASCII "re.ASCII") flag to [`compile()`](https://docs.python.org/3/library/re.html#re.compile "re.compile"), `\d+` will match the substring “57” instead.
+Similarly, `\w` matches a wide variety of Unicode characters but only `[a-zA-Z0-9_]` in bytes or if [`re.ASCII`](https://docs.python.org/3/library/re.html#re.ASCII "re.ASCII") is supplied, and `\s` will match either Unicode whitespace characters or `[ \t\n\r\f\v]`.
+### References[¶](https://docs.python.org/3/howto/unicode.html#id2 "Link to this heading")
+Some good alternative discussions of Python’s Unicode support are:
+  * [Processing Text Files in Python 3](https://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html), by Nick Coghlan.
+  * [Pragmatic Unicode](https://nedbatchelder.com/text/unipain.html), a PyCon 2012 presentation by Ned Batchelder.
+
+
+The [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") type is described in the Python library reference at [Text Sequence Type — str](https://docs.python.org/3/library/stdtypes.html#textseq).
+The documentation for the [`unicodedata`](https://docs.python.org/3/library/unicodedata.html#module-unicodedata "unicodedata: Access the Unicode Database.") module.
+The documentation for the [`codecs`](https://docs.python.org/3/library/codecs.html#module-codecs "codecs: Encode and decode data and streams.") module.
+Marc-André Lemburg gave [a presentation titled “Python and Unicode” (PDF slides)](https://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf) at EuroPython 2002. The slides are an excellent overview of the design of Python 2’s Unicode features (where the Unicode string type is called `unicode` and literals start with `u`).
+## Reading and Writing Unicode Data[¶](https://docs.python.org/3/howto/unicode.html#reading-and-writing-unicode-data "Link to this heading")
+Once you’ve written some code that works with Unicode data, the next problem is input/output. How do you get Unicode strings into your program, and how do you convert Unicode into a form suitable for storage or transmission?
+It’s possible that you may not need to do anything depending on your input sources and output destinations; you should check whether the libraries used in your application support Unicode natively. XML parsers often return Unicode data, for example. Many relational databases also support Unicode-valued columns and can return Unicode values from an SQL query.
+Unicode data is usually converted to a particular encoding before it gets written to disk or sent over a socket. It’s possible to do all the work yourself: open a file, read an 8-bit bytes object from it, and convert the bytes with `bytes.decode(encoding)`. However, the manual approach is not recommended.
+One problem is the multi-byte nature of encodings; one Unicode character can be represented by several bytes. If you want to read the file in arbitrary-sized chunks (say, 1024 or 4096 bytes), you need to write error-handling code to catch the case where only part of the bytes encoding a single Unicode character are read at the end of a chunk. One solution would be to read the entire file into memory and then perform the decoding, but that prevents you from working with files that are extremely large; if you need to read a 2 GiB file, you need 2 GiB of RAM. (More, really, since for at least a moment you’d need to have both the encoded string and its Unicode version in memory.)
+The solution would be to use the low-level decoding interface to catch the case of partial coding sequences. The work of implementing this has already been done for you: the built-in [`open()`](https://docs.python.org/3/library/functions.html#open "open") function can return a file-like object that assumes the file’s contents are in a specified encoding and accepts Unicode parameters for methods such as [`read()`](https://docs.python.org/3/library/io.html#io.TextIOBase.read "io.TextIOBase.read") and [`write()`](https://docs.python.org/3/library/io.html#io.TextIOBase.write "io.TextIOBase.write"). This works through [`open()`](https://docs.python.org/3/library/functions.html#open "open")'s _encoding_ and _errors_ parameters which are interpreted just like those in [`str.encode()`](https://docs.python.org/3/library/stdtypes.html#str.encode "str.encode") and [`bytes.decode()`](https://docs.python.org/3/library/stdtypes.html#bytes.decode "bytes.decode").
+Reading Unicode from a file is therefore simple:
+```
+with open('unicode.txt', encoding='utf-8') as f:
+  for line in f:
+    print(repr(line))
+
+```
+
+It’s also possible to open files in update mode, allowing both reading and writing:
+```
+with open('test', encoding='utf-8', mode='w+') as f:
+  f.write('\u4500 blah blah blah\n')
+  f.seek(0)
+  print(repr(f.readline()[:1]))

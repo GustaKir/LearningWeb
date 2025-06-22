@@ -1,0 +1,34 @@
+Title: Condition.wait_for Method in Threading
+URL: https://docs.python.org/3/library/threading.html
+Summary: The `wait_for` method waits for a given predicate to evaluate to true, optionally within a specified timeout. It calls the predicate repeatedly until satisfied or the timeout occurs, returning the last predicate value or `False` if it times out. A lock must be held when calling this method.
+---
+
+wait_for(_predicate_ , _timeout =None_)[¶](https://docs.python.org/3/library/threading.html#threading.Condition.wait_for "Link to this definition")
+    
+Wait until a condition evaluates to true. _predicate_ should be a callable which result will be interpreted as a boolean value. A _timeout_ may be provided giving the maximum time to wait.
+This utility method may call [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait") repeatedly until the predicate is satisfied, or until a timeout occurs. The return value is the last return value of the predicate and will evaluate to `False` if the method timed out.
+Ignoring the timeout feature, calling this method is roughly equivalent to writing:
+```
+while not predicate():
+  cv.wait()
+
+```
+
+Therefore, the same rules apply as with [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait"): The lock must be held when called and is re-acquired on return. The predicate is evaluated with the lock held.
+Added in version 3.2. 
+
+notify(_n =1_)[¶](https://docs.python.org/3/library/threading.html#threading.Condition.notify "Link to this definition")
+    
+By default, wake up one thread waiting on this condition, if any. If the calling thread has not acquired the lock when this method is called, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised.
+This method wakes up at most _n_ of the threads waiting for the condition variable; it is a no-op if no threads are waiting.
+The current implementation wakes up exactly _n_ threads, if at least _n_ threads are waiting. However, it’s not safe to rely on this behavior. A future, optimized implementation may occasionally wake up more than _n_ threads.
+Note: an awakened thread does not actually return from its [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait") call until it can reacquire the lock. Since [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") does not release the lock, its caller should. 
+
+notify_all()[¶](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "Link to this definition")
+    
+Wake up all threads waiting on this condition. This method acts like [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify"), but wakes up all waiting threads instead of one. If the calling thread has not acquired the lock when this method is called, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised.
+The method `notifyAll` is a deprecated alias for this method.
+## Semaphore Objects[¶](https://docs.python.org/3/library/threading.html#semaphore-objects "Link to this heading")
+This is one of the oldest synchronization primitives in the history of computer science, invented by the early Dutch computer scientist Edsger W. Dijkstra (he used the names `P()` and `V()` instead of [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.acquire "threading.Semaphore.acquire") and [`release()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.release "threading.Semaphore.release")).
+A semaphore manages an internal counter which is decremented by each [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.acquire "threading.Semaphore.acquire") call and incremented by each [`release()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.release "threading.Semaphore.release") call. The counter can never go below zero; when [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.acquire "threading.Semaphore.acquire") finds that it is zero, it blocks, waiting until some other thread calls [`release()`](https://docs.python.org/3/library/threading.html#threading.Semaphore.release "threading.Semaphore.release").
+Semaphores also support the [context management protocol](https://docs.python.org/3/library/threading.html#with-locks).

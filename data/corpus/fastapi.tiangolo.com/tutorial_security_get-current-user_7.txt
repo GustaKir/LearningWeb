@@ -1,0 +1,138 @@
+Title: Getting the Current User in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/security/get-current-user/
+Summary: This document provides an implementation example for obtaining the current user in a FastAPI application using OAuth2. It defines a User model, a fake token decoding function, and an endpoint to retrieve the current user. It emphasizes using Dependent Injection with Annotated for cleaner code.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+classUser(BaseModel):
+  username: str
+  email: Union[str, None] = None
+  full_name: Union[str, None] = None
+  disabled: Union[bool, None] = None
+deffake_decode_token(token):
+  return User(
+    username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+  )
+async defget_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+  user = fake_decode_token(token)
+  return user
+@app.get("/users/me")
+async defread_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+  return current_user
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+frompydanticimport BaseModel
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+classUser(BaseModel):
+  username: str
+  email: str | None = None
+  full_name: str | None = None
+  disabled: bool | None = None
+deffake_decode_token(token):
+  return User(
+    username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+  )
+async defget_current_user(token: str = Depends(oauth2_scheme)):
+  user = fake_decode_token(token)
+  return user
+@app.get("/users/me")
+async defread_users_me(current_user: User = Depends(get_current_user)):
+  return current_user
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+frompydanticimport BaseModel
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+classUser(BaseModel):
+  username: str
+  email: Union[str, None] = None
+  full_name: Union[str, None] = None
+  disabled: Union[bool, None] = None
+deffake_decode_token(token):
+  return User(
+    username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+  )
+async defget_current_user(token: str = Depends(oauth2_scheme)):
+  user = fake_decode_token(token)
+  return user
+@app.get("/users/me")
+async defread_users_me(current_user: User = Depends(get_current_user)):
+  return current_user
+
+```
+
+## Inject the current user[¶](https://fastapi.tiangolo.com/tutorial/security/get-current-user/#inject-the-current-user "Permanent link")
+So now we can use the same `Depends` with our `get_current_user` in the _path operation_ :
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/security/get-current-user/#__tabbed_9_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+frompydanticimport BaseModel
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+classUser(BaseModel):
+  username: str
+  email: str | None = None
+  full_name: str | None = None
+  disabled: bool | None = None
+deffake_decode_token(token):
+  return User(
+    username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+  )
+async defget_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+  user = fake_decode_token(token)
+  return user
+@app.get("/users/me")
+async defread_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+  return current_user
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/security/get-current-user/#__tabbed_10_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/security/get-current-user/#__tabbed_10_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/security/get-current-user/#__tabbed_10_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/security/get-current-user/#__tabbed_10_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+frompydanticimport BaseModel
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+classUser(BaseModel):
+  username: str
+  email: Union[str, None] = None
+  full_name: Union[str, None] = None
+  disabled: Union[bool, None] = None
+deffake_decode_token(token):
+  return User(
+    username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
+  )
+async defget_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+  user = fake_decode_token(token)
+  return user
+@app.get("/users/me")
+async defread_users_me(current_user: Annotated[User, Depends(get_current_user)]):
+  return current_user
+
+```

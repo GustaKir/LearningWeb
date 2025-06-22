@@ -1,0 +1,27 @@
+Title: set_content Method in Email Content Manager
+URL: https://docs.python.org/3/library/email.contentmanager.html
+Summary: The `set_content` method handles the assignment of content to an email message. It raises a `TypeError` if the `maintype` is `multipart`. The method clears the existing content of the message and invokes a handler function based on the type of the provided object. This handler is responsible for transforming and storing the object in the message, potentially modifying the message with additional MIME headers.
+---
+
+set_content(_msg_ , _obj_ , _* args_, _** kw_)[¶](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.ContentManager.set_content "Link to this definition")
+    
+If the `maintype` is `multipart`, raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError"); otherwise look up a handler function based on the type of _obj_ (see next paragraph), call [`clear_content()`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.clear_content "email.message.EmailMessage.clear_content") on the _msg_ , and call the handler function, passing through all arguments. The expectation is that the handler will transform and store _obj_ into _msg_ , possibly making other changes to _msg_ as well, such as adding various MIME headers to encode information needed to interpret the stored data.
+To find the handler, obtain the type of _obj_ (`typ = type(obj)`), and look for the following keys in the registry, stopping with the first one found:
+  * the type itself (`typ`)
+  * the type’s fully qualified name (`typ.__module__ + '.' + typ.__qualname__`).
+  * the type’s [`qualname`](https://docs.python.org/3/reference/datamodel.html#type.__qualname__ "type.__qualname__") (`typ.__qualname__`)
+  * the type’s [`name`](https://docs.python.org/3/reference/datamodel.html#type.__name__ "type.__name__") (`typ.__name__`).
+
+
+If none of the above match, repeat all of the checks above for each of the types in the [MRO](https://docs.python.org/3/glossary.html#term-MRO) ([`typ.__mro__`](https://docs.python.org/3/reference/datamodel.html#type.__mro__ "type.__mro__")). Finally, if no other key yields a handler, check for a handler for the key `None`. If there is no handler for `None`, raise a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") for the fully qualified name of the type.
+Also add a _MIME-Version_ header if one is not present (see also [`MIMEPart`](https://docs.python.org/3/library/email.message.html#email.message.MIMEPart "email.message.MIMEPart")). 
+
+add_get_handler(_key_ , _handler_)[¶](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.ContentManager.add_get_handler "Link to this definition")
+    
+Record the function _handler_ as the handler for _key_. For the possible values of _key_ , see [`get_content()`](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.get_content "email.contentmanager.get_content"). 
+
+add_set_handler(_typekey_ , _handler_)[¶](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.ContentManager.add_set_handler "Link to this definition")
+    
+Record _handler_ as the function to call when an object of a type matching _typekey_ is passed to [`set_content()`](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.set_content "email.contentmanager.set_content"). For the possible values of _typekey_ , see [`set_content()`](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.set_content "email.contentmanager.set_content").
+## Content Manager Instances[¶](https://docs.python.org/3/library/email.contentmanager.html#content-manager-instances "Link to this heading")
+Currently the email package provides only one concrete content manager, [`raw_data_manager`](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.raw_data_manager "email.contentmanager.raw_data_manager"), although more may be added in the future. [`raw_data_manager`](https://docs.python.org/3/library/email.contentmanager.html#email.contentmanager.raw_data_manager "email.contentmanager.raw_data_manager") is the [`content_manager`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.content_manager "email.policy.EmailPolicy.content_manager") provided by [`EmailPolicy`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy "email.policy.EmailPolicy") and its derivatives.

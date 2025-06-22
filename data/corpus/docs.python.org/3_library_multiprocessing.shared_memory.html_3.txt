@@ -1,0 +1,40 @@
+Title: SharedMemoryManager Class in multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.shared_memory.html
+Summary: The SharedMemoryManager class is a subclass of BaseManager designed for managing shared memory blocks across processes. Calling start() on an instance initiates a process dedicated to managing the lifecycle of these shared memory blocks, while shutdown() is used to release them.
+---
+
+```
+
+
+_class_ multiprocessing.managers.SharedMemoryManager([_address_[, _authkey_]])[¶](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager "Link to this definition")
+    
+A subclass of [`multiprocessing.managers.BaseManager`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager "multiprocessing.managers.BaseManager") which can be used for the management of shared memory blocks across processes.
+A call to [`start()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.start "multiprocessing.managers.BaseManager.start") on a `SharedMemoryManager` instance causes a new process to be started. This new process’s sole purpose is to manage the life cycle of all shared memory blocks created through it. To trigger the release of all shared memory blocks managed by that process, call [`shutdown()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.shutdown "multiprocessing.managers.BaseManager.shutdown") on the instance. This triggers a [`unlink()`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.shared_memory.SharedMemory.unlink "multiprocessing.shared_memory.SharedMemory.unlink") call on all of the [`SharedMemory`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager.SharedMemory "multiprocessing.managers.SharedMemoryManager.SharedMemory") objects managed by that process and then stops the process itself. By creating `SharedMemory` instances through a `SharedMemoryManager`, we avoid the need to manually track and trigger the freeing of shared memory resources.
+This class provides methods for creating and returning [`SharedMemory`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager.SharedMemory "multiprocessing.managers.SharedMemoryManager.SharedMemory") instances and for creating a list-like object ([`ShareableList`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager.ShareableList "multiprocessing.managers.SharedMemoryManager.ShareableList")) backed by shared memory.
+Refer to [`BaseManager`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager "multiprocessing.managers.BaseManager") for a description of the inherited _address_ and _authkey_ optional input arguments and how they may be used to connect to an existing `SharedMemoryManager` service from other processes. 
+
+SharedMemory(_size_)[¶](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager.SharedMemory "Link to this definition")
+    
+Create and return a new [`SharedMemory`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager.SharedMemory "multiprocessing.managers.SharedMemoryManager.SharedMemory") object with the specified _size_ in bytes. 
+
+ShareableList(_sequence_)[¶](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager.ShareableList "Link to this definition")
+    
+Create and return a new [`ShareableList`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager.ShareableList "multiprocessing.managers.SharedMemoryManager.ShareableList") object, initialized by the values from the input _sequence_.
+The following example demonstrates the basic mechanisms of a [`SharedMemoryManager`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager "multiprocessing.managers.SharedMemoryManager"):
+>>>```
+>>> frommultiprocessing.managersimport SharedMemoryManager
+>>> smm = SharedMemoryManager()
+>>> smm.start() # Start the process that manages the shared memory blocks
+>>> sl = smm.ShareableList(range(4))
+>>> sl
+ShareableList([0, 1, 2, 3], name='psm_6572_7512')
+>>> raw_shm = smm.SharedMemory(size=128)
+>>> another_sl = smm.ShareableList('alpha')
+>>> another_sl
+ShareableList(['a', 'l', 'p', 'h', 'a'], name='psm_6572_12221')
+>>> smm.shutdown() # Calls unlink() on sl, raw_shm, and another_sl
+
+```
+
+The following example depicts a potentially more convenient pattern for using [`SharedMemoryManager`](https://docs.python.org/3/library/multiprocessing.shared_memory.html#multiprocessing.managers.SharedMemoryManager "multiprocessing.managers.SharedMemoryManager") objects via the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement to ensure that all shared memory blocks are released after they are no longer needed:
+>>>

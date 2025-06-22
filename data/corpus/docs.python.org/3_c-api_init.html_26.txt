@@ -1,0 +1,28 @@
+Title: Creating a New Sub-Interpreter in Python
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The function Py_NewInterpreterFromConfig allows for the creation of a new sub-interpreter, which operates in a separate environment for executing Python code. This new interpreter maintains independent versions of all imported modules, including builtins and __main__.
+---
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")Py_NewInterpreterFromConfig([PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")**tstate_p, const[PyInterpreterConfig](https://docs.python.org/3/c-api/init.html#c.PyInterpreterConfig "PyInterpreterConfig")*config)[¶](https://docs.python.org/3/c-api/init.html#c.Py_NewInterpreterFromConfig "Link to this definition")
+    
+Create a new sub-interpreter. This is an (almost) totally separate environment for the execution of Python code. In particular, the new interpreter has separate, independent versions of all imported modules, including the fundamental modules [`builtins`](https://docs.python.org/3/library/builtins.html#module-builtins "builtins: The module that provides the built-in namespace."), [`__main__`](https://docs.python.org/3/library/__main__.html#module-__main__ "__main__: The environment where top-level code is run. Covers command-line interfaces, import-time behavior, and ``__name__ == '__main__'``.") and [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions."). The table of loaded modules (`sys.modules`) and the module search path (`sys.path`) are also separate. The new environment has no `sys.argv` variable. It has new standard I/O stream file objects `sys.stdin`, `sys.stdout` and `sys.stderr` (however these refer to the same underlying file descriptors).
+The given _config_ controls the options with which the interpreter is initialized.
+Upon success, _tstate_p_ will be set to the first thread state created in the new sub-interpreter. This thread state is made in the current thread state. Note that no actual thread is created; see the discussion of thread states below. If creation of the new interpreter is unsuccessful, _tstate_p_ is set to `NULL`; no exception is set since the exception state is stored in the current thread state and there may not be a current thread state.
+Like all other Python/C API functions, the global interpreter lock must be held before calling this function and is still held when it returns. Likewise a current thread state must be set on entry. On success, the returned thread state will be set as current. If the sub-interpreter is created with its own GIL then the GIL of the calling interpreter will be released. When the function returns, the new interpreter’s GIL will be held by the current thread and the previously interpreter’s GIL will remain released here.
+Added in version 3.12.
+Sub-interpreters are most effective when isolated from each other, with certain functionality restricted:
+```
+PyInterpreterConfigconfig={
+.use_main_obmalloc=0,
+.allow_fork=0,
+.allow_exec=0,
+.allow_threads=1,
+.allow_daemon_threads=0,
+.check_multi_interp_extensions=1,
+.gil=PyInterpreterConfig_OWN_GIL,
+};
+PyThreadState*tstate=NULL;
+PyStatusstatus=Py_NewInterpreterFromConfig(&tstate,&config);
+if(PyStatus_Exception(status)){
+Py_ExitStatusException(status);
+}

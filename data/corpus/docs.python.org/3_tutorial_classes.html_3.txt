@@ -1,0 +1,56 @@
+Title: Understanding Variable Scope in Python
+URL: https://docs.python.org/3/tutorial/classes.html
+Summary: This section explains the concept of variable scope in Python, detailing how global and nonlocal declarations affect variable binding. It highlights that global variables refer to the module's global names, while nonlocal allows access to variables in enclosing scopes. Additionally, it outlines that scopes are determined textually and describes the impact of class definitions on local scopes.
+---
+
+If a name is declared global, then all references and assignments go directly to the next-to-last scope containing the module’s global names. To rebind variables found outside of the innermost scope, the [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) statement can be used; if not declared nonlocal, those variables are read-only (an attempt to write to such a variable will simply create a _new_ local variable in the innermost scope, leaving the identically named outer variable unchanged).
+Usually, the local scope references the local names of the (textually) current function. Outside functions, the local scope references the same namespace as the global scope: the module’s namespace. Class definitions place yet another namespace in the local scope.
+It is important to realize that scopes are determined textually: the global scope of a function defined in a module is that module’s namespace, no matter from where or by what alias the function is called. On the other hand, the actual search for names is done dynamically, at run time — however, the language definition is evolving towards static name resolution, at “compile” time, so don’t rely on dynamic name resolution! (In fact, local variables are already determined statically.)
+A special quirk of Python is that – if no [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) or [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) statement is in effect – assignments to names always go into the innermost scope. Assignments do not copy data — they just bind names to objects. The same is true for deletions: the statement `del x` removes the binding of `x` from the namespace referenced by the local scope. In fact, all operations that introduce new names use the local scope: in particular, [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) statements and function definitions bind the module or function name in the local scope.
+The [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) statement can be used to indicate that particular variables live in the global scope and should be rebound there; the [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) statement indicates that particular variables live in an enclosing scope and should be rebound there.
+### 9.2.1. Scopes and Namespaces Example[¶](https://docs.python.org/3/tutorial/classes.html#scopes-and-namespaces-example "Link to this heading")
+This is an example demonstrating how to reference the different scopes and namespaces, and how [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) and [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) affect variable binding:
+```
+defscope_test():
+  defdo_local():
+    spam = "local spam"
+  defdo_nonlocal():
+    nonlocal spam
+    spam = "nonlocal spam"
+  defdo_global():
+    global spam
+    spam = "global spam"
+  spam = "test spam"
+  do_local()
+  print("After local assignment:", spam)
+  do_nonlocal()
+  print("After nonlocal assignment:", spam)
+  do_global()
+  print("After global assignment:", spam)
+scope_test()
+print("In global scope:", spam)
+
+```
+
+The output of the example code is:
+```
+After local assignment: test spam
+After nonlocal assignment: nonlocal spam
+After global assignment: nonlocal spam
+In global scope: global spam
+
+```
+
+Note how the _local_ assignment (which is default) didn’t change _scope_test_ 's binding of _spam_. The [`nonlocal`](https://docs.python.org/3/reference/simple_stmts.html#nonlocal) assignment changed _scope_test_ 's binding of _spam_ , and the [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) assignment changed the module-level binding.
+You can also see that there was no previous binding for _spam_ before the [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) assignment.
+## 9.3. A First Look at Classes[¶](https://docs.python.org/3/tutorial/classes.html#a-first-look-at-classes "Link to this heading")
+Classes introduce a little bit of new syntax, three new object types, and some new semantics.
+### 9.3.1. Class Definition Syntax[¶](https://docs.python.org/3/tutorial/classes.html#class-definition-syntax "Link to this heading")
+The simplest form of class definition looks like this:
+```
+classClassName:
+  <statement-1>
+  .
+  .
+  .
+  <statement-N>

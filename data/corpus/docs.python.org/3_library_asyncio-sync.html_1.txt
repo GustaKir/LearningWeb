@@ -1,0 +1,87 @@
+Title: Asyncio Lock Methods
+URL: https://docs.python.org/3/library/asyncio-sync.html
+Summary: This section details methods of the asyncio Lock. The 'acquire()' method waits for the lock to become available, ensuring fair access to coroutines, while 'release()' resets the lock to an unlocked state but raises a RuntimeError if the lock is already unlocked. Note that the _loop_ parameter has been removed in version 3.10.
+---
+
+```
+
+Changed in version 3.10: Removed the _loop_ parameter. 
+
+_async_ acquire()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Lock.acquire "Link to this definition")
+    
+Acquire the lock.
+This method waits until the lock is _unlocked_ , sets it to _locked_ and returns `True`.
+When more than one coroutine is blocked in [`acquire()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Lock.acquire "asyncio.Lock.acquire") waiting for the lock to be unlocked, only one coroutine eventually proceeds.
+Acquiring a lock is _fair_ : the coroutine that proceeds will be the first coroutine that started waiting on the lock. 
+
+release()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Lock.release "Link to this definition")
+    
+Release the lock.
+When the lock is _locked_ , reset it to _unlocked_ and return.
+If the lock is _unlocked_ , a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised. 
+
+locked()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Lock.locked "Link to this definition")
+    
+Return `True` if the lock is _locked_.
+## Event[¶](https://docs.python.org/3/library/asyncio-sync.html#event "Link to this heading") 
+
+_class_ asyncio.Event[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event "Link to this definition")
+    
+An event object. Not thread-safe.
+An asyncio event can be used to notify multiple asyncio tasks that some event has happened.
+An Event object manages an internal flag that can be set to _true_ with the [`set()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.set "asyncio.Event.set") method and reset to _false_ with the [`clear()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.clear "asyncio.Event.clear") method. The [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.wait "asyncio.Event.wait") method blocks until the flag is set to _true_. The flag is set to _false_ initially.
+Changed in version 3.10: Removed the _loop_ parameter.
+Example:
+```
+async defwaiter(event):
+  print('waiting for it ...')
+  await event.wait()
+  print('... got it!')
+async defmain():
+  # Create an Event object.
+  event = asyncio.Event()
+  # Spawn a Task to wait until 'event' is set.
+  waiter_task = asyncio.create_task(waiter(event))
+  # Sleep for 1 second and set the event.
+  await asyncio.sleep(1)
+  event.set()
+  # Wait until the waiter task is finished.
+  await waiter_task
+asyncio.run(main())
+
+```
+
+
+_async_ wait()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.wait "Link to this definition")
+    
+Wait until the event is set.
+If the event is set, return `True` immediately. Otherwise block until another task calls [`set()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.set "asyncio.Event.set"). 
+
+set()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.set "Link to this definition")
+    
+Set the event.
+All tasks waiting for event to be set will be immediately awakened. 
+
+clear()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.clear "Link to this definition")
+    
+Clear (unset) the event.
+Tasks awaiting on [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.wait "asyncio.Event.wait") will now block until the [`set()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.set "asyncio.Event.set") method is called again. 
+
+is_set()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event.is_set "Link to this definition")
+    
+Return `True` if the event is set.
+## Condition[¶](https://docs.python.org/3/library/asyncio-sync.html#condition "Link to this heading") 
+
+_class_ asyncio.Condition(_lock =None_)[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition "Link to this definition")
+    
+A Condition object. Not thread-safe.
+An asyncio condition primitive can be used by a task to wait for some event to happen and then get exclusive access to a shared resource.
+In essence, a Condition object combines the functionality of an [`Event`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event "asyncio.Event") and a [`Lock`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Lock "asyncio.Lock"). It is possible to have multiple Condition objects share one Lock, which allows coordinating exclusive access to a shared resource between different tasks interested in particular states of that shared resource.
+The optional _lock_ argument must be a [`Lock`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Lock "asyncio.Lock") object or `None`. In the latter case a new Lock object is created automatically.
+Changed in version 3.10: Removed the _loop_ parameter.
+The preferred way to use a Condition is an [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) statement:
+```
+cond = asyncio.Condition()
+# ... later
+async with cond:
+  await cond.wait()

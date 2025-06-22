@@ -1,0 +1,58 @@
+Title: Conflict Handling in argparse
+URL: https://docs.python.org/3/library/argparse.html
+Summary: The `conflict_handler='resolve'` option in `ArgumentParser` allows overriding older arguments with the same option string when using parents. This behavior is demonstrated with an example, showing how new help for an argument can replace old help information.
+---
+
+```
+
+Sometimes (e.g. when using [parents](https://docs.python.org/3/library/argparse.html#parents)) it may be useful to simply override any older arguments with the same option string. To get this behavior, the value `'resolve'` can be supplied to the `conflict_handler=` argument of [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser"):
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG', conflict_handler='resolve')
+>>> parser.add_argument('-f', '--foo', help='old foo help')
+>>> parser.add_argument('--foo', help='new foo help')
+>>> parser.print_help()
+usage: PROG [-h] [-f FOO] [--foo FOO]
+options:
+ -h, --help show this help message and exit
+ -f FOO   old foo help
+ --foo FOO  new foo help
+
+```
+
+Note that [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") objects only remove an action if all of its option strings are overridden. So, in the example above, the old `-f/--foo` action is retained as the `-f` action, because only the `--foo` option string was overridden.
+### add_help[¶](https://docs.python.org/3/library/argparse.html#add-help "Link to this heading")
+By default, [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") objects add an option which simply displays the parser’s help message. If `-h` or `--help` is supplied at the command line, the `ArgumentParser` help will be printed.
+Occasionally, it may be useful to disable the addition of this help option. This can be achieved by passing `False` as the `add_help=` argument to [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser"):
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG', add_help=False)
+>>> parser.add_argument('--foo', help='foo help')
+>>> parser.print_help()
+usage: PROG [--foo FOO]
+options:
+ --foo FOO foo help
+
+```
+
+The help option is typically `-h/--help`. The exception to this is if the `prefix_chars=` is specified and does not include `-`, in which case `-h` and `--help` are not valid options. In this case, the first character in `prefix_chars` is used to prefix the help options:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG', prefix_chars='+/')
+>>> parser.print_help()
+usage: PROG [+h]
+options:
+ +h, ++help show this help message and exit
+
+```
+
+### exit_on_error[¶](https://docs.python.org/3/library/argparse.html#exit-on-error "Link to this heading")
+Normally, when you pass an invalid argument list to the [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") method of an [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser"), it will print a _message_ to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") and exit with a status code of 2.
+If the user would like to catch errors manually, the feature can be enabled by setting `exit_on_error` to `False`:
+>>>```
+>>> parser = argparse.ArgumentParser(exit_on_error=False)
+>>> parser.add_argument('--integers', type=int)
+_StoreAction(option_strings=['--integers'], dest='integers', nargs=None, const=None, default=None, type=<class 'int'>, choices=None, help=None, metavar=None)
+>>> try:
+...   parser.parse_args('--integers a'.split())
+... except argparse.ArgumentError:
+...   print('Catching an argumentError')
+...
+Catching an argumentError

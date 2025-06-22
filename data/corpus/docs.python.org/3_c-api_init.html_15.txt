@@ -1,0 +1,41 @@
+Title: Py_GetPythonHome Function Documentation
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The `Py_GetPythonHome` function returns the default Python home directory set by `PyConfig.home` or the `PYTHONHOME` environment variable. It should only be called after initializing Python with `Py_Initialize()`, otherwise it returns `NULL`. This function is deprecated since version 3.13 and is set to be removed in version 3.15.
+---
+
+wchar_t*Py_GetPythonHome()[¶](https://docs.python.org/3/c-api/init.html#c.Py_GetPythonHome "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return the default “home”, that is, the value set by [`PyConfig.home`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.home "PyConfig.home"), or the value of the [`PYTHONHOME`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHOME) environment variable if it is set.
+This function should not be called before [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize"), otherwise it returns `NULL`.
+Changed in version 3.10: It now returns `NULL` if called before [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize").
+Deprecated since version 3.13, will be removed in version 3.15: Get [`PyConfig.home`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.home "PyConfig.home") or [`PYTHONHOME`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHOME) environment variable instead.
+## Thread State and the Global Interpreter Lock[¶](https://docs.python.org/3/c-api/init.html#thread-state-and-the-global-interpreter-lock "Link to this heading")
+The Python interpreter is not fully thread-safe. In order to support multi-threaded Python programs, there’s a global lock, called the [global interpreter lock](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) or [GIL](https://docs.python.org/3/glossary.html#term-GIL), that must be held by the current thread before it can safely access Python objects. Without the lock, even the simplest operations could cause problems in a multi-threaded program: for example, when two threads simultaneously increment the reference count of the same object, the reference count could end up being incremented only once instead of twice.
+Therefore, the rule exists that only the thread that has acquired the [GIL](https://docs.python.org/3/glossary.html#term-GIL) may operate on Python objects or call Python/C API functions. In order to emulate concurrency of execution, the interpreter regularly tries to switch threads (see [`sys.setswitchinterval()`](https://docs.python.org/3/library/sys.html#sys.setswitchinterval "sys.setswitchinterval")). The lock is also released around potentially blocking I/O operations like reading or writing a file, so that other Python threads can run in the meantime.
+The Python interpreter keeps some thread-specific bookkeeping information inside a data structure called [`PyThreadState`](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState"). There’s also one global variable pointing to the current [`PyThreadState`](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState"): it can be retrieved using [`PyThreadState_Get()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_Get "PyThreadState_Get").
+### Releasing the GIL from extension code[¶](https://docs.python.org/3/c-api/init.html#releasing-the-gil-from-extension-code "Link to this heading")
+Most extension code manipulating the [GIL](https://docs.python.org/3/glossary.html#term-GIL) has the following simple structure:
+```
+Savethethreadstateinalocalvariable.
+Releasetheglobalinterpreterlock.
+...DosomeblockingI/Ooperation...
+Reacquiretheglobalinterpreterlock.
+Restorethethreadstatefromthelocalvariable.
+
+```
+
+This is so common that a pair of macros exists to simplify it:
+```
+Py_BEGIN_ALLOW_THREADS
+...DosomeblockingI/Ooperation...
+Py_END_ALLOW_THREADS
+
+```
+
+The [`Py_BEGIN_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Py_BEGIN_ALLOW_THREADS") macro opens a new block and declares a hidden local variable; the [`Py_END_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Py_END_ALLOW_THREADS") macro closes the block.
+The block above expands to the following code:
+```
+PyThreadState*_save;
+_save=PyEval_SaveThread();
+...DosomeblockingI/Ooperation...
+PyEval_RestoreThread(_save);

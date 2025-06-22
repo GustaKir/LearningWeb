@@ -1,0 +1,136 @@
+Title: Using PyArg_ParseTuple in Python C API
+URL: https://docs.python.org/3/extending/extending.html
+Summary: This section explains the usage of the _arg_ argument as a tuple for passing arguments from Python to a C function and the _format_ argument for specifying their types. It highlights the importance of ensuring the validity of addresses for variables passed, as incorrect usage may lead to crashes. Additionally, it clarifies that Python object references provided are borrowed references, and provides examples of using these arguments in C code.
+---
+
+```
+
+The _arg_ argument must be a tuple object containing an argument list passed from Python to a C function. The _format_ argument must be a format string, whose syntax is explained in [Parsing arguments and building values](https://docs.python.org/3/c-api/arg.html#arg-parsing) in the Python/C API Reference Manual. The remaining arguments must be addresses of variables whose type is determined by the format string.
+Note that while [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") checks that the Python arguments have the required types, it cannot check the validity of the addresses of C variables passed to the call: if you make mistakes there, your code will probably crash or at least overwrite random bits in memory. So be careful!
+Note that any Python object references which are provided to the caller are _borrowed_ references; do not decrement their reference count!
+Some example calls:
+```
+#define PY_SSIZE_T_CLEAN
+#include<Python.h>
+
+```
+
+```
+intok;
+inti,j;
+longk,l;
+constchar*s;
+Py_ssize_tsize;
+ok=PyArg_ParseTuple(args,"");/* No arguments */
+/* Python call: f() */
+
+```
+
+```
+ok=PyArg_ParseTuple(args,"s",&s);/* A string */
+/* Possible Python call: f('whoops!') */
+
+```
+
+```
+ok=PyArg_ParseTuple(args,"lls",&k,&l,&s);/* Two longs and a string */
+/* Possible Python call: f(1, 2, 'three') */
+
+```
+
+```
+ok=PyArg_ParseTuple(args,"(ii)s#",&i,&j,&s,&size);
+/* A pair of ints and a string, whose size is also returned */
+/* Possible Python call: f((1, 2), 'three') */
+
+```
+
+```
+{
+constchar*file;
+constchar*mode="r";
+intbufsize=0;
+ok=PyArg_ParseTuple(args,"s|si",&file,&mode,&bufsize);
+/* A string, and optionally another string and an integer */
+/* Possible Python calls:
+    f('spam')
+    f('spam', 'w')
+    f('spam', 'wb', 100000) */
+}
+
+```
+
+```
+{
+intleft,top,right,bottom,h,v;
+ok=PyArg_ParseTuple(args,"((ii)(ii))(ii)",
+&left,&top,&right,&bottom,&h,&v);
+/* A rectangle and a point */
+/* Possible Python call:
+    f(((0, 0), (400, 300)), (10, 10)) */
+}
+
+```
+
+```
+{
+Py_complexc;
+ok=PyArg_ParseTuple(args,"D:myfunction",&c);
+/* a complex, also providing a function name for errors */
+/* Possible Python call: myfunction(1+2j) */
+}
+
+```
+
+## 1.8. Keyword Parameters for Extension Functions[¶](https://docs.python.org/3/extending/extending.html#keyword-parameters-for-extension-functions "Link to this heading")
+The [`PyArg_ParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTupleAndKeywords "PyArg_ParseTupleAndKeywords") function is declared as follows:
+```
+intPyArg_ParseTupleAndKeywords(PyObject*arg,PyObject*kwdict,
+constchar*format,char*const*kwlist,...);
+
+```
+
+The _arg_ and _format_ parameters are identical to those of the [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") function. The _kwdict_ parameter is the dictionary of keywords received as the third parameter from the Python runtime. The _kwlist_ parameter is a `NULL`-terminated list of strings which identify the parameters; the names are matched with the type information from _format_ from left to right. On success, [`PyArg_ParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTupleAndKeywords "PyArg_ParseTupleAndKeywords") returns true, otherwise it returns false and raises an appropriate exception.
+Note
+Nested tuples cannot be parsed when using keyword arguments! Keyword parameters passed in which are not present in the _kwlist_ will cause [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") to be raised.
+Here is an example module which uses keywords, based on an example by Geoff Philbrick (philbrick@hks.com):
+```
+#define PY_SSIZE_T_CLEAN
+#include<Python.h>
+staticPyObject*
+keywdarg_parrot(PyObject*self,PyObject*args,PyObject*keywds)
+{
+intvoltage;
+constchar*state="a stiff";
+constchar*action="voom";
+constchar*type="Norwegian Blue";
+staticchar*kwlist[]={"voltage","state","action","type",NULL};
+if(!PyArg_ParseTupleAndKeywords(args,keywds,"i|sss",kwlist,
+&voltage,&state,&action,&type))
+returnNULL;
+printf("-- This parrot wouldn't %s if you put %i Volts through it.\n",
+action,voltage);
+printf("-- Lovely plumage, the %s -- It's %s!\n",type,state);
+Py_RETURN_NONE;
+}
+staticPyMethodDefkeywdarg_methods[]={
+/* The cast of the function is necessary since PyCFunction values
+   * only take two PyObject* parameters, and keywdarg_parrot() takes
+   * three.
+   */
+{"parrot",(PyCFunction)(void(*)(void))keywdarg_parrot,METH_VARARGS|METH_KEYWORDS,
+"Print a lovely skit to standard output."},
+{NULL,NULL,0,NULL}/* sentinel */
+};
+staticstructPyModuleDefkeywdargmodule={
+PyModuleDef_HEAD_INIT,
+"keywdarg",
+NULL,
+-1,
+keywdarg_methods
+};
+PyMODINIT_FUNC
+PyInit_keywdarg(void)
+{
+returnPyModule_Create(&keywdargmodule);
+}

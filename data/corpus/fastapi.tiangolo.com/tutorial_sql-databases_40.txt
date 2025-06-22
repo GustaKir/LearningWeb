@@ -1,0 +1,153 @@
+Title: FastAPI Tutorial: SQL Databases
+URL: https://fastapi.tiangolo.com/tutorial/sql-databases/
+Summary: This section covers the implementation of SQL databases in FastAPI using SQLModel. It defines data models for a 'Hero' entity, including classes for creating, updating, and representing heroes, as well as setting up a SQLite database connection and session management for handling database operations.
+---
+
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Depends, FastAPI, HTTPException, Query
+fromsqlmodelimport Field, Session, SQLModel, create_engine, select
+classHeroBase(SQLModel):
+  name: str = Field(index=True)
+  age: Union[int, None] = Field(default=None, index=True)
+classHero(HeroBase, table=True):
+  id: Union[int, None] = Field(default=None, primary_key=True)
+  secret_name: str
+classHeroPublic(HeroBase):
+  id: int
+classHeroCreate(HeroBase):
+  secret_name: str
+classHeroUpdate(HeroBase):
+  name: Union[str, None] = None
+  age: Union[int, None] = None
+  secret_name: Union[str, None] = None
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, connect_args=connect_args)
+defcreate_db_and_tables():
+  SQLModel.metadata.create_all(engine)
+defget_session():
+  with Session(engine) as session:
+    yield session
+SessionDep = Annotated[Session, Depends(get_session)]
+app = FastAPI()
+@app.on_event("startup")
+defon_startup():
+  create_db_and_tables()
+@app.post("/heroes/", response_model=HeroPublic)
+defcreate_hero(hero: HeroCreate, session: SessionDep):
+  db_hero = Hero.model_validate(hero)
+  session.add(db_hero)
+  session.commit()
+  session.refresh(db_hero)
+  return db_hero
+@app.get("/heroes/", response_model=list[HeroPublic])
+defread_heroes(
+  session: SessionDep,
+  offset: int = 0,
+  limit: Annotated[int, Query(le=100)] = 100,
+):
+  heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+  return heroes
+@app.get("/heroes/{hero_id}", response_model=HeroPublic)
+defread_hero(hero_id: int, session: SessionDep):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  return hero
+@app.patch("/heroes/{hero_id}", response_model=HeroPublic)
+defupdate_hero(hero_id: int, hero: HeroUpdate, session: SessionDep):
+  hero_db = session.get(Hero, hero_id)
+  if not hero_db:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  hero_data = hero.model_dump(exclude_unset=True)
+  hero_db.sqlmodel_update(hero_data)
+  session.add(hero_db)
+  session.commit()
+  session.refresh(hero_db)
+  return hero_db
+@app.delete("/heroes/{hero_id}")
+defdelete_hero(hero_id: int, session: SessionDep):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  session.delete(hero)
+  session.commit()
+  return {"ok": True}
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport Depends, FastAPI, HTTPException, Query
+fromsqlmodelimport Field, Session, SQLModel, create_engine, select
+fromtyping_extensionsimport Annotated
+classHeroBase(SQLModel):
+  name: str = Field(index=True)
+  age: Union[int, None] = Field(default=None, index=True)
+classHero(HeroBase, table=True):
+  id: Union[int, None] = Field(default=None, primary_key=True)
+  secret_name: str
+classHeroPublic(HeroBase):
+  id: int
+classHeroCreate(HeroBase):
+  secret_name: str
+classHeroUpdate(HeroBase):
+  name: Union[str, None] = None
+  age: Union[int, None] = None
+  secret_name: Union[str, None] = None
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, connect_args=connect_args)
+defcreate_db_and_tables():
+  SQLModel.metadata.create_all(engine)
+defget_session():
+  with Session(engine) as session:
+    yield session
+SessionDep = Annotated[Session, Depends(get_session)]
+app = FastAPI()
+@app.on_event("startup")
+defon_startup():
+  create_db_and_tables()
+@app.post("/heroes/", response_model=HeroPublic)
+defcreate_hero(hero: HeroCreate, session: SessionDep):
+  db_hero = Hero.model_validate(hero)
+  session.add(db_hero)
+  session.commit()
+  session.refresh(db_hero)
+  return db_hero
+@app.get("/heroes/", response_model=List[HeroPublic])
+defread_heroes(
+  session: SessionDep,
+  offset: int = 0,
+  limit: Annotated[int, Query(le=100)] = 100,
+):
+  heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+  return heroes
+@app.get("/heroes/{hero_id}", response_model=HeroPublic)
+defread_hero(hero_id: int, session: SessionDep):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  return hero
+@app.patch("/heroes/{hero_id}", response_model=HeroPublic)
+defupdate_hero(hero_id: int, hero: HeroUpdate, session: SessionDep):
+  hero_db = session.get(Hero, hero_id)
+  if not hero_db:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  hero_data = hero.model_dump(exclude_unset=True)
+  hero_db.sqlmodel_update(hero_data)
+  session.add(hero_db)
+  session.commit()
+  session.refresh(hero_db)
+  return hero_db
+@app.delete("/heroes/{hero_id}")
+defdelete_hero(hero_id: int, session: SessionDep):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  session.delete(hero)
+  session.commit()
+  return {"ok": True}

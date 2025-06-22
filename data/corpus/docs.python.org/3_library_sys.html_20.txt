@@ -1,0 +1,50 @@
+Title: sys Module Functionality Overview
+URL: https://docs.python.org/3/library/sys.html
+Summary: This section covers two functions in the sys module: `set_int_max_str_digits` for setting the maximum integer string conversion length limit, introduced in Python 3.11, and `setprofile`, which allows the integration of a profile function for implementing a Python source code profiler, with references to relevant documentation for deeper understanding.
+---
+
+sys.set_int_max_str_digits(_maxdigits_)[¶](https://docs.python.org/3/library/sys.html#sys.set_int_max_str_digits "Link to this definition")
+    
+Set the [integer string conversion length limitation](https://docs.python.org/3/library/stdtypes.html#int-max-str-digits) used by this interpreter. See also [`get_int_max_str_digits()`](https://docs.python.org/3/library/sys.html#sys.get_int_max_str_digits "sys.get_int_max_str_digits").
+Added in version 3.11. 
+
+sys.setprofile(_profilefunc_)[¶](https://docs.python.org/3/library/sys.html#sys.setprofile "Link to this definition")
+    
+Set the system’s profile function, which allows you to implement a Python source code profiler in Python. See chapter [The Python Profilers](https://docs.python.org/3/library/profile.html#profile) for more information on the Python profiler. The system’s profile function is called similarly to the system’s trace function (see [`settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace")), but it is called with different events, for example it isn’t called for each executed line of code (only on call and return, but the return event is reported even when an exception has been set). The function is thread-specific, but there is no way for the profiler to know about context switches between threads, so it does not make sense to use this in the presence of multiple threads. Also, its return value is not used, so it can simply return `None`. Error in the profile function will cause itself unset.
+Note
+The same tracing mechanism is used for `setprofile()` as [`settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace"). To trace calls with `setprofile()` inside a tracing function (e.g. in a debugger breakpoint), see [`call_tracing()`](https://docs.python.org/3/library/sys.html#sys.call_tracing "sys.call_tracing").
+Profile functions should have three arguments: _frame_ , _event_ , and _arg_. _frame_ is the current stack frame. _event_ is a string: `'call'`, `'return'`, `'c_call'`, `'c_return'`, or `'c_exception'`. _arg_ depends on the event type.
+The events have the following meaning: 
+
+`'call'`
+    
+A function is called (or some other code block entered). The profile function is called; _arg_ is `None`. 
+
+`'return'`
+    
+A function (or other code block) is about to return. The profile function is called; _arg_ is the value that will be returned, or `None` if the event is caused by an exception being raised. 
+
+`'c_call'`
+    
+A C function is about to be called. This may be an extension function or a built-in. _arg_ is the C function object. 
+
+`'c_return'`
+    
+A C function has returned. _arg_ is the C function object. 
+
+`'c_exception'`
+    
+A C function has raised an exception. _arg_ is the C function object.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `sys.setprofile` with no arguments. 
+
+sys.setrecursionlimit(_limit_)[¶](https://docs.python.org/3/library/sys.html#sys.setrecursionlimit "Link to this definition")
+    
+Set the maximum depth of the Python interpreter stack to _limit_. This limit prevents infinite recursion from causing an overflow of the C stack and crashing Python.
+The highest possible limit is platform-dependent. A user may need to set the limit higher when they have a program that requires deep recursion and a platform that supports a higher limit. This should be done with care, because a too-high limit can lead to a crash.
+If the new limit is too low at the current recursion depth, a [`RecursionError`](https://docs.python.org/3/library/exceptions.html#RecursionError "RecursionError") exception is raised.
+Changed in version 3.5.1: A [`RecursionError`](https://docs.python.org/3/library/exceptions.html#RecursionError "RecursionError") exception is now raised if the new limit is too low at the current recursion depth. 
+
+sys.setswitchinterval(_interval_)[¶](https://docs.python.org/3/library/sys.html#sys.setswitchinterval "Link to this definition")
+    
+Set the interpreter’s thread switch interval (in seconds). This floating-point value determines the ideal duration of the “timeslices” allocated to concurrently running Python threads. Please note that the actual value can be higher, especially if long-running internal functions or methods are used. Also, which thread becomes scheduled at the end of the interval is the operating system’s decision. The interpreter doesn’t have its own scheduler.
+Added in version 3.2.

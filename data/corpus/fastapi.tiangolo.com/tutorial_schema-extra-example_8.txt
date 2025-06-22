@@ -1,0 +1,139 @@
+Title: Using OpenAPI-Specific Examples in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/schema-extra-example/
+Summary: This section discusses integrating multiple examples into the OpenAPI documentation for FastAPI. While JSON Schema does not currently support multiple examples visible in Swagger UI, OpenAPI has a separate field called `examples` that allows for multiple documented examples per path operation. This method can be utilized to enhance the API documentation presented in the UI.
+---
+
+```
+
+When you do this, the examples will be part of the internal **JSON Schema** for that body data.
+Nevertheless, at the time of writing this, Swagger UI, the tool in charge of showing the docs UI, doesn't support showing multiple examples for the data in **JSON Schema**. But read below for a workaround.
+### OpenAPI-specific `examples`[¶](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#openapi-specific-examples "Permanent link")
+Since before **JSON Schema** supported `examples` OpenAPI had support for a different field also called `examples`.
+This **OpenAPI-specific** `examples` goes in another section in the OpenAPI specification. It goes in the **details for each _path operation_** , not inside each JSON Schema.
+And Swagger UI has supported this particular `examples` field for a while. So, you can use it to **show** different **examples in the docs UI**.
+The shape of this OpenAPI-specific field `examples` is a `dict` with **multiple examples** (instead of a `list`), each with extra information that will be added to **OpenAPI** too.
+This doesn't go inside of each JSON Schema contained in OpenAPI, this goes outside, in the _path operation_ directly.
+### Using the `openapi_examples` Parameter[¶](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter "Permanent link")
+You can declare the OpenAPI-specific `examples` in FastAPI with the parameter `openapi_examples` for:
+  * `Path()`
+  * `Query()`
+  * `Header()`
+  * `Cookie()`
+  * `Body()`
+  * `Form()`
+  * `File()`
+
+
+The keys of the `dict` identify each example, and each value is another `dict`.
+Each specific example `dict` in the `examples` can contain:
+  * `summary`: Short description for the example.
+  * `description`: A long description that can contain Markdown text.
+  * `value`: This is the actual example shown, e.g. a `dict`.
+  * `externalValue`: alternative to `value`, a URL pointing to the example. Although this might not be supported by as many tools as `value`.
+
+
+You can use it like this:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_13_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Annotated[
+    Item,
+    Body(
+      openapi_examples={
+        "normal": {
+          "summary": "A normal example",
+          "description": "A **normal** item works correctly.",
+          "value": {
+            "name": "Foo",
+            "description": "A very nice Item",
+            "price": 35.4,
+            "tax": 3.2,
+          },
+        },
+        "converted": {
+          "summary": "An example with converted data",
+          "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+          "value": {
+            "name": "Bar",
+            "price": "35.4",
+          },
+        },
+        "invalid": {
+          "summary": "Invalid data is rejected with an error",
+          "value": {
+            "name": "Baz",
+            "price": "thirty five point four",
+          },
+        },
+      },
+    ),
+  ],
+):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_14_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_14_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_14_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#__tabbed_14_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Annotated[
+    Item,
+    Body(
+      openapi_examples={
+        "normal": {
+          "summary": "A normal example",
+          "description": "A **normal** item works correctly.",
+          "value": {
+            "name": "Foo",
+            "description": "A very nice Item",
+            "price": 35.4,
+            "tax": 3.2,
+          },
+        },
+        "converted": {
+          "summary": "An example with converted data",
+          "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+          "value": {
+            "name": "Bar",
+            "price": "35.4",
+          },
+        },
+        "invalid": {
+          "summary": "Invalid data is rejected with an error",
+          "value": {
+            "name": "Baz",
+            "price": "thirty five point four",
+          },
+        },
+      },
+    ),
+  ],
+):
+  results = {"item_id": item_id, "item": item}
+  return results

@@ -1,0 +1,61 @@
+Title: Difflib Ratio Methods
+URL: https://docs.python.org/3/library/difflib.html
+Summary: This section describes the `quick_ratio()` and `real_quick_ratio()` methods from the difflib library in Python, which provide upper bounds on the matching ratio of sequences. These methods return results more quickly but may differ in accuracy compared to the standard `ratio()` method.
+---
+
+```
+
+
+quick_ratio()[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.quick_ratio "Link to this definition")
+    
+Return an upper bound on [`ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.ratio "difflib.SequenceMatcher.ratio") relatively quickly. 
+
+real_quick_ratio()[¶](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.real_quick_ratio "Link to this definition")
+    
+Return an upper bound on [`ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.ratio "difflib.SequenceMatcher.ratio") very quickly.
+The three methods that return the ratio of matching to total characters can give different results due to differing levels of approximation, although [`quick_ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.quick_ratio "difflib.SequenceMatcher.quick_ratio") and [`real_quick_ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.real_quick_ratio "difflib.SequenceMatcher.real_quick_ratio") are always at least as large as [`ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.ratio "difflib.SequenceMatcher.ratio"):
+>>>```
+>>> s = SequenceMatcher(None, "abcd", "bcde")
+>>> s.ratio()
+0.75
+>>> s.quick_ratio()
+0.75
+>>> s.real_quick_ratio()
+1.0
+
+```
+
+## SequenceMatcher Examples[¶](https://docs.python.org/3/library/difflib.html#sequencematcher-examples "Link to this heading")
+This example compares two strings, considering blanks to be “junk”:
+>>>```
+>>> s = SequenceMatcher(lambda x: x == " ",
+...           "private Thread currentThread;",
+...           "private volatile Thread currentThread;")
+
+```
+
+[`ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.ratio "difflib.SequenceMatcher.ratio") returns a float in [0, 1], measuring the similarity of the sequences. As a rule of thumb, a [`ratio()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.ratio "difflib.SequenceMatcher.ratio") value over 0.6 means the sequences are close matches:
+>>>```
+>>> print(round(s.ratio(), 3))
+0.866
+
+```
+
+If you’re only interested in where the sequences match, [`get_matching_blocks()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_matching_blocks "difflib.SequenceMatcher.get_matching_blocks") is handy:
+>>>```
+>>> for block in s.get_matching_blocks():
+...   print("a[%d] and b[%d] match for %d elements" % block)
+a[0] and b[0] match for 8 elements
+a[8] and b[17] match for 21 elements
+a[29] and b[38] match for 0 elements
+
+```
+
+Note that the last tuple returned by [`get_matching_blocks()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_matching_blocks "difflib.SequenceMatcher.get_matching_blocks") is always a dummy, `(len(a), len(b), 0)`, and this is the only case in which the last tuple element (number of elements matched) is `0`.
+If you want to know how to change the first sequence into the second, use [`get_opcodes()`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher.get_opcodes "difflib.SequenceMatcher.get_opcodes"):
+>>>```
+>>> for opcode in s.get_opcodes():
+...   print("%6s a[%d:%d] b[%d:%d]" % opcode)
+ equal a[0:8] b[0:8]
+insert a[8:8] b[8:17]
+ equal a[8:29] b[17:38]

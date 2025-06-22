@@ -1,0 +1,26 @@
+Title: Package Utilities in Python
+URL: https://docs.python.org/3/library/pkgutil.html
+Summary: This section explains how Python's pkgutil module enhances package handling by modifying the package's __path__ based on sys.path directories that match the package name, and by processing *.pkg files, which add entries to the path without filesystem verification, similar to *.pth files.
+---
+
+```
+
+For each directory on [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") that has a subdirectory that matches the package name, add the subdirectory to the package’s [`__path__`](https://docs.python.org/3/reference/datamodel.html#module.__path__ "module.__path__"). This is useful if one wants to distribute different parts of a single logical package as multiple directories.
+It also looks for `*.pkg` files beginning where `*` matches the _name_ argument. This feature is similar to `*.pth` files (see the [`site`](https://docs.python.org/3/library/site.html#module-site "site: Module responsible for site-specific configuration.") module for more information), except that it doesn’t special-case lines starting with `import`. A `*.pkg` file is trusted at face value: apart from skipping blank lines and ignoring comments, all entries found in a `*.pkg` file are added to the path, regardless of whether they exist on the filesystem (this is a feature).
+If the input path is not a list (as is the case for frozen packages) it is returned unchanged. The input path is not modified; an extended copy is returned. Items are only appended to the copy at the end.
+It is assumed that [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") is a sequence. Items of [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") that are not strings referring to existing directories are ignored. Unicode items on [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") that cause errors when used as filenames may cause this function to raise an exception (in line with [`os.path.isdir()`](https://docs.python.org/3/library/os.path.html#os.path.isdir "os.path.isdir") behavior). 
+
+pkgutil.find_loader(_fullname_)[¶](https://docs.python.org/3/library/pkgutil.html#pkgutil.find_loader "Link to this definition")
+    
+Retrieve a module [loader](https://docs.python.org/3/glossary.html#term-loader) for the given _fullname_.
+This is a backwards compatibility wrapper around [`importlib.util.find_spec()`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec "importlib.util.find_spec") that converts most failures to [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") and only returns the loader rather than the full [`importlib.machinery.ModuleSpec`](https://docs.python.org/3/library/importlib.html#importlib.machinery.ModuleSpec "importlib.machinery.ModuleSpec").
+Changed in version 3.3: Updated to be based directly on [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.") rather than relying on the package internal [**PEP 302**](https://peps.python.org/pep-0302/) import emulation.
+Changed in version 3.4: Updated to be based on [**PEP 451**](https://peps.python.org/pep-0451/)
+Deprecated since version 3.12, will be removed in version 3.14: Use [`importlib.util.find_spec()`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec "importlib.util.find_spec") instead. 
+
+pkgutil.get_importer(_path_item_)[¶](https://docs.python.org/3/library/pkgutil.html#pkgutil.get_importer "Link to this definition")
+    
+Retrieve a [finder](https://docs.python.org/3/glossary.html#term-finder) for the given _path_item_.
+The returned finder is cached in [`sys.path_importer_cache`](https://docs.python.org/3/library/sys.html#sys.path_importer_cache "sys.path_importer_cache") if it was newly created by a path hook.
+The cache (or part of it) can be cleared manually if a rescan of [`sys.path_hooks`](https://docs.python.org/3/library/sys.html#sys.path_hooks "sys.path_hooks") is necessary.
+Changed in version 3.3: Updated to be based directly on [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.") rather than relying on the package internal [**PEP 302**](https://peps.python.org/pep-0302/) import emulation.

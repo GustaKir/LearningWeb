@@ -1,0 +1,30 @@
+Title: io.BufferedIOBase Class
+URL: https://docs.python.org/3/library/io.html
+Summary: The io.BufferedIOBase class is a base class for binary streams that offer buffering. It extends from IOBase and differs from RawIOBase by attempting to read and write more data in a single operation, potentially resulting in multiple system calls. It can also raise a BlockingIOError.
+---
+
+_class_ io.BufferedIOBase[¶](https://docs.python.org/3/library/io.html#io.BufferedIOBase "Link to this definition")
+    
+Base class for binary streams that support some kind of buffering. It inherits from [`IOBase`](https://docs.python.org/3/library/io.html#io.IOBase "io.IOBase").
+The main difference with [`RawIOBase`](https://docs.python.org/3/library/io.html#io.RawIOBase "io.RawIOBase") is that methods [`read()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.read "io.BufferedIOBase.read"), [`readinto()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.readinto "io.BufferedIOBase.readinto") and [`write()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.write "io.BufferedIOBase.write") will try (respectively) to read as much input as requested or to consume all given output, at the expense of making perhaps more than one system call.
+In addition, those methods can raise [`BlockingIOError`](https://docs.python.org/3/library/exceptions.html#BlockingIOError "BlockingIOError") if the underlying raw stream is in non-blocking mode and cannot take or give enough data; unlike their [`RawIOBase`](https://docs.python.org/3/library/io.html#io.RawIOBase "io.RawIOBase") counterparts, they will never return `None`.
+Besides, the [`read()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.read "io.BufferedIOBase.read") method does not have a default implementation that defers to [`readinto()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.readinto "io.BufferedIOBase.readinto").
+A typical [`BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") implementation should not inherit from a [`RawIOBase`](https://docs.python.org/3/library/io.html#io.RawIOBase "io.RawIOBase") implementation, but wrap one, like [`BufferedWriter`](https://docs.python.org/3/library/io.html#io.BufferedWriter "io.BufferedWriter") and [`BufferedReader`](https://docs.python.org/3/library/io.html#io.BufferedReader "io.BufferedReader") do.
+[`BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") provides or overrides these data attributes and methods in addition to those from [`IOBase`](https://docs.python.org/3/library/io.html#io.IOBase "io.IOBase"): 
+
+raw[¶](https://docs.python.org/3/library/io.html#io.BufferedIOBase.raw "Link to this definition")
+    
+The underlying raw stream (a [`RawIOBase`](https://docs.python.org/3/library/io.html#io.RawIOBase "io.RawIOBase") instance) that [`BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") deals with. This is not part of the [`BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") API and may not exist on some implementations. 
+
+detach()[¶](https://docs.python.org/3/library/io.html#io.BufferedIOBase.detach "Link to this definition")
+    
+Separate the underlying raw stream from the buffer and return it.
+After the raw stream has been detached, the buffer is in an unusable state.
+Some buffers, like [`BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO "io.BytesIO"), do not have the concept of a single raw stream to return from this method. They raise [`UnsupportedOperation`](https://docs.python.org/3/library/io.html#io.UnsupportedOperation "io.UnsupportedOperation").
+Added in version 3.1. 
+
+read(_size =-1_, _/_)[¶](https://docs.python.org/3/library/io.html#io.BufferedIOBase.read "Link to this definition")
+    
+Read and return up to _size_ bytes. If the argument is omitted, `None`, or negative, data is read and returned until EOF is reached. An empty [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object is returned if the stream is already at EOF.
+If the argument is positive, and the underlying raw stream is not interactive, multiple raw reads may be issued to satisfy the byte count (unless EOF is reached first). But for interactive raw streams, at most one raw read will be issued, and a short result does not imply that EOF is imminent.
+A [`BlockingIOError`](https://docs.python.org/3/library/exceptions.html#BlockingIOError "BlockingIOError") is raised if the underlying raw stream is in non blocking-mode, and has no data available at the moment.

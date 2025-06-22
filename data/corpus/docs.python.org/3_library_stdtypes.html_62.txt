@@ -1,0 +1,22 @@
+Title: Caution Regarding Low Limit on Decimal Integer Constants
+URL: https://docs.python.org/3/library/stdtypes.html
+Summary: In Python 3.11, setting a low limit on decimal integer constants can lead to parsing errors if the code includes large integer literals. It is advised to convert large decimal constants to hexadecimal format to avoid issues. It is also important to thoroughly test applications using a low limit to ensure compatibility during startup and installation.
+---
+
+Added in version 3.11.
+Caution
+Setting a low limit _can_ lead to problems. While rare, code exists that contains integer constants in decimal in their source that exceed the minimum threshold. A consequence of setting the limit is that Python source code containing decimal integer literals longer than the limit will encounter an error during parsing, usually at startup time or import time or even at installation time - anytime an up to date `.pyc` does not already exist for the code. A workaround for source that contains such large constants is to convert them to `0x` hexadecimal form as it has no limit.
+Test your application thoroughly if you use a low limit. Ensure your tests run with the limit set early via the environment or flag so that it applies during startup and even during any installation step that may invoke Python to precompile `.py` sources to `.pyc` files.
+### Recommended configuration[¶](https://docs.python.org/3/library/stdtypes.html#recommended-configuration "Link to this heading")
+The default [`sys.int_info.default_max_str_digits`](https://docs.python.org/3/library/sys.html#sys.int_info.default_max_str_digits "sys.int_info.default_max_str_digits") is expected to be reasonable for most applications. If your application requires a different limit, set it from your main entry point using Python version agnostic code as these APIs were added in security patch releases in versions before 3.12.
+Example:
+>>>```
+>>> importsys
+>>> if hasattr(sys, "set_int_max_str_digits"):
+...   upper_bound = 68000
+...   lower_bound = 4004
+...   current_limit = sys.get_int_max_str_digits()
+...   if current_limit == 0 or current_limit > upper_bound:
+...     sys.set_int_max_str_digits(upper_bound)
+...   elif current_limit < lower_bound:
+...     sys.set_int_max_str_digits(lower_bound)

@@ -1,0 +1,75 @@
+Title: New Features in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces a new method `move_to_end()` in the `collections.OrderedDict` class, which allows users to move a specified key to the beginning or end of the ordered sequence. This method facilitates efficient resequencing of entries, useful for tracking access order.
+---
+
+```
+>>> tally = Counter(dogs=5, cats=3)
+>>> tally.subtract(dogs=2, cats=8)   # regular subtraction
+>>> tally
+Counter({'dogs': 3, 'cats': -5})
+
+```
+
+(Contributed by Raymond Hettinger.)
+  * The [`collections.OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") class has a new method [`move_to_end()`](https://docs.python.org/3/library/collections.html#collections.OrderedDict.move_to_end "collections.OrderedDict.move_to_end") which takes an existing key and moves it to either the first or last position in the ordered sequence.
+The default is to move an item to the last position. This is equivalent of renewing an entry with `od[k] = od.pop(k)`.
+A fast move-to-end operation is useful for resequencing entries. For example, an ordered dictionary can be used to track order of access by aging entries from the oldest to the most recently accessed.
+>>>```
+>>> fromcollectionsimport OrderedDict
+>>> d = OrderedDict.fromkeys(['a', 'b', 'X', 'd', 'e'])
+>>> list(d)
+['a', 'b', 'X', 'd', 'e']
+>>> d.move_to_end('X')
+>>> list(d)
+['a', 'b', 'd', 'e', 'X']
+
+```
+
+(Contributed by Raymond Hettinger.)
+  * The [`collections.deque`](https://docs.python.org/3/library/collections.html#collections.deque "collections.deque") class grew two new methods [`count()`](https://docs.python.org/3/library/collections.html#collections.deque.count "collections.deque.count") and [`reverse()`](https://docs.python.org/3/library/collections.html#collections.deque.reverse "collections.deque.reverse") that make them more substitutable for [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") objects:
+>>>```
+>>> fromcollectionsimport deque
+>>> d = deque('simsalabim')
+>>> d.count('s')
+2
+>>> d.reverse()
+>>> d
+deque(['m', 'i', 'b', 'a', 'l', 'a', 's', 'm', 'i', 's'])
+
+```
+
+(Contributed by Raymond Hettinger.)
+
+
+### threading[¶](https://docs.python.org/3/whatsnew/3.2.html#threading "Link to this heading")
+The [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module has a new [`Barrier`](https://docs.python.org/3/library/threading.html#threading.Barrier "threading.Barrier") synchronization class for making multiple threads wait until all of them have reached a common barrier point. Barriers are useful for making sure that a task with multiple preconditions does not run until all of the predecessor tasks are complete.
+Barriers can work with an arbitrary number of threads. This is a generalization of a [Rendezvous](https://en.wikipedia.org/wiki/Synchronous_rendezvous) which is defined for only two threads.
+Implemented as a two-phase cyclic barrier, [`Barrier`](https://docs.python.org/3/library/threading.html#threading.Barrier "threading.Barrier") objects are suitable for use in loops. The separate _filling_ and _draining_ phases assure that all threads get released (drained) before any one of them can loop back and re-enter the barrier. The barrier fully resets after each cycle.
+Example of using barriers:
+```
+fromthreadingimport Barrier, Thread
+defget_votes(site):
+  ballots = conduct_election(site)
+  all_polls_closed.wait()    # do not count until all polls are closed
+  totals = summarize(ballots)
+  publish(site, totals)
+all_polls_closed = Barrier(len(sites))
+for site in sites:
+  Thread(target=get_votes, args=(site,)).start()
+
+```
+
+In this example, the barrier enforces a rule that votes cannot be counted at any polling site until all polls are closed. Notice how a solution with a barrier is similar to one with [`threading.Thread.join()`](https://docs.python.org/3/library/threading.html#threading.Thread.join "threading.Thread.join"), but the threads stay alive and continue to do work (summarizing ballots) after the barrier point is crossed.
+If any of the predecessor tasks can hang or be delayed, a barrier can be created with an optional _timeout_ parameter. Then if the timeout period elapses before all the predecessor tasks reach the barrier point, all waiting threads are released and a [`BrokenBarrierError`](https://docs.python.org/3/library/threading.html#threading.BrokenBarrierError "threading.BrokenBarrierError") exception is raised:
+```
+defget_votes(site):
+  ballots = conduct_election(site)
+  try:
+    all_polls_closed.wait(timeout=midnight - time.now())
+  except BrokenBarrierError:
+    lockbox = seal_ballots(ballots)
+    queue.put(lockbox)
+  else:
+    totals = summarize(ballots)
+    publish(site, totals)

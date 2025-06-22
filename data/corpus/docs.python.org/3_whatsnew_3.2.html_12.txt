@@ -1,0 +1,75 @@
+Title: Python 3.2: Enhancements to functools.wraps
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The functools.wraps() decorator now includes a __wrapped__ attribute that references the original function for better introspection. Additionally, it copies the __annotations__ if available and avoids errors related to missing attributes like __doc__.
+---
+
+```
+
+(Contributed by Raymond Hettinger and incorporating design ideas from Jim Baker, Miki Tebeka, and Nick Coghlan; see [recipe 498245](https://code.activestate.com/recipes/498245-lru-and-lfu-cache-decorators/), [recipe 577479](https://code.activestate.com/recipes/577479-simple-caching-decorator/), [bpo-10586](https://bugs.python.org/issue?@action=redirect&bpo=10586), and [bpo-10593](https://bugs.python.org/issue?@action=redirect&bpo=10593).)
+  * The [`functools.wraps()`](https://docs.python.org/3/library/functools.html#functools.wraps "functools.wraps") decorator now adds a `__wrapped__` attribute pointing to the original callable function. This allows wrapped functions to be introspected. It also copies [`__annotations__`](https://docs.python.org/3/reference/datamodel.html#function.__annotations__ "function.__annotations__") if defined. And now it also gracefully skips over missing attributes such as [`__doc__`](https://docs.python.org/3/reference/datamodel.html#function.__doc__ "function.__doc__") which might not be defined for the wrapped callable.
+In the above example, the cache can be removed by recovering the original function:
+>>>```
+>>> get_phone_number = get_phone_number.__wrapped__  # uncached function
+
+```
+
+(By Nick Coghlan and Terrence Cole; [bpo-9567](https://bugs.python.org/issue?@action=redirect&bpo=9567), [bpo-3445](https://bugs.python.org/issue?@action=redirect&bpo=3445), and [bpo-8814](https://bugs.python.org/issue?@action=redirect&bpo=8814).)
+  * To help write classes with rich comparison methods, a new decorator [`functools.total_ordering()`](https://docs.python.org/3/library/functools.html#functools.total_ordering "functools.total_ordering") will use existing equality and inequality methods to fill in the remaining methods.
+For example, supplying ___eq___ and ___lt___ will enable [`total_ordering()`](https://docs.python.org/3/library/functools.html#functools.total_ordering "functools.total_ordering") to fill-in ___le___ , ___gt___ and ___ge___ :
+```
+@total_ordering
+classStudent:
+  def__eq__(self, other):
+    return ((self.lastname.lower(), self.firstname.lower()) ==
+        (other.lastname.lower(), other.firstname.lower()))
+  def__lt__(self, other):
+    return ((self.lastname.lower(), self.firstname.lower()) <
+        (other.lastname.lower(), other.firstname.lower()))
+
+```
+
+With the _total_ordering_ decorator, the remaining comparison methods are filled in automatically.
+(Contributed by Raymond Hettinger.)
+  * To aid in porting programs from Python 2, the [`functools.cmp_to_key()`](https://docs.python.org/3/library/functools.html#functools.cmp_to_key "functools.cmp_to_key") function converts an old-style comparison function to modern [key function](https://docs.python.org/3/glossary.html#term-key-function):
+>>>```
+>>> # locale-aware sort order
+>>> sorted(iterable, key=cmp_to_key(locale.strcoll))
+
+```
+
+For sorting examples and a brief sorting tutorial, see the [Sorting HowTo](https://wiki.python.org/moin/HowTo/Sorting/) tutorial.
+(Contributed by Raymond Hettinger.)
+
+
+### itertools[¶](https://docs.python.org/3/whatsnew/3.2.html#itertools "Link to this heading")
+  * The [`itertools`](https://docs.python.org/3/library/itertools.html#module-itertools "itertools: Functions creating iterators for efficient looping.") module has a new [`accumulate()`](https://docs.python.org/3/library/itertools.html#itertools.accumulate "itertools.accumulate") function modeled on APL’s _scan_ operator and Numpy’s _accumulate_ function:
+>>>```
+>>> fromitertoolsimport accumulate
+>>> list(accumulate([8, 2, 50]))
+[8, 10, 60]
+
+```
+
+>>>```
+>>> prob_dist = [0.1, 0.4, 0.2, 0.3]
+>>> list(accumulate(prob_dist))   # cumulative probability distribution
+[0.1, 0.5, 0.7, 1.0]
+
+```
+
+For an example using [`accumulate()`](https://docs.python.org/3/library/itertools.html#itertools.accumulate "itertools.accumulate"), see the [examples for the random module](https://docs.python.org/3/library/random.html#random-examples).
+(Contributed by Raymond Hettinger and incorporating design suggestions from Mark Dickinson.)
+
+
+### collections[¶](https://docs.python.org/3/whatsnew/3.2.html#collections "Link to this heading")
+  * The [`collections.Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") class now has two forms of in-place subtraction, the existing _-=_ operator for [saturating subtraction](https://en.wikipedia.org/wiki/Saturation_arithmetic) and the new [`subtract()`](https://docs.python.org/3/library/collections.html#collections.Counter.subtract "collections.Counter.subtract") method for regular subtraction. The former is suitable for [multisets](https://en.wikipedia.org/wiki/Multiset) which only have positive counts, and the latter is more suitable for use cases that allow negative counts:
+>>>```
+>>> fromcollectionsimport Counter
+>>> tally = Counter(dogs=5, cats=3)
+>>> tally -= Counter(dogs=2, cats=8)  # saturating subtraction
+>>> tally
+Counter({'dogs': 3})
+
+```
+
+>>>

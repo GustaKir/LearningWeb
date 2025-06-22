@@ -1,0 +1,175 @@
+Title: Query Parameters and Validations in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This section demonstrates how to define query parameters in FastAPI using both `Annotated` and `Query`. It shows examples of defining a route that accepts a list of strings as query parameters with a default value. The recommended approach is to use the `Annotated` version for better clarity.
+---
+
+```
+fromtypingimport List
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[List[str], Query()] = ["foo", "bar"]):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: list[str] = Query(default=["foo", "bar"])):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport List
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: List[str] = Query(default=["foo", "bar"])):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+If you go to:
+```
+http://localhost:8000/items/
+
+```
+
+the default of `q` will be: `["foo", "bar"]` and your response will be:
+```
+{
+"q":[
+"foo",
+"bar"
+]
+}
+
+```
+
+#### Using just `list`[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#using-just-list "Permanent link")
+You can also use `list` directly instead of `list[str]`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_28_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[list, Query()] = []):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_29_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_29_2)
+```
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[list, Query()] = []):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: list = Query(default=[])):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Note
+Keep in mind that in this case, FastAPI won't check the contents of the list.
+For example, `list[int]` would check (and document) that the contents of the list are integers. But `list` alone wouldn't.
+## Declare more metadata[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#declare-more-metadata "Permanent link")
+You can add more information about the parameter.
+That information will be included in the generated OpenAPI and used by the documentation user interfaces and external tools.
+Note
+Keep in mind that different tools might have different levels of OpenAPI support.
+Some of them might not show all the extra information declared yet, although in most of the cases, the missing feature is already planned for development.
+You can add a `title`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_30_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[str | None, Query(title="Query string", min_length=3)] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_31_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_31_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_31_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_31_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[Union[str, None], Query(title="Query string", min_length=3)] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[Union[str, None], Query(title="Query string", min_length=3)] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: str | None = Query(default=None, title="Query string", min_length=3),
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

@@ -1,0 +1,69 @@
+Title: Response Model in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/response-model/
+Summary: This section discusses how FastAPI leverages type annotations for tooling support, allowing editors and mypy to validate types effectively. It explains the relationship between `BaseUser` and `UserIn`, highlighting how `UserIn` inherits from `BaseUser` and how FastAPI ensures data filtering based on these models.
+---
+
+```
+
+With this, we get tooling support, from editors and mypy as this code is correct in terms of types, but we also get the data filtering from FastAPI.
+How does this work? Let's check that out. 🤓
+### Type Annotations and Tooling[¶](https://fastapi.tiangolo.com/tutorial/response-model/#type-annotations-and-tooling "Permanent link")
+First let's see how editors, mypy and other tools would see this.
+`BaseUser` has the base fields. Then `UserIn` inherits from `BaseUser` and adds the `password` field, so, it will include all the fields from both models.
+We annotate the function return type as `BaseUser`, but we are actually returning a `UserIn` instance.
+The editor, mypy, and other tools won't complain about this because, in typing terms, `UserIn` is a subclass of `BaseUser`, which means it's a _valid_ type when what is expected is anything that is a `BaseUser`.
+### FastAPI Data Filtering[¶](https://fastapi.tiangolo.com/tutorial/response-model/#fastapi-data-filtering "Permanent link")
+Now, for FastAPI, it will see the return type and make sure that what you return includes **only** the fields that are declared in the type.
+FastAPI does several things internally with Pydantic to make sure that those same rules of class inheritance are not used for the returned data filtering, otherwise you could end up returning much more data than what you expected.
+This way, you can get the best of both worlds: type annotations with **tooling support** and **data filtering**.
+## See it in the docs[¶](https://fastapi.tiangolo.com/tutorial/response-model/#see-it-in-the-docs "Permanent link")
+When you see the automatic docs, you can check that the input model and output model will both have their own JSON Schema:
+![](https://fastapi.tiangolo.com/img/tutorial/response-model/image01.png)
+And both models will be used for the interactive API documentation:
+![](https://fastapi.tiangolo.com/img/tutorial/response-model/image02.png)
+## Other Return Type Annotations[¶](https://fastapi.tiangolo.com/tutorial/response-model/#other-return-type-annotations "Permanent link")
+There might be cases where you return something that is not a valid Pydantic field and you annotate it in the function, only to get the support provided by tooling (the editor, mypy, etc).
+### Return a Response Directly[¶](https://fastapi.tiangolo.com/tutorial/response-model/#return-a-response-directly "Permanent link")
+The most common case would be [returning a Response directly as explained later in the advanced docs](https://fastapi.tiangolo.com/advanced/response-directly/).
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_17_1)
+```
+fromfastapiimport FastAPI, Response
+fromfastapi.responsesimport JSONResponse, RedirectResponse
+app = FastAPI()
+@app.get("/portal")
+async defget_portal(teleport: bool = False) -> Response:
+  if teleport:
+    return RedirectResponse(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+  return JSONResponse(content={"message": "Here's your interdimensional portal."})
+
+```
+
+This simple case is handled automatically by FastAPI because the return type annotation is the class (or a subclass of) `Response`.
+And tools will also be happy because both `RedirectResponse` and `JSONResponse` are subclasses of `Response`, so the type annotation is correct.
+### Annotate a Response Subclass[¶](https://fastapi.tiangolo.com/tutorial/response-model/#annotate-a-response-subclass "Permanent link")
+You can also use a subclass of `Response` in the type annotation:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_18_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/teleport")
+async defget_teleport() -> RedirectResponse:
+  return RedirectResponse(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+
+```
+
+This will also work because `RedirectResponse` is a subclass of `Response`, and FastAPI will automatically handle this simple case.
+### Invalid Return Type Annotations[¶](https://fastapi.tiangolo.com/tutorial/response-model/#invalid-return-type-annotations "Permanent link")
+But when you return some other arbitrary object that is not a valid Pydantic type (e.g. a database object) and you annotate it like that in the function, FastAPI will try to create a Pydantic response model from that type annotation, and will fail.
+The same would happen if you had something like a union between different types where one or more of them are not valid Pydantic types, for example this would fail 💥:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_19_1)
+```
+fromfastapiimport FastAPI, Response
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/portal")
+async defget_portal(teleport: bool = False) -> Response | dict:
+  if teleport:
+    return RedirectResponse(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+  return {"message": "Here's your interdimensional portal."}

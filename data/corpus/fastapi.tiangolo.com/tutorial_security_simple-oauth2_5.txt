@@ -1,0 +1,106 @@
+Title: Implementing Simple OAuth2 with Password and Bearer in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/
+Summary: This section discusses building a complete security flow in FastAPI using OAuth2 with password and bearer tokens. It emphasizes the importance of using specific field names ('username' and 'password') for form data during user authentication while noting that different names can be used in frontend displays and database models.
+---
+
+# Simple OAuth2 with Password and Bearer[¶](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#simple-oauth2-with-password-and-bearer "Permanent link")
+Now let's build from the previous chapter and add the missing parts to have a complete security flow.
+## Get the `username` and `password`[¶](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#get-the-username-and-password "Permanent link")
+We are going to use **FastAPI** security utilities to get the `username` and `password`.
+OAuth2 specifies that when using the "password flow" (that we are using) the client/user must send a `username` and `password` fields as form data.
+And the spec says that the fields have to be named like that. So `user-name` or `email` wouldn't work.
+But don't worry, you can show it as you wish to your final users in the frontend.
+And your database models can use any other names you want.
+But for the login _path operation_ , we need to use these names to be compatible with the spec (and be able to, for example, use the integrated API documentation system).
+The spec also states that the `username` and `password` must be sent as form data (so, no JSON here).
+### `scope`[¶](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#scope "Permanent link")
+The spec also says that the client can send another form field "`scope`".
+The form field name is `scope` (in singular), but it is actually a long string with "scopes" separated by spaces.
+Each "scope" is just a string (without spaces).
+They are normally used to declare specific security permissions, for example:
+  * `users:read` or `users:write` are common examples.
+  * `instagram_basic` is used by Facebook / Instagram.
+  * `https://www.googleapis.com/auth/drive` is used by Google.
+
+
+Info
+In OAuth2 a "scope" is just a string that declares a specific permission required.
+It doesn't matter if it has other characters like `:` or if it is a URL.
+Those details are implementation specific.
+For OAuth2 they are just strings.
+## Code to get the `username` and `password`[¶](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#code-to-get-the-username-and-password "Permanent link")
+Now let's use the utilities provided by **FastAPI** to handle this.
+### `OAuth2PasswordRequestForm`[¶](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#oauth2passwordrequestform "Permanent link")
+First, import `OAuth2PasswordRequestForm`, and use it as a dependency with `Depends` in the _path operation_ for `/token`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/security/simple-oauth2/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI, HTTPException, status
+fromfastapi.securityimport OAuth2PasswordBearer, OAuth2PasswordRequestForm
+frompydanticimport BaseModel
+fake_users_db = {
+  "johndoe": {
+    "username": "johndoe",
+    "full_name": "John Doe",
+    "email": "johndoe@example.com",
+    "hashed_password": "fakehashedsecret",
+    "disabled": False,
+  },
+  "alice": {
+    "username": "alice",
+    "full_name": "Alice Wonderson",
+    "email": "alice@example.com",
+    "hashed_password": "fakehashedsecret2",
+    "disabled": True,
+  },
+}
+app = FastAPI()
+deffake_hash_password(password: str):
+  return "fakehashed" + password
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+classUser(BaseModel):
+  username: str
+  email: str | None = None
+  full_name: str | None = None
+  disabled: bool | None = None
+classUserInDB(User):
+  hashed_password: str
+defget_user(db, username: str):
+  if username in db:
+    user_dict = db[username]
+    return UserInDB(**user_dict)
+deffake_decode_token(token):
+  # This doesn't provide any security at all
+  # Check the next version
+  user = get_user(fake_users_db, token)
+  return user
+async defget_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+  user = fake_decode_token(token)
+  if not user:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid authentication credentials",
+      headers={"WWW-Authenticate": "Bearer"},
+    )
+  return user
+async defget_current_active_user(
+  current_user: Annotated[User, Depends(get_current_user)],
+):
+  if current_user.disabled:
+    raise HTTPException(status_code=400, detail="Inactive user")
+  return current_user
+@app.post("/token")
+async deflogin(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+  user_dict = fake_users_db.get(form_data.username)
+  if not user_dict:
+    raise HTTPException(status_code=400, detail="Incorrect username or password")
+  user = UserInDB(**user_dict)
+  hashed_password = fake_hash_password(form_data.password)
+  if not hashed_password == user.hashed_password:
+    raise HTTPException(status_code=400, detail="Incorrect username or password")
+  return {"access_token": user.username, "token_type": "bearer"}
+@app.get("/users/me")
+async defread_users_me(
+  current_user: Annotated[User, Depends(get_current_active_user)],
+):
+  return current_user

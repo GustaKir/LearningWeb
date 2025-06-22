@@ -1,0 +1,58 @@
+Title: Coroutine Close Method
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: The `coroutine.close()` method cleans up and exits the coroutine. It first calls the `close()` method of the suspending iterator if available, raises `GeneratorExit` at the suspension point, and marks the coroutine as finished, even if it wasn't started. Coroutine objects are automatically closed when destroyed.
+---
+
+coroutine.close()[¶](https://docs.python.org/3/reference/datamodel.html#coroutine.close "Link to this definition")
+    
+Causes the coroutine to clean itself up and exit. If the coroutine is suspended, this method first delegates to the [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close") method of the iterator that caused the coroutine to suspend, if it has such a method. Then it raises [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") at the suspension point, causing the coroutine to immediately clean itself up. Finally, the coroutine is marked as having finished executing, even if it was never started.
+Coroutine objects are automatically closed using the above process when they are about to be destroyed.
+### 3.4.3. Asynchronous Iterators[¶](https://docs.python.org/3/reference/datamodel.html#asynchronous-iterators "Link to this heading")
+An _asynchronous iterator_ can call asynchronous code in its `__anext__` method.
+Asynchronous iterators can be used in an [`async for`](https://docs.python.org/3/reference/compound_stmts.html#async-for) statement.
+The [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself does not provide these methods. 
+
+object.__aiter__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__aiter__ "Link to this definition")
+    
+Must return an _asynchronous iterator_ object. 
+
+object.__anext__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__anext__ "Link to this definition")
+    
+Must return an _awaitable_ resulting in a next value of the iterator. Should raise a [`StopAsyncIteration`](https://docs.python.org/3/library/exceptions.html#StopAsyncIteration "StopAsyncIteration") error when the iteration is over.
+An example of an asynchronous iterable object:
+```
+classReader:
+  async defreadline(self):
+    ...
+  def__aiter__(self):
+    return self
+  async def__anext__(self):
+    val = await self.readline()
+    if val == b'':
+      raise StopAsyncIteration
+    return val
+
+```
+
+Added in version 3.5.
+Changed in version 3.7: Prior to Python 3.7, [`__aiter__()`](https://docs.python.org/3/reference/datamodel.html#object.__aiter__ "object.__aiter__") could return an _awaitable_ that would resolve to an [asynchronous iterator](https://docs.python.org/3/glossary.html#term-asynchronous-iterator).
+Starting with Python 3.7, [`__aiter__()`](https://docs.python.org/3/reference/datamodel.html#object.__aiter__ "object.__aiter__") must return an asynchronous iterator object. Returning anything else will result in a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") error.
+### 3.4.4. Asynchronous Context Managers[¶](https://docs.python.org/3/reference/datamodel.html#asynchronous-context-managers "Link to this heading")
+An _asynchronous context manager_ is a _context manager_ that is able to suspend execution in its `__aenter__` and `__aexit__` methods.
+Asynchronous context managers can be used in an [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) statement.
+The [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself does not provide these methods. 
+
+object.__aenter__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__aenter__ "Link to this definition")
+    
+Semantically similar to [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__"), the only difference being that it must return an _awaitable_. 
+
+object.__aexit__(_self_ , _exc_type_ , _exc_value_ , _traceback_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__aexit__ "Link to this definition")
+    
+Semantically similar to [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__"), the only difference being that it must return an _awaitable_.
+An example of an asynchronous context manager class:
+```
+classAsyncContextManager:
+  async def__aenter__(self):
+    await log('entering context')
+  async def__aexit__(self, exc_type, exc, tb):
+    await log('exiting context')

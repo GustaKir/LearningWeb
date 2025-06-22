@@ -1,0 +1,211 @@
+Title: TestClient `httpx.request()` Alternative
+URL: https://fastapi.tiangolo.com/reference/testclient/
+Summary: This documentation chunk explains an alternative to `httpx.request()` that allows streaming the response body instead of loading it entirely in memory. It lists parameters such as `method`, `url`, `content`, `data`, and more, along with their types and default values, while also referencing the section on Streaming Responses.
+---
+
+```
+
+Alternative to `httpx.request()` that streams the response body instead of loading it into memory at once.
+**Parameters** : See `httpx.request`.
+See also: [Streaming Responses](https://fastapi.tiangolo.com/quickstart#streaming-responses)
+PARAMETER | DESCRIPTION  
+---|---  
+`method` |  **TYPE:** `str`  
+`url` |  **TYPE:** `URL | str`  
+`content` |  **TYPE:** `RequestContent | None` **DEFAULT:** `None`  
+`data` |  **TYPE:** `RequestData | None` **DEFAULT:** `None`  
+`files` |  **TYPE:** `RequestFiles | None` **DEFAULT:** `None`  
+`json` |  **TYPE:** `Any | None` **DEFAULT:** `None`  
+`params` |  **TYPE:** `QueryParamTypes | None` **DEFAULT:** `None`  
+`headers` |  **TYPE:** `HeaderTypes | None` **DEFAULT:** `None`  
+`cookies` |  **TYPE:** `CookieTypes | None` **DEFAULT:** `None`  
+`auth` |  **TYPE:** `AuthTypes | UseClientDefault | None` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+`follow_redirects` |  **TYPE:** `bool | UseClientDefault` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+`timeout` |  **TYPE:** `TimeoutTypes | UseClientDefault` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+`extensions` |  **TYPE:** `RequestExtensions | None` **DEFAULT:** `None`  
+YIELDS | DESCRIPTION  
+---|---  
+`Response` |   
+Source code in `httpx/_client.py`
+```
+839
+840
+841
+842
+843
+844
+845
+846
+847
+848
+849
+850
+851
+852
+853
+854
+855
+856
+857
+858
+859
+860
+861
+862
+863
+864
+865
+866
+867
+868
+869
+870
+871
+872
+873
+874
+875
+876
+877
+878
+879
+880
+881
+882
+883
+884
+885
+886
+887
+888
+889
+```
+| ```
+@contextmanager
+defstream(
+  self,
+  method: str,
+  url: URL | str,
+  *,
+  content: RequestContent | None = None,
+  data: RequestData | None = None,
+  files: RequestFiles | None = None,
+  json: typing.Any | None = None,
+  params: QueryParamTypes | None = None,
+  headers: HeaderTypes | None = None,
+  cookies: CookieTypes | None = None,
+  auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT,
+  follow_redirects: bool | UseClientDefault = USE_CLIENT_DEFAULT,
+  timeout: TimeoutTypes | UseClientDefault = USE_CLIENT_DEFAULT,
+  extensions: RequestExtensions | None = None,
+) -> typing.Iterator[Response]:
+"""
+  Alternative to `httpx.request()` that streams the response body
+  instead of loading it into memory at once.
+  **Parameters**: See `httpx.request`.
+  See also: [Streaming Responses][0]
+  [0]: /quickstart#streaming-responses
+  """
+  request = self.build_request(
+    method=method,
+    url=url,
+    content=content,
+    data=data,
+    files=files,
+    json=json,
+    params=params,
+    headers=headers,
+    cookies=cookies,
+    timeout=timeout,
+    extensions=extensions,
+  )
+  response = self.send(
+    request=request,
+    auth=auth,
+    follow_redirects=follow_redirects,
+    stream=True,
+  )
+  try:
+    yield response
+  finally:
+    response.close()
+
+```
+  
+---|---  
+###  send [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.send "Permanent link")
+```
+send(
+  request,
+  *,
+  stream=False,
+  auth=USE_CLIENT_DEFAULT,
+  follow_redirects=USE_CLIENT_DEFAULT
+)
+
+```
+
+Send a request.
+The request is sent as-is, unmodified.
+Typically you'll want to build one with `Client.build_request()` so that any client-level configuration is merged into the request, but passing an explicit `httpx.Request()` is supported as well.
+See also: [Request instances](https://fastapi.tiangolo.com/advanced/clients/#request-instances)
+PARAMETER | DESCRIPTION  
+---|---  
+`request` |  **TYPE:** `Request`  
+`stream` |  **TYPE:** `bool` **DEFAULT:** `False`  
+`auth` |  **TYPE:** `AuthTypes | UseClientDefault | None` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+`follow_redirects` |  **TYPE:** `bool | UseClientDefault` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+Source code in `httpx/_client.py`
+```
+891
+892
+893
+894
+895
+896
+897
+898
+899
+900
+901
+902
+903
+904
+905
+906
+907
+908
+909
+910
+911
+912
+913
+914
+915
+916
+917
+918
+919
+920
+921
+922
+923
+924
+925
+926
+927
+928
+929
+930
+931
+932
+933
+934
+935
+936
+937
+938
+939
+940
+```
+|

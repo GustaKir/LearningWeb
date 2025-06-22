@@ -1,0 +1,43 @@
+Title: OS Module Functions: Memory Locking and Piping
+URL: https://docs.python.org/3/library/os.html
+Summary: This chunk describes two functions in the OS module: `os.plock`, which locks program segments into memory based on the operation value `_op_`, and `os.popen`, which opens a pipe to a command `_cmd_` and returns a file object for reading or writing. The availability of these functions varies across platforms.
+---
+
+os.plock(_op_ , _/_)[¶](https://docs.python.org/3/library/os.html#os.plock "Link to this definition")
+    
+Lock program segments into memory. The value of _op_ (defined in `<sys/lock.h>`) determines which segments are locked.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, not WASI, not iOS. 
+
+os.popen(_cmd_ , _mode ='r'_, _buffering =-1_)[¶](https://docs.python.org/3/library/os.html#os.popen "Link to this definition")
+    
+Open a pipe to or from command _cmd_. The return value is an open file object connected to the pipe, which can be read or written depending on whether _mode_ is `'r'` (default) or `'w'`. The _buffering_ argument have the same meaning as the corresponding argument to the built-in [`open()`](https://docs.python.org/3/library/functions.html#open "open") function. The returned file object reads or writes text strings rather than bytes.
+The `close` method returns [`None`](https://docs.python.org/3/library/constants.html#None "None") if the subprocess exited successfully, or the subprocess’s return code if there was an error. On POSIX systems, if the return code is positive it represents the return value of the process left-shifted by one byte. If the return code is negative, the process was terminated by the signal given by the negated value of the return code. (For example, the return value might be `- signal.SIGKILL` if the subprocess was killed.) On Windows systems, the return value contains the signed integer return code from the child process.
+On Unix, [`waitstatus_to_exitcode()`](https://docs.python.org/3/library/os.html#os.waitstatus_to_exitcode "os.waitstatus_to_exitcode") can be used to convert the `close` method result (exit status) into an exit code if it is not `None`. On Windows, the `close` method result is directly the exit code (or `None`).
+This is implemented using [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen"); see that class’s documentation for more powerful ways to manage and communicate with subprocesses.
+[Availability](https://docs.python.org/3/library/intro.html#availability): not WASI, not Android, not iOS.
+Note
+The [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode) affects encodings used for _cmd_ and pipe contents.
+[`popen()`](https://docs.python.org/3/library/os.html#os.popen "os.popen") is a simple wrapper around [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen"). Use [`subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") or [`subprocess.run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run") to control options like encodings. 
+
+os.posix_spawn(_path_ , _argv_ , _env_ , _*_ , _file_actions =None_, _setpgroup =None_, _resetids =False_, _setsid =False_, _setsigmask =()_, _setsigdef =()_, _scheduler =None_)[¶](https://docs.python.org/3/library/os.html#os.posix_spawn "Link to this definition")
+    
+Wraps the `posix_spawn()` C library API for use from Python.
+Most users should use [`subprocess.run()`](https://docs.python.org/3/library/subprocess.html#subprocess.run "subprocess.run") instead of [`posix_spawn()`](https://docs.python.org/3/library/os.html#os.posix_spawn "os.posix_spawn").
+The positional-only arguments _path_ , _args_ , and _env_ are similar to [`execve()`](https://docs.python.org/3/library/os.html#os.execve "os.execve"). _env_ is allowed to be `None`, in which case current process’ environment is used.
+The _path_ parameter is the path to the executable file. The _path_ should contain a directory. Use [`posix_spawnp()`](https://docs.python.org/3/library/os.html#os.posix_spawnp "os.posix_spawnp") to pass an executable file without directory.
+The _file_actions_ argument may be a sequence of tuples describing actions to take on specific file descriptors in the child process between the C library implementation’s `fork()` and `exec()` steps. The first item in each tuple must be one of the three type indicator listed below describing the remaining tuple elements: 
+
+os.POSIX_SPAWN_OPEN[¶](https://docs.python.org/3/library/os.html#os.POSIX_SPAWN_OPEN "Link to this definition")
+    
+(`os.POSIX_SPAWN_OPEN`, _fd_ , _path_ , _flags_ , _mode_)
+Performs `os.dup2(os.open(path, flags, mode), fd)`. 
+
+os.POSIX_SPAWN_CLOSE[¶](https://docs.python.org/3/library/os.html#os.POSIX_SPAWN_CLOSE "Link to this definition")
+    
+(`os.POSIX_SPAWN_CLOSE`, _fd_)
+Performs `os.close(fd)`. 
+
+os.POSIX_SPAWN_DUP2[¶](https://docs.python.org/3/library/os.html#os.POSIX_SPAWN_DUP2 "Link to this definition")
+    
+(`os.POSIX_SPAWN_DUP2`, _fd_ , _new_fd_)
+Performs `os.dup2(fd, new_fd)`.

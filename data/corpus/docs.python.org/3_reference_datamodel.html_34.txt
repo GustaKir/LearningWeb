@@ -1,0 +1,59 @@
+Title: Customizing Class Creation in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: This section discusses the `__init_subclass__()` method, which is invoked on a parent class whenever it is subclassed. It allows the parent class to alter the behavior of its subclasses. Unlike class decorators that affect only the decorated class, `__init_subclass__` applies to all future subclasses. When defined as a normal instance method, it is automatically treated as a class method.
+---
+
+### 3.3.3. Customizing class creation[¶](https://docs.python.org/3/reference/datamodel.html#customizing-class-creation "Link to this heading")
+Whenever a class inherits from another class, [`__init_subclass__()`](https://docs.python.org/3/reference/datamodel.html#object.__init_subclass__ "object.__init_subclass__") is called on the parent class. This way, it is possible to write classes which change the behavior of subclasses. This is closely related to class decorators, but where class decorators only affect the specific class they’re applied to, `__init_subclass__` solely applies to future subclasses of the class defining the method. 
+
+_classmethod_ object.__init_subclass__(_cls_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__init_subclass__ "Link to this definition")
+    
+This method is called whenever the containing class is subclassed. _cls_ is then the new subclass. If defined as a normal instance method, this method is implicitly converted to a class method.
+Keyword arguments which are given to a new class are passed to the parent class’s `__init_subclass__`. For compatibility with other classes using `__init_subclass__`, one should take out the needed keyword arguments and pass the others over to the base class, as in:
+```
+classPhilosopher:
+  def__init_subclass__(cls, /, default_name, **kwargs):
+    super().__init_subclass__(**kwargs)
+    cls.default_name = default_name
+classAustralianPhilosopher(Philosopher, default_name="Bruce"):
+  pass
+
+```
+
+The default implementation `object.__init_subclass__` does nothing, but raises an error if it is called with any arguments.
+Note
+The metaclass hint `metaclass` is consumed by the rest of the type machinery, and is never passed to `__init_subclass__` implementations. The actual metaclass (rather than the explicit hint) can be accessed as `type(cls)`.
+Added in version 3.6.
+When a class is created, `type.__new__()` scans the class variables and makes callbacks to those with a [`__set_name__()`](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "object.__set_name__") hook. 
+
+object.__set_name__(_self_ , _owner_ , _name_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "Link to this definition")
+    
+Automatically called at the time the owning class _owner_ is created. The object has been assigned to _name_ in that class:
+```
+classA:
+  x = C() # Automatically calls: x.__set_name__(A, 'x')
+
+```
+
+If the class variable is assigned after the class is created, [`__set_name__()`](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "object.__set_name__") will not be called automatically. If needed, [`__set_name__()`](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "object.__set_name__") can be called directly:
+```
+classA:
+  pass
+c = C()
+A.x = c         # The hook is not called
+c.__set_name__(A, 'x')  # Manually invoke the hook
+
+```
+
+See [Creating the class object](https://docs.python.org/3/reference/datamodel.html#class-object-creation) for more details.
+Added in version 3.6.
+#### 3.3.3.1. Metaclasses[¶](https://docs.python.org/3/reference/datamodel.html#metaclasses "Link to this heading")
+By default, classes are constructed using [`type()`](https://docs.python.org/3/library/functions.html#type "type"). The class body is executed in a new namespace and the class name is bound locally to the result of `type(name, bases, namespace)`.
+The class creation process can be customized by passing the `metaclass` keyword argument in the class definition line, or by inheriting from an existing class that included such an argument. In the following example, both `MyClass` and `MySubclass` are instances of `Meta`:
+```
+classMeta(type):
+  pass
+classMyClass(metaclass=Meta):
+  pass
+classMySubclass(MyClass):
+  pass

@@ -1,0 +1,50 @@
+Title: Customizing Named Tuple Docstrings
+URL: https://docs.python.org/3/library/collections.html
+Summary: This section demonstrates how to customize docstrings for fields in a namedtuple using direct assignments to the `__doc__` attribute. It highlights the addition of a docstring feature in version 3.5, and references `typing.NamedTuple` for adding type hints and an alternative syntax using the class keyword.
+---
+
+```
+>>> Point3D = namedtuple('Point3D', Point._fields + ('z',))
+
+```
+
+Docstrings can be customized by making direct assignments to the `__doc__` fields:
+>>>```
+>>> Book = namedtuple('Book', ['id', 'title', 'authors'])
+>>> Book.__doc__ += ': Hardcover book in active collection'
+>>> Book.id.__doc__ = '13-digit ISBN'
+>>> Book.title.__doc__ = 'Title of first printing'
+>>> Book.authors.__doc__ = 'List of authors sorted by last name'
+
+```
+
+Changed in version 3.5: Property docstrings became writeable.
+See also
+  * See [`typing.NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple "typing.NamedTuple") for a way to add type hints for named tuples. It also provides an elegant notation using the [`class`](https://docs.python.org/3/reference/compound_stmts.html#class) keyword:
+```
+classComponent(NamedTuple):
+  part_number: int
+  weight: float
+  description: Optional[str] = None
+
+```
+
+  * See [`types.SimpleNamespace()`](https://docs.python.org/3/library/types.html#types.SimpleNamespace "types.SimpleNamespace") for a mutable namespace based on an underlying dictionary instead of a tuple.
+  * The [`dataclasses`](https://docs.python.org/3/library/dataclasses.html#module-dataclasses "dataclasses: Generate special methods on user-defined classes.") module provides a decorator and functions for automatically adding generated special methods to user-defined classes.
+
+
+## [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") objects[¶](https://docs.python.org/3/library/collections.html#ordereddict-objects "Link to this heading")
+Ordered dictionaries are just like regular dictionaries but have some extra capabilities relating to ordering operations. They have become less important now that the built-in [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") class gained the ability to remember insertion order (this new behavior became guaranteed in Python 3.7).
+Some differences from [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") still remain:
+  * The regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") was designed to be very good at mapping operations. Tracking insertion order was secondary.
+  * The [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") was designed to be good at reordering operations. Space efficiency, iteration speed, and the performance of update operations were secondary.
+  * The [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") algorithm can handle frequent reordering operations better than [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict"). As shown in the recipes below, this makes it suitable for implementing various kinds of LRU caches.
+  * The equality operation for [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") checks for matching order.
+A regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") can emulate the order sensitive equality test with `p == q and all(k1 == k2 for k1, k2 in zip(p, q))`.
+  * The [`popitem()`](https://docs.python.org/3/library/collections.html#collections.OrderedDict.popitem "collections.OrderedDict.popitem") method of [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") has a different signature. It accepts an optional argument to specify which item is popped.
+A regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") can emulate OrderedDict’s `od.popitem(last=True)` with `d.popitem()` which is guaranteed to pop the rightmost (last) item.
+A regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") can emulate OrderedDict’s `od.popitem(last=False)` with `(k := next(iter(d)), d.pop(k))` which will return and remove the leftmost (first) item if it exists.
+  * [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") has a [`move_to_end()`](https://docs.python.org/3/library/collections.html#collections.OrderedDict.move_to_end "collections.OrderedDict.move_to_end") method to efficiently reposition an element to an endpoint.
+A regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") can emulate OrderedDict’s `od.move_to_end(k, last=True)` with `d[k] = d.pop(k)` which will move the key and its associated value to the rightmost (last) position.
+A regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") does not have an efficient equivalent for OrderedDict’s `od.move_to_end(k, last=False)` which moves the key and its associated value to the leftmost (first) position.
+  * Until Python 3.8, [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") lacked a [`__reversed__()`](https://docs

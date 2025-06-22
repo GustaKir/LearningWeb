@@ -1,0 +1,31 @@
+Title: Class Lookup Rules in Python
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: This document discusses the differences between classic classes and new-style classes in Python regarding method lookup. It explains that classic classes use a simple depth-first search for method resolution, which can lead to issues, like not finding methods in subclasses. New-style classes improve on this by modifying the lookup algorithm for better accuracy, especially in complex inheritance scenarios. The document also notes upcoming changes in Python 2.3 that further refine method resolution.
+---
+
+```
+
+The lookup rule for classic classes is simple but not very smart; the base classes are searched depth-first, going from left to right. A reference to `D.save()` will search the classes `D`, `B`, and then `A`, where `save()` would be found and returned. `C.save()` would never be found at all. This is bad, because if `C`’s `save()` method is saving some internal state specific to `C`, not calling it will result in that state never getting saved.
+New-style classes follow a different algorithm that’s a bit more complicated to explain, but does the right thing in this situation. (Note that Python 2.3 changes this algorithm to one that produces the same results in most cases, but produces more useful results for really complicated inheritance graphs.)
+  1. List all the base classes, following the classic lookup rule and include a class multiple times if it’s visited repeatedly. In the above example, the list of visited classes is [`D`, `B`, `A`, `C`, `A`].
+  2. Scan the list for duplicated classes. If any are found, remove all but one occurrence, leaving the _last_ one in the list. In the above example, the list becomes [`D`, `B`, `C`, `A`] after dropping duplicates.
+
+
+Following this rule, referring to `D.save()` will return `C.save()`, which is the behaviour we’re after. This lookup rule is the same as the one followed by Common Lisp. A new built-in function, [`super()`](https://docs.python.org/3/library/functions.html#super "super"), provides a way to get at a class’s superclasses without having to reimplement Python’s algorithm. The most commonly used form will be `super(class, obj)`, which returns a bound superclass object (not the actual class object). This form will be used in methods to call a method in the superclass; for example, `D`’s `save()` method would look like this:
+```
+classD (B,C):
+  defsave (self):
+    # Call superclass .save()
+    super(D, self).save()
+    # Save D's private information here
+    ...
+
+```
+
+[`super()`](https://docs.python.org/3/library/functions.html#super "super") can also return unbound superclass objects when called as `super(class)` or `super(class1, class2)`, but this probably won’t often be useful.
+### Attribute Access[¶](https://docs.python.org/3/whatsnew/2.2.html#attribute-access "Link to this heading")
+A fair number of sophisticated Python classes define hooks for attribute access using [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__"); most commonly this is done for convenience, to make code more readable by automatically mapping an attribute access such as `obj.parent` into a method call such as `obj.get_parent`. Python 2.2 adds some new ways of controlling attribute access.
+First, `__getattr__(attr_name)` is still supported by new-style classes, and nothing about it has changed. As before, it will be called when an attempt is made to access `obj.foo` and no attribute named `foo` is found in the instance’s dictionary.
+New-style classes also support a new method, `__getattribute__(attr_name)`. The difference between the two methods is that [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") is _always_ called whenever any attribute is accessed, while the old [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") is only called if `foo` isn’t found in the instance’s dictionary.
+However, Python 2.2’s support for _properties_ will often be a simpler way to trap attribute references. Writing a `__getattr__()` method is complicated because to avoid recursion you can’t use regular attribute accesses inside them, and instead have to mess around with the contents of [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__"). [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") methods also end up being called by Python when it checks for other methods such as [`__repr__()`](https://docs.python.org/3/reference/datamodel.html#object.__repr__ "object.__repr__") or `__coerce__()`, and so have to be written with this in mind. Finally, calling a function on every attribute access results in a sizable performance loss.
+[`property`](https://docs.python.org/3/library/functions.html#property "property") is a new built-in type that packages up three functions that get, set, or delete an attribute, and a docstring. For example, if you want to define a `size` attribute that’s computed, but also settable, you could write:

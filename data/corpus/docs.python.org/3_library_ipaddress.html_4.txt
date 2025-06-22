@@ -1,0 +1,66 @@
+Title: IPv4Address and IPv6Address Privacy and Global Reachability
+URL: https://docs.python.org/3/library/ipaddress.html
+Summary: `is_private` indicates whether an IP address is private, being the opposite of `is_global` except for the `100.64.0.0/10` range. Updates in version 3.13 adjusted which addresses are classified as private or global, including changes to the private classification for specific IPv4 and IPv6 addresses, along with noted exceptions for certain ranges.
+---
+
+```
+
+
+
+`is_private` has value opposite to [`is_global`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_global "ipaddress.IPv4Address.is_global"), except for the shared address space (`100.64.0.0/10` range) where they are both `False`.
+Changed in version 3.13: Fixed some false positives and false negatives.
+  * `192.0.0.0/24` is considered private with the exception of `192.0.0.9/32` and `192.0.0.10/32` (previously: only the `192.0.0.0/29` sub-range was considered private).
+  * `64:ff9b:1::/48` is considered private.
+  * `2002::/16` is considered private.
+  * There are exceptions within `2001::/23` (otherwise considered private): `2001:1::1/128`, `2001:1::2/128`, `2001:3::/32`, `2001:4:112::/48`, `2001:20::/28`, `2001:30::/28`. The exceptions are not considered private.
+
+
+
+is_global[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_global "Link to this definition")
+    
+`True` if the address is defined as globally reachable by [iana-ipv4-special-registry](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml) (for IPv4) or [iana-ipv6-special-registry](https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml) (for IPv6) with the following exception:
+For IPv4-mapped IPv6-addresses the `is_private` value is determined by the semantics of the underlying IPv4 addresses and the following condition holds (see [`IPv6Address.ipv4_mapped`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv6Address.ipv4_mapped "ipaddress.IPv6Address.ipv4_mapped")):
+```
+address.is_global == address.ipv4_mapped.is_global
+
+```
+
+`is_global` has value opposite to [`is_private`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_private "ipaddress.IPv4Address.is_private"), except for the shared address space (`100.64.0.0/10` range) where they are both `False`.
+Added in version 3.4.
+Changed in version 3.13: Fixed some false positives and false negatives, see [`is_private`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_private "ipaddress.IPv4Address.is_private") for details. 
+
+is_unspecified[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_unspecified "Link to this definition")
+    
+`True` if the address is unspecified. See [**RFC 5735**](https://datatracker.ietf.org/doc/html/rfc5735.html) (for IPv4) or [**RFC 2373**](https://datatracker.ietf.org/doc/html/rfc2373.html) (for IPv6). 
+
+is_reserved[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_reserved "Link to this definition")
+    
+`True` if the address is otherwise IETF reserved. 
+
+is_loopback[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_loopback "Link to this definition")
+    
+`True` if this is a loopback address. See [**RFC 3330**](https://datatracker.ietf.org/doc/html/rfc3330.html) (for IPv4) or [**RFC 2373**](https://datatracker.ietf.org/doc/html/rfc2373.html) (for IPv6). 
+
+is_link_local[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_link_local "Link to this definition")
+    
+`True` if the address is reserved for link-local usage. See [**RFC 3927**](https://datatracker.ietf.org/doc/html/rfc3927.html). 
+
+ipv6_mapped[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.ipv6_mapped "Link to this definition")
+    
+[`IPv4Address`](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address "ipaddress.IPv4Address") object representing the IPv4-mapped IPv6 address. See [**RFC 4291**](https://datatracker.ietf.org/doc/html/rfc4291.html).
+Added in version 3.13. 
+
+IPv4Address.__format__(_fmt_)[¶](https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.__format__ "Link to this definition")
+    
+Returns a string representation of the IP address, controlled by an explicit format string. _fmt_ can be one of the following: `'s'`, the default option, equivalent to [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str"), `'b'` for a zero-padded binary string, `'X'` or `'x'` for an uppercase or lowercase hexadecimal representation, or `'n'`, which is equivalent to `'b'` for IPv4 addresses and `'x'` for IPv6. For binary and hexadecimal representations, the form specifier `'#'` and the grouping option `'_'` are available. `__format__` is used by `format`, `str.format` and f-strings.
+>>>```
+>>> format(ipaddress.IPv4Address('192.168.0.1'))
+'192.168.0.1'
+>>> '{:#b}'.format(ipaddress.IPv4Address('192.168.0.1'))
+'0b11000000101010000000000000000001'
+>>> f'{ipaddress.IPv6Address("2001:db8::1000"):s}'
+'2001:db8::1000'
+>>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
+'2001_0DB8_0000_0000_0000_0000_0000_1000'
+>>> '{:#_n}'.format(ipaddress.IPv6Address('2001:db8::1000'))
+'0x2001_0db8_0000_0000_0000_0000_0000_1000'

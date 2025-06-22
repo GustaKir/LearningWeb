@@ -1,0 +1,60 @@
+Title: Overloading Functions and Methods in Python
+URL: https://docs.python.org/3/library/typing.html
+Summary: The `@overload` decorator allows for the definition of functions and methods that accept various argument type combinations. This requires a series of `@overload` definitions followed by a single non-`@overload` definition. The overloaded definitions serve to inform type checkers and do not execute at runtime, where only the non-`@overload` version is active, leading to a `NotImplementedError` if the overloaded version is called directly.
+---
+
+@typing.overload[¶](https://docs.python.org/3/library/typing.html#typing.overload "Link to this definition")
+    
+Decorator for creating overloaded functions and methods.
+The `@overload` decorator allows describing functions and methods that support multiple different combinations of argument types. A series of `@overload`-decorated definitions must be followed by exactly one non-`@overload`-decorated definition (for the same function/method).
+`@overload`-decorated definitions are for the benefit of the type checker only, since they will be overwritten by the non-`@overload`-decorated definition. The non-`@overload`-decorated definition, meanwhile, will be used at runtime but should be ignored by a type checker. At runtime, calling an `@overload`-decorated function directly will raise [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError").
+An example of overload that gives a more precise type than can be expressed using a union or a type variable:
+```
+@overload
+defprocess(response: None) -> None:
+  ...
+@overload
+defprocess(response: int) -> tuple[int, str]:
+  ...
+@overload
+defprocess(response: bytes) -> str:
+  ...
+defprocess(response):
+  ... # actual implementation goes here
+
+```
+
+See [**PEP 484**](https://peps.python.org/pep-0484/) for more details and comparison with other typing semantics.
+Changed in version 3.11: Overloaded functions can now be introspected at runtime using [`get_overloads()`](https://docs.python.org/3/library/typing.html#typing.get_overloads "typing.get_overloads"). 
+
+typing.get_overloads(_func_)[¶](https://docs.python.org/3/library/typing.html#typing.get_overloads "Link to this definition")
+    
+Return a sequence of [`@overload`](https://docs.python.org/3/library/typing.html#typing.overload "typing.overload")-decorated definitions for _func_.
+_func_ is the function object for the implementation of the overloaded function. For example, given the definition of `process` in the documentation for [`@overload`](https://docs.python.org/3/library/typing.html#typing.overload "typing.overload"), `get_overloads(process)` will return a sequence of three function objects for the three defined overloads. If called on a function with no overloads, `get_overloads()` returns an empty sequence.
+`get_overloads()` can be used for introspecting an overloaded function at runtime.
+Added in version 3.11. 
+
+typing.clear_overloads()[¶](https://docs.python.org/3/library/typing.html#typing.clear_overloads "Link to this definition")
+    
+Clear all registered overloads in the internal registry.
+This can be used to reclaim the memory used by the registry.
+Added in version 3.11. 
+
+@typing.final[¶](https://docs.python.org/3/library/typing.html#typing.final "Link to this definition")
+    
+Decorator to indicate final methods and final classes.
+Decorating a method with `@final` indicates to a type checker that the method cannot be overridden in a subclass. Decorating a class with `@final` indicates that it cannot be subclassed.
+For example:
+```
+classBase:
+  @final
+  defdone(self) -> None:
+    ...
+classSub(Base):
+  defdone(self) -> None: # Error reported by type checker
+    ...
+@final
+classLeaf:
+  ...
+classOther(Leaf): # Error reported by type checker
+  ...

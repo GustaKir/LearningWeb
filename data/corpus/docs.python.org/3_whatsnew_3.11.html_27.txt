@@ -1,0 +1,20 @@
+Title: Opcode Replacements in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: This section details the replacement of several opcodes in Python 3.11. Notable changes include the consolidation of numeric binary and in-place opcodes into a single opcode, the decoupling of method argument handling from keyword arguments, and the introduction of new stack manipulation instructions.
+---
+
+### Replaced opcodes[¶](https://docs.python.org/3/whatsnew/3.11.html#replaced-opcodes "Link to this heading")
+Replaced Opcode(s) | New Opcode(s) | Notes  
+---|---|---  
+`BINARY_*` `INPLACE_*` | [`BINARY_OP`](https://docs.python.org/3/library/dis.html#opcode-BINARY_OP) | Replaced all numeric binary/in-place opcodes with a single opcode  
+`CALL_FUNCTION` `CALL_FUNCTION_KW` `CALL_METHOD` |  [`CALL`](https://docs.python.org/3/library/dis.html#opcode-CALL) `KW_NAMES` `PRECALL` [`PUSH_NULL`](https://docs.python.org/3/library/dis.html#opcode-PUSH_NULL) | Decouples argument shifting for methods from handling of keyword arguments; allows better specialization of calls  
+`DUP_TOP` `DUP_TOP_TWO` `ROT_TWO` `ROT_THREE` `ROT_FOUR` `ROT_N` |  [`COPY`](https://docs.python.org/3/library/dis.html#opcode-COPY) [`SWAP`](https://docs.python.org/3/library/dis.html#opcode-SWAP) | Stack manipulation instructions  
+`JUMP_IF_NOT_EXC_MATCH` |  [`CHECK_EXC_MATCH`](https://docs.python.org/3/library/dis.html#opcode-CHECK_EXC_MATCH) | Now performs check but doesn’t jump  
+`JUMP_ABSOLUTE` `POP_JUMP_IF_FALSE` `POP_JUMP_IF_TRUE` |  [`JUMP_BACKWARD`](https://docs.python.org/3/library/dis.html#opcode-JUMP_BACKWARD) `POP_JUMP_BACKWARD_IF_*` `POP_JUMP_FORWARD_IF_*` | See [[3]](https://docs.python.org/3/whatsnew/3.11.html#bytecode-jump); `TRUE`, `FALSE`, `NONE` and `NOT_NONE` variants for each direction  
+`SETUP_WITH` `SETUP_ASYNC_WITH` | [`BEFORE_WITH`](https://docs.python.org/3/library/dis.html#opcode-BEFORE_WITH) | [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) block setup  
+[[3](https://docs.python.org/3/whatsnew/3.11.html#id4)]
+All jump opcodes are now relative, including the existing `JUMP_IF_TRUE_OR_POP` and `JUMP_IF_FALSE_OR_POP`. The argument is now an offset from the current instruction rather than an absolute location.
+### Changed/removed opcodes[¶](https://docs.python.org/3/whatsnew/3.11.html#changed-removed-opcodes "Link to this heading")
+  * Changed [`MATCH_CLASS`](https://docs.python.org/3/library/dis.html#opcode-MATCH_CLASS) and [`MATCH_KEYS`](https://docs.python.org/3/library/dis.html#opcode-MATCH_KEYS) to no longer push an additional boolean value to indicate success/failure. Instead, `None` is pushed on failure in place of the tuple of extracted values.
+  * Changed opcodes that work with exceptions to reflect them now being represented as one item on the stack instead of three (see [gh-89874](https://github.com/python/cpython/issues/89874)).
+  * Removed `COPY_DICT_WITHOUT_KEYS`, `GEN_START`, `POP_BLOCK`, `SETUP_FINALLY` and `YIELD_FROM`.

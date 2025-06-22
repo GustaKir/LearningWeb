@@ -1,0 +1,35 @@
+Title: Using Callbacks with Streamlit Widgets
+URL: https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state
+Summary: This section discusses the use of callbacks in Streamlit widgets, specifically those with `on_click` and `on_change` events. It highlights how to create a callback function above the widget declaration and link it to widgets such as `st.button`, `st.download_button`, and `st.form_submit_button`. Additionally, it explains how to use the Session State API to access and set values of form inputs during form submission.
+---
+
+Widgets which support the `on_click` event:
+  * `st.button`
+  * `st.download_button`
+  * `st.form_submit_button`
+
+
+To add a callback, define a callback function **above** the widget declaration and pass it to the widget via the `on_change` (or `on_click` ) parameter.
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#forms-and-callbacks)Forms and Callbacks
+Widgets inside a form can have their values be accessed and set via the Session State API. `st.form_submit_button` can have a callback associated with it. The callback gets executed upon clicking on the submit button. For example:
+`def form_callback():   st.write(st.session_state.my_slider)   st.write(st.session_state.my_checkbox) with st.form(key='my_form'):   slider_input = st.slider('My slider', 0, 10, 5, key='my_slider')   checkbox_input = st.checkbox('Yes or No', key='my_checkbox')   submit_button = st.form_submit_button(label='Submit', on_click=form_callback) `
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#serializable-session-state)Serializable Session State
+Serialization refers to the process of converting an object or data structure into a format that can be persisted and shared, and allowing you to recover the data’s original structure. Python’s built-in [pickle](https://docs.python.org/3/develop/pickle.html) module serializes Python objects to a byte stream ("pickling") and deserializes the stream into an object ("unpickling").
+By default, Streamlit’s [Session State](https://docs.streamlit.io/develop/concepts/architecture/session-state) allows you to persist any Python object for the duration of the session, irrespective of the object’s pickle-serializability. This property lets you store Python primitives such as integers, floating-point numbers, complex numbers and booleans, dataframes, and even [lambdas](https://docs.python.org/3/reference/expressions.html#lambda) returned by functions. However, some execution environments may require serializing all data in Session State, so it may be useful to detect incompatibility during development, or when the execution environment will stop supporting it in the future.
+To that end, Streamlit provides a `runner.enforceSerializableSessionState` [configuration option](https://docs.streamlit.io/develop/concepts/configuration) that, when set to `true`, only allows pickle-serializable objects in Session State. To enable the option, either create a global or project config file with the following or use it as a command-line flag:
+`# .streamlit/config.toml [runner] enforceSerializableSessionState = true `
+By "_pickle-serializable_ ", we mean calling `pickle.dumps(obj)` should not raise a [`PicklingError`](https://docs.python.org/3/develop/pickle.html#pickle.PicklingError) exception. When the config option is enabled, adding unserializable data to session state should result in an exception. E.g.,
+`import streamlit as st def unserializable_data(): return lambda x: x #👇 results in an exception when enforceSerializableSessionState is on st.session_state.unserializable = unserializable_data() `
+![UnserializableSessionStateError](https://docs.streamlit.io/images/unserializable-session-state-error.png) _priority_high_
+#### Warning
+When `runner.enforceSerializableSessionState` is set to `true`, Session State implicitly uses the `pickle` module, which is known to be insecure. Ensure all data saved and retrieved from Session State is trusted because it is possible to construct malicious pickle data that will execute arbitrary code during unpickling. Never load data that could have come from an untrusted source in an unsafe mode or that could have been tampered with. **Only load data you trust**.
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#caveats-and-limitations)Caveats and limitations
+  * Only the `st.form_submit_button` has a callback in forms. Other widgets inside a form are not allowed to have callbacks.
+  * `on_change` and `on_click` events are only supported on input type widgets.
+  * Modifying the value of a widget via the Session state API, after instantiating it, is not allowed and will raise a `StreamlitAPIException`. For example:
+`slider = st.slider(   label='My Slider', min_value=1,   max_value=10, value=5, key='my_slider') st.session_state.my_slider = 7 # Throws an exception! `
+![state-modified-instantiated-exception](https://docs.streamlit.io/images/state_modified_instantiated_exception.png)
+  * Setting the widget state via the Session State API and using the `value` parameter in the widget declaration is not recommended, and will throw a warning on the first run. For example:
+`st.session_state.my_slider = 7 slider = st.slider(   label='Choose a Value', min_value=1,   max_value=10, value=5, key='my_slider') `
+![state-value-api-exception](https://docs.streamlit.io/images/state_value_api_exception.png)
+  * Setting the state of button-like widgets: `st.button`, `st.download_butt

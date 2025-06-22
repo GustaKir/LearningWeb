@@ -1,0 +1,41 @@
+Title: Custom CookiePolicy Implementation
+URL: https://docs.python.org/3/library/http.cookiejar.html
+Summary: This section describes a class that extends the CookiePolicy interface, enabling users to manage domain-specific cookie permissions through blocklists and allowlists. It also discusses the strictness settings that modify the handling of cookies according to the Netscape protocol, allowing for finer control over cookie interactions.
+---
+
+```
+
+In addition to the features required to implement the [`CookiePolicy`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.CookiePolicy "http.cookiejar.CookiePolicy") interface, this class allows you to block and allow domains from setting and receiving cookies. There are also some strictness switches that allow you to tighten up the rather loose Netscape protocol rules a little bit (at the cost of blocking some benign cookies).
+A domain blocklist and allowlist is provided (both off by default). Only domains not in the blocklist and present in the allowlist (if the allowlist is active) participate in cookie setting and returning. Use the _blocked_domains_ constructor argument, and `blocked_domains()` and `set_blocked_domains()` methods (and the corresponding argument and methods for _allowed_domains_). If you set an allowlist, you can turn it off again by setting it to [`None`](https://docs.python.org/3/library/constants.html#None "None").
+Domains in block or allow lists that do not start with a dot must equal the cookie domain to be matched. For example, `"example.com"` matches a blocklist entry of `"example.com"`, but `"www.example.com"` does not. Domains that do start with a dot are matched by more specific domains too. For example, both `"www.example.com"` and `"www.coyote.example.com"` match `".example.com"` (but `"example.com"` itself does not). IP addresses are an exception, and must match exactly. For example, if blocked_domains contains `"192.168.1.2"` and `".168.1.2"`, 192.168.1.2 is blocked, but 193.168.1.2 is not.
+[`DefaultCookiePolicy`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy "http.cookiejar.DefaultCookiePolicy") implements the following additional methods: 
+
+DefaultCookiePolicy.blocked_domains()[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy.blocked_domains "Link to this definition")
+    
+Return the sequence of blocked domains (as a tuple). 
+
+DefaultCookiePolicy.set_blocked_domains(_blocked_domains_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy.set_blocked_domains "Link to this definition")
+    
+Set the sequence of blocked domains. 
+
+DefaultCookiePolicy.is_blocked(_domain_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy.is_blocked "Link to this definition")
+    
+Return `True` if _domain_ is on the blocklist for setting or receiving cookies. 
+
+DefaultCookiePolicy.allowed_domains()[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy.allowed_domains "Link to this definition")
+    
+Return [`None`](https://docs.python.org/3/library/constants.html#None "None"), or the sequence of allowed domains (as a tuple). 
+
+DefaultCookiePolicy.set_allowed_domains(_allowed_domains_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy.set_allowed_domains "Link to this definition")
+    
+Set the sequence of allowed domains, or [`None`](https://docs.python.org/3/library/constants.html#None "None"). 
+
+DefaultCookiePolicy.is_not_allowed(_domain_)[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy.is_not_allowed "Link to this definition")
+    
+Return `True` if _domain_ is not on the allowlist for setting or receiving cookies.
+[`DefaultCookiePolicy`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy "http.cookiejar.DefaultCookiePolicy") instances have the following attributes, which are all initialised from the constructor arguments of the same name, and which may all be assigned to. 
+
+DefaultCookiePolicy.rfc2109_as_netscape[¶](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy.rfc2109_as_netscape "Link to this definition")
+    
+If true, request that the [`CookieJar`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.CookieJar "http.cookiejar.CookieJar") instance downgrade [**RFC 2109**](https://datatracker.ietf.org/doc/html/rfc2109.html) cookies (ie. cookies received in a _Set-Cookie_ header with a version cookie-attribute of 1) to Netscape cookies by setting the version attribute of the [`Cookie`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.Cookie "http.cookiejar.Cookie") instance to 0. The default value is [`None`](https://docs.python.org/3/library/constants.html#None "None"), in which case RFC 2109 cookies are downgraded if and only if [**RFC 2965**](https://datatracker.ietf.org/doc/html/rfc2965.html) handling is turned off. Therefore, RFC 2109 cookies are downgraded by default.
+General strictness switches:

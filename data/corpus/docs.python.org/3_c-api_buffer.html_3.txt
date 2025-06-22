@@ -1,0 +1,37 @@
+Title: Buffer Protocol: Strides and Suboffsets
+URL: https://docs.python.org/3/c-api/buffer.html
+Summary: This document chunk details the 'strides' array within the buffer protocol, which indicates the number of bytes to skip for accessing new elements across dimensions in an array, and highlights that strides can be any integer, including negative values. It also introduces the 'suboffsets' array, emphasizing that strides are read-only for the consumer and directing users to further information on complex arrays.
+---
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*strides[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.strides "Link to this definition")
+    
+An array of [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") of length [`ndim`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim "Py_buffer.ndim") giving the number of bytes to skip to get to a new element in each dimension.
+Stride values can be any integer. For regular arrays, strides are usually positive, but a consumer MUST be able to handle the case `strides[n] <= 0`. See [complex arrays](https://docs.python.org/3/c-api/buffer.html#complex-arrays) for further information.
+The strides array is read-only for the consumer. 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*suboffsets[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.suboffsets "Link to this definition")
+    
+An array of [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") of length [`ndim`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim "Py_buffer.ndim"). If `suboffsets[n] >= 0`, the values stored along the nth dimension are pointers and the suboffset value dictates how many bytes to add to each pointer after de-referencing. A suboffset value that is negative indicates that no de-referencing should occur (striding in a contiguous memory block).
+If all suboffsets are negative (i.e. no de-referencing is needed), then this field must be `NULL` (the default value).
+This type of array representation is used by the Python Imaging Library (PIL). See [complex arrays](https://docs.python.org/3/c-api/buffer.html#complex-arrays) for further information how to access elements of such an array.
+The suboffsets array is read-only for the consumer. 
+
+void*internal[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.internal "Link to this definition")
+    
+This is for use internally by the exporting object. For example, this might be re-cast as an integer by the exporter and used to store flags about whether or not the shape, strides, and suboffsets arrays must be freed when the buffer is released. The consumer MUST NOT alter this value.
+Constants: 
+
+PyBUF_MAX_NDIM[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_MAX_NDIM "Link to this definition")
+    
+The maximum number of dimensions the memory represents. Exporters MUST respect this limit, consumers of multi-dimensional buffers SHOULD be able to handle up to `PyBUF_MAX_NDIM` dimensions. Currently set to 64.
+## Buffer request types[¶](https://docs.python.org/3/c-api/buffer.html#buffer-request-types "Link to this heading")
+Buffers are usually obtained by sending a buffer request to an exporting object via [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer"). Since the complexity of the logical structure of the memory can vary drastically, the consumer uses the _flags_ argument to specify the exact buffer type it can handle.
+All [`Py_buffer`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer") fields are unambiguously defined by the request type.
+### request-independent fields[¶](https://docs.python.org/3/c-api/buffer.html#request-independent-fields "Link to this heading")
+The following fields are not influenced by _flags_ and must always be filled in with the correct values: [`obj`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.obj "Py_buffer.obj"), [`buf`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.buf "Py_buffer.buf"), [`len`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.len "Py_buffer.len"), [`itemsize`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Py_buffer.itemsize"), [`ndim`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim "Py_buffer.ndim").
+### readonly, format[¶](https://docs.python.org/3/c-api/buffer.html#readonly-format "Link to this heading")
+> 
+
+PyBUF_WRITABLE[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_WRITABLE "Link to this definition")
+    
+> Controls the [`readonly`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.readonly "Py_buffer.readonly") field. If set, the exporter MUST provide a writable buffer or else report failure. Otherwise, the exporter MAY provide either a read-only or writable buffer, but the choice MUST be consistent for all consumers. For example, [PyBUF_SIMPLE](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_SIMPLE "PyBUF_SIMPLE")|[PyBUF_WRITABLE](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_WRITABLE "PyBUF_WRITABLE") can be used to request a simple writable buffer.

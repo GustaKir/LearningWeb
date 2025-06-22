@@ -1,0 +1,75 @@
+Title: Handling Signals and Blocking Code in Asyncio
+URL: https://docs.python.org/3/library/asyncio-dev.html
+Summary: The event loop in asyncio must run in the main thread to handle signals. The `loop.run_in_executor()` method allows blocking code to execute in a separate OS thread using `concurrent.futures.ThreadPoolExecutor`, preventing blockage of the main event loop. Currently, coroutines or callbacks cannot be scheduled directly from different processes, such as those created with `multiprocessing`. The document also references methods for non-blocking I/O operations.
+---
+
+```
+
+To handle signals the event loop must be run in the main thread.
+The [`loop.run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor") method can be used with a [`concurrent.futures.ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor") to execute blocking code in a different OS thread without blocking the OS thread that the event loop runs in.
+There is currently no way to schedule coroutines or callbacks directly from a different process (such as one started with [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.")). The [Event Loop Methods](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop-methods) section lists APIs that can read from pipes and watch file descriptors without blocking the event loop. In addition, asyncio’s [Subprocess](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio-subprocess) APIs provide a way to start a process and communicate with it from the event loop. Lastly, the aforementioned [`loop.run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor") method can also be used with a [`concurrent.futures.ProcessPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ProcessPoolExecutor "concurrent.futures.ProcessPoolExecutor") to execute code in a different process.
+## Running Blocking Code[¶](https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code "Link to this heading")
+Blocking (CPU-bound) code should not be called directly. For example, if a function performs a CPU-intensive calculation for 1 second, all concurrent asyncio Tasks and IO operations would be delayed by 1 second.
+An executor can be used to run a task in a different thread or even in a different process to avoid blocking the OS thread with the event loop. See the [`loop.run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor") method for more details.
+## Logging[¶](https://docs.python.org/3/library/asyncio-dev.html#logging "Link to this heading")
+asyncio uses the [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") module and all logging is performed via the `"asyncio"` logger.
+The default log level is [`logging.INFO`](https://docs.python.org/3/library/logging.html#logging.INFO "logging.INFO"), which can be easily adjusted:
+```
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+
+```
+
+Network logging can block the event loop. It is recommended to use a separate thread for handling logs or use non-blocking IO. For example, see [Dealing with handlers that block](https://docs.python.org/3/howto/logging-cookbook.html#blocking-handlers).
+## Detect never-awaited coroutines[¶](https://docs.python.org/3/library/asyncio-dev.html#detect-never-awaited-coroutines "Link to this heading")
+When a coroutine function is called, but not awaited (e.g. `coro()` instead of `await coro()`) or the coroutine is not scheduled with [`asyncio.create_task()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task "asyncio.create_task"), asyncio will emit a [`RuntimeWarning`](https://docs.python.org/3/library/exceptions.html#RuntimeWarning "RuntimeWarning"):
+```
+importasyncio
+async deftest():
+  print("never scheduled")
+async defmain():
+  test()
+asyncio.run(main())
+
+```
+
+Output:
+```
+test.py:7: RuntimeWarning: coroutine 'test' was never awaited
+ test()
+
+```
+
+Output in debug mode:
+```
+test.py:7: RuntimeWarning: coroutine 'test' was never awaited
+Coroutine created at (most recent call last)
+ File "../t.py", line 9, in <module>
+  asyncio.run(main(), debug=True)
+ < .. >
+ File "../t.py", line 7, in main
+  test()
+ test()
+
+```
+
+The usual fix is to either await the coroutine or call the [`asyncio.create_task()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task "asyncio.create_task") function:
+```
+async defmain():
+  await test()
+
+```
+
+## Detect never-retrieved exceptions[¶](https://docs.python.org/3/library/asyncio-dev.html#detect-never-retrieved-exceptions "Link to this heading")
+If a [`Future.set_exception()`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future.set_exception "asyncio.Future.set_exception") is called but the Future object is never awaited on, the exception would never be propagated to the user code. In this case, asyncio would emit a log message when the Future object is garbage collected.
+Example of an unhandled exception:
+```
+importasyncio
+async defbug():
+  raise Exception("not consumed")
+async defmain():
+  asyncio.create_task(bug())
+asyncio.run(main())
+
+```
+
+Output:

@@ -1,0 +1,35 @@
+Title: Building Arbitrary Values in Python C API
+URL: https://docs.python.org/3/extending/extending.html
+Summary: This section discusses the `Py_BuildValue()` function, which allows for the creation of new Python objects from C values. It explains how this function recognizes format units similar to `PyArg_ParseTuple()`, with a key differentiation that it takes values instead of pointers as inputs. This function is essential for returning Python objects from C functions.
+---
+
+```
+
+## 1.9. Building Arbitrary Values[¶](https://docs.python.org/3/extending/extending.html#building-arbitrary-values "Link to this heading")
+This function is the counterpart to [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"). It is declared as follows:
+```
+PyObject*Py_BuildValue(constchar*format,...);
+
+```
+
+It recognizes a set of format units similar to the ones recognized by [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"), but the arguments (which are input to the function, not output) must not be pointers, just values. It returns a new Python object, suitable for returning from a C function called from Python.
+One difference with [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"): while the latter requires its first argument to be a tuple (since Python argument lists are always represented as tuples internally), [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") does not always build a tuple. It builds a tuple only if its format string contains two or more format units. If the format string is empty, it returns `None`; if it contains exactly one format unit, it returns whatever object is described by that format unit. To force it to return a tuple of size 0 or one, parenthesize the format string.
+Examples (to the left the call, to the right the resulting Python value):
+```
+Py_BuildValue("")            None
+Py_BuildValue("i", 123)         123
+Py_BuildValue("iii", 123, 456, 789)   (123, 456, 789)
+Py_BuildValue("s", "hello")       'hello'
+Py_BuildValue("y", "hello")       b'hello'
+Py_BuildValue("ss", "hello", "world")  ('hello', 'world')
+Py_BuildValue("s#", "hello", 4)     'hell'
+Py_BuildValue("y#", "hello", 4)     b'hell'
+Py_BuildValue("()")           ()
+Py_BuildValue("(i)", 123)        (123,)
+Py_BuildValue("(ii)", 123, 456)     (123, 456)
+Py_BuildValue("(i,i)", 123, 456)     (123, 456)
+Py_BuildValue("[i,i]", 123, 456)     [123, 456]
+Py_BuildValue("{s:i,s:i}",
+       "abc", 123, "def", 456)  {'abc': 123, 'def': 456}
+Py_BuildValue("((ii)(ii)) (ii)",
+       1, 2, 3, 4, 5, 6)     (((1, 2), (3, 4)), (5, 6))

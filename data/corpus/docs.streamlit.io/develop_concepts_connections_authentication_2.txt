@@ -1,0 +1,28 @@
+Title: User Cookies and Session Management in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/connections/authentication
+Summary: Streamlit manages user authentication through identity cookies, allowing automatic login across tabs. Calling `st.logout()` removes the cookie and initiates a new session, logging the user out only from the current session. Users remain logged in across other sessions unless logged out explicitly. Identity cookies expire after 30 days if not manually logged out.
+---
+
+## [](https://docs.streamlit.io/develop/concepts/connections/authentication#user-cookies-and-logging-out)User cookies and logging out
+Streamlit checks for the identity cookie at the beginning of each new session. If a user logs in to your app in one tab and then opens a new tab, they will automatically be logged in to your app in the new tab. When you call `st.logout()` in a user session, Streamlit removes the identity cookie and starts a new session. This logs the user out from the current session. However, if they were logged in to other sessions already, they will remain logged in within those sessions. The information in `st.experimental_user` is updated at the beginning of a session (which is why `st.login()` and `st.logout()` both start new sessions after saving or deleting the identity cookie).
+If a user closes your app without logging out, the identity cookie will expire after 30 days. This expiration time is not configurable and is not tied to any expiration time that may be returned in your user's identity token. If you need to prevent persistent authentication in your app, check the expiration information returned by the identity provider in `st.experimental_user` and manually call `st.logout()` when needed.
+Streamlit does not modify or delete any cookies saved directly by your identity provider. For example, if you use Google as your identity provider and a user logs in to your app with Google, they will remain logged in to their Google account after they log out of your app with `st.logout()`.
+## [](https://docs.streamlit.io/develop/concepts/connections/authentication#setting-up-an-identity-provider)Setting up an identity provider
+In order to use an identity provider, you must first configure your identity provider through an admin account. This typically involves setting up a client or application within the identity provider's system. Follow the documentation for your identity provider. As a general overview, an identity-provider client typically does the following:
+  * Manages the list of your users.
+  * Optional: Allows users to add themselves to your user list.
+  * Declares the set of attributes passed from each user account to the client (which is then passed to your Streamlit app).
+  * Only allows authentication requests to come from your Streamlit app.
+  * Redirects users back to your Streamlit app after they authenticate.
+
+
+To configure your app, you'll need the following:
+  * Your app's URL For example, use `http://localhost:8501` for most local development cases.
+  * A redirect URL, which is your app's URL with the pathname `oauth2callback` For example, `http://localhost:8501/oauth2callback` for most local development cases.
+  * A cookie secret, which should be a strong, randomly generated string
+
+
+After you use this information to configure your identity-provider client, you'll receive the following information from your identity provider:
+  * Client ID
+  * Client secret
+  * Server metadata URL

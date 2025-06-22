@@ -1,0 +1,165 @@
+Title: Memoryview Object Updates in Python
+URL: https://docs.python.org/3/library/stdtypes.html
+Summary: In Python 3.3, the `tolist()` method of memoryview objects was enhanced to support all single character native formats from the struct module and multi-dimensional representations. The `toreadonly()` method was introduced to create a read-only version of the memoryview that cannot be modified. An example demonstrates the behavior of `toreadonly()` and its effect on the original memoryview.
+---
+
+```
+
+Changed in version 3.3: [`tolist()`](https://docs.python.org/3/library/stdtypes.html#memoryview.tolist "memoryview.tolist") now supports all single character native formats in [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") module syntax as well as multi-dimensional representations. 
+
+toreadonly()[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.toreadonly "Link to this definition")
+    
+Return a readonly version of the memoryview object. The original memoryview object is unchanged.
+>>>```
+>>> m = memoryview(bytearray(b'abc'))
+>>> mm = m.toreadonly()
+>>> mm.tolist()
+[97, 98, 99]
+>>> mm[0] = 42
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: cannot modify read-only memory
+>>> m[0] = 43
+>>> mm.tolist()
+[43, 98, 99]
+
+```
+
+Added in version 3.8. 
+
+release()[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.release "Link to this definition")
+    
+Release the underlying buffer exposed by the memoryview object. Many objects take special actions when a view is held on them (for example, a [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") would temporarily forbid resizing); therefore, calling release() is handy to remove these restrictions (and free any dangling resources) as soon as possible.
+After this method has been called, any further operation on the view raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") (except [`release()`](https://docs.python.org/3/library/stdtypes.html#memoryview.release "memoryview.release") itself which can be called multiple times):
+>>>```
+>>> m = memoryview(b'abc')
+>>> m.release()
+>>> m[0]
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ValueError: operation forbidden on released memoryview object
+
+```
+
+The context management protocol can be used for a similar effect, using the `with` statement:
+>>>```
+>>> with memoryview(b'abc') as m:
+...   m[0]
+...
+97
+>>> m[0]
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ValueError: operation forbidden on released memoryview object
+
+```
+
+Added in version 3.2. 
+
+cast(_format_[, _shape_])[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.cast "Link to this definition")
+    
+Cast a memoryview to a new format or shape. _shape_ defaults to `[byte_length//new_itemsize]`, which means that the result view will be one-dimensional. The return value is a new memoryview, but the buffer itself is not copied. Supported casts are 1D -> C-[contiguous](https://docs.python.org/3/glossary.html#term-contiguous) and C-contiguous -> 1D.
+The destination format is restricted to a single element native format in [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") syntax. One of the formats must be a byte format (‘B’, ‘b’ or ‘c’). The byte length of the result must be the same as the original length. Note that all byte lengths may depend on the operating system.
+Cast 1D/long to 1D/unsigned bytes:
+>>>```
+>>> importarray
+>>> a = array.array('l', [1,2,3])
+>>> x = memoryview(a)
+>>> x.format
+'l'
+>>> x.itemsize
+8
+>>> len(x)
+3
+>>> x.nbytes
+24
+>>> y = x.cast('B')
+>>> y.format
+'B'
+>>> y.itemsize
+1
+>>> len(y)
+24
+>>> y.nbytes
+24
+
+```
+
+Cast 1D/unsigned bytes to 1D/char:
+>>>```
+>>> b = bytearray(b'zyz')
+>>> x = memoryview(b)
+>>> x[0] = b'a'
+Traceback (most recent call last):
+...
+TypeError: memoryview: invalid type for format 'B'
+>>> y = x.cast('c')
+>>> y[0] = b'a'
+>>> b
+bytearray(b'ayz')
+
+```
+
+Cast 1D/bytes to 3D/ints to 1D/signed char:
+>>>```
+>>> importstruct
+>>> buf = struct.pack("i"*12, *list(range(12)))
+>>> x = memoryview(buf)
+>>> y = x.cast('i', shape=[2,2,3])
+>>> y.tolist()
+[[[0, 1, 2], [3, 4, 5]], [[6, 7, 8], [9, 10, 11]]]
+>>> y.format
+'i'
+>>> y.itemsize
+4
+>>> len(y)
+2
+>>> y.nbytes
+48
+>>> z = y.cast('b')
+>>> z.format
+'b'
+>>> z.itemsize
+1
+>>> len(z)
+48
+>>> z.nbytes
+48
+
+```
+
+Cast 1D/unsigned long to 2D/unsigned long:
+>>>```
+>>> buf = struct.pack("L"*6, *list(range(6)))
+>>> x = memoryview(buf)
+>>> y = x.cast('L', shape=[2,3])
+>>> len(y)
+2
+>>> y.nbytes
+48
+>>> y.tolist()
+[[0, 1, 2], [3, 4, 5]]
+
+```
+
+Added in version 3.3.
+Changed in version 3.5: The source format is no longer restricted when casting to a byte view.
+There are also several readonly attributes available: 
+
+obj[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.obj "Link to this definition")
+    
+The underlying object of the memoryview:
+>>>```
+>>> b = bytearray(b'xyz')
+>>> m = memoryview(b)
+>>> m.obj is b
+True
+
+```
+
+Added in version 3.3. 
+
+nbytes[¶](https://docs.python.org/3/library/stdtypes.html#memoryview.nbytes "Link to this definition")
+    
+`nbytes == product(shape) * itemsize == len(m.tobytes())`. This is the amount of space in bytes that the array would use in a contiguous representation. It is not necessarily equal to `len(m)`:
+>>>

@@ -1,0 +1,68 @@
+Title: unittest.mock PropertyMock and Assertion Methods
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section discusses various assertion methods in the unittest.mock library, including assert_called_with, assert_called_once_with, assert_has_calls, and assert_any_call. It also notes the enhancements made in version 3.4 regarding signature introspection for specced and autospecced mock objects.
+---
+
+```
+
+This applies to [`assert_called_with()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called_with "unittest.mock.Mock.assert_called_with"), [`assert_called_once_with()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called_once_with "unittest.mock.Mock.assert_called_once_with"), [`assert_has_calls()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_has_calls "unittest.mock.Mock.assert_has_calls") and [`assert_any_call()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_any_call "unittest.mock.Mock.assert_any_call"). When [Autospeccing](https://docs.python.org/3/library/unittest.mock.html#auto-speccing), it will also apply to method calls on the mock object.
+Changed in version 3.4: Added signature introspection on specced and autospecced mock objects. 
+
+_class_ unittest.mock.PropertyMock(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock "Link to this definition")
+    
+A mock intended to be used as a [`property`](https://docs.python.org/3/library/functions.html#property "property"), or other [descriptor](https://docs.python.org/3/glossary.html#term-descriptor), on a class. [`PropertyMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock "unittest.mock.PropertyMock") provides [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") and [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__") methods so you can specify a return value when it is fetched.
+Fetching a [`PropertyMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock "unittest.mock.PropertyMock") instance from an object calls the mock, with no args. Setting it calls the mock with the value being set.
+>>>```
+>>> classFoo:
+...   @property
+...   deffoo(self):
+...     return 'something'
+...   @foo.setter
+...   deffoo(self, value):
+...     pass
+...
+>>> with patch('__main__.Foo.foo', new_callable=PropertyMock) as mock_foo:
+...   mock_foo.return_value = 'mockity-mock'
+...   this_foo = Foo()
+...   print(this_foo.foo)
+...   this_foo.foo = 6
+...
+mockity-mock
+>>> mock_foo.mock_calls
+[call(), call(6)]
+
+```
+
+Because of the way mock attributes are stored you can’t directly attach a [`PropertyMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock "unittest.mock.PropertyMock") to a mock object. Instead you can attach it to the mock type object:
+>>>```
+>>> m = MagicMock()
+>>> p = PropertyMock(return_value=3)
+>>> type(m).foo = p
+>>> m.foo
+3
+>>> p.assert_called_once_with()
+
+```
+
+Caution
+If an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") is raised by [`PropertyMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.PropertyMock "unittest.mock.PropertyMock"), it will be interpreted as a missing descriptor and [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") will be called on the parent mock:
+>>>```
+>>> m = MagicMock()
+>>> no_attribute = PropertyMock(side_effect=AttributeError)
+>>> type(m).my_property = no_attribute
+>>> m.my_property
+<MagicMock name='mock.my_property' id='140165240345424'>
+
+```
+
+See [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") for details. 
+
+_class_ unittest.mock.AsyncMock(_spec =None_, _side_effect =None_, _return_value =DEFAULT_, _wraps =None_, _name =None_, _spec_set =None_, _unsafe =False_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "Link to this definition")
+    
+An asynchronous version of [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock"). The [`AsyncMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "unittest.mock.AsyncMock") object will behave so the object is recognized as an async function, and the result of a call is an awaitable.
+>>>```
+>>> mock = AsyncMock()
+>>> asyncio.iscoroutinefunction(mock)
+True
+>>> inspect.isawaitable(mock())
+True

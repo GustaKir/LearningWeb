@@ -1,0 +1,37 @@
+Title: Understanding HTTPS and TLS Termination
+URL: https://fastapi.tiangolo.com/deployment/https/
+Summary: This section explains the process of HTTPS requests and TLS encryption. It outlines how a client's HTTPS request is sent through an encrypted TCP connection, how the TLS Termination Proxy decrypts the request to forward a plain HTTP request to the application, and how the application processes this request to send an unencrypted HTTP response back.
+---
+
+ion Proxy) have an **encrypted TCP connection** , they can start the **HTTP communication**.
+So, the client sends an **HTTPS request**. This is just an HTTP request through an encrypted TLS connection.
+![](https://fastapi.tiangolo.com/img/deployment/https/https04.svg)
+### Decrypt the Request[¶](https://fastapi.tiangolo.com/deployment/https/#decrypt-the-request "Permanent link")
+The TLS Termination Proxy would use the encryption agreed to **decrypt the request** , and would transmit the **plain (decrypted) HTTP request** to the process running the application (for example a process with Uvicorn running the FastAPI application).
+![](https://fastapi.tiangolo.com/img/deployment/https/https05.svg)
+### HTTP Response[¶](https://fastapi.tiangolo.com/deployment/https/#http-response "Permanent link")
+The application would process the request and send a **plain (unencrypted) HTTP response** to the TLS Termination Proxy.
+![](https://fastapi.tiangolo.com/img/deployment/https/https06.svg)
+### HTTPS Response[¶](https://fastapi.tiangolo.com/deployment/https/#https-response "Permanent link")
+The TLS Termination Proxy would then **encrypt the response** using the cryptography agreed before (that started with the certificate for `someapp.example.com`), and send it back to the browser.
+Next, the browser would verify that the response is valid and encrypted with the right cryptographic key, etc. It would then **decrypt the response** and process it.
+![](https://fastapi.tiangolo.com/img/deployment/https/https07.svg)
+The client (browser) will know that the response comes from the correct server because it is using the cryptography they agreed using the **HTTPS certificate** before.
+### Multiple Applications[¶](https://fastapi.tiangolo.com/deployment/https/#multiple-applications "Permanent link")
+In the same server (or servers), there could be **multiple applications** , for example, other API programs or a database.
+Only one process can be handling the specific IP and port (the TLS Termination Proxy in our example) but the other applications/processes can be running on the server(s) too, as long as they don't try to use the same **combination of public IP and port**.
+![](https://fastapi.tiangolo.com/img/deployment/https/https08.svg)
+That way, the TLS Termination Proxy could handle HTTPS and certificates for **multiple domains** , for multiple applications, and then transmit the requests to the right application in each case.
+### Certificate Renewal[¶](https://fastapi.tiangolo.com/deployment/https/#certificate-renewal "Permanent link")
+At some point in the future, each certificate would **expire** (about 3 months after acquiring it).
+And then, there would be another program (in some cases it's another program, in some cases it could be the same TLS Termination Proxy) that would talk to Let's Encrypt, and renew the certificate(s).
+![](https://fastapi.tiangolo.com/img/deployment/https/https.svg)
+The **TLS certificates** are **associated with a domain name** , not with an IP address.
+So, to renew the certificates, the renewal program needs to **prove** to the authority (Let's Encrypt) that it indeed **"owns" and controls that domain**.
+To do that, and to accommodate different application needs, there are several ways it can do it. Some popular ways are:
+  * **Modify some DNS records**.
+    * For this, the renewal program needs to support the APIs of the DNS provider, so, depending on the DNS provider you are using, this might or might not be an option.
+  * **Run as a server** (at least during the certificate acquisition process) on the public IP address associated with the domain.
+    * As we said above, only one process can be listening on a specific IP and port.
+    * This is one of the reasons why it's very useful when the same TLS Termination Proxy also takes care of the certificate renewal process.
+    * Otherwise, you might have to stop the TLS Termination Proxy momentarily, start the renewal program to acquire the certificates, then configure them with the TLS Termination Proxy, and then restart the TLS Termination Proxy. This is not ideal, as your app(s) will not be available during the time that the TLS Termination Proxy is off.

@@ -1,0 +1,30 @@
+Title: Initializing Type Instances with PyType_Ready
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: The document explains the necessity of calling `PyType_Ready()` before creating any instances of a type, as it initializes the `ob_type` to the base class if it is `NULL`. It also notes that the `ob_type` field is inherited by subtypes.
+---
+
+```
+
+This should be done before any instances of the type are created. [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready") checks if [`ob_type`](https://docs.python.org/3/c-api/typeobj.html#c.PyObject.ob_type "PyObject.ob_type") is `NULL`, and if so, initializes it to the [`ob_type`](https://docs.python.org/3/c-api/typeobj.html#c.PyObject.ob_type "PyObject.ob_type") field of the base class. [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready") will not change this field if it is non-zero.
+**Inheritance:**
+This field is inherited by subtypes.
+## PyVarObject Slots[¶](https://docs.python.org/3/c-api/typeobj.html#pyvarobject-slots "Link to this heading") 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")[PyVarObject](https://docs.python.org/3/c-api/structures.html#c.PyVarObject "PyVarObject").ob_size[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyVarObject.ob_size "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+For [statically allocated type objects](https://docs.python.org/3/c-api/typeobj.html#static-types), this should be initialized to zero. For [dynamically allocated type objects](https://docs.python.org/3/c-api/typeobj.html#heap-types), this field has a special internal meaning.
+This field should be accessed using the [`Py_SIZE()`](https://docs.python.org/3/c-api/structures.html#c.Py_SIZE "Py_SIZE") and [`Py_SET_SIZE()`](https://docs.python.org/3/c-api/structures.html#c.Py_SET_SIZE "Py_SET_SIZE") macros.
+**Inheritance:**
+This field is not inherited by subtypes.
+## PyTypeObject Slots[¶](https://docs.python.org/3/c-api/typeobj.html#pytypeobject-slots "Link to this heading")
+Each slot has a section describing inheritance. If [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready") may set a value when the field is set to `NULL` then there will also be a “Default” section. (Note that many fields set on [`PyBaseObject_Type`](https://docs.python.org/3/c-api/structures.html#c.PyBaseObject_Type "PyBaseObject_Type") and [`PyType_Type`](https://docs.python.org/3/c-api/type.html#c.PyType_Type "PyType_Type") effectively act as defaults.) 
+
+constchar*[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_name[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_name "Link to this definition")
+    
+Pointer to a NUL-terminated string containing the name of the type. For types that are accessible as module globals, the string should be the full module name, followed by a dot, followed by the type name; for built-in types, it should be just the type name. If the module is a submodule of a package, the full package name is part of the full module name. For example, a type named `T` defined in module `M` in subpackage `Q` in package `P` should have the [`tp_name`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_name "PyTypeObject.tp_name") initializer `"P.Q.M.T"`.
+For [dynamically allocated type objects](https://docs.python.org/3/c-api/typeobj.html#heap-types), this should just be the type name, and the module name explicitly stored in the type dict as the value for key `'__module__'`.
+For [statically allocated type objects](https://docs.python.org/3/c-api/typeobj.html#static-types), the _tp_name_ field should contain a dot. Everything before the last dot is made accessible as the [`__module__`](https://docs.python.org/3/reference/datamodel.html#type.__module__ "type.__module__") attribute, and everything after the last dot is made accessible as the [`__name__`](https://docs.python.org/3/reference/datamodel.html#type.__name__ "type.__name__") attribute.
+If no dot is present, the entire [`tp_name`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_name "PyTypeObject.tp_name") field is made accessible as the [`__name__`](https://docs.python.org/3/reference/datamodel.html#type.__name__ "type.__name__") attribute, and the [`__module__`](https://docs.python.org/3/reference/datamodel.html#type.__module__ "type.__module__") attribute is undefined (unless explicitly set in the dictionary, as explained above). This means your type will be impossible to pickle. Additionally, it will not be listed in module documentations created with pydoc.
+This field must not be `NULL`. It is the only required field in [`PyTypeObject()`](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject") (other than potentially [`tp_itemsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_itemsize "PyTypeObject.tp_itemsize")).
+**Inheritance:**
+This field is not inherited by subtypes.

@@ -1,0 +1,33 @@
+Title: ConfigParser Default Values
+URL: https://docs.python.org/3/library/configparser.html
+Summary: Default values in ConfigParser are utilized for interpolation when options are undefined. Example code demonstrates creating a ConfigParser instance with defaults, reading a configuration file, and retrieving options with and without prior definitions.
+---
+
+```
+
+Default values are available in both types of ConfigParsers. They are used in interpolation if an option used is not defined elsewhere.
+```
+importconfigparser
+# New instance with 'bar' and 'baz' defaulting to 'Life' and 'hard' each
+config = configparser.ConfigParser({'bar': 'Life', 'baz': 'hard'})
+config.read('example.cfg')
+print(config.get('Section1', 'foo'))   # -> "Python is fun!"
+config.remove_option('Section1', 'bar')
+config.remove_option('Section1', 'baz')
+print(config.get('Section1', 'foo'))   # -> "Life is hard!"
+
+```
+
+## ConfigParser Objects[¶](https://docs.python.org/3/library/configparser.html#configparser-objects "Link to this heading") 
+
+_class_ configparser.ConfigParser(_defaults =None_, _dict_type =dict_, _allow_no_value =False_, _*_ , _delimiters =('=', ':')_, _comment_prefixes =('#', ';')_, _inline_comment_prefixes =None_, _strict =True_, _empty_lines_in_values =True_, _default_section =configparser.DEFAULTSECT_, _interpolation =BasicInterpolation()_, _converters ={}_, _allow_unnamed_section =False_)[¶](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser "Link to this definition")
+    
+The main configuration parser. When _defaults_ is given, it is initialized into the dictionary of intrinsic defaults. When _dict_type_ is given, it will be used to create the dictionary objects for the list of sections, for the options within a section, and for the default values.
+When _delimiters_ is given, it is used as the set of substrings that divide keys from values. When _comment_prefixes_ is given, it will be used as the set of substrings that prefix comments in otherwise empty lines. Comments can be indented. When _inline_comment_prefixes_ is given, it will be used as the set of substrings that prefix comments in non-empty lines.
+When _strict_ is `True` (the default), the parser won’t allow for any section or option duplicates while reading from a single source (file, string or dictionary), raising [`DuplicateSectionError`](https://docs.python.org/3/library/configparser.html#configparser.DuplicateSectionError "configparser.DuplicateSectionError") or [`DuplicateOptionError`](https://docs.python.org/3/library/configparser.html#configparser.DuplicateOptionError "configparser.DuplicateOptionError"). When _empty_lines_in_values_ is `False` (default: `True`), each empty line marks the end of an option. Otherwise, internal empty lines of a multiline option are kept as part of the value. When _allow_no_value_ is `True` (default: `False`), options without values are accepted; the value held for these is `None` and they are serialized without the trailing delimiter.
+When _default_section_ is given, it specifies the name for the special section holding default values for other sections and interpolation purposes (normally named `"DEFAULT"`). This value can be retrieved and changed at runtime using the `default_section` instance attribute. This won’t re-evaluate an already parsed config file, but will be used when writing parsed settings to a new config file.
+Interpolation behaviour may be customized by providing a custom handler through the _interpolation_ argument. `None` can be used to turn off interpolation completely, `ExtendedInterpolation()` provides a more advanced variant inspired by `zc.buildout`. More on the subject in the [dedicated documentation section](https://docs.python.org/3/library/configparser.html#interpolation-of-values).
+All option names used in interpolation will be passed through the [`optionxform()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.optionxform "configparser.ConfigParser.optionxform") method just like any other option name reference. For example, using the default implementation of [`optionxform()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.optionxform "configparser.ConfigParser.optionxform") (which converts option names to lower case), the values `foo %(bar)s` and `foo %(BAR)s` are equivalent.
+When _converters_ is given, it should be a dictionary where each key represents the name of a type converter and each value is a callable implementing the conversion from string to the desired datatype. Every converter gets its own corresponding `get*()` method on the parser object and section proxies.
+When _allow_unnamed_section_ is `True` (default: `False`), the first section name can be omitted. See the [“Unnamed Sections” section](https://docs.python.org/3/library/configparser.html#unnamed-sections).
+It is possible to read several configurations into a single [`ConfigParser`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser "configparser.ConfigParser"), where the most recently added configuration has the highest priority. Any conflicting keys are taken from the more recent configuration while the previously existing keys are retained. The example below reads in an `override.ini` file, which will override any conflicting keys from the `example.ini` file.

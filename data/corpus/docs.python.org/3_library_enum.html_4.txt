@@ -1,0 +1,135 @@
+Title: Enum Class Methods in Python
+URL: https://docs.python.org/3/library/enum.html
+Summary: This documentation chunk describes the __init__, __init_subclass__, and _missing_ methods of the Enum class in Python. The __init__ method handles member assignments and initializes them with multiple values as separate arguments. The __init_subclass__ is a class method for configuring subclasses, while _missing_ provides a way to look up values not found in the class, with the option for custom behavior.
+---
+
+```
+
+
+__init__(_self_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/enum.html#enum.Enum.__init__ "Link to this definition")
+    
+By default, does nothing. If multiple values are given in the member assignment, those values become separate arguments to `__init__`; e.g.
+>>>```
+>>> fromenumimport Enum
+>>> classWeekday(Enum):
+...   MONDAY = 1, 'Mon'
+
+```
+
+`Weekday.__init__()` would be called as `Weekday.__init__(self, 1, 'Mon')` 
+
+__init_subclass__(_cls_ , _** kwds_)[¶](https://docs.python.org/3/library/enum.html#enum.Enum.__init_subclass__ "Link to this definition")
+    
+A _classmethod_ that is used to further configure subsequent subclasses. By default, does nothing. 
+
+_missing_(_cls_ , _value_)[¶](https://docs.python.org/3/library/enum.html#enum.Enum._missing_ "Link to this definition")
+    
+A _classmethod_ for looking up values not found in _cls_. By default it does nothing, but can be overridden to implement custom search behavior:
+>>>```
+>>> fromenumimport StrEnum
+>>> classBuild(StrEnum):
+...   DEBUG = auto()
+...   OPTIMIZED = auto()
+...   @classmethod
+...   def_missing_(cls, value):
+...     value = value.lower()
+...     for member in cls:
+...       if member.value == value:
+...         return member
+...     return None
+...
+>>> Build.DEBUG.value
+'debug'
+>>> Build('deBUG')
+<Build.DEBUG: 'debug'>
+
+```
+
+
+__new__(_cls_ , _* args_, _** kwds_)[¶](https://docs.python.org/3/library/enum.html#enum.Enum.__new__ "Link to this definition")
+    
+By default, doesn’t exist. If specified, either in the enum class definition or in a mixin class (such as `int`), all values given in the member assignment will be passed; e.g.
+>>>```
+>>> fromenumimport Enum
+>>> classMyIntEnum(int, Enum):
+...   TWENTYSIX = '1a', 16
+
+```
+
+results in the call `int('1a', 16)` and a value of `26` for the member.
+Note
+When writing a custom `__new__`, do not use `super().__new__` – call the appropriate `__new__` instead. 
+
+__repr__(_self_)[¶](https://docs.python.org/3/library/enum.html#enum.Enum.__repr__ "Link to this definition")
+    
+Returns the string used for _repr()_ calls. By default, returns the _Enum_ name, member name, and value, but can be overridden:
+>>>```
+>>> classOtherStyle(Enum):
+...   ALTERNATE = auto()
+...   OTHER = auto()
+...   SOMETHING_ELSE = auto()
+...   def__repr__(self):
+...     cls_name = self.__class__.__name__
+...     return f'{cls_name}.{self.name}'
+...
+>>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+(OtherStyle.ALTERNATE, 'OtherStyle.ALTERNATE', 'OtherStyle.ALTERNATE')
+
+```
+
+
+__str__(_self_)[¶](https://docs.python.org/3/library/enum.html#enum.Enum.__str__ "Link to this definition")
+    
+Returns the string used for _str()_ calls. By default, returns the _Enum_ name and member name, but can be overridden:
+>>>```
+>>> classOtherStyle(Enum):
+...   ALTERNATE = auto()
+...   OTHER = auto()
+...   SOMETHING_ELSE = auto()
+...   def__str__(self):
+...     return f'{self.name}'
+...
+>>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+(<OtherStyle.ALTERNATE: 1>, 'ALTERNATE', 'ALTERNATE')
+
+```
+
+
+__format__(_self_)[¶](https://docs.python.org/3/library/enum.html#enum.Enum.__format__ "Link to this definition")
+    
+Returns the string used for _format()_ and _f-string_ calls. By default, returns [`__str__()`](https://docs.python.org/3/library/enum.html#enum.Enum.__str__ "enum.Enum.__str__") return value, but can be overridden:
+>>>```
+>>> classOtherStyle(Enum):
+...   ALTERNATE = auto()
+...   OTHER = auto()
+...   SOMETHING_ELSE = auto()
+...   def__format__(self, spec):
+...     return f'{self.name}'
+...
+>>> OtherStyle.ALTERNATE, str(OtherStyle.ALTERNATE), f"{OtherStyle.ALTERNATE}"
+(<OtherStyle.ALTERNATE: 1>, 'OtherStyle.ALTERNATE', 'ALTERNATE')
+
+```
+
+Note
+Using [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") with [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") results in integers of increasing value, starting with `1`.
+Changed in version 3.12: Added [Dataclass support](https://docs.python.org/3/howto/enum.html#enum-dataclass-support) 
+
+_class_ enum.IntEnum[¶](https://docs.python.org/3/library/enum.html#enum.IntEnum "Link to this definition")
+    
+_IntEnum_ is the same as [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum"), but its members are also integers and can be used anywhere that an integer can be used. If any integer operation is performed with an _IntEnum_ member, the resulting value loses its enumeration status.
+>>>```
+>>> fromenumimport IntEnum
+>>> classNumber(IntEnum):
+...   ONE = 1
+...   TWO = 2
+...   THREE = 3
+...
+>>> Number.THREE
+<Number.THREE: 3>
+>>> Number.ONE + Number.TWO
+3
+>>> Number.THREE + 5
+8
+>>> Number.THREE == 3
+True

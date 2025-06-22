@@ -1,0 +1,245 @@
+Title: WebSocket Receive Methods in FastAPI
+URL: https://fastapi.tiangolo.com/reference/websockets/
+Summary: This section covers the WebSocket receive methods available in FastAPI, specifically 'receive_bytes' and 'receive_json'. It explains the requirements for calling these methods, such as the WebSocket needing to be in a 'CONNECTED' state, and details the parameters for 'receive_json', emphasizing the acceptable modes ('text' or 'binary').
+---
+
+```
+| ```
+async defreceive_bytes(self) -> bytes:
+  if self.application_state != WebSocketState.CONNECTED:
+    raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+  message = await self.receive()
+  self._raise_on_disconnect(message)
+  return typing.cast(bytes, message["bytes"])
+
+```
+  
+---|---  
+###  receive_json `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.receive_json "Permanent link")
+```
+receive_json(mode='text')
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`mode` |  **TYPE:** `str` **DEFAULT:** `'text'`  
+Source code in `starlette/websockets.py`
+```
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+```
+| ```
+async defreceive_json(self, mode: str = "text") -> typing.Any:
+  if mode not in {"text", "binary"}:
+    raise RuntimeError('The "mode" argument should be "text" or "binary".')
+  if self.application_state != WebSocketState.CONNECTED:
+    raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+  message = await self.receive()
+  self._raise_on_disconnect(message)
+  if mode == "text":
+    text = message["text"]
+  else:
+    text = message["bytes"].decode("utf-8")
+  return json.loads(text)
+
+```
+  
+---|---  
+###  iter_text `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.iter_text "Permanent link")
+```
+iter_text()
+
+```
+
+Source code in `starlette/websockets.py`
+```
+143
+144
+145
+146
+147
+148
+```
+| ```
+async defiter_text(self) -> typing.AsyncIterator[str]:
+  try:
+    while True:
+      yield await self.receive_text()
+  except WebSocketDisconnect:
+    pass
+
+```
+  
+---|---  
+###  iter_bytes `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.iter_bytes "Permanent link")
+```
+iter_bytes()
+
+```
+
+Source code in `starlette/websockets.py`
+```
+150
+151
+152
+153
+154
+155
+```
+| ```
+async defiter_bytes(self) -> typing.AsyncIterator[bytes]:
+  try:
+    while True:
+      yield await self.receive_bytes()
+  except WebSocketDisconnect:
+    pass
+
+```
+  
+---|---  
+###  iter_json `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.iter_json "Permanent link")
+```
+iter_json()
+
+```
+
+Source code in `starlette/websockets.py`
+```
+157
+158
+159
+160
+161
+162
+```
+| ```
+async defiter_json(self) -> typing.AsyncIterator[typing.Any]:
+  try:
+    while True:
+      yield await self.receive_json()
+  except WebSocketDisconnect:
+    pass
+
+```
+  
+---|---  
+###  send_text `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.send_text "Permanent link")
+```
+send_text(data)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`data` |  **TYPE:** `str`  
+Source code in `starlette/websockets.py`
+```
+164
+165
+```
+| ```
+async defsend_text(self, data: str) -> None:
+  await self.send({"type": "websocket.send", "text": data})
+
+```
+  
+---|---  
+###  send_bytes `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.send_bytes "Permanent link")
+```
+send_bytes(data)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`data` |  **TYPE:** `bytes`  
+Source code in `starlette/websockets.py`
+```
+167
+168
+```
+| ```
+async defsend_bytes(self, data: bytes) -> None:
+  await self.send({"type": "websocket.send", "bytes": data})
+
+```
+  
+---|---  
+###  send_json `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.send_json "Permanent link")
+```
+send_json(data, mode='text')
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`data` |  **TYPE:** `Any`  
+`mode` |  **TYPE:** `str` **DEFAULT:** `'text'`  
+Source code in `starlette/websockets.py`
+```
+170
+171
+172
+173
+174
+175
+176
+177
+```
+| ```
+async defsend_json(self, data: typing.Any, mode: str = "text") -> None:
+  if mode not in {"text", "binary"}:
+    raise RuntimeError('The "mode" argument should be "text" or "binary".')
+  text = json.dumps(data, separators=(",", ":"), ensure_ascii=False)
+  if mode == "text":
+    await self.send({"type": "websocket.send", "text": text})
+  else:
+    await self.send({"type": "websocket.send", "bytes": text.encode("utf-8")})
+
+```
+  
+---|---  
+###  close `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.close "Permanent link")
+```
+close(code=1000, reason=None)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`code` |  **TYPE:** `int` **DEFAULT:** `1000`  
+`reason` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+Source code in `starlette/websockets.py`
+```
+179
+180
+```
+| ```
+async defclose(self, code: int = 1000, reason: str | None = None) -> None:
+  await self.send({"type": "websocket.close", "code": code, "reason": reason or ""})
+
+```
+  
+---|---  
+When a client disconnects, a `WebSocketDisconnect` exception is raised, you can catch it.
+You can import it directly form `fastapi`:
+```
+fromfastapiimport WebSocketDisconnect
+
+```
+
+##  fastapi.WebSocketDisconnect [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocketDisconnect "Permanent link")
+```
+WebSocketDisconnect(code=1000, reason=None)

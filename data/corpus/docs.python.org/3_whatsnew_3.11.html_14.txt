@@ -1,0 +1,23 @@
+Title: Improvements to gzip in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: The `gzip.compress()` function is optimized for the **mtime=0** argument, enhancing performance by utilizing a single `zlib.compress()` operation. This update alters the gzip file header's OS byte setting, which was previously set to 255 (unknown).
+---
+
+```
+
+(Contributed by Yurii Karabas in [bpo-46014](https://bugs.python.org/issue?@action=redirect&bpo=46014).)
+
+
+### gzip[¶](https://docs.python.org/3/whatsnew/3.11.html#gzip "Link to this heading")
+  * The [`gzip.compress()`](https://docs.python.org/3/library/gzip.html#gzip.compress "gzip.compress") function is now faster when used with the **mtime=0** argument as it delegates the compression entirely to a single [`zlib.compress()`](https://docs.python.org/3/library/zlib.html#zlib.compress "zlib.compress") operation. There is one side effect of this change: The gzip file header contains an “OS” byte in its header. That was traditionally always set to a value of 255 representing “unknown” by the [`gzip`](https://docs.python.org/3/library/gzip.html#module-gzip "gzip: Interfaces for gzip compression and decompression using file objects.") module. Now, when using [`compress()`](https://docs.python.org/3/library/gzip.html#gzip.compress "gzip.compress") with **mtime=0** , it may be set to a different value by the underlying zlib C library Python was linked against. (See [gh-112346](https://github.com/python/cpython/issues/112346) for details on the side effect.)
+
+
+### hashlib[¶](https://docs.python.org/3/whatsnew/3.11.html#hashlib "Link to this heading")
+  * [`hashlib.blake2b()`](https://docs.python.org/3/library/hashlib.html#hashlib.blake2b "hashlib.blake2b") and [`hashlib.blake2s()`](https://docs.python.org/3/library/hashlib.html#hashlib.blake2s "hashlib.blake2s") now prefer [libb2](https://www.blake2.net/) over Python’s vendored copy. (Contributed by Christian Heimes in [bpo-47095](https://bugs.python.org/issue?@action=redirect&bpo=47095).)
+  * The internal `_sha3` module with SHA3 and SHAKE algorithms now uses _tiny_sha3_ instead of the _Keccak Code Package_ to reduce code and binary size. The [`hashlib`](https://docs.python.org/3/library/hashlib.html#module-hashlib "hashlib: Secure hash and message digest algorithms.") module prefers optimized SHA3 and SHAKE implementations from OpenSSL. The change affects only installations without OpenSSL support. (Contributed by Christian Heimes in [bpo-47098](https://bugs.python.org/issue?@action=redirect&bpo=47098).)
+  * Add [`hashlib.file_digest()`](https://docs.python.org/3/library/hashlib.html#hashlib.file_digest "hashlib.file_digest"), a helper function for efficient hashing of files or file-like objects. (Contributed by Christian Heimes in [gh-89313](https://github.com/python/cpython/issues/89313).)
+
+
+### IDLE and idlelib[¶](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-idle "Link to this heading")
+  * Apply syntax highlighting to `.pyi` files. (Contributed by Alex Waygood and Terry Jan Reedy in [bpo-45447](https://bugs.python.org/issue?@action=redirect&bpo=45447).)
+  * Include prompts when saving Shell with inputs and outputs. (Contributed by Terry Jan Reedy in [gh-95191](https://github.com/python/cpython/issues/95191).)

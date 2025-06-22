@@ -1,0 +1,122 @@
+Title: classProperty in Python Descriptors
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section defines the `classProperty` descriptor, which allows for properties that function like class-level decorators. It includes methods for getting, setting, and deleting properties, as well as additional functions for defining getter, setter, and deleter methods.
+---
+
+```
+classProperty:
+  "Emulate PyProperty_Type() in Objects/descrobject.c"
+  def__init__(self, fget=None, fset=None, fdel=None, doc=None):
+    self.fget = fget
+    self.fset = fset
+    self.fdel = fdel
+    if doc is None and fget is not None:
+      doc = fget.__doc__
+    self.__doc__ = doc
+  def__set_name__(self, owner, name):
+    self.__name__ = name
+  def__get__(self, obj, objtype=None):
+    if obj is None:
+      return self
+    if self.fget is None:
+      raise AttributeError
+    return self.fget(obj)
+  def__set__(self, obj, value):
+    if self.fset is None:
+      raise AttributeError
+    self.fset(obj, value)
+  def__delete__(self, obj):
+    if self.fdel is None:
+      raise AttributeError
+    self.fdel(obj)
+  defgetter(self, fget):
+    return type(self)(fget, self.fset, self.fdel, self.__doc__)
+  defsetter(self, fset):
+    return type(self)(self.fget, fset, self.fdel, self.__doc__)
+  defdeleter(self, fdel):
+    return type(self)(self.fget, self.fset, fdel, self.__doc__)
+
+```
+
+The [`property()`](https://docs.python.org/3/library/functions.html#property "property") builtin helps whenever a user interface has granted attribute access and then subsequent changes require the intervention of a method.
+For instance, a spreadsheet class may grant access to a cell value through `Cell('b10').value`. Subsequent improvements to the program require the cell to be recalculated on every access; however, the programmer does not want to affect existing client code accessing the attribute directly. The solution is to wrap access to the value attribute in a property data descriptor:
+```
+classCell:
+  ...
+  @property
+  defvalue(self):
+    "Recalculate the cell before returning value"
+    self.recalc()
+    return self._value
+
+```
+
+Either the built-in [`property()`](https://docs.python.org/3/library/functions.html#property "property") or our `Property()` equivalent would work in this example.
+### [Functions and methods](https://docs.python.org/3/howto/descriptor.html#id25)[¶](https://docs.python.org/3/howto/descriptor.html#functions-and-methods "Link to this heading")
+Python’s object oriented features are built upon a function based environment. Using non-data descriptors, the two are merged seamlessly.
+Functions stored in class dictionaries get turned into methods when invoked. Methods only differ from regular functions in that the object instance is prepended to the other arguments. By convention, the instance is called _self_ but could be called _this_ or any other variable name.
+Methods can be created manually with [`types.MethodType`](https://docs.python.org/3/library/types.html#types.MethodType "types.MethodType") which is roughly equivalent to:
+```
+classMethodType:
+  "Emulate PyMethod_Type in Objects/classobject.c"
+  def__init__(self, func, obj):
+    self.__func__ = func
+    self.__self__ = obj
+  def__call__(self, *args, **kwargs):
+    func = self.__func__
+    obj = self.__self__
+    return func(obj, *args, **kwargs)
+  def__getattribute__(self, name):
+    "Emulate method_getset() in Objects/classobject.c"
+    if name == '__doc__':
+      return self.__func__.__doc__
+    return object.__getattribute__(self, name)
+  def__getattr__(self, name):
+    "Emulate method_getattro() in Objects/classobject.c"
+    return getattr(self.__func__, name)
+  def__get__(self, obj, objtype=None):
+    "Emulate method_descr_get() in Objects/classobject.c"
+    return self
+
+```
+
+To support automatic creation of methods, functions include the [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") method for binding methods during attribute access. This means that functions are non-data descriptors that return bound methods during dotted lookup from an instance. Here’s how it works:
+```
+classFunction:
+  ...
+  def__get__(self, obj, objtype=None):
+    "Simulate func_descr_get() in Objects/funcobject.c"
+    if obj is None:
+      return self
+    return MethodType(self, obj)
+
+```
+
+Running the following class in the interpreter shows how the function descriptor works in practice:
+```
+classD:
+  deff(self):
+     return self
+classD2:
+  pass
+
+```
+
+The function has a [qualified name](https://docs.python.org/3/glossary.html#term-qualified-name) attribute to support introspection:
+>>>```
+>>> D.f.__qualname__
+'D.f'
+
+```
+
+Accessing the function through the class dictionary does not invoke [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__"). Instead, it just returns the underlying function object:
+>>>```
+>>> D.__dict__['f']
+<function D.f at 0x00C45070>
+
+```
+
+Dotted access from a class calls [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") which just returns the underlying function unchanged:
+>>>```
+>>> D.f
+<function D.f at 0x00C45070>

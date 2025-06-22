@@ -1,0 +1,90 @@
+Title: Python 3.10: Syntax Errors and Indentation Updates
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: The documentation highlights specific syntax errors introduced in Python 3.10, including the misuse of `=` in comparisons and the improper use of `*` in f-strings, both leading to SyntaxErrors. Additionally, it mentions updates related to IndentationErrors, enhancing error handling in Python.
+---
+
+```
+
+(Contributed by Pablo Galindo in [bpo-44305](https://bugs.python.org/issue?@action=redirect&bpo=44305).)
+  * Usage of `=` instead of `==` in comparisons:
+>>>```
+>>> if rocket.position = event_horizon:
+ File "<stdin>", line 1
+if rocket.position = event_horizon:
+^
+SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+```
+
+(Contributed by Pablo Galindo in [bpo-43797](https://bugs.python.org/issue?@action=redirect&bpo=43797).)
+  * Usage of `*` in f-strings:
+>>>```
+>>> f"Black holes {*all_black_holes} and revelations"
+ File "<stdin>", line 1
+(*all_black_holes)
+^
+SyntaxError: f-string: cannot use starred expression here
+
+```
+
+(Contributed by Pablo Galindo in [bpo-41064](https://bugs.python.org/issue?@action=redirect&bpo=41064).)
+
+
+#### IndentationErrors[¶](https://docs.python.org/3/whatsnew/3.10.html#indentationerrors "Link to this heading")
+Many [`IndentationError`](https://docs.python.org/3/library/exceptions.html#IndentationError "IndentationError") exceptions now have more context regarding what kind of block was expecting an indentation, including the location of the statement:
+>>>```
+>>> deffoo():
+...   if lel:
+...   x = 2
+ File "<stdin>", line 3
+x = 2
+^
+IndentationError: expected an indented block after 'if' statement in line 2
+
+```
+
+#### AttributeErrors[¶](https://docs.python.org/3/whatsnew/3.10.html#attributeerrors "Link to this heading")
+When printing [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"), `PyErr_Display()` will offer suggestions of similar attribute names in the object that the exception was raised from:
+>>>```
+>>> collections.namedtoplo
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+AttributeError: module 'collections' has no attribute 'namedtoplo'. Did you mean: namedtuple?
+
+```
+
+(Contributed by Pablo Galindo in [bpo-38530](https://bugs.python.org/issue?@action=redirect&bpo=38530).)
+Warning
+Notice this won’t work if `PyErr_Display()` is not called to display the error which can happen if some other custom error display function is used. This is a common scenario in some REPLs like IPython.
+#### NameErrors[¶](https://docs.python.org/3/whatsnew/3.10.html#nameerrors "Link to this heading")
+When printing [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") raised by the interpreter, `PyErr_Display()` will offer suggestions of similar variable names in the function that the exception was raised from:
+>>>```
+>>> schwarzschild_black_hole = None
+>>> schwarschild_black_hole
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+NameError: name 'schwarschild_black_hole' is not defined. Did you mean: schwarzschild_black_hole?
+
+```
+
+(Contributed by Pablo Galindo in [bpo-38530](https://bugs.python.org/issue?@action=redirect&bpo=38530).)
+Warning
+Notice this won’t work if `PyErr_Display()` is not called to display the error, which can happen if some other custom error display function is used. This is a common scenario in some REPLs like IPython.
+### PEP 626: Precise line numbers for debugging and other tools[¶](https://docs.python.org/3/whatsnew/3.10.html#pep-626-precise-line-numbers-for-debugging-and-other-tools "Link to this heading")
+PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools. Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
+The [`f_lineno`](https://docs.python.org/3/reference/datamodel.html#frame.f_lineno "frame.f_lineno") attribute of frame objects will always contain the expected line number.
+The [`co_lnotab`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_lnotab "codeobject.co_lnotab") attribute of [code objects](https://docs.python.org/3/reference/datamodel.html#code-objects) is deprecated and will be removed in 3.12. Code that needs to convert from offset to line number should use the new [`co_lines()`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_lines "codeobject.co_lines") method instead.
+### PEP 634: Structural Pattern Matching[¶](https://docs.python.org/3/whatsnew/3.10.html#pep-634-structural-pattern-matching "Link to this heading")
+Structural pattern matching has been added in the form of a _match statement_ and _case statements_ of patterns with associated actions. Patterns consist of sequences, mappings, primitive data types as well as class instances. Pattern matching enables programs to extract information from complex data types, branch on the structure of data, and apply specific actions based on different forms of data.
+#### Syntax and operations[¶](https://docs.python.org/3/whatsnew/3.10.html#syntax-and-operations "Link to this heading")
+The generic syntax of pattern matching is:
+```
+match subject:
+  case <pattern_1>:
+    <action_1>
+  case <pattern_2>:
+    <action_2>
+  case <pattern_3>:
+    <action_3>
+  case_:
+    <action_wildcard>

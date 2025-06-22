@@ -1,0 +1,105 @@
+Title: Understanding `mock()` in Async Functions
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: The `mock()` function returns an async function that resolves based on the `side_effect` or `return_value`. Depending on `side_effect`, it can return a result from a function, raise an exception, yield values from an iterable, or return a default value. If `side_effect` is not specified, it defaults to returning a new `AsyncMock` object.
+---
+
+```
+
+The result of `mock()` is an async function which will have the outcome of `side_effect` or `return_value` after it has been awaited:
+  * if `side_effect` is a function, the async function will return the result of that function,
+  * if `side_effect` is an exception, the async function will raise the exception,
+  * if `side_effect` is an iterable, the async function will return the next value of the iterable, however, if the sequence of result is exhausted, `StopAsyncIteration` is raised immediately,
+  * if `side_effect` is not defined, the async function will return the value defined by `return_value`, hence, by default, the async function returns a new [`AsyncMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "unittest.mock.AsyncMock") object.
+
+
+Setting the _spec_ of a [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") or [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") to an async function will result in a coroutine object being returned after calling.
+>>>```
+>>> async defasync_func(): pass
+...
+>>> mock = MagicMock(async_func)
+>>> mock
+<MagicMock spec='function' id='...'>
+>>> mock()
+<coroutine object AsyncMockMixin._mock_call at ...>
+
+```
+
+Setting the _spec_ of a [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock"), [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock"), or [`AsyncMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "unittest.mock.AsyncMock") to a class with asynchronous and synchronous functions will automatically detect the synchronous functions and set them as [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") (if the parent mock is [`AsyncMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "unittest.mock.AsyncMock") or [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock")) or [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") (if the parent mock is [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock")). All asynchronous functions will be [`AsyncMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "unittest.mock.AsyncMock").
+>>>```
+>>> classExampleClass:
+...   defsync_foo():
+...     pass
+...   async defasync_foo():
+...     pass
+...
+>>> a_mock = AsyncMock(ExampleClass)
+>>> a_mock.sync_foo
+<MagicMock name='mock.sync_foo' id='...'>
+>>> a_mock.async_foo
+<AsyncMock name='mock.async_foo' id='...'>
+>>> mock = Mock(ExampleClass)
+>>> mock.sync_foo
+<Mock name='mock.sync_foo' id='...'>
+>>> mock.async_foo
+<AsyncMock name='mock.async_foo' id='...'>
+
+```
+
+Added in version 3.8. 
+
+assert_awaited()[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.assert_awaited "Link to this definition")
+    
+Assert that the mock was awaited at least once. Note that this is separate from the object having been called, the `await` keyword must be used:
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain(coroutine_mock):
+...   await coroutine_mock
+...
+>>> coroutine_mock = mock()
+>>> mock.called
+True
+>>> mock.assert_awaited()
+Traceback (most recent call last):
+...
+AssertionError: Expected mock to have been awaited.
+>>> asyncio.run(main(coroutine_mock))
+>>> mock.assert_awaited()
+
+```
+
+
+assert_awaited_once()[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.assert_awaited_once "Link to this definition")
+    
+Assert that the mock was awaited exactly once.
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain():
+...   await mock()
+...
+>>> asyncio.run(main())
+>>> mock.assert_awaited_once()
+>>> asyncio.run(main())
+>>> mock.assert_awaited_once()
+Traceback (most recent call last):
+...
+AssertionError: Expected mock to have been awaited once. Awaited 2 times.
+
+```
+
+
+assert_awaited_with(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock.assert_awaited_with "Link to this definition")
+    
+Assert that the last await was with the specified arguments.
+>>>```
+>>> mock = AsyncMock()
+>>> async defmain(*args, **kwargs):
+...   await mock(*args, **kwargs)
+...
+>>> asyncio.run(main('foo', bar='bar'))
+>>> mock.assert_awaited_with('foo', bar='bar')
+>>> mock.assert_awaited_with('other')
+Traceback (most recent call last):
+...
+AssertionError: expected await not found.
+Expected: mock('other')
+Actual: mock('foo', bar='bar')

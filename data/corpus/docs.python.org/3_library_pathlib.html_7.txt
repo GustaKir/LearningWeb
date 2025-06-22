@@ -1,0 +1,89 @@
+Title: Concrete Paths in pathlib
+URL: https://docs.python.org/3/library/pathlib.html
+Summary: This section introduces concrete paths in Python's pathlib module, which are subclasses of pure path classes. Concrete paths allow system calls on path objects and can be instantiated via the pathlib.Path class, creating either PosixPath or WindowsPath objects.
+---
+
+```
+
+Added in version 3.12.
+## Concrete paths[¶](https://docs.python.org/3/library/pathlib.html#concrete-paths "Link to this heading")
+Concrete paths are subclasses of the pure path classes. In addition to operations provided by the latter, they also provide methods to do system calls on path objects. There are three ways to instantiate concrete paths: 
+
+_class_ pathlib.Path(_* pathsegments_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path "Link to this definition")
+    
+A subclass of [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath"), this class represents concrete paths of the system’s path flavour (instantiating it creates either a [`PosixPath`](https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath "pathlib.PosixPath") or a [`WindowsPath`](https://docs.python.org/3/library/pathlib.html#pathlib.WindowsPath "pathlib.WindowsPath")):
+>>>```
+>>> Path('setup.py')
+PosixPath('setup.py')
+
+```
+
+_pathsegments_ is specified similarly to [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath"). 
+
+_class_ pathlib.PosixPath(_* pathsegments_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.PosixPath "Link to this definition")
+    
+A subclass of [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") and [`PurePosixPath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePosixPath "pathlib.PurePosixPath"), this class represents concrete non-Windows filesystem paths:
+>>>```
+>>> PosixPath('/etc/hosts')
+PosixPath('/etc/hosts')
+
+```
+
+_pathsegments_ is specified similarly to [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath").
+Changed in version 3.13: Raises [`UnsupportedOperation`](https://docs.python.org/3/library/pathlib.html#pathlib.UnsupportedOperation "pathlib.UnsupportedOperation") on Windows. In previous versions, [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") was raised instead. 
+
+_class_ pathlib.WindowsPath(_* pathsegments_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.WindowsPath "Link to this definition")
+    
+A subclass of [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") and [`PureWindowsPath`](https://docs.python.org/3/library/pathlib.html#pathlib.PureWindowsPath "pathlib.PureWindowsPath"), this class represents concrete Windows filesystem paths:
+>>>```
+>>> WindowsPath('c:/', 'Users', 'Ximénez')
+WindowsPath('c:/Users/Ximénez')
+
+```
+
+_pathsegments_ is specified similarly to [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath").
+Changed in version 3.13: Raises [`UnsupportedOperation`](https://docs.python.org/3/library/pathlib.html#pathlib.UnsupportedOperation "pathlib.UnsupportedOperation") on non-Windows platforms. In previous versions, [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") was raised instead.
+You can only instantiate the class flavour that corresponds to your system (allowing system calls on non-compatible path flavours could lead to bugs or failures in your application):
+>>>```
+>>> importos
+>>> os.name
+'posix'
+>>> Path('setup.py')
+PosixPath('setup.py')
+>>> PosixPath('setup.py')
+PosixPath('setup.py')
+>>> WindowsPath('setup.py')
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ File "pathlib.py", line 798, in __new__
+% (cls.__name__,))
+UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
+
+```
+
+Some concrete path methods can raise an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") if a system call fails (for example because the path doesn’t exist).
+### Parsing and generating URIs[¶](https://docs.python.org/3/library/pathlib.html#parsing-and-generating-uris "Link to this heading")
+Concrete path objects can be created from, and represented as, ‘file’ URIs conforming to [**RFC 8089**](https://datatracker.ietf.org/doc/html/rfc8089.html).
+Note
+File URIs are not portable across machines with different [filesystem encodings](https://docs.python.org/3/library/os.html#filesystem-encoding). 
+
+_classmethod_ Path.from_uri(_uri_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.from_uri "Link to this definition")
+    
+Return a new path object from parsing a ‘file’ URI. For example:
+>>>```
+>>> p = Path.from_uri('file:///etc/hosts')
+PosixPath('/etc/hosts')
+
+```
+
+On Windows, DOS device and UNC paths may be parsed from URIs:
+>>>```
+>>> p = Path.from_uri('file:///c:/windows')
+WindowsPath('c:/windows')
+>>> p = Path.from_uri('file://server/share')
+WindowsPath('//server/share')
+
+```
+
+Several variant forms are supported:
+>>>

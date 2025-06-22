@@ -1,0 +1,65 @@
+Title: Multi-threading in Python
+URL: https://docs.python.org/3/tutorial/stdlib2.html
+Summary: This section introduces multi-threading in Python, explaining how threads can improve application responsiveness by decoupling tasks that are not sequentially dependent. It highlights the use of threads for parallel I/O operations and background computations.
+---
+
+```
+importstruct
+with open('myfile.zip', 'rb') as f:
+  data = f.read()
+start = 0
+for i in range(3):           # show the first 3 file headers
+  start += 14
+  fields = struct.unpack('<IIIHH', data[start:start+16])
+  crc32, comp_size, uncomp_size, filenamesize, extra_size = fields
+  start += 16
+  filename = data[start:start+filenamesize]
+  start += filenamesize
+  extra = data[start:start+extra_size]
+  print(filename, hex(crc32), comp_size, uncomp_size)
+  start += extra_size + comp_size   # skip to the next header
+
+```
+
+## 11.4. Multi-threading[¶](https://docs.python.org/3/tutorial/stdlib2.html#multi-threading "Link to this heading")
+Threading is a technique for decoupling tasks which are not sequentially dependent. Threads can be used to improve the responsiveness of applications that accept user input while other tasks run in the background. A related use case is running I/O in parallel with computations in another thread.
+The following code shows how the high level [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module can run tasks in background while the main program continues to run:
+```
+importthreading,zipfile
+classAsyncZip(threading.Thread):
+  def__init__(self, infile, outfile):
+    threading.Thread.__init__(self)
+    self.infile = infile
+    self.outfile = outfile
+  defrun(self):
+    f = zipfile.ZipFile(self.outfile, 'w', zipfile.ZIP_DEFLATED)
+    f.write(self.infile)
+    f.close()
+    print('Finished background zip of:', self.infile)
+background = AsyncZip('mydata.txt', 'myarchive.zip')
+background.start()
+print('The main program continues to run in foreground.')
+background.join()  # Wait for the background task to finish
+print('Main program waited until background was done.')
+
+```
+
+The principal challenge of multi-threaded applications is coordinating threads that share data or other resources. To that end, the threading module provides a number of synchronization primitives including locks, events, condition variables, and semaphores.
+While those tools are powerful, minor design errors can result in problems that are difficult to reproduce. So, the preferred approach to task coordination is to concentrate all access to a resource in a single thread and then use the [`queue`](https://docs.python.org/3/library/queue.html#module-queue "queue: A synchronized queue class.") module to feed that thread with requests from other threads. Applications using [`Queue`](https://docs.python.org/3/library/queue.html#queue.Queue "queue.Queue") objects for inter-thread communication and coordination are easier to design, more readable, and more reliable.
+## 11.5. Logging[¶](https://docs.python.org/3/tutorial/stdlib2.html#logging "Link to this heading")
+The [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") module offers a full featured and flexible logging system. At its simplest, log messages are sent to a file or to `sys.stderr`:
+```
+importlogging
+logging.debug('Debugging information')
+logging.info('Informational message')
+logging.warning('Warning:config file %s not found', 'server.conf')
+logging.error('Error occurred')
+logging.critical('Critical error -- shutting down')
+
+```
+
+This produces the following output:
+```
+WARNING:root:Warning:config file server.conf not found
+ERROR:root:Error occurred
+CRITICAL:root:Critical error -- shutting down

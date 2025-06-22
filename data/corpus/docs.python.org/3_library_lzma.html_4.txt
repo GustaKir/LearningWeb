@@ -1,0 +1,66 @@
+Title: LZMADecompressor Attributes
+URL: https://docs.python.org/3/library/lzma.html
+Summary: This section describes the attributes of the LZMADecompressor class, including integrity check ID, end-of-stream status, unused data post-stream, and input requirements for decompression.
+---
+
+check[¶](https://docs.python.org/3/library/lzma.html#lzma.LZMADecompressor.check "Link to this definition")
+    
+The ID of the integrity check used by the input stream. This may be `CHECK_UNKNOWN` until enough of the input has been decoded to determine what integrity check it uses. 
+
+eof[¶](https://docs.python.org/3/library/lzma.html#lzma.LZMADecompressor.eof "Link to this definition")
+    
+`True` if the end-of-stream marker has been reached. 
+
+unused_data[¶](https://docs.python.org/3/library/lzma.html#lzma.LZMADecompressor.unused_data "Link to this definition")
+    
+Data found after the end of the compressed stream.
+Before the end of the stream is reached, this will be `b""`. 
+
+needs_input[¶](https://docs.python.org/3/library/lzma.html#lzma.LZMADecompressor.needs_input "Link to this definition")
+    
+`False` if the [`decompress()`](https://docs.python.org/3/library/lzma.html#lzma.LZMADecompressor.decompress "lzma.LZMADecompressor.decompress") method can provide more decompressed data before requiring new uncompressed input.
+Added in version 3.5. 
+
+lzma.compress(_data_ , _format =FORMAT_XZ_, _check =-1_, _preset =None_, _filters =None_)[¶](https://docs.python.org/3/library/lzma.html#lzma.compress "Link to this definition")
+    
+Compress _data_ (a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object), returning the compressed data as a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object.
+See [`LZMACompressor`](https://docs.python.org/3/library/lzma.html#lzma.LZMACompressor "lzma.LZMACompressor") above for a description of the _format_ , _check_ , _preset_ and _filters_ arguments. 
+
+lzma.decompress(_data_ , _format =FORMAT_AUTO_, _memlimit =None_, _filters =None_)[¶](https://docs.python.org/3/library/lzma.html#lzma.decompress "Link to this definition")
+    
+Decompress _data_ (a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object), returning the uncompressed data as a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object.
+If _data_ is the concatenation of multiple distinct compressed streams, decompress all of these streams, and return the concatenation of the results.
+See [`LZMADecompressor`](https://docs.python.org/3/library/lzma.html#lzma.LZMADecompressor "lzma.LZMADecompressor") above for a description of the _format_ , _memlimit_ and _filters_ arguments.
+## Miscellaneous[¶](https://docs.python.org/3/library/lzma.html#miscellaneous "Link to this heading") 
+
+lzma.is_check_supported(_check_)[¶](https://docs.python.org/3/library/lzma.html#lzma.is_check_supported "Link to this definition")
+    
+Return `True` if the given integrity check is supported on this system.
+`CHECK_NONE` and `CHECK_CRC32` are always supported. `CHECK_CRC64` and `CHECK_SHA256` may be unavailable if you are using a version of **liblzma** that was compiled with a limited feature set.
+## Specifying custom filter chains[¶](https://docs.python.org/3/library/lzma.html#specifying-custom-filter-chains "Link to this heading")
+A filter chain specifier is a sequence of dictionaries, where each dictionary contains the ID and options for a single filter. Each dictionary must contain the key `"id"`, and may contain additional keys to specify filter-dependent options. Valid filter IDs are as follows:
+  * Compression filters:
+    * `FILTER_LZMA1` (for use with `FORMAT_ALONE`)
+    * `FILTER_LZMA2` (for use with `FORMAT_XZ` and `FORMAT_RAW`)
+  * Delta filter:
+    * `FILTER_DELTA`
+  * Branch-Call-Jump (BCJ) filters:
+    * `FILTER_X86`
+    * `FILTER_IA64`
+    * `FILTER_ARM`
+    * `FILTER_ARMTHUMB`
+    * `FILTER_POWERPC`
+    * `FILTER_SPARC`
+
+
+A filter chain can consist of up to 4 filters, and cannot be empty. The last filter in the chain must be a compression filter, and any other filters must be delta or BCJ filters.
+Compression filters support the following options (specified as additional entries in the dictionary representing the filter):
+  * `preset`: A compression preset to use as a source of default values for options that are not specified explicitly.
+  * `dict_size`: Dictionary size in bytes. This should be between 4 KiB and 1.5 GiB (inclusive).
+  * `lc`: Number of literal context bits.
+  * `lp`: Number of literal position bits. The sum `lc + lp` must be at most 4.
+  * `pb`: Number of position bits; must be at most 4.
+  * `mode`: `MODE_FAST` or `MODE_NORMAL`.
+  * `nice_len`: What should be considered a “nice length” for a match. This should be 273 or less.
+  * `mf`: What match finder to use – `MF_HC3`, `MF_HC4`, `MF_BT2`, `MF_BT3`, or `MF_BT4`.
+  * `depth`: Maximum search depth used by match finder. 0 (default) means to select automatically based on other filter options.

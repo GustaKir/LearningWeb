@@ -1,0 +1,28 @@
+Title: Finding an Unused Port with socket_helper
+URL: https://docs.python.org/3/library/test.html
+Summary: The `find_unused_port` function from the `test.support.socket_helper` module returns an unused port suitable for binding by creating a temporary socket. It defaults to using the `AF_INET` family and `SOCK_STREAM` type, binding to `0.0.0.0` with the port set to 0 to retrieve an ephemeral port from the OS. After obtaining the port, the temporary socket is closed and removed.
+---
+
+test.support.socket_helper.find_unused_port(_family =socket.AF_INET_, _socktype =socket.SOCK_STREAM_)[¶](https://docs.python.org/3/library/test.html#test.support.socket_helper.find_unused_port "Link to this definition")
+    
+Returns an unused port that should be suitable for binding. This is achieved by creating a temporary socket with the same family and type as the `sock` parameter (default is [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET"), [`SOCK_STREAM`](https://docs.python.org/3/library/socket.html#socket.SOCK_STREAM "socket.SOCK_STREAM")), and binding it to the specified host address (defaults to `0.0.0.0`) with the port set to 0, eliciting an unused ephemeral port from the OS. The temporary socket is then closed and deleted, and the ephemeral port is returned.
+Either this method or [`bind_port()`](https://docs.python.org/3/library/test.html#test.support.socket_helper.bind_port "test.support.socket_helper.bind_port") should be used for any tests where a server socket needs to be bound to a particular port for the duration of the test. Which one to use depends on whether the calling code is creating a Python socket, or if an unused port needs to be provided in a constructor or passed to an external program (i.e. the `-accept` argument to openssl’s s_server mode). Always prefer [`bind_port()`](https://docs.python.org/3/library/test.html#test.support.socket_helper.bind_port "test.support.socket_helper.bind_port") over [`find_unused_port()`](https://docs.python.org/3/library/test.html#test.support.socket_helper.find_unused_port "test.support.socket_helper.find_unused_port") where possible. Using a hard coded port is discouraged since it can make multiple instances of the test impossible to run simultaneously, which is a problem for buildbots. 
+
+test.support.socket_helper.bind_port(_sock_ , _host =HOST_)[¶](https://docs.python.org/3/library/test.html#test.support.socket_helper.bind_port "Link to this definition")
+    
+Bind the socket to a free port and return the port number. Relies on ephemeral ports in order to ensure we are using an unbound port. This is important as many tests may be running simultaneously, especially in a buildbot environment. This method raises an exception if the `sock.family` is [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET") and `sock.type` is [`SOCK_STREAM`](https://docs.python.org/3/library/socket.html#socket.SOCK_STREAM "socket.SOCK_STREAM"), and the socket has `SO_REUSEADDR` or `SO_REUSEPORT` set on it. Tests should never set these socket options for TCP/IP sockets. The only case for setting these options is testing multicasting via multiple UDP sockets.
+Additionally, if the `SO_EXCLUSIVEADDRUSE` socket option is available (i.e. on Windows), it will be set on the socket. This will prevent anyone else from binding to our host/port for the duration of the test. 
+
+test.support.socket_helper.bind_unix_socket(_sock_ , _addr_)[¶](https://docs.python.org/3/library/test.html#test.support.socket_helper.bind_unix_socket "Link to this definition")
+    
+Bind a Unix socket, raising [`unittest.SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest") if [`PermissionError`](https://docs.python.org/3/library/exceptions.html#PermissionError "PermissionError") is raised. 
+
+@test.support.socket_helper.skip_unless_bind_unix_socket[¶](https://docs.python.org/3/library/test.html#test.support.socket_helper.skip_unless_bind_unix_socket "Link to this definition")
+    
+A decorator for running tests that require a functional `bind()` for Unix sockets. 
+
+test.support.socket_helper.transient_internet(_resource_name_ , _*_ , _timeout =30.0_, _errnos =()_)[¶](https://docs.python.org/3/library/test.html#test.support.socket_helper.transient_internet "Link to this definition")
+    
+A context manager that raises [`ResourceDenied`](https://docs.python.org/3/library/test.html#test.support.ResourceDenied "test.support.ResourceDenied") when various issues with the internet connection manifest themselves as exceptions.
+# [`test.support.script_helper`](https://docs.python.org/3/library/test.html#module-test.support.script_helper "test.support.script_helper: Support for Python's script execution tests.") — Utilities for the Python execution tests[¶](https://docs.python.org/3/library/test.html#module-test.support.script_helper "Link to this heading")
+The [`test.support.script_helper`](https://docs.python.org/3/library/test.html#module-test.support.script_helper "test.support.script_helper: Support for Python's script execution tests.") module provides support for Python’s script execution tests.

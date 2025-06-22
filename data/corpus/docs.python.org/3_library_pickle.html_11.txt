@@ -1,0 +1,31 @@
+Title: Customizing Pickle Behavior with __getnewargs_ex__
+URL: https://docs.python.org/3/library/pickle.html
+Summary: Classes can customize unpickling behavior by implementing the __getnewargs_ex__() method, which returns a tuple of positional and named arguments for the __new__() method. This enables more control over the object construction during unpickling in protocols 2 and newer.
+---
+
+```
+
+Classes can alter the default behaviour by providing one or several special methods: 
+
+object.__getnewargs_ex__()[¶](https://docs.python.org/3/library/pickle.html#object.__getnewargs_ex__ "Link to this definition")
+    
+In protocols 2 and newer, classes that implements the [`__getnewargs_ex__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs_ex__ "object.__getnewargs_ex__") method can dictate the values passed to the [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method upon unpickling. The method must return a pair `(args, kwargs)` where _args_ is a tuple of positional arguments and _kwargs_ a dictionary of named arguments for constructing the object. Those will be passed to the [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method upon unpickling.
+You should implement this method if the [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method of your class requires keyword-only arguments. Otherwise, it is recommended for compatibility to implement [`__getnewargs__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs__ "object.__getnewargs__").
+Changed in version 3.6: [`__getnewargs_ex__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs_ex__ "object.__getnewargs_ex__") is now used in protocols 2 and 3. 
+
+object.__getnewargs__()[¶](https://docs.python.org/3/library/pickle.html#object.__getnewargs__ "Link to this definition")
+    
+This method serves a similar purpose as [`__getnewargs_ex__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs_ex__ "object.__getnewargs_ex__"), but supports only positional arguments. It must return a tuple of arguments `args` which will be passed to the [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method upon unpickling.
+[`__getnewargs__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs__ "object.__getnewargs__") will not be called if [`__getnewargs_ex__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs_ex__ "object.__getnewargs_ex__") is defined.
+Changed in version 3.6: Before Python 3.6, [`__getnewargs__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs__ "object.__getnewargs__") was called instead of [`__getnewargs_ex__()`](https://docs.python.org/3/library/pickle.html#object.__getnewargs_ex__ "object.__getnewargs_ex__") in protocols 2 and 3. 
+
+object.__getstate__()[¶](https://docs.python.org/3/library/pickle.html#object.__getstate__ "Link to this definition")
+    
+Classes can further influence how their instances are pickled by overriding the method [`__getstate__()`](https://docs.python.org/3/library/pickle.html#object.__getstate__ "object.__getstate__"). It is called and the returned object is pickled as the contents for the instance, instead of a default state. There are several cases:
+  * For a class that has no instance [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") and no [`__slots__`](https://docs.python.org/3/reference/datamodel.html#object.__slots__ "object.__slots__"), the default state is `None`.
+  * For a class that has an instance [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") and no [`__slots__`](https://docs.python.org/3/reference/datamodel.html#object.__slots__ "object.__slots__"), the default state is `self.__dict__`.
+  * For a class that has an instance [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") and [`__slots__`](https://docs.python.org/3/reference/datamodel.html#object.__slots__ "object.__slots__"), the default state is a tuple consisting of two dictionaries: `self.__dict__`, and a dictionary mapping slot names to slot values. Only slots that have a value are included in the latter.
+  * For a class that has [`__slots__`](https://docs.python.org/3/reference/datamodel.html#object.__slots__ "object.__slots__") and no instance [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__"), the default state is a tuple whose first item is `None` and whose second item is a dictionary mapping slot names to slot values described in the previous bullet.
+
+
+Changed in version 3.11: Added the default implementation of the `__getstate__()` method in the [`object`](https://docs.python.org/3/library/functions.html#object "object") class.

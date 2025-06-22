@@ -1,0 +1,112 @@
+Title: Contextlib: Redirecting Standard Error
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: The `contextlib.redirect_stderr` context manager redirects `sys.stderr` to a specified file or file-like object. It is reentrant but not suitable for library code or most threaded applications due to side effects on `sys.stdout` and lack of effect on subprocess output. Introduced in version 3.4, it is particularly useful for utility scripts.
+---
+
+```
+
+Note that the global side effect on [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") means that this context manager is not suitable for use in library code and most threaded applications. It also has no effect on the output of subprocesses. However, it is still a useful approach for many utility scripts.
+This context manager is [reentrant](https://docs.python.org/3/library/contextlib.html#reentrant-cms).
+Added in version 3.4. 
+
+contextlib.redirect_stderr(_new_target_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stderr "Link to this definition")
+    
+Similar to [`redirect_stdout()`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout "contextlib.redirect_stdout") but redirecting [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") to another file or file-like object.
+This context manager is [reentrant](https://docs.python.org/3/library/contextlib.html#reentrant-cms).
+Added in version 3.5. 
+
+contextlib.chdir(_path_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.chdir "Link to this definition")
+    
+Non parallel-safe context manager to change the current working directory. As this changes a global state, the working directory, it is not suitable for use in most threaded or async contexts. It is also not suitable for most non-linear code execution, like generators, where the program execution is temporarily relinquished – unless explicitly desired, you should not yield when this context manager is active.
+This is a simple wrapper around [`chdir()`](https://docs.python.org/3/library/os.html#os.chdir "os.chdir"), it changes the current working directory upon entering and restores the old one on exit.
+This context manager is [reentrant](https://docs.python.org/3/library/contextlib.html#reentrant-cms).
+Added in version 3.11. 
+
+_class_ contextlib.ContextDecorator[¶](https://docs.python.org/3/library/contextlib.html#contextlib.ContextDecorator "Link to this definition")
+    
+A base class that enables a context manager to also be used as a decorator.
+Context managers inheriting from `ContextDecorator` have to implement `__enter__` and `__exit__` as normal. `__exit__` retains its optional exception handling even when used as a decorator.
+`ContextDecorator` is used by [`contextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager "contextlib.contextmanager"), so you get this functionality automatically.
+Example of `ContextDecorator`:
+```
+fromcontextlibimport ContextDecorator
+classmycontext(ContextDecorator):
+  def__enter__(self):
+    print('Starting')
+    return self
+  def__exit__(self, *exc):
+    print('Finishing')
+    return False
+
+```
+
+The class can then be used like this:
+>>>```
+>>> @mycontext()
+... deffunction():
+...   print('The bit in the middle')
+...
+>>> function()
+Starting
+The bit in the middle
+Finishing
+>>> with mycontext():
+...   print('The bit in the middle')
+...
+Starting
+The bit in the middle
+Finishing
+
+```
+
+This change is just syntactic sugar for any construct of the following form:
+```
+deff():
+  with cm():
+    # Do stuff
+
+```
+
+`ContextDecorator` lets you instead write:
+```
+@cm()
+deff():
+  # Do stuff
+
+```
+
+It makes it clear that the `cm` applies to the whole function, rather than just a piece of it (and saving an indentation level is nice, too).
+Existing context managers that already have a base class can be extended by using `ContextDecorator` as a mixin class:
+```
+fromcontextlibimport ContextDecorator
+classmycontext(ContextBaseClass, ContextDecorator):
+  def__enter__(self):
+    return self
+  def__exit__(self, *exc):
+    return False
+
+```
+
+Note
+As the decorated function must be able to be called multiple times, the underlying context manager must support use in multiple [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statements. If this is not the case, then the original construct with the explicit `with` statement inside the function should be used.
+Added in version 3.2. 
+
+_class_ contextlib.AsyncContextDecorator[¶](https://docs.python.org/3/library/contextlib.html#contextlib.AsyncContextDecorator "Link to this definition")
+    
+Similar to [`ContextDecorator`](https://docs.python.org/3/library/contextlib.html#contextlib.ContextDecorator "contextlib.ContextDecorator") but only for asynchronous functions.
+Example of `AsyncContextDecorator`:
+```
+fromasyncioimport run
+fromcontextlibimport AsyncContextDecorator
+classmycontext(AsyncContextDecorator):
+  async def__aenter__(self):
+    print('Starting')
+    return self
+  async def__aexit__(self, *exc):
+    print('Finishing')
+    return False
+
+```
+
+The class can then be used like this:
+>>>

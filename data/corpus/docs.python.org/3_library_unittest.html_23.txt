@@ -1,0 +1,28 @@
+Title: TestSuite Iteration in unittest
+URL: https://docs.python.org/3/library/unittest.html
+Summary: The `__iter__()` method of `TestSuite` is used for accessing tests through iteration. Subclasses can provide tests lazily by overriding this method. It is important that the tests returned in multiple calls before `TestSuite.run()` remain consistent. Post `run()`, reliance on the iteration results should be cautious unless the subclass specifically maintains test references.
+---
+
+__iter__()[¶](https://docs.python.org/3/library/unittest.html#unittest.TestSuite.__iter__ "Link to this definition")
+    
+Tests grouped by a [`TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite") are always accessed by iteration. Subclasses can lazily provide tests by overriding `__iter__()`. Note that this method may be called several times on a single suite (for example when counting tests or comparing for equality) so the tests returned by repeated iterations before [`TestSuite.run()`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite.run "unittest.TestSuite.run") must be the same for each call iteration. After [`TestSuite.run()`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite.run "unittest.TestSuite.run"), callers should not rely on the tests returned by this method unless the caller uses a subclass that overrides `TestSuite._removeTestAtIndex()` to preserve test references.
+Changed in version 3.2: In earlier versions the [`TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite") accessed tests directly rather than through iteration, so overriding `__iter__()` wasn’t sufficient for providing tests.
+Changed in version 3.4: In earlier versions the [`TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite") held references to each [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") after [`TestSuite.run()`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite.run "unittest.TestSuite.run"). Subclasses can restore that behavior by overriding `TestSuite._removeTestAtIndex()`.
+In the typical usage of a [`TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite") object, the [`run()`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite.run "unittest.TestSuite.run") method is invoked by a `TestRunner` rather than by the end-user test harness.
+### Loading and running tests[¶](https://docs.python.org/3/library/unittest.html#loading-and-running-tests "Link to this heading") 
+
+_class_ unittest.TestLoader[¶](https://docs.python.org/3/library/unittest.html#unittest.TestLoader "Link to this definition")
+    
+The [`TestLoader`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader "unittest.TestLoader") class is used to create test suites from classes and modules. Normally, there is no need to create an instance of this class; the [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") module provides an instance that can be shared as [`unittest.defaultTestLoader`](https://docs.python.org/3/library/unittest.html#unittest.defaultTestLoader "unittest.defaultTestLoader"). Using a subclass or instance, however, allows customization of some configurable properties.
+[`TestLoader`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader "unittest.TestLoader") objects have the following attributes: 
+
+errors[¶](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.errors "Link to this definition")
+    
+A list of the non-fatal errors encountered while loading tests. Not reset by the loader at any point. Fatal errors are signalled by the relevant method raising an exception to the caller. Non-fatal errors are also indicated by a synthetic test that will raise the original error when run.
+Added in version 3.5.
+[`TestLoader`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader "unittest.TestLoader") objects have the following methods: 
+
+loadTestsFromTestCase(_testCaseClass_)[¶](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.loadTestsFromTestCase "Link to this definition")
+    
+Return a suite of all test cases contained in the [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase")-derived `testCaseClass`.
+A test case instance is created for each method named by [`getTestCaseNames()`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.getTestCaseNames "unittest.TestLoader.getTestCaseNames"). By default these are the method names beginning with `test`. If [`getTestCaseNames()`](https://docs.python.org/3/library/unittest.html#unittest.TestLoader.getTestCaseNames "unittest.TestLoader.getTestCaseNames") returns no methods, but the `runTest()` method is implemented, a single test case is created for that method instead.

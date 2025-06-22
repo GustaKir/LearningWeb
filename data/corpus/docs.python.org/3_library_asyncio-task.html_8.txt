@@ -1,0 +1,53 @@
+Title: Handling Coroutine Cancellation in asyncio
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: The document discusses the behavior of cancellation in asyncio when using the `await` keyword within a coroutine. It explains that if a coroutine is cancelled, it does not affect the task being awaited. It also introduces the `shield()` function, which can be used to ignore cancellation, and emphasizes the importance of retaining references to tasks to prevent them from disappearing mid-execution.
+---
+
+```
+res = await something()
+
+```
+
+_except_ that if the coroutine containing it is cancelled, the Task running in `something()` is not cancelled. From the point of view of `something()`, the cancellation did not happen. Although its caller is still cancelled, so the “await” expression still raises a [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError").
+If `something()` is cancelled by other means (i.e. from within itself) that would also cancel `shield()`.
+If it is desired to completely ignore cancellation (not recommended) the `shield()` function should be combined with a try/except clause, as follows:
+```
+task = asyncio.create_task(something())
+try:
+  res = await shield(task)
+except CancelledError:
+  res = None
+
+```
+
+Important
+Save a reference to tasks passed to this function, to avoid a task disappearing mid-execution. The event loop only keeps weak references to tasks. A task that isn’t referenced elsewhere may get garbage collected at any time, even before it’s done.
+Changed in version 3.10: Removed the _loop_ parameter.
+Deprecated since version 3.10: Deprecation warning is emitted if _aw_ is not Future-like object and there is no running event loop.
+## [Timeouts](https://docs.python.org/3/library/asyncio-task.html#id11)[¶](https://docs.python.org/3/library/asyncio-task.html#timeouts "Link to this heading") 
+
+asyncio.timeout(_delay_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout "Link to this definition")
+    
+Return an [asynchronous context manager](https://docs.python.org/3/reference/datamodel.html#async-context-managers) that can be used to limit the amount of time spent waiting on something.
+_delay_ can either be `None`, or a float/int number of seconds to wait. If _delay_ is `None`, no time limit will be applied; this can be useful if the delay is unknown when the context manager is created.
+In either case, the context manager can be rescheduled after creation using [`Timeout.reschedule()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Timeout.reschedule "asyncio.Timeout.reschedule").
+Example:
+```
+async defmain():
+  async with asyncio.timeout(10):
+    await long_running_task()
+
+```
+
+If `long_running_task` takes more than 10 seconds to complete, the context manager will cancel the current task and handle the resulting [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") internally, transforming it into a [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError") which can be caught and handled.
+Note
+The [`asyncio.timeout()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout "asyncio.timeout") context manager is what transforms the [`asyncio.CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") into a [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError"), which means the [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError") can only be caught _outside_ of the context manager.
+Example of catching [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError"):
+```
+async defmain():
+  try:
+    async with asyncio.timeout(10):
+      await long_running_task()
+  except TimeoutError:
+    print("The long operation timed out, but we've handled it.")
+  print("This statement will run regardless.")

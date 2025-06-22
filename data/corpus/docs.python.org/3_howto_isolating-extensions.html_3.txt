@@ -1,0 +1,56 @@
+Title: Making Modules Safe with Multiple Interpreters
+URL: https://docs.python.org/3/howto/isolating-extensions.html
+Summary: This section discusses the importance of ensuring that extension modules in Python are safe at the C level, emphasizing that Python's behavior with pure-Python modules is consistent. It highlights the need for managing global state in modules, specifically when the state is shared across the entire process rather than being localized to a module.
+---
+
+```
+
+This is expected. Notice that pure-Python modules behave the same way: it is a part of how Python works.
+The goal is to make extension modules safe at the C level, not to make hacks behave intuitively. Mutating `sys.modules` “manually” counts as a hack.
+## Making Modules Safe with Multiple Interpreters[¶](https://docs.python.org/3/howto/isolating-extensions.html#making-modules-safe-with-multiple-interpreters "Link to this heading")
+### Managing Global State[¶](https://docs.python.org/3/howto/isolating-extensions.html#managing-global-state "Link to this heading")
+Sometimes, the state associated with a Python module is not specific to that module, but to the entire process (or something else “more global” than a module). For example:
+  * The `readline` module manages _the_ terminal.
+  * A module running on a circuit board wants to control _the_ on-board LED.
+
+
+In these cases, the Python module should provide _access_ to the global state, rather than _own_ it. If possible, write the module so that multiple copies of it can access the state independently (along with other libraries, whether for Python or other languages). If that is not possible, consider explicit locking.
+If it is necessary to use process-global state, the simplest way to avoid issues with multiple interpreters is to explicitly prevent a module from being loaded more than once per process—see [Opt-Out: Limiting to One Module Object per Process](https://docs.python.org/3/howto/isolating-extensions.html#opt-out-limiting-to-one-module-object-per-process).
+### Managing Per-Module State[¶](https://docs.python.org/3/howto/isolating-extensions.html#managing-per-module-state "Link to this heading")
+To use per-module state, use [multi-phase extension module initialization](https://docs.python.org/3/c-api/module.html#multi-phase-initialization). This signals that your module supports multiple interpreters correctly.
+Set `PyModuleDef.m_size` to a positive number to request that many bytes of storage local to the module. Usually, this will be set to the size of some module-specific `struct`, which can store all of the module’s C-level state. In particular, it is where you should put pointers to classes (including exceptions, but excluding static types) and settings (e.g. `csv`’s [`field_size_limit`](https://docs.python.org/3/library/csv.html#csv.field_size_limit "csv.field_size_limit")) which the C code needs to function.
+Note
+Another option is to store state in the module’s `__dict__`, but you must avoid crashing when users modify `__dict__` from Python code. This usually means error- and type-checking at the C level, which is easy to get wrong and hard to test sufficiently.
+However, if module state is not needed in C code, storing it in `__dict__` only is a good idea.
+If the module state includes `PyObject` pointers, the module object must hold references to those objects and implement the module-level hooks `m_traverse`, `m_clear` and `m_free`. These work like `tp_traverse`, `tp_clear` and `tp_free` of a class. Adding them will require some work and make the code longer; this is the price for modules which can be unloaded cleanly.
+An example of a module with per-module state is currently available as [xxlimited](https://github.com/python/cpython/blob/master/Modules/xxlimited.c); example module initialization shown at the bottom of the file.
+### Opt-Out: Limiting to One Module Object per Process[¶](https://docs.python.org/3/howto/isolating-extensions.html#opt-out-limiting-to-one-module-object-per-process "Link to this heading")
+A non-negative `PyModuleDef.m_size` signals that a module supports multiple interpreters correctly. If this is not yet the case for your module, you can explicitly make your module loadable only once per process. For example:
+```
+staticintloaded=0;
+staticint
+exec_module(PyObject*module)
+{
+if(loaded){
+PyErr_SetString(PyExc_ImportError,
+"cannot load module more than once per process");
+return-1;
+}
+loaded=1;
+// ... rest of initialization
+}
+
+```
+
+### Module State Access from Functions[¶](https://docs.python.org/3/howto/isolating-extensions.html#module-state-access-from-functions "Link to this heading")
+Accessing the state from module-level functions is straightforward. Functions get the module object as their first argument; for extracting the state, you can use `PyModule_GetState`:
+```
+staticPyObject*
+func(PyObject*module,PyObject*args)
+{
+my_struct*state=(my_struct*)PyModule_GetState(module);
+if(state==NULL){
+returnNULL;
+}
+// ... rest of logic
+}

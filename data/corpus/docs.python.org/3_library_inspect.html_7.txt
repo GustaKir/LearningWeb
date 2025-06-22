@@ -1,0 +1,43 @@
+Title: inspect.signature() - Function Signatures in Python
+URL: https://docs.python.org/3/library/inspect.html
+Summary: The `inspect.signature()` function returns a `Signature` object for various callable types in Python, such as functions and classes. It allows inspection of parameters, including annotations. Example usage demonstrates how to retrieve and represent a callable's signature and its parameters.
+---
+
+inspect.signature(_callable_ , _*_ , _follow_wrapped =True_, _globals =None_, _locals =None_, _eval_str =False_)[¶](https://docs.python.org/3/library/inspect.html#inspect.signature "Link to this definition")
+    
+Return a [`Signature`](https://docs.python.org/3/library/inspect.html#inspect.Signature "inspect.Signature") object for the given _callable_ :
+>>>```
+>>> frominspectimport signature
+>>> deffoo(a, *, b:int, **kwargs):
+...   pass
+>>> sig = signature(foo)
+>>> str(sig)
+'(a, *, b: int, **kwargs)'
+>>> str(sig.parameters['b'])
+'b: int'
+>>> sig.parameters['b'].annotation
+<class 'int'>
+
+```
+
+Accepts a wide range of Python callables, from plain functions and classes to [`functools.partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") objects.
+For objects defined in modules using stringized annotations (`from __future__ import annotations`), [`signature()`](https://docs.python.org/3/library/inspect.html#inspect.signature "inspect.signature") will attempt to automatically un-stringize the annotations using [`get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations"). The _globals_ , _locals_ , and _eval_str_ parameters are passed into [`get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations") when resolving the annotations; see the documentation for [`get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations") for instructions on how to use these parameters.
+Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if no signature can be provided, and [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if that type of object is not supported. Also, if the annotations are stringized, and _eval_str_ is not false, the `eval()` call(s) to un-stringize the annotations in [`get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations") could potentially raise any kind of exception.
+A slash(/) in the signature of a function denotes that the parameters prior to it are positional-only. For more info, see [the FAQ entry on positional-only parameters](https://docs.python.org/3/faq/programming.html#faq-positional-only-arguments).
+Changed in version 3.5: The _follow_wrapped_ parameter was added. Pass `False` to get a signature of _callable_ specifically (`callable.__wrapped__` will not be used to unwrap decorated callables.)
+Changed in version 3.10: The _globals_ , _locals_ , and _eval_str_ parameters were added.
+Note
+Some callables may not be introspectable in certain implementations of Python. For example, in CPython, some built-in functions defined in C provide no metadata about their arguments.
+**CPython implementation detail:** If the passed object has a `__signature__` attribute, we may use it to create the signature. The exact semantics are an implementation detail and are subject to unannounced changes. Consult the source code for current semantics. 
+
+_class_ inspect.Signature(_parameters =None_, _*_ , _return_annotation =Signature.empty_)[¶](https://docs.python.org/3/library/inspect.html#inspect.Signature "Link to this definition")
+    
+A `Signature` object represents the call signature of a function and its return annotation. For each parameter accepted by the function it stores a [`Parameter`](https://docs.python.org/3/library/inspect.html#inspect.Parameter "inspect.Parameter") object in its [`parameters`](https://docs.python.org/3/library/inspect.html#inspect.Signature.parameters "inspect.Signature.parameters") collection.
+The optional _parameters_ argument is a sequence of [`Parameter`](https://docs.python.org/3/library/inspect.html#inspect.Parameter "inspect.Parameter") objects, which is validated to check that there are no parameters with duplicate names, and that the parameters are in the right order, i.e. positional-only first, then positional-or-keyword, and that parameters with defaults follow parameters without defaults.
+The optional _return_annotation_ argument can be an arbitrary Python object. It represents the “return” annotation of the callable.
+`Signature` objects are _immutable_. Use [`Signature.replace()`](https://docs.python.org/3/library/inspect.html#inspect.Signature.replace "inspect.Signature.replace") or [`copy.replace()`](https://docs.python.org/3/library/copy.html#copy.replace "copy.replace") to make a modified copy.
+Changed in version 3.5: `Signature` objects are now picklable and [hashable](https://docs.python.org/3/glossary.html#term-hashable). 
+
+empty[¶](https://docs.python.org/3/library/inspect.html#inspect.Signature.empty "Link to this definition")
+    
+A special class-level marker to specify absence of a return annotation.

@@ -1,0 +1,65 @@
+Title: Using Store Const with Optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section explains the 'store_const' action in the optparse module, detailing how it assigns a constant value to a specified destination variable when a command-line option is used. An example demonstrates the use of 'store_const' with options for quiet, verbose, and noisy modes.
+---
+
+```
+
+  * `"store_const"` [required: [`const`](https://docs.python.org/3/library/optparse.html#optparse.Option.const "optparse.Option.const"); relevant: [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest")]
+The value [`const`](https://docs.python.org/3/library/optparse.html#optparse.Option.const "optparse.Option.const") is stored in [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest").
+Example:
+```
+parser.add_option("-q", "--quiet",
+         action="store_const", const=0, dest="verbose")
+parser.add_option("-v", "--verbose",
+         action="store_const", const=1, dest="verbose")
+parser.add_option("--noisy",
+         action="store_const", const=2, dest="verbose")
+
+```
+
+If `--noisy` is seen, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") will set
+```
+options.verbose = 2
+
+```
+
+  * `"store_true"` [relevant: [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest")]
+A special case of `"store_const"` that stores `True` to [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest").
+  * `"store_false"` [relevant: [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest")]
+Like `"store_true"`, but stores `False`.
+Example:
+```
+parser.add_option("--clobber", action="store_true", dest="clobber")
+parser.add_option("--no-clobber", action="store_false", dest="clobber")
+
+```
+
+  * `"append"` [relevant: [`type`](https://docs.python.org/3/library/optparse.html#optparse.Option.type "optparse.Option.type"), [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest"), [`nargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.nargs "optparse.Option.nargs"), [`choices`](https://docs.python.org/3/library/optparse.html#optparse.Option.choices "optparse.Option.choices")]
+The option must be followed by an argument, which is appended to the list in [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest"). If no default value for [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest") is supplied, an empty list is automatically created when [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") first encounters this option on the command-line. If [`nargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.nargs "optparse.Option.nargs") > 1, multiple arguments are consumed, and a tuple of length [`nargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.nargs "optparse.Option.nargs") is appended to [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest").
+The defaults for [`type`](https://docs.python.org/3/library/optparse.html#optparse.Option.type "optparse.Option.type") and [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest") are the same as for the `"store"` action.
+Example:
+```
+parser.add_option("-t", "--tracks", action="append", type="int")
+
+```
+
+If `-t3` is seen on the command-line, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") does the equivalent of:
+```
+options.tracks = []
+options.tracks.append(int("3"))
+
+```
+
+If, a little later on, `--tracks=4` is seen, it does:
+```
+options.tracks.append(int("4"))
+
+```
+
+The `append` action calls the `append` method on the current value of the option. This means that any default value specified must have an `append` method. It also means that if the default value is non-empty, the default elements will be present in the parsed value for the option, with any values from the command line appended after those default values:
+>>>```
+>>> parser.add_option("--files", action="append", default=['~/.mypkg/defaults'])
+>>> opts, args = parser.parse_args(['--files', 'overrides.mypkg'])
+>>> opts.files
+['~/.mypkg/defaults', 'overrides.mypkg']

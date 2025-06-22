@@ -1,0 +1,30 @@
+Title: Python C API: Setting Exception Location
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: This section describes two functions for setting file and line number information related to exceptions: `PyErr_SyntaxLocationObject`, which  sets syntax-related information for the current exception, and `PyErr_SyntaxLocationEx`, available since Python 3.7, which serves a similar purpose but takes a different parameter type.
+---
+
+voidPyErr_SyntaxLocationObject([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*filename, intlineno, intcol_offset)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SyntaxLocationObject "Link to this definition")
+    
+Set file, line, and offset information for the current exception. If the current exception is not a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError"), then it sets additional attributes, which make the exception printing subsystem think the exception is a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError").
+Added in version 3.4. 
+
+voidPyErr_SyntaxLocationEx(constchar*filename, intlineno, intcol_offset)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SyntaxLocationEx "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Like [`PyErr_SyntaxLocationObject()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SyntaxLocationObject "PyErr_SyntaxLocationObject"), but _filename_ is a byte string decoded from the [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler).
+Added in version 3.2. 
+
+voidPyErr_SyntaxLocation(constchar*filename, intlineno)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SyntaxLocation "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Like [`PyErr_SyntaxLocationEx()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SyntaxLocationEx "PyErr_SyntaxLocationEx"), but the _col_offset_ parameter is omitted. 
+
+voidPyErr_BadInternalCall()[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_BadInternalCall "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is a shorthand for `PyErr_SetString(PyExc_SystemError, message)`, where _message_ indicates that an internal operation (e.g. a Python/C API function) was invoked with an illegal argument. It is mostly for internal use.
+## Issuing warnings[¶](https://docs.python.org/3/c-api/exceptions.html#issuing-warnings "Link to this heading")
+Use these functions to issue warnings from C code. They mirror similar functions exported by the Python [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module. They normally print a warning message to _sys.stderr_ ; however, it is also possible that the user has specified that warnings are to be turned into errors, and in that case they will raise an exception. It is also possible that the functions raise an exception because of a problem with the warning machinery. The return value is `0` if no exception is raised, or `-1` if an exception is raised. (It is not possible to determine whether a warning message is actually printed, nor what the reason is for the exception; this is intentional.) If an exception is raised, the caller should do its normal exception handling (for example, [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF") owned references and return an error value). 
+
+intPyErr_WarnEx([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*category, constchar*message, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")stack_level)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_WarnEx "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Issue a warning message. The _category_ argument is a warning category (see below) or `NULL`; the _message_ argument is a UTF-8 encoded string. _stack_level_ is a positive number giving a number of stack frames; the warning will be issued from the currently executing line of code in that stack frame. A _stack_level_ of 1 is the function calling [`PyErr_WarnEx()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_WarnEx "PyErr_WarnEx"), 2 is the function above that, and so forth.
+Warning categories must be subclasses of `PyExc_Warning`; `PyExc_Warning` is a subclass of `PyExc_Exception`; the default warning category is `PyExc_RuntimeWarning`. The standard Python warning categories are available as global variables whose names are enumerated at [Standard Warning Categories](https://docs.python.org/3/c-api/exceptions.html#standardwarningcategories).
+For information about warning control, see the documentation for the [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module and the [`-W`](https://docs.python.org/3/using/cmdline.html#cmdoption-W) option in the command line documentation. There is no C API for warning control.

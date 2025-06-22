@@ -1,0 +1,90 @@
+Title: Using ConfigParser in Python
+URL: https://docs.python.org/3/library/configparser.html
+Summary: This section demonstrates how to use the ConfigParser class to read a configuration string. The example illustrates how to access settings with and without values, along with handling non-existent settings that raise a KeyError. It also briefly describes the delimiters used to separate keys from values.
+---
+
+```
+>>> importconfigparser
+>>> sample_config = """
+... [mysqld]
+...  user = mysql
+...  pid-file = /var/run/mysqld/mysqld.pid
+...  skip-external-locking
+...  old_passwords = 1
+...  skip-bdb
+...  # we don't need ACID today
+...  skip-innodb
+... """
+>>> config = configparser.ConfigParser(allow_no_value=True)
+>>> config.read_string(sample_config)
+>>> # Settings with values are treated as before:
+>>> config["mysqld"]["user"]
+'mysql'
+>>> # Settings without values provide None:
+>>> config["mysqld"]["skip-bdb"]
+>>> # Settings which aren't specified still raise an error:
+>>> config["mysqld"]["does-not-exist"]
+Traceback (most recent call last):
+...
+KeyError: 'does-not-exist'
+
+```
+
+  * _delimiters_ , default value: `('=', ':')`
+Delimiters are substrings that delimit keys from values within a section. The first occurrence of a delimiting substring on a line is considered a delimiter. This means values (but not keys) can contain the delimiters.
+See also the _space_around_delimiters_ argument to [`ConfigParser.write()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.write "configparser.ConfigParser.write").
+  * _comment_prefixes_ , default value: `('#', ';')`
+  * _inline_comment_prefixes_ , default value: `None`
+Comment prefixes are strings that indicate the start of a valid comment within a config file. _comment_prefixes_ are used only on otherwise empty lines (optionally indented) whereas _inline_comment_prefixes_ can be used after every valid value (e.g. section names, options and empty lines as well). By default inline comments are disabled and `'#'` and `';'` are used as prefixes for whole line comments.
+Changed in version 3.2: In previous versions of [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") behaviour matched `comment_prefixes=('#',';')` and `inline_comment_prefixes=(';',)`.
+Please note that config parsers don’t support escaping of comment prefixes so using _inline_comment_prefixes_ may prevent users from specifying option values with characters used as comment prefixes. When in doubt, avoid setting _inline_comment_prefixes_. In any circumstances, the only way of storing comment prefix characters at the beginning of a line in multiline values is to interpolate the prefix, for example:
+>>>```
+>>> fromconfigparserimport ConfigParser, ExtendedInterpolation
+>>> parser = ConfigParser(interpolation=ExtendedInterpolation())
+>>> # the default BasicInterpolation could be used as well
+>>> parser.read_string("""
+... [DEFAULT]
+... hash = #
+...
+... [hashes]
+... shebang =
+...  ${hash}!/usr/bin/env python
+...  ${hash} -*- coding: utf-8 -*-
+...
+... extensions =
+...  enabled_extension
+...  another_extension
+...  #disabled_by_comment
+...  yet_another_extension
+...
+... interpolation not necessary = if # is not at line start
+... even in multiline values = line #1
+...  line #2
+...  line #3
+... """)
+>>> print(parser['hashes']['shebang'])
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+>>> print(parser['hashes']['extensions'])
+enabled_extension
+another_extension
+yet_another_extension
+>>> print(parser['hashes']['interpolation not necessary'])
+if # is not at line start
+>>> print(parser['hashes']['even in multiline values'])
+line #1
+line #2
+line #3
+
+```
+
+  * _strict_ , default value: `True`
+When set to `True`, the parser will not allow for any section or option duplicates while reading from a single source (using [`read_file()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.read_file "configparser.ConfigParser.read_file"), [`read_string()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.read_string "configparser.ConfigParser.read_string") or [`read_dict()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.read_dict "configparser.ConfigParser.read_dict")). It is recommended to use strict parsers in new applications.
+Changed in version 3.2: In previous versions of [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") behaviour matched `strict=False`.
+  * _empty_lines_in_values_ , default value: `True`
+In config parsers, values can span multiple lines as long as they are indented more than the key that holds them. By default parsers also let empty lines to be parts of values. At the same time, keys can be arbitrarily indented themselves to improve readability. In consequence, when configuration files get big and complex, it is easy for the user to lose track of the file structure. Take for instance:
+```
+[Section]
+key=multiline
+value with a gotcha
+this=is still a part of the multiline value of 'key'

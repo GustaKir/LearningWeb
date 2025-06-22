@@ -1,0 +1,67 @@
+Title: SnowparkConnection.reset Method
+URL: https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowparkconnection
+Summary: The `reset` method in the SnowparkConnection class reinitializes the connection, useful for handling stale connections or expired auth tokens. It ensures the connection is refreshed for subsequent use.
+---
+
+```
+import streamlit as st
+conn = st.connection("snowpark")
+df = conn.query("SELECT * FROM pet_owners")
+st.dataframe(df)
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowparkconnection#snowparkconnectionreset)SnowparkConnection.reset
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Reset this connection so that it gets reinitialized the next time it's used.
+This method can be useful when a connection has become stale, an auth token has expired, or in similar scenarios where a broken connection might be fixed by reinitializing it. Note that some connection methods may already use `reset()` in their error handling code.
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/base_connection.py#L121 "View st.reset source code on GitHub")  
+---  
+SnowparkConnection.reset()  
+Returns  
+(None) | No description  
+#### Example
+```
+import streamlit as st
+conn = st.connection("my_conn")
+# Reset the connection before using it if it isn't healthy
+# Note: is_healthy() isn't a real method and is just shown for example here.
+if not conn.is_healthy():
+  conn.reset()
+# Do stuff with conn...
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowparkconnection#snowparkconnectionsafe_session)SnowparkConnection.safe_session
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Grab the underlying Snowpark session in a thread-safe manner.
+As operations on a Snowpark session are not thread safe, we need to take care when using a session in the context of a Streamlit app where each script run occurs in its own thread. Using the contextmanager pattern to do this ensures that access on this connection's underlying Session is done in a thread-safe manner.
+Information on how to use Snowpark sessions can be found in the [Snowpark documentation](https://docs.snowflake.com/en/developer-guide/snowpark/python/working-with-dataframes).
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/snowpark_connection.py#L189 "View st.safe_session source code on GitHub")  
+---  
+SnowparkConnection.safe_session()  
+#### Example
+```
+import streamlit as st
+conn = st.connection("snowpark")
+with conn.safe_session() as session:
+  df = session.table("mytable").limit(10).to_pandas()
+st.dataframe(df)
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowparkconnection#snowparkconnectionsession)SnowparkConnection.session
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Access the underlying Snowpark session.
+Note
+Snowpark sessions are **not** thread safe. Users of this method are responsible for ensuring that access to the session returned by this method is done in a thread-safe manner. For most users, we recommend using the thread-safe safe_session() method and a `with` block.
+Information on how to use Snowpark sessions can be found in the [Snowpark documentation](https://docs.snowflake.com/en/developer-guide/snowpark/python/working-with-dataframes).
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/snowpark_connection.py#L166 "View st.session source code on GitHub")  
+---  
+SnowparkConnection.session  
+#### Example
+```
+import streamlit as st
+session = st.connection("snowpark").session
+df = session.table("mytable").limit(10).to_pandas()
+st.dataframe(df)

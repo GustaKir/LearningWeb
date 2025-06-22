@@ -1,0 +1,16 @@
+Title: Module Object Deallocation in Python C API
+URL: https://docs.python.org/3/c-api/module.html
+Summary: The section discusses the `m_free` function within the Python C API, which is called during module object deallocation. It clarifies conditions under which this function is invoked or skipped, specifically regarding module state allocation and its changes in version 3.9.
+---
+
+[freefunc](https://docs.python.org/3/c-api/typeobj.html#c.freefunc "freefunc")m_free[¶](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_free "Link to this definition")
+    
+A function to call during deallocation of the module object, or `NULL` if not needed.
+This function is not called if the module state was requested but is not allocated yet. This is the case immediately after the module is created and before the module is executed ([`Py_mod_exec`](https://docs.python.org/3/c-api/module.html#c.Py_mod_exec "Py_mod_exec") function). More precisely, this function is not called if [`m_size`](https://docs.python.org/3/c-api/module.html#c.PyModuleDef.m_size "PyModuleDef.m_size") is greater than 0 and the module state (as returned by [`PyModule_GetState()`](https://docs.python.org/3/c-api/module.html#c.PyModule_GetState "PyModule_GetState")) is `NULL`.
+Changed in version 3.9: No longer called before the module state is allocated.
+### Single-phase initialization[¶](https://docs.python.org/3/c-api/module.html#single-phase-initialization "Link to this heading")
+The module initialization function may create and return the module object directly. This is referred to as “single-phase initialization”, and uses one of the following two module creation functions: 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyModule_Create([PyModuleDef](https://docs.python.org/3/c-api/module.html#c.PyModuleDef "PyModuleDef")*def)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_Create "Link to this definition")
+    _Return value: New reference._
+Create a new module object, given the definition in _def_. This behaves like [`PyModule_Create2()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Create2 "PyModule_Create2") with _module_api_version_ set to `PYTHON_API_VERSION`.

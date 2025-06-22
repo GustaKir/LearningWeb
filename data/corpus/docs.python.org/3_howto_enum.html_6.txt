@@ -1,0 +1,112 @@
+Title: Derived Enumerations in Python Enum
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section details the parameters involved in creating a new enum class, such as module name, qualified name, type, and start count, noting the introduction of the _start_ parameter in version 3.5. It introduces `IntEnum`, a subclass of `Enum` and `int`, allowing comparisons with integers.
+---
+
+```
+
+  * _module_ : name of module where new enum class can be found.
+  * _qualname_ : where in module new enum class can be found.
+  * _type_ : type to mix in to new enum class.
+  * _start_ : number to start counting at if only names are passed in.
+
+
+Changed in version 3.5: The _start_ parameter was added.
+## Derived Enumerations[¶](https://docs.python.org/3/howto/enum.html#derived-enumerations "Link to this heading")
+### IntEnum[¶](https://docs.python.org/3/howto/enum.html#intenum "Link to this heading")
+The first variation of [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") that is provided is also a subclass of [`int`](https://docs.python.org/3/library/functions.html#int "int"). Members of an [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") can be compared to integers; by extension, integer enumerations of different types can also be compared to each other:
+>>>```
+>>> fromenumimport IntEnum
+>>> classShape(IntEnum):
+...   CIRCLE = 1
+...   SQUARE = 2
+...
+>>> classRequest(IntEnum):
+...   POST = 1
+...   GET = 2
+...
+>>> Shape == 1
+False
+>>> Shape.CIRCLE == 1
+True
+>>> Shape.CIRCLE == Request.POST
+True
+
+```
+
+However, they still can’t be compared to standard [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") enumerations:
+>>>```
+>>> classShape(IntEnum):
+...   CIRCLE = 1
+...   SQUARE = 2
+...
+>>> classColor(Enum):
+...   RED = 1
+...   GREEN = 2
+...
+>>> Shape.CIRCLE == Color.RED
+False
+
+```
+
+[`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") values behave like integers in other ways you’d expect:
+>>>```
+>>> int(Shape.CIRCLE)
+1
+>>> ['a', 'b', 'c'][Shape.CIRCLE]
+'b'
+>>> [i for i in range(Shape.SQUARE)]
+[0, 1]
+
+```
+
+### StrEnum[¶](https://docs.python.org/3/howto/enum.html#strenum "Link to this heading")
+The second variation of [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") that is provided is also a subclass of [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"). Members of a [`StrEnum`](https://docs.python.org/3/library/enum.html#enum.StrEnum "enum.StrEnum") can be compared to strings; by extension, string enumerations of different types can also be compared to each other.
+Added in version 3.11.
+### IntFlag[¶](https://docs.python.org/3/howto/enum.html#intflag "Link to this heading")
+The next variation of [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") provided, [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag"), is also based on [`int`](https://docs.python.org/3/library/functions.html#int "int"). The difference being [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") members can be combined using the bitwise operators (&, |, ^, ~) and the result is still an [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") member, if possible. Like [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum"), [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") members are also integers and can be used wherever an [`int`](https://docs.python.org/3/library/functions.html#int "int") is used.
+Note
+Any operation on an [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") member besides the bit-wise operations will lose the [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") membership.
+Bit-wise operations that result in invalid [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") values will lose the [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") membership. See [`FlagBoundary`](https://docs.python.org/3/library/enum.html#enum.FlagBoundary "enum.FlagBoundary") for details.
+Added in version 3.6.
+Changed in version 3.11.
+Sample [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") class:
+>>>```
+>>> fromenumimport IntFlag
+>>> classPerm(IntFlag):
+...   R = 4
+...   W = 2
+...   X = 1
+...
+>>> Perm.R | Perm.W
+<Perm.R|W: 6>
+>>> Perm.R + Perm.W
+6
+>>> RW = Perm.R | Perm.W
+>>> Perm.R in RW
+True
+
+```
+
+It is also possible to name the combinations:
+>>>```
+>>> classPerm(IntFlag):
+...   R = 4
+...   W = 2
+...   X = 1
+...   RWX = 7
+...
+>>> Perm.RWX
+<Perm.RWX: 7>
+>>> ~Perm.RWX
+<Perm: 0>
+>>> Perm(7)
+<Perm.RWX: 7>
+
+```
+
+Note
+Named combinations are considered aliases. Aliases do not show up during iteration, but can be returned from by-value lookups.
+Changed in version 3.11.
+Another important difference between [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") and [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") is that if no flags are set (the value is 0), its boolean evaluation is [`False`](https://docs.python.org/3/library/constants.html#False "False"):
+>>>

@@ -1,0 +1,34 @@
+Title: shlex.sourcehook Method
+URL: https://docs.python.org/3/library/shlex.html
+Summary: The `shlex.sourcehook` method processes a source request by returning a tuple of a filename and an open file-like object, manipulating the input token to handle absolute and relative pathnames, similar to C's preprocessor behavior.
+---
+
+shlex.sourcehook(_filename_)[¶](https://docs.python.org/3/library/shlex.html#shlex.shlex.sourcehook "Link to this definition")
+    
+When [`shlex`](https://docs.python.org/3/library/shlex.html#shlex.shlex "shlex.shlex") detects a source request (see [`source`](https://docs.python.org/3/library/shlex.html#shlex.shlex.source "shlex.shlex.source") below) this method is given the following token as argument, and expected to return a tuple consisting of a filename and an open file-like object.
+Normally, this method first strips any quotes off the argument. If the result is an absolute pathname, or there was no previous source request in effect, or the previous source was a stream (such as `sys.stdin`), the result is left alone. Otherwise, if the result is a relative pathname, the directory part of the name of the file immediately before it on the source inclusion stack is prepended (this behavior is like the way the C preprocessor handles `#include "file.h"`).
+The result of the manipulations is treated as a filename, and returned as the first component of the tuple, with [`open()`](https://docs.python.org/3/library/functions.html#open "open") called on it to yield the second component. (Note: this is the reverse of the order of arguments in instance initialization!)
+This hook is exposed so that you can use it to implement directory search paths, addition of file extensions, and other namespace hacks. There is no corresponding ‘close’ hook, but a shlex instance will call the [`close()`](https://docs.python.org/3/library/io.html#io.IOBase.close "io.IOBase.close") method of the sourced input stream when it returns EOF.
+For more explicit control of source stacking, use the [`push_source()`](https://docs.python.org/3/library/shlex.html#shlex.shlex.push_source "shlex.shlex.push_source") and [`pop_source()`](https://docs.python.org/3/library/shlex.html#shlex.shlex.pop_source "shlex.shlex.pop_source") methods. 
+
+shlex.push_source(_newstream_ , _newfile =None_)[¶](https://docs.python.org/3/library/shlex.html#shlex.shlex.push_source "Link to this definition")
+    
+Push an input source stream onto the input stack. If the filename argument is specified it will later be available for use in error messages. This is the same method used internally by the [`sourcehook()`](https://docs.python.org/3/library/shlex.html#shlex.shlex.sourcehook "shlex.shlex.sourcehook") method. 
+
+shlex.pop_source()[¶](https://docs.python.org/3/library/shlex.html#shlex.shlex.pop_source "Link to this definition")
+    
+Pop the last-pushed input source from the input stack. This is the same method used internally when the lexer reaches EOF on a stacked input stream. 
+
+shlex.error_leader(_infile =None_, _lineno =None_)[¶](https://docs.python.org/3/library/shlex.html#shlex.shlex.error_leader "Link to this definition")
+    
+This method generates an error message leader in the format of a Unix C compiler error label; the format is `'"%s", line %d: '`, where the `%s` is replaced with the name of the current source file and the `%d` with the current input line number (the optional arguments can be used to override these).
+This convenience is provided to encourage [`shlex`](https://docs.python.org/3/library/shlex.html#module-shlex "shlex: Simple lexical analysis for Unix shell-like languages.") users to generate error messages in the standard, parseable format understood by Emacs and other Unix tools.
+Instances of [`shlex`](https://docs.python.org/3/library/shlex.html#shlex.shlex "shlex.shlex") subclasses have some public instance variables which either control lexical analysis or can be used for debugging: 
+
+shlex.commenters[¶](https://docs.python.org/3/library/shlex.html#shlex.shlex.commenters "Link to this definition")
+    
+The string of characters that are recognized as comment beginners. All characters from the comment beginner to end of line are ignored. Includes just `'#'` by default. 
+
+shlex.wordchars[¶](https://docs.python.org/3/library/shlex.html#shlex.shlex.wordchars "Link to this definition")
+    
+The string of characters that will accumulate into multi-character tokens. By default, includes all ASCII alphanumerics and underscore. In POSIX mode, the accented characters in the Latin-1 set are also included. If [`punctuation_chars`](https://docs.python.org/3/library/shlex.html#shlex.shlex.punctuation_chars "shlex.shlex.punctuation_chars") is not empty, the characters `~-./*?=`, which can appear in filename specifications and command line parameters, will also be included in this attribute, and any characters which appear in `punctuation_chars` will be removed from `wordchars` if they are present there. If [`whitespace_split`](https://docs.python.org/3/library/shlex.html#shlex.shlex.whitespace_split "shlex.shlex.whitespace_split") is set to `True`, this will have no effect.

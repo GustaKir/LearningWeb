@@ -1,0 +1,60 @@
+Title: Python Memory Management C API
+URL: https://docs.python.org/3/c-api/memory.html
+Summary: This document discusses key functions and features related to memory management in Python, including setting the arena allocator with `PyObject_SetArenaAllocator`, support for the mimalloc allocator introduced in version 3.13, and the tracemalloc C API, which allows tracking memory allocation, introduced in version 3.7.
+---
+
+voidPyObject_SetArenaAllocator([PyObjectArenaAllocator](https://docs.python.org/3/c-api/memory.html#c.PyObjectArenaAllocator "PyObjectArenaAllocator")*allocator)[¶](https://docs.python.org/3/c-api/memory.html#c.PyObject_SetArenaAllocator "Link to this definition")
+    
+Set the arena allocator.
+## The mimalloc allocator[¶](https://docs.python.org/3/c-api/memory.html#the-mimalloc-allocator "Link to this heading")
+Added in version 3.13.
+Python supports the mimalloc allocator when the underlying platform support is available. mimalloc “is a general purpose allocator with excellent performance characteristics. Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages.”
+## tracemalloc C API[¶](https://docs.python.org/3/c-api/memory.html#tracemalloc-c-api "Link to this heading")
+Added in version 3.7. 
+
+intPyTraceMalloc_Track(unsignedintdomain, uintptr_tptr, size_tsize)[¶](https://docs.python.org/3/c-api/memory.html#c.PyTraceMalloc_Track "Link to this definition")
+    
+Track an allocated memory block in the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module.
+Return `0` on success, return `-1` on error (failed to allocate memory to store the trace). Return `-2` if tracemalloc is disabled.
+If memory block is already tracked, update the existing trace. 
+
+intPyTraceMalloc_Untrack(unsignedintdomain, uintptr_tptr)[¶](https://docs.python.org/3/c-api/memory.html#c.PyTraceMalloc_Untrack "Link to this definition")
+    
+Untrack an allocated memory block in the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module. Do nothing if the block was not tracked.
+Return `-2` if tracemalloc is disabled, otherwise return `0`.
+## Examples[¶](https://docs.python.org/3/c-api/memory.html#examples "Link to this heading")
+Here is the example from section [Overview](https://docs.python.org/3/c-api/memory.html#memoryoverview), rewritten so that the I/O buffer is allocated from the Python heap by using the first function set:
+```
+PyObject*res;
+char*buf=(char*)PyMem_Malloc(BUFSIZ);/* for I/O */
+if(buf==NULL)
+returnPyErr_NoMemory();
+/* ...Do some I/O operation involving buf... */
+res=PyBytes_FromString(buf);
+PyMem_Free(buf);/* allocated with PyMem_Malloc */
+returnres;
+
+```
+
+The same code using the type-oriented function set:
+```
+PyObject*res;
+char*buf=PyMem_New(char,BUFSIZ);/* for I/O */
+if(buf==NULL)
+returnPyErr_NoMemory();
+/* ...Do some I/O operation involving buf... */
+res=PyBytes_FromString(buf);
+PyMem_Del(buf);/* allocated with PyMem_New */
+returnres;
+
+```
+
+Note that in the two examples above, the buffer is always manipulated via functions belonging to the same set. Indeed, it is required to use the same memory API family for a given memory block, so that the risk of mixing different allocators is reduced to a minimum. The following code sequence contains two errors, one of which is labeled as _fatal_ because it mixes two different allocators operating on different heaps.
+```
+char*buf1=PyMem_New(char,BUFSIZ);
+char*buf2=(char*)malloc(BUFSIZ);
+char*buf3=(char*)PyMem_Malloc(BUFSIZ);
+...
+PyMem_Del(buf3);/* Wrong -- should be PyMem_Free() */
+free(buf2);/* Right -- allocated via malloc() */
+free(buf1);/* Fatal -- should be PyMem_Del() */

@@ -1,0 +1,46 @@
+Title: Uninstalling Python and Known Issues on Windows
+URL: https://docs.python.org/3/using/windows.html
+Summary: This section discusses how to uninstall Python on Windows, noting that uninstalling will remove installed packages but not virtual environments. It also highlights known issues with Microsoft Store versions of Python, such as limited write access to shared locations and the use of private copies of certain Windows folders and registry entries.
+---
+
+on, open Settings and use Apps and Features, or else find Python in Start and right-click to select Uninstall. Uninstalling will remove all packages you installed directly into this Python installation, but will not remove any virtual environments
+### 4.2.1. Known issues[¶](https://docs.python.org/3/using/windows.html#known-issues "Link to this heading")
+#### 4.2.1.1. Redirection of local data, registry, and temporary paths[¶](https://docs.python.org/3/using/windows.html#redirection-of-local-data-registry-and-temporary-paths "Link to this heading")
+Because of restrictions on Microsoft Store apps, Python scripts may not have full write access to shared locations such as `TEMP` and the registry. Instead, it will write to a private copy. If your scripts must modify the shared locations, you will need to install the full installer.
+At runtime, Python will use a private copy of well-known Windows folders and the registry. For example, if the environment variable `%APPDATA%` is `c:\Users\<user>\AppData\`, then when writing to `C:\Users\<user>\AppData\Local` will write to `C:\Users\<user>\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0\LocalCache\Local\`.
+When reading files, Windows will return the file from the private folder, or if that does not exist, the real Windows directory. For example reading `C:\Windows\System32` returns the contents of `C:\Windows\System32` plus the contents of `C:\Program Files\WindowsApps\package_name\VFS\SystemX86`.
+You can find the real path of any existing file using [`os.path.realpath()`](https://docs.python.org/3/library/os.path.html#os.path.realpath "os.path.realpath"):
+>>>```
+>>> importos
+>>> test_file = 'C:\\Users\\example\\AppData\\Local\\test.txt'
+>>> os.path.realpath(test_file)
+'C:\\Users\\example\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.8_qbz5n2kfra8p0\\LocalCache\\Local\\test.txt'
+
+```
+
+When writing to the Windows Registry, the following behaviors exist:
+  * Reading from `HKLM\\Software` is allowed and results are merged with the `registry.dat` file in the package.
+  * Writing to `HKLM\\Software` is not allowed if the corresponding key/value exists, i.e. modifying existing keys.
+  * Writing to `HKLM\\Software` is allowed as long as a corresponding key/value does not exist in the package and the user has the correct access permissions.
+
+
+For more detail on the technical basis for these limitations, please consult Microsoft’s documentation on packaged full-trust apps, currently available at [docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes](https://learn.microsoft.com/windows/msix/desktop/desktop-to-uwp-behind-the-scenes)
+## 4.3. The nuget.org packages[¶](https://docs.python.org/3/using/windows.html#the-nuget-org-packages "Link to this heading")
+Added in version 3.5.2.
+The nuget.org package is a reduced size Python environment intended for use on continuous integration and build systems that do not have a system-wide install of Python. While nuget is “the package manager for .NET”, it also works perfectly fine for packages containing build-time tools.
+Visit [nuget.org](https://www.nuget.org/) for the most up-to-date information on using nuget. What follows is a summary that is sufficient for Python developers.
+The `nuget.exe` command line tool may be downloaded directly from `https://aka.ms/nugetclidl`, for example, using curl or PowerShell. With the tool, the latest version of Python for 64-bit or 32-bit machines is installed using:
+```
+nuget.exe install python -ExcludeVersion -OutputDirectory .
+nuget.exe install pythonx86 -ExcludeVersion -OutputDirectory .
+
+```
+
+To select a particular version, add a `-Version 3.x.y`. The output directory may be changed from `.`, and the package will be installed into a subdirectory. By default, the subdirectory is named the same as the package, and without the `-ExcludeVersion` option this name will include the specific version installed. Inside the subdirectory is a `tools` directory that contains the Python installation:
+```
+# Without -ExcludeVersion
+> .\python.3.5.2\tools\python.exe -V
+Python 3.5.2
+# With -ExcludeVersion
+> .\python\tools\python.exe -V
+Python 3.5.2

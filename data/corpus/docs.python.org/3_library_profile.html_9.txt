@@ -1,0 +1,49 @@
+Title: Profiling in Python: Calibration and Measurement
+URL: https://docs.python.org/3/library/profile.html
+Summary: This section discusses how to obtain a consistent constant for profiling in Python using the 'profile' module. It outlines the calibration method which measures execution time for a specified number of calls, computes the hidden overhead per event, and suggests potential adjustments for faster machines. Additionally, it introduces ways to apply the computed bias to Profile instances.
+---
+
+sed to obtain a better constant for a given platform (see [Limitations](https://docs.python.org/3/library/profile.html#profile-limitations)).
+```
+importprofile
+pr = profile.Profile()
+for i in range(5):
+  print(pr.calibrate(10000))
+
+```
+
+The method executes the number of Python calls given by the argument, directly and again under the profiler, measuring the time for both. It then computes the hidden overhead per profiler event, and returns that as a float. For example, on a 1.8Ghz Intel Core i5 running macOS, and using Python’s time.process_time() as the timer, the magical number is about 4.04e-6.
+The object of this exercise is to get a fairly consistent result. If your computer is _very_ fast, or your timer function has poor resolution, you might have to pass 100000, or even 1000000, to get consistent results.
+When you have a consistent answer, there are three ways you can use it:
+```
+importprofile
+# 1. Apply computed bias to all Profile instances created hereafter.
+profile.Profile.bias = your_computed_bias
+# 2. Apply computed bias to a specific Profile instance.
+pr = profile.Profile()
+pr.bias = your_computed_bias
+# 3. Specify computed bias in instance constructor.
+pr = profile.Profile(bias=your_computed_bias)
+
+```
+
+If you have a choice, you are better off choosing a smaller constant, and then your results will “less often” show up as negative in profile statistics.
+## Using a custom timer[¶](https://docs.python.org/3/library/profile.html#using-a-custom-timer "Link to this heading")
+If you want to change how current time is determined (for example, to force use of wall-clock time or elapsed process time), pass the timing function you want to the `Profile` class constructor:
+```
+pr = profile.Profile(your_time_func)
+
+```
+
+The resulting profiler will then call `your_time_func`. Depending on whether you are using [`profile.Profile`](https://docs.python.org/3/library/profile.html#profile.Profile "profile.Profile") or `cProfile.Profile`, `your_time_func`’s return value will be interpreted differently: 
+
+[`profile.Profile`](https://docs.python.org/3/library/profile.html#profile.Profile "profile.Profile")
+    
+`your_time_func` should return a single number, or a list of numbers whose sum is the current time (like what [`os.times()`](https://docs.python.org/3/library/os.html#os.times "os.times") returns). If the function returns a single time number, or the list of returned numbers has length 2, then you will get an especially fast version of the dispatch routine.
+Be warned that you should calibrate the profiler class for the timer function that you choose (see [Calibration](https://docs.python.org/3/library/profile.html#profile-calibration)). For most machines, a timer that returns a lone integer value will provide the best results in terms of low overhead during profiling. ([`os.times()`](https://docs.python.org/3/library/os.html#os.times "os.times") is _pretty_ bad, as it returns a tuple of floating-point values). If you want to substitute a better timer in the cleanest fashion, derive a class and hardwire a replacement dispatch method that best handles your timer call, along with the appropriate calibration constant. 
+
+`cProfile.Profile`
+    
+`your_time_func` should return a single number. If it returns integers, you can also invoke the class constructor with a second argument specifying the real duration of one unit of time. For example, if `your_integer_time_func` returns times measured in thousands of seconds, you would construct the `Profile` instance as follows:
+```
+pr = cProfile.Profile(your_integer_time_func, 0.001)

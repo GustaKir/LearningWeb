@@ -1,0 +1,214 @@
+Title: TestClient.delete Method
+URL: https://fastapi.tiangolo.com/reference/testclient/
+Summary: The `delete` method in TestClient allows for sending DELETE requests to a specified URL with optional query parameters, headers, cookies, authentication, and other settings. It returns an HTTP response.
+---
+
+```
+defdelete( # type: ignore[override]
+  self,
+  url: httpx._types.URLTypes,
+  *,
+  params: httpx._types.QueryParamTypes | None = None,
+  headers: httpx._types.HeaderTypes | None = None,
+  cookies: httpx._types.CookieTypes | None = None,
+  auth: httpx._types.AuthTypes | httpx._client.UseClientDefault = httpx._client.USE_CLIENT_DEFAULT,
+  follow_redirects: bool | httpx._client.UseClientDefault = httpx._client.USE_CLIENT_DEFAULT,
+  timeout: httpx._types.TimeoutTypes | httpx._client.UseClientDefault = httpx._client.USE_CLIENT_DEFAULT,
+  extensions: dict[str, typing.Any] | None = None,
+) -> httpx.Response:
+  return super().delete(
+    url,
+    params=params,
+    headers=headers,
+    cookies=cookies,
+    auth=auth,
+    follow_redirects=follow_redirects,
+    timeout=timeout,
+    extensions=extensions,
+  )
+
+```
+  
+---|---  
+###  websocket_connect [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.websocket_connect "Permanent link")
+```
+websocket_connect(url, subprotocols=None, **kwargs)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`url` |  **TYPE:** `str`  
+`subprotocols` |  **TYPE:** `Sequence[str] | None` **DEFAULT:** `None`  
+`**kwargs` |  **TYPE:** `Any` **DEFAULT:** `{}`  
+Source code in `starlette/testclient.py`
+```
+638
+639
+640
+641
+642
+643
+644
+645
+646
+647
+648
+649
+650
+651
+652
+653
+654
+655
+656
+657
+658
+659
+```
+| ```
+defwebsocket_connect(
+  self,
+  url: str,
+  subprotocols: typing.Sequence[str] | None = None,
+  **kwargs: typing.Any,
+) -> WebSocketTestSession:
+  url = urljoin("ws://testserver", url)
+  headers = kwargs.get("headers", {})
+  headers.setdefault("connection", "upgrade")
+  headers.setdefault("sec-websocket-key", "testserver==")
+  headers.setdefault("sec-websocket-version", "13")
+  if subprotocols is not None:
+    headers.setdefault("sec-websocket-protocol", ", ".join(subprotocols))
+  kwargs["headers"] = headers
+  try:
+    super().request("GET", url, **kwargs)
+  except _Upgrade as exc:
+    session = exc.session
+  else:
+    raise RuntimeError("Expected WebSocket upgrade") # pragma: no cover
+  return session
+
+```
+  
+---|---  
+###  lifespan `async` [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.lifespan "Permanent link")
+```
+lifespan()
+
+```
+
+Source code in `starlette/testclient.py`
+```
+693
+694
+695
+696
+697
+698
+```
+| ```
+async deflifespan(self) -> None:
+  scope = {"type": "lifespan", "state": self.app_state}
+  try:
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+  finally:
+    await self.stream_send.send(None)
+
+```
+  
+---|---  
+###  wait_startup `async` [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.wait_startup "Permanent link")
+```
+wait_startup()
+
+```
+
+Source code in `starlette/testclient.py`
+```
+700
+701
+702
+703
+704
+705
+706
+707
+708
+709
+710
+711
+712
+713
+714
+715
+```
+| ```
+async defwait_startup(self) -> None:
+  await self.stream_receive.send({"type": "lifespan.startup"})
+  async defreceive() -> typing.Any:
+    message = await self.stream_send.receive()
+    if message is None:
+      self.task.result()
+    return message
+  message = await receive()
+  assert message["type"] in (
+    "lifespan.startup.complete",
+    "lifespan.startup.failed",
+  )
+  if message["type"] == "lifespan.startup.failed":
+    await receive()
+
+```
+  
+---|---  
+###  wait_shutdown `async` [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.wait_shutdown "Permanent link")
+```
+wait_shutdown()
+
+```
+
+Source code in `starlette/testclient.py`
+```
+717
+718
+719
+720
+721
+722
+723
+724
+725
+726
+727
+728
+729
+730
+731
+```
+| ```
+async defwait_shutdown(self) -> None:
+  async defreceive() -> typing.Any:
+    message = await self.stream_send.receive()
+    if message is None:
+      self.task.result()
+    return message
+  await self.stream_receive.send({"type": "lifespan.shutdown"})
+  message = await receive()
+  assert message["type"] in (
+    "lifespan.shutdown.complete",
+    "lifespan.shutdown.failed",
+  )
+  if message["type"] == "lifespan.shutdown.failed":
+    await receive()
+
+```
+  
+---|---  
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Templating - Jinja2Templates  ](https://fastapi.tiangolo.com/reference/templating/) [ Next  FastAPI People  ](https://fastapi.tiangolo.com/fastapi-people/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

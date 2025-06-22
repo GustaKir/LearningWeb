@@ -1,0 +1,44 @@
+Title: Future Statements in Python
+URL: https://docs.python.org/3/reference/simple_stmts.html
+Summary: A future statement must be placed near the top of a module, allowing only specific preceding elements like docstrings, comments, and other future statements. The primary use of the future statement is for enabling `annotations`, while historical features such as `absolute_import` and `print_function` remain recognized for compatibility, though they are always enabled in Python 3. Future statements are treated specially at compile time to accommodate semantic changes.
+---
+
+```
+
+A future statement must appear near the top of the module. The only lines that can appear before a future statement are:
+  * the module docstring (if any),
+  * comments,
+  * blank lines, and
+  * other future statements.
+
+
+The only feature that requires using the future statement is `annotations` (see [**PEP 563**](https://peps.python.org/pep-0563/)).
+All historical features enabled by the future statement are still recognized by Python 3. The list includes `absolute_import`, `division`, `generators`, `generator_stop`, `unicode_literals`, `print_function`, `nested_scopes` and `with_statement`. They are all redundant because they are always enabled, and only kept for backwards compatibility.
+A future statement is recognized and treated specially at compile time: Changes to the semantics of core constructs are often implemented by generating different code. It may even be the case that a new feature introduces new incompatible syntax (such as a new reserved word), in which case the compiler may need to parse the module differently. Such decisions cannot be pushed off until runtime.
+For any given release, the compiler knows which feature names have been defined, and raises a compile-time error if a future statement contains a feature not known to it.
+The direct runtime semantics are the same as for any import statement: there is a standard module [`__future__`](https://docs.python.org/3/library/__future__.html#module-__future__ "__future__: Future statement definitions"), described later, and it will be imported in the usual way at the time the future statement is executed.
+The interesting runtime semantics depend on the specific feature enabled by the future statement.
+Note that there is nothing special about the statement:
+```
+import__future__ [as name]
+
+```
+
+That is not a future statement; it’s an ordinary import statement with no special semantics or syntax restrictions.
+Code compiled by calls to the built-in functions [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec") and [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile") that occur in a module `M` containing a future statement will, by default, use the new syntax or semantics associated with the future statement. This can be controlled by optional arguments to [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile") — see the documentation of that function for details.
+A future statement typed at an interactive interpreter prompt will take effect for the rest of the interpreter session. If an interpreter is started with the [`-i`](https://docs.python.org/3/using/cmdline.html#cmdoption-i) option, is passed a script name to execute, and the script includes a future statement, it will be in effect in the interactive session started after the script is executed.
+See also 
+
+[**PEP 236**](https://peps.python.org/pep-0236/) - Back to the __future__
+    
+The original proposal for the __future__ mechanism.
+## 7.12. The `global` statement[¶](https://docs.python.org/3/reference/simple_stmts.html#the-global-statement "Link to this heading")
+```
+**global_stmt** ::= "global" [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier) ("," [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier))*
+
+```
+
+The [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) statement causes the listed identifiers to be interpreted as globals. It would be impossible to assign to a global variable without `global`, although free variables may refer to globals without being declared global.
+The [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) statement applies to the entire scope of a function or class body. A [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") is raised if a variable is used or assigned to prior to its global declaration in the scope.
+**Programmer’s note:** [`global`](https://docs.python.org/3/reference/simple_stmts.html#global) is a directive to the parser. It applies only to code parsed at the same time as the `global` statement. In particular, a `global` statement contained in a string or code object supplied to the built-in [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec") function does not affect the code block _containing_ the function call, and code contained in such a string is unaffected by `global` statements in the code containing the function call. The same applies to the [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") and [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile") functions.
+## 7.13. The `nonlocal` statement[¶](https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement "Link to this heading")

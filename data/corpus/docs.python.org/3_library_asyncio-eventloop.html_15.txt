@@ -1,0 +1,37 @@
+Title: asyncio.loop.sock_sendfile
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: The `sock_sendfile` method in the asyncio library sends a file using the high-performance `os.sendfile` if available, returning the total bytes sent. It operates asynchronously and requires a non-blocking TCP socket and a regular binary file object. The method allows for specifying an offset and count of bytes to transmit.
+---
+
+_async_ loop.sock_sendfile(_sock_ , _file_ , _offset =0_, _count =None_, _*_ , _fallback =True_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.sock_sendfile "Link to this definition")
+    
+Send a file using high-performance [`os.sendfile`](https://docs.python.org/3/library/os.html#os.sendfile "os.sendfile") if possible. Return the total number of bytes sent.
+Asynchronous version of [`socket.sendfile()`](https://docs.python.org/3/library/socket.html#socket.socket.sendfile "socket.socket.sendfile").
+_sock_ must be a non-blocking [`socket.SOCK_STREAM`](https://docs.python.org/3/library/socket.html#socket.SOCK_STREAM "socket.SOCK_STREAM") [`socket`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket").
+_file_ must be a regular file object open in binary mode.
+_offset_ tells from where to start reading the file. If specified, _count_ is the total number of bytes to transmit as opposed to sending the file until EOF is reached. File position is always updated, even when this method raises an error, and [`file.tell()`](https://docs.python.org/3/library/io.html#io.IOBase.tell "io.IOBase.tell") can be used to obtain the actual number of bytes sent.
+_fallback_ , when set to `True`, makes asyncio manually read and send the file when the platform does not support the sendfile syscall (e.g. Windows or SSL socket on Unix).
+Raise [`SendfileNotAvailableError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.SendfileNotAvailableError "asyncio.SendfileNotAvailableError") if the system does not support _sendfile_ syscall and _fallback_ is `False`.
+_sock_ must be a non-blocking socket.
+Added in version 3.7.
+### [DNS](https://docs.python.org/3/library/asyncio-eventloop.html#id11)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#dns "Link to this heading") 
+
+_async_ loop.getaddrinfo(_host_ , _port_ , _*_ , _family =0_, _type =0_, _proto =0_, _flags =0_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.getaddrinfo "Link to this definition")
+    
+Asynchronous version of [`socket.getaddrinfo()`](https://docs.python.org/3/library/socket.html#socket.getaddrinfo "socket.getaddrinfo"). 
+
+_async_ loop.getnameinfo(_sockaddr_ , _flags =0_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.getnameinfo "Link to this definition")
+    
+Asynchronous version of [`socket.getnameinfo()`](https://docs.python.org/3/library/socket.html#socket.getnameinfo "socket.getnameinfo").
+Note
+Both _getaddrinfo_ and _getnameinfo_ internally utilize their synchronous versions through the loop’s default thread pool executor. When this executor is saturated, these methods may experience delays, which higher-level networking libraries may report as increased timeouts. To mitigate this, consider using a custom executor for other user tasks, or setting a default executor with a larger number of workers.
+Changed in version 3.7: Both _getaddrinfo_ and _getnameinfo_ methods were always documented to return a coroutine, but prior to Python 3.7 they were, in fact, returning [`asyncio.Future`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future") objects. Starting with Python 3.7 both methods are coroutines.
+### [Working with pipes](https://docs.python.org/3/library/asyncio-eventloop.html#id12)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#working-with-pipes "Link to this heading") 
+
+_async_ loop.connect_read_pipe(_protocol_factory_ , _pipe_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.connect_read_pipe "Link to this definition")
+    
+Register the read end of _pipe_ in the event loop.
+_protocol_factory_ must be a callable returning an [asyncio protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-protocol) implementation.
+_pipe_ is a [file-like object](https://docs.python.org/3/glossary.html#term-file-object).
+Return pair `(transport, protocol)`, where _transport_ supports the [`ReadTransport`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.ReadTransport "asyncio.ReadTransport") interface and _protocol_ is an object instantiated by the _protocol_factory_.
+With [`SelectorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.SelectorEventLoop "asyncio.SelectorEventLoop") event loop, the _pipe_ is set to non-blocking mode.

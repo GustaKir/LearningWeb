@@ -1,0 +1,34 @@
+Title: Initializing and Rendering Chat History in Streamlit App
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/chat-response-feedback
+Summary: This section explains how to make a chat app stateful by storing conversation history in Session State. It defines message attributes such as 'role', 'content', and 'feedback', and provides steps to initialize chat history and render messages.
+---
+
+You now have a complete generator function to simulate a chat stream object.
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/chat-response-feedback#initialize-and-render-your-chat-history)Initialize and render your chat history
+To make your chat app stateful, you'll save the conversation history into Session State as a list of messages. Each message is a dictionary of message attributes. The dictionary keys include the following:
+  * `"role"`: Indicates the source of the message (either `"user"` or `"assistant"`).
+  * `"content"`: The body of the message as a string.
+  * `"feedback"`: An integer that indicates a user's feedback. This is only included when the message role is `"assistant"` because users do not leave feedback on their own prompts.
+
+
+  1. Initialize the chat history in Session State:
+`if "history" not in st.session_state:   st.session_state.history = [] `
+  2. Iterate through the messages in your chat history and render their contents in chat message containers:
+`for i, message in enumerate(st.session_state.history): with st.chat_message(message["role"]):     st.write(message["content"]) `
+In a later step, you'll need a unique key for each assistant message. You can use the index of the message in your chat history to create a unique key. Therefore, use `enumerate()` to get an index along with each message dictionary.
+  3. For each assistant message, check whether feedback has been saved:
+` if message["role"] == "assistant":       feedback = message.get("feedback", None) `
+If no feedback is saved for the current message, the `.get()` method will return the specified default of `None`.
+  4. Save the feedback value into Session State under a unique key for that message:
+`      st.session_state[f"feedback_{i}"] = feedback `
+Because the message index within the ordered chat history is unique, you can use the index as the key. For readability, you can add a prefix, "feedback_", to the index. In the next step, to make the feedback widget show this value, you'll assign the same key to the widget.
+  5. Add a feedback widget to the chat message container:
+`      st.feedback( "thumbs",         key=f"feedback_{i}",         disabled=feedback is not None, ) `
+The code you've written so far will show the chat history. If a user has already rated a message in the chat history, the feedback widget will show the rating and be disabled. The user won't be able to change their rating.
+All unrated messages include an enabled feedback widget. However, if a user interacts with one of those widgets, there is no code to save that information into the chat history yet. To solve this, use a callback as shown in the following steps.
+  6. At the top of your app, after the definition of `chat_stream()` and before you initialize your chat history, define a function to use as a callback:
+`def save_feedback(index):   st.session_state.history[index]["feedback"] = st.session_state[f"feedback_{index}"] `
+The `save_feedback()` function accepts an index and uses the index to get the associated widget value from Session State. Then, this value is saved into chat history.
+  7. Add the callback and index argument to your `st.feedback` widget:
+`      st.feedback(         "thumbs",         key=f"feedback_{i}",         disabled=feedback is not None, +        on_change=save_feedback, +        args=[i],       ) `
+When a user interacts with the feedback widget, the callback will update the chat history before the app reruns.

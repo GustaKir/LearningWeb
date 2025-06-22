@@ -1,0 +1,47 @@
+Title: Asynchronous Tear Down in Unit Tests
+URL: https://docs.python.org/3/library/unittest.html
+Summary: The `_async_ asyncTearDown()` method is executed immediately after the test method and before the `tearDown()` method. It is called even if the test raises an exception. Implementations should carefully check internal state to avoid additional errors being reported, except for `AssertionError` or `SkipTest` exceptions.
+---
+
+_async_ asyncTearDown()[¶](https://docs.python.org/3/library/unittest.html#unittest.IsolatedAsyncioTestCase.asyncTearDown "Link to this definition")
+    
+Method called immediately after the test method has been called and the result recorded. This is called before `tearDown()`. This is called even if the test method raised an exception, so the implementation in subclasses may need to be particularly careful about checking internal state. Any exception, other than [`AssertionError`](https://docs.python.org/3/library/exceptions.html#AssertionError "AssertionError") or [`SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest"), raised by this method will be considered an additional error rather than a test failure (thus increasing the total number of reported errors). This method will only be called if the [`asyncSetUp()`](https://docs.python.org/3/library/unittest.html#unittest.IsolatedAsyncioTestCase.asyncSetUp "unittest.IsolatedAsyncioTestCase.asyncSetUp") succeeds, regardless of the outcome of the test method. The default implementation does nothing. 
+
+addAsyncCleanup(_function_ , _/_ , _* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.html#unittest.IsolatedAsyncioTestCase.addAsyncCleanup "Link to this definition")
+    
+This method accepts a coroutine that can be used as a cleanup function. 
+
+_async_ enterAsyncContext(_cm_)[¶](https://docs.python.org/3/library/unittest.html#unittest.IsolatedAsyncioTestCase.enterAsyncContext "Link to this definition")
+    
+Enter the supplied [asynchronous context manager](https://docs.python.org/3/glossary.html#term-asynchronous-context-manager). If successful, also add its [`__aexit__()`](https://docs.python.org/3/reference/datamodel.html#object.__aexit__ "object.__aexit__") method as a cleanup function by [`addAsyncCleanup()`](https://docs.python.org/3/library/unittest.html#unittest.IsolatedAsyncioTestCase.addAsyncCleanup "unittest.IsolatedAsyncioTestCase.addAsyncCleanup") and return the result of the [`__aenter__()`](https://docs.python.org/3/reference/datamodel.html#object.__aenter__ "object.__aenter__") method.
+Added in version 3.11. 
+
+run(_result =None_)[¶](https://docs.python.org/3/library/unittest.html#unittest.IsolatedAsyncioTestCase.run "Link to this definition")
+    
+Sets up a new event loop to run the test, collecting the result into the [`TestResult`](https://docs.python.org/3/library/unittest.html#unittest.TestResult "unittest.TestResult") object passed as _result_. If _result_ is omitted or `None`, a temporary result object is created (by calling the `defaultTestResult()` method) and used. The result object is returned to [`run()`](https://docs.python.org/3/library/unittest.html#unittest.IsolatedAsyncioTestCase.run "unittest.IsolatedAsyncioTestCase.run")’s caller. At the end of the test all the tasks in the event loop are cancelled.
+An example illustrating the order:
+```
+fromunittestimport IsolatedAsyncioTestCase
+events = []
+
+classTest(IsolatedAsyncioTestCase):
+
+  defsetUp(self):
+    events.append("setUp")
+  async defasyncSetUp(self):
+    self._async_connection = await AsyncConnection()
+    events.append("asyncSetUp")
+  async deftest_response(self):
+    events.append("test_response")
+    response = await self._async_connection.get("https://example.com")
+    self.assertEqual(response.status_code, 200)
+    self.addAsyncCleanup(self.on_cleanup)
+  deftearDown(self):
+    events.append("tearDown")
+  async defasyncTearDown(self):
+    await self._async_connection.close()
+    events.append("asyncTearDown")
+  async defon_cleanup(self):
+    events.append("cleanup")
+if __name__ == "__main__":
+  unittest.main()

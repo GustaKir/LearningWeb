@@ -1,0 +1,25 @@
+Title: Warning and Overview of the Shelve Module
+URL: https://docs.python.org/3/library/shelve.html
+Summary: The `shelve` module relies on `pickle`, making it insecure to load shelves from untrusted sources due to potential arbitrary code execution. Shelf objects function similarly to dictionaries, offering most dictionary operations with additional support for syncing with the persistent storage.
+---
+
+```
+
+Warning
+Because the [`shelve`](https://docs.python.org/3/library/shelve.html#module-shelve "shelve: Python object persistence.") module is backed by [`pickle`](https://docs.python.org/3/library/pickle.html#module-pickle "pickle: Convert Python objects to streams of bytes and back."), it is insecure to load a shelf from an untrusted source. Like with pickle, loading a shelf can execute arbitrary code.
+Shelf objects support most of methods and operations supported by dictionaries (except copying, constructors and operators `|` and `|=`). This eases the transition from dictionary based scripts to those requiring persistent storage.
+Two additional methods are supported: 
+
+Shelf.sync()[¶](https://docs.python.org/3/library/shelve.html#shelve.Shelf.sync "Link to this definition")
+    
+Write back all entries in the cache if the shelf was opened with _writeback_ set to [`True`](https://docs.python.org/3/library/constants.html#True "True"). Also empty the cache and synchronize the persistent dictionary on disk, if feasible. This is called automatically when the shelf is closed with [`close()`](https://docs.python.org/3/library/shelve.html#shelve.Shelf.close "shelve.Shelf.close"). 
+
+Shelf.close()[¶](https://docs.python.org/3/library/shelve.html#shelve.Shelf.close "Link to this definition")
+    
+Synchronize and close the persistent _dict_ object. Operations on a closed shelf will fail with a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError").
+See also
+[Persistent dictionary recipe](https://code.activestate.com/recipes/576642-persistent-dict-with-multiple-standard-file-format/) with widely supported storage formats and having the speed of native dictionaries.
+## Restrictions[¶](https://docs.python.org/3/library/shelve.html#restrictions "Link to this heading")
+  * The choice of which database package will be used (such as [`dbm.ndbm`](https://docs.python.org/3/library/dbm.html#module-dbm.ndbm "dbm.ndbm: The New Database Manager \(Unix\)") or [`dbm.gnu`](https://docs.python.org/3/library/dbm.html#module-dbm.gnu "dbm.gnu: GNU database manager \(Unix\)")) depends on which interface is available. Therefore it is not safe to open the database directly using [`dbm`](https://docs.python.org/3/library/dbm.html#module-dbm "dbm: Interfaces to various Unix "database" formats."). The database is also (unfortunately) subject to the limitations of [`dbm`](https://docs.python.org/3/library/dbm.html#module-dbm "dbm: Interfaces to various Unix "database" formats."), if it is used — this means that (the pickled representation of) the objects stored in the database should be fairly small, and in rare cases key collisions may cause the database to refuse updates.
+  * The [`shelve`](https://docs.python.org/3/library/shelve.html#module-shelve "shelve: Python object persistence.") module does not support _concurrent_ read/write access to shelved objects. (Multiple simultaneous read accesses are safe.) When a program has a shelf open for writing, no other program should have it open for reading or writing. Unix file locking can be used to solve this, but this differs across Unix versions and requires knowledge about the database implementation used.
+  * On macOS [`dbm.ndbm`](https://docs.python.org/3/library/dbm.html#module-dbm.ndbm "dbm.ndbm: The New Database Manager \(Unix\)") can silently corrupt the database file on updates, which can cause hard crashes when trying to read from the database.

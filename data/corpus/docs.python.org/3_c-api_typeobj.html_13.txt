@@ -1,0 +1,22 @@
+Title: Handling `tp_dealloc` in Python's C API
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: In Python's garbage collection, `tp_dealloc` can be invoked by any thread, not just the one that created the object. While API calls are safe due to the Global Interpreter Lock (GIL), caution is advised when these deallocations interact with other C or C++ libraries to prevent violations of those libraries' assumptions.
+---
+
+```
+
+Warning
+In a garbage collected Python, `tp_dealloc` may be called from any Python thread, not just the thread which created the object (if the object becomes part of a refcount cycle, that cycle might be collected by a garbage collection on any thread). This is not a problem for Python API calls, since the thread on which `tp_dealloc` is called will own the Global Interpreter Lock (GIL). However, if the object being destroyed in turn destroys objects from some other C or C++ library, care should be taken to ensure that destroying those objects on the thread which called `tp_dealloc` will not violate any assumptions of the library.
+**Inheritance:**
+This field is inherited by subtypes. 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject").tp_vectorcall_offset[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_vectorcall_offset "Link to this definition")
+    
+An optional offset to a per-instance function that implements calling the object using the [vectorcall protocol](https://docs.python.org/3/c-api/call.html#vectorcall), a more efficient alternative of the simpler [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call").
+This field is only used if the flag [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") is set. If so, this must be a positive integer containing the offset in the instance of a [`vectorcallfunc`](https://docs.python.org/3/c-api/call.html#c.vectorcallfunc "vectorcallfunc") pointer.
+The _vectorcallfunc_ pointer may be `NULL`, in which case the instance behaves as if [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") was not set: calling the instance falls back to [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call").
+Any class that sets `Py_TPFLAGS_HAVE_VECTORCALL` must also set [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call") and make sure its behaviour is consistent with the _vectorcallfunc_ function. This can be done by setting _tp_call_ to [`PyVectorcall_Call()`](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_Call "PyVectorcall_Call").
+Changed in version 3.8: Before version 3.8, this slot was named `tp_print`. In Python 2.x, it was used for printing to a file. In Python 3.0 to 3.7, it was unused.
+Changed in version 3.12: Before version 3.12, it was not recommended for [mutable heap types](https://docs.python.org/3/c-api/typeobj.html#heap-types) to implement the vectorcall protocol. When a user sets [`__call__`](https://docs.python.org/3/reference/datamodel.html#object.__call__ "object.__call__") in Python code, only _tp_call_ is updated, likely making it inconsistent with the vectorcall function. Since 3.12, setting `__call__` will disable vectorcall optimization by clearing the [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") flag.
+**Inheritance:**
+This field is always inherited. However, the [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") flag is not always inherited. If it’s not set, then the subclass won’t use [vectorcall](https://docs.python.org/3/c-api/call.html#vectorcall), except when [`PyVectorcall_Call()`](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_Call "PyVectorcall_Call") is explicitly called.

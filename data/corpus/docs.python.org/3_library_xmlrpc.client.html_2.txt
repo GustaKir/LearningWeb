@@ -1,0 +1,34 @@
+Title: XML-RPC Data Types
+URL: https://docs.python.org/3/library/xmlrpc.client.html
+Summary: This section outlines the supported data types in XML-RPC, including `boolean`, `string`, `int`, `array`, `struct`, `float`, `datetime`, `binary`, `nil`, and `bigdecimal`. It describes how the returned types can change based on specific flags and mentions the existence of `Fault` and `ProtocolError` for signaling server errors.
+---
+
+thon.org/3/library/datetime.html#datetime.datetime "datetime.datetime"). Returned type depends on values of _use_builtin_types_ and _use_datetime_ flags.  
+`base64` | [`Binary`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary "xmlrpc.client.Binary"), [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") or [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray"). Returned type depends on the value of the _use_builtin_types_ flag.  
+`nil` | The `None` constant. Passing is allowed only if _allow_none_ is true.  
+`bigdecimal` | [`decimal.Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal"). Returned type only.  
+This is the full set of data types supported by XML-RPC. Method calls may also raise a special [`Fault`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "xmlrpc.client.Fault") instance, used to signal XML-RPC server errors, or [`ProtocolError`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError "xmlrpc.client.ProtocolError") used to signal an error in the HTTP/HTTPS transport layer. Both [`Fault`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "xmlrpc.client.Fault") and [`ProtocolError`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError "xmlrpc.client.ProtocolError") derive from a base class called `Error`. Note that the xmlrpc client module currently does not marshal instances of subclasses of built-in types.
+When passing strings, characters special to XML such as `<`, `>`, and `&` will be automatically escaped. However, it’s the caller’s responsibility to ensure that the string is free of characters that aren’t allowed in XML, such as the control characters with ASCII values between 0 and 31 (except, of course, tab, newline and carriage return); failing to do this will result in an XML-RPC request that isn’t well-formed XML. If you have to pass arbitrary bytes via XML-RPC, use [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") or [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") classes or the [`Binary`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary "xmlrpc.client.Binary") wrapper class described below.
+`Server` is retained as an alias for [`ServerProxy`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ServerProxy "xmlrpc.client.ServerProxy") for backwards compatibility. New code should use [`ServerProxy`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ServerProxy "xmlrpc.client.ServerProxy").
+Changed in version 3.5: Added the _context_ argument.
+Changed in version 3.6: Added support of type tags with prefixes (e.g. `ex:nil`). Added support of unmarshalling additional types used by Apache XML-RPC implementation for numerics: `i1`, `i2`, `i8`, `biginteger`, `float` and `bigdecimal`. See <https://ws.apache.org/xmlrpc/types.html> for a description.
+See also 
+
+[XML-RPC HOWTO](https://tldp.org/HOWTO/XML-RPC-HOWTO/index.html)
+    
+A good description of XML-RPC operation and client software in several languages. Contains pretty much everything an XML-RPC client developer needs to know. 
+
+[XML-RPC Introspection](https://xmlrpc-c.sourceforge.io/introspection.html)
+    
+Describes the XML-RPC protocol extension for introspection. 
+
+[XML-RPC Specification](http://xmlrpc.scripting.com/spec.html)
+    
+The official specification.
+## ServerProxy Objects[¶](https://docs.python.org/3/library/xmlrpc.client.html#serverproxy-objects "Link to this heading")
+A [`ServerProxy`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ServerProxy "xmlrpc.client.ServerProxy") instance has a method corresponding to each remote procedure call accepted by the XML-RPC server. Calling the method performs an RPC, dispatched by both name and argument signature (e.g. the same method name can be overloaded with multiple argument signatures). The RPC finishes by returning a value, which may be either returned data in a conformant type or a [`Fault`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "xmlrpc.client.Fault") or [`ProtocolError`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ProtocolError "xmlrpc.client.ProtocolError") object indicating an error.
+Servers that support the XML introspection API support some common methods grouped under the reserved `system` attribute: 
+
+ServerProxy.system.listMethods()[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.ServerProxy.system.listMethods "Link to this definition")
+    
+This method returns a list of strings, one for each (non-system) method supported by the XML-RPC server.

@@ -1,0 +1,38 @@
+Title: Using defaultdict for Counting Letters
+URL: https://docs.python.org/3/library/collections.html
+Summary: This section demonstrates how to use Python's `defaultdict` to count occurrences of each letter in a string. When a letter is first encountered, it initializes its count to zero using `int()`. It also introduces a custom `constant_factory` function, which utilizes a lambda to create constant functions for supplying default values.
+---
+
+```
+>>> s = 'mississippi'
+>>> d = defaultdict(int)
+>>> for k in s:
+...   d[k] += 1
+...
+>>> sorted(d.items())
+[('i', 4), ('m', 1), ('p', 2), ('s', 4)]
+
+```
+
+When a letter is first encountered, it is missing from the mapping, so the [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory") function calls [`int()`](https://docs.python.org/3/library/functions.html#int "int") to supply a default count of zero. The increment operation then builds up the count for each letter.
+The function [`int()`](https://docs.python.org/3/library/functions.html#int "int") which always returns zero is just a special case of constant functions. A faster and more flexible way to create constant functions is to use a lambda function which can supply any constant value (not just zero):
+>>>```
+>>> defconstant_factory(value):
+...   return lambda: value
+...
+>>> d = defaultdict(constant_factory('<missing>'))
+>>> d.update(name='John', action='ran')
+>>> '%(name)s%(action)s to %(object)s' % d
+'John ran to <missing>'
+
+```
+
+Setting the [`default_factory`](https://docs.python.org/3/library/collections.html#collections.defaultdict.default_factory "collections.defaultdict.default_factory") to [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") makes the [`defaultdict`](https://docs.python.org/3/library/collections.html#collections.defaultdict "collections.defaultdict") useful for building a dictionary of sets:
+>>>```
+>>> s = [('red', 1), ('blue', 2), ('red', 3), ('blue', 4), ('red', 1), ('blue', 4)]
+>>> d = defaultdict(set)
+>>> for k, v in s:
+...   d[k].add(v)
+...
+>>> sorted(d.items())
+[('blue', {2, 4}), ('red', {1, 3})]

@@ -1,0 +1,65 @@
+Title: FileType Objects in argparse Module
+URL: https://docs.python.org/3/library/argparse.html
+Summary: The argparse.FileType factory allows the creation of objects that are used as types for command-line arguments, enabling the opening of files with specified modes, buffer sizes, encodings, and error handling.
+---
+
+```
+
+Changed in version 3.7: New _required_ keyword-only parameter.
+### FileType objects[¶](https://docs.python.org/3/library/argparse.html#filetype-objects "Link to this heading") 
+
+_class_ argparse.FileType(_mode ='r'_, _bufsize =-1_, _encoding =None_, _errors =None_)[¶](https://docs.python.org/3/library/argparse.html#argparse.FileType "Link to this definition")
+    
+The [`FileType`](https://docs.python.org/3/library/argparse.html#argparse.FileType "argparse.FileType") factory creates objects that can be passed to the type argument of [`ArgumentParser.add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"). Arguments that have [`FileType`](https://docs.python.org/3/library/argparse.html#argparse.FileType "argparse.FileType") objects as their type will open command-line arguments as files with the requested modes, buffer sizes, encodings and error handling (see the [`open()`](https://docs.python.org/3/library/functions.html#open "open") function for more details):
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--raw', type=argparse.FileType('wb', 0))
+>>> parser.add_argument('out', type=argparse.FileType('w', encoding='UTF-8'))
+>>> parser.parse_args(['--raw', 'raw.dat', 'file.txt'])
+Namespace(out=<_io.TextIOWrapper name='file.txt' mode='w' encoding='UTF-8'>, raw=<_io.FileIO name='raw.dat' mode='wb'>)
+
+```
+
+FileType objects understand the pseudo-argument `'-'` and automatically convert this into [`sys.stdin`](https://docs.python.org/3/library/sys.html#sys.stdin "sys.stdin") for readable [`FileType`](https://docs.python.org/3/library/argparse.html#argparse.FileType "argparse.FileType") objects and [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") for writable [`FileType`](https://docs.python.org/3/library/argparse.html#argparse.FileType "argparse.FileType") objects:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('infile', type=argparse.FileType('r'))
+>>> parser.parse_args(['-'])
+Namespace(infile=<_io.TextIOWrapper name='<stdin>' encoding='UTF-8'>)
+
+```
+
+Changed in version 3.4: Added the _encodings_ and _errors_ parameters.
+### Argument groups[¶](https://docs.python.org/3/library/argparse.html#argument-groups "Link to this heading") 
+
+ArgumentParser.add_argument_group(_title=None_ , _description=None_ , _*_[, _argument_default_][, _conflict_handler_])[¶](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group "Link to this definition")
+    
+By default, [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") groups command-line arguments into “positional arguments” and “options” when displaying help messages. When there is a better conceptual grouping of arguments than this default one, appropriate groups can be created using the `add_argument_group()` method:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG', add_help=False)
+>>> group = parser.add_argument_group('group')
+>>> group.add_argument('--foo', help='foo help')
+>>> group.add_argument('bar', help='bar help')
+>>> parser.print_help()
+usage: PROG [--foo FOO] bar
+group:
+ bar  bar help
+ --foo FOO foo help
+
+```
+
+The [`add_argument_group()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group "argparse.ArgumentParser.add_argument_group") method returns an argument group object which has an [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") method just like a regular [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser"). When an argument is added to the group, the parser treats it just like a normal argument, but displays the argument in a separate group for help messages. The `add_argument_group()` method accepts _title_ and _description_ arguments which can be used to customize this display:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG', add_help=False)
+>>> group1 = parser.add_argument_group('group1', 'group1 description')
+>>> group1.add_argument('foo', help='foo help')
+>>> group2 = parser.add_argument_group('group2', 'group2 description')
+>>> group2.add_argument('--bar', help='bar help')
+>>> parser.print_help()
+usage: PROG [--bar BAR] foo
+group1:
+ group1 description
+ foo  foo help
+group2:
+ group2 description
+ --bar BAR bar help

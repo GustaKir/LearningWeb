@@ -1,0 +1,37 @@
+Title: Streamlit BigQuery Tutorial
+URL: https://docs.streamlit.io/develop/tutorials/databases/bigquery
+Summary: This tutorial covers the steps to integrate BigQuery with a Streamlit app, including creating a database, enabling the BigQuery API, setting up a service account, managing app secrets, and adding necessary dependencies.
+---
+
+1. Contents
+  2. [Introduction](https://docs.streamlit.io/develop/tutorials/databases/bigquery#introduction)
+  3. [Create a BigQuery database](https://docs.streamlit.io/develop/tutorials/databases/bigquery#create-a-bigquery-database)
+  4. [Enable the BigQuery API](https://docs.streamlit.io/develop/tutorials/databases/bigquery#enable-the-bigquery-api)
+  5. [Create a service account & key file](https://docs.streamlit.io/develop/tutorials/databases/bigquery#create-a-service-account--key-file)
+  6. [Add the key file to your local app secrets](https://docs.streamlit.io/develop/tutorials/databases/bigquery#add-the-key-file-to-your-local-app-secrets)
+  7. [Copy your app secrets to the cloud](https://docs.streamlit.io/develop/tutorials/databases/bigquery#copy-your-app-secrets-to-the-cloud)
+  8. [Add google-cloud-bigquery to your requirements file](https://docs.streamlit.io/develop/tutorials/databases/bigquery#add-google-cloud-bigquery-to-your-requirements-file)
+  9. [Write your Streamlit app](https://docs.streamlit.io/develop/tutorials/databases/bigquery#write-your-streamlit-app)
+
+
+# [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#connect-streamlit-to-google-bigquery)Connect Streamlit to Google BigQuery
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#introduction)Introduction
+This guide explains how to securely access a BigQuery database from Streamlit Community Cloud. It uses the [google-cloud-bigquery](https://googleapis.dev/python/bigquery/latest/index.html) library and Streamlit's [Secrets management](https://docs.streamlit.io/develop/concepts/connections/secrets-management).
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#create-a-bigquery-database)Create a BigQuery database
+_push_pin_
+#### Note
+If you already have a database that you want to use, feel free to [skip to the next step](https://docs.streamlit.io/develop/tutorials/databases/bigquery#enable-the-bigquery-api).
+For this example, we will use one of the [sample datasets](https://cloud.google.com/bigquery/public-data#sample_tables) from BigQuery (namely the `shakespeare` table). If you want to create a new dataset instead, follow [Google's quickstart guide](https://cloud.google.com/bigquery/docs/quickstarts/quickstart-web-ui).
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#enable-the-bigquery-api)Enable the BigQuery API
+Programmatic access to BigQuery is controlled through [Google Cloud Platform](https://cloud.google.com). Create an account or sign in and head over to the [APIs & Services dashboard](https://console.cloud.google.com/apis/dashboard) (select or create a project if asked). As shown below, search for the BigQuery API and enable it:
+![Bigquery screenshot 1](https://docs.streamlit.io/images/databases/big-query-1.png)![Bigquery screenshot 2](https://docs.streamlit.io/images/databases/big-query-2.png)![Bigquery screenshot 3](https://docs.streamlit.io/images/databases/big-query-3.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#create-a-service-account--key-file)Create a service account & key file
+To use the BigQuery API from Streamlit Community Cloud, you need a Google Cloud Platform service account (a special account type for programmatic data access). Go to the [Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts) page and create an account with the **Viewer** permission (this will let the account access data but not change it):
+![Bigquery screenshot 4](https://docs.streamlit.io/images/databases/big-query-4.png)![Bigquery screenshot 5](https://docs.streamlit.io/images/databases/big-query-5.png)![Bigquery screenshot 6](https://docs.streamlit.io/images/databases/big-query-6.png) _push_pin_
+#### Note
+If the button **CREATE SERVICE ACCOUNT** is gray, you don't have the correct permissions. Ask the admin of your Google Cloud project for help.
+After clicking **DONE** , you should be back on the service accounts overview. Create a JSON key file for the new account and download it:
+![Bigquery screenshot 7](https://docs.streamlit.io/images/databases/big-query-7.png)![Bigquery screenshot 8](https://docs.streamlit.io/images/databases/big-query-8.png)![Bigquery screenshot 9](https://docs.streamlit.io/images/databases/big-query-9.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/bigquery#add-the-key-file-to-your-local-app-secrets)Add the key file to your local app secrets
+Your local Streamlit app will read secrets from a file `.streamlit/secrets.toml` in your app's root directory. Create this file if it doesn't exist yet and add the content of the key file you just downloaded to it as shown below:
+`# .streamlit/secrets.toml [gcp_service_account] type = "service_account" project_id = "xxx" private_key_id = "xxx" private_key = "xxx" client_email = "xxx" client_id = "xxx" auth_uri = "https://accounts.google.com/o/oauth2/auth" token_uri = "https://oauth2.googleapis.com/token" auth_provider_x509_cert_url = "https

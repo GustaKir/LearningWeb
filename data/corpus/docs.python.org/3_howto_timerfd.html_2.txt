@@ -1,0 +1,109 @@
+Title: Using Timer File Descriptors in Python
+URL: https://docs.python.org/3/howto/timerfd.html
+Summary: This document describes how to set up and use timer file descriptors in Python. It includes an example of creating a non-blocking socket server that listens for a 'stop' command while managing multiple timers that fire at specified intervals. The code demonstrates the creation of timers using `os.timerfd_create` and sets their times using `os.timerfd_settime`.
+---
+
+```
+importos,time,select,socket,sys
+# In this example, use loopback address to send "stop" command to the server.
+#
+# $ telnet 127.0.0.1 1234
+# Trying 127.0.0.1...
+# Connected to 127.0.0.1.
+# Escape character is '^]'.
+# stop
+# Connection closed by foreign host.
+#
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind(("127.0.0.1", 1234))
+sock.setblocking(False)
+sock.listen(1)
+# Create timer file descriptors in non-blocking mode.
+num = 3
+fds = [os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+    for _ in range(num)]
+select_fds = fds + [sock]
+# Start the timers with os.timerfd_settime() in seconds.
+# Timer 1 fires every 0.25 seconds; timer 2 every 0.5 seconds; etc
+for i, fd in enumerate(fds, start=1):
+  os.timerfd_settime(fd, initial=i/4, interval=i/4)
+timeout = 3
+try:
+  conn = None
+  is_active = True
+  while is_active:
+    # Wait for the timer to expire for 3 seconds.
+    # select.select() returns a list of file descriptors or objects.
+    rfd, wfd, xfd = select.select(select_fds, select_fds, select_fds, timeout)
+    for fd in rfd:
+      if fd == sock:
+        # Check if there is a connection request.
+        print(f"Accepting connection {fd}")
+        conn, addr = sock.accept()
+        conn.setblocking(False)
+        print(f"Accepted connection {conn} from {addr}")
+        select_fds.append(conn)
+      elif conn and fd == conn:
+        # Check if there is data to read.
+        print(f"Reading data {fd}")
+        data = conn.recv(1024)
+        if data:
+          # You should catch UnicodeDecodeError exception for safety.
+          cmd = data.decode()
+          if cmd.startswith("stop"):
+            print(f"Stopping server")
+            is_active = False
+          else:
+            print(f"Unknown command: {cmd}")
+        else:
+          # No more data, close connection
+          print(f"Closing connection {fd}")
+          select_fds.remove(conn)
+          conn.close()
+          conn = None
+      elif fd in fds:
+        print(f"Reading timer {fd}")
+        count = int.from_bytes(os.read(fd, 8), byteorder=sys.byteorder)
+        print(f"Timer {fds.index(fd)+1} expired {count} times")
+      else:
+        print(f"Unknown file descriptor {fd}")
+finally:
+  for fd in fds:
+    os.close(fd)
+  sock.close()
+  sock = None
+
+```
+
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [timer file descriptor HOWTO](https://docs.python.org/3/howto/timerfd.html)
+    * [Examples](https://docs.python.org/3/howto/timerfd.html#examples)
+
+
+#### Previous topic
+[Isolating Extension Modules](https://docs.python.org/3/howto/isolating-extensions.html "previous chapter")
+#### Next topic
+[The Python 2.3 Method Resolution Order](https://docs.python.org/3/howto/mro.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/timerfd.rst)
+
+
+«
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/mro.html "The Python 2.3 Method Resolution Order") |
+  * [previous](https://docs.python.org/3/howto/isolating-extensions.html "Isolating Extension Modules") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [timer file descriptor HOWTO](https://docs.python.org/3/howto/timerfd.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+© [ Copyright ](https://docs.python.org/3/copyright.html) 2001-2025, Python Software Foundation. This page is licensed under the Python Software Foundation License Version 2. Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License. See [History and License](https://docs.python.org/license.html) for more information. The Python Software Foundation is a non-profit corporation. [Please donate.](https://www.python.org/psf/donations/) Last updated on Apr 27, 2025 (05:38 UTC). [Found a bug](https://docs.python.org/bugs.html)? Created using [Sphinx](https://www.sphinx-doc.org/) 8.2.3.

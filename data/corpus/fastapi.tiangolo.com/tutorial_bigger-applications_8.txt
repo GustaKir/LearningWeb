@@ -1,0 +1,112 @@
+Title: Using Relative Imports in FastAPI Applications
+URL: https://fastapi.tiangolo.com/tutorial/bigger-applications/
+Summary: This section explains how to use relative imports in FastAPI applications, emphasizing the directory structure required for resolving dependencies. It also highlights the importance of knowing the package hierarchy to avoid errors, particularly when attempting to import functions from sibling modules. The content briefly mentions adding custom tags, responses, and dependencies to path operations.
+---
+
+```
+
+that would mean:
+  * Starting in the same package that this module (the file `app/routers/items.py`) lives in (the directory `app/routers/`)...
+  * go to the parent package (the directory `app/`)...
+  * then go to the parent of that package (there's no parent package, `app` is the top level 😱)...
+  * and in there, find the module `dependencies` (the file at `app/dependencies.py`)...
+  * and from it, import the function `get_token_header`.
+
+
+That would refer to some package above `app/`, with its own file `__init__.py`, etc. But we don't have that. So, that would throw an error in our example. 🚨
+But now you know how it works, so you can use relative imports in your own apps no matter how complex they are. 🤓
+### Add some custom `tags`, `responses`, and `dependencies`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#add-some-custom-tags-responses-and-dependencies "Permanent link")
+We are not adding the prefix `/items` nor the `tags=["items"]` to each _path operation_ because we added them to the `APIRouter`.
+But we can still add _more_ `tags` that will be applied to a specific _path operation_ , and also some extra `responses` specific to that _path operation_ :
+app/routers/items.py```
+fromfastapiimport APIRouter, Depends, HTTPException
+from..dependenciesimport get_token_header
+router = APIRouter(
+  prefix="/items",
+  tags=["items"],
+  dependencies=[Depends(get_token_header)],
+  responses={404: {"description": "Not found"}},
+)
+fake_items_db = {"plumbus": {"name": "Plumbus"}, "gun": {"name": "Portal Gun"}}
+@router.get("/")
+async defread_items():
+  return fake_items_db
+@router.get("/{item_id}")
+async defread_item(item_id: str):
+  if item_id not in fake_items_db:
+    raise HTTPException(status_code=404, detail="Item not found")
+  return {"name": fake_items_db[item_id]["name"], "item_id": item_id}
+@router.put(
+  "/{item_id}",
+  tags=["custom"],
+  responses={403: {"description": "Operation forbidden"}},
+)
+async defupdate_item(item_id: str):
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=403, detail="You can only update the item: plumbus"
+    )
+  return {"item_id": item_id, "name": "The great Plumbus"}
+
+```
+
+Tip
+This last path operation will have the combination of tags: `["items", "custom"]`.
+And it will also have both responses in the documentation, one for `404` and one for `403`.
+## The main `FastAPI`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#the-main-fastapi "Permanent link")
+Now, let's see the module at `app/main.py`.
+Here's where you import and use the class `FastAPI`.
+This will be the main file in your application that ties everything together.
+And as most of your logic will now live in its own specific module, the main file will be quite simple.
+### Import `FastAPI`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#import-fastapi "Permanent link")
+You import and create a `FastAPI` class as normally.
+And we can even declare [global dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/) that will be combined with the dependencies for each `APIRouter`:
+app/main.py```
+fromfastapiimport Depends, FastAPI
+from.dependenciesimport get_query_token, get_token_header
+from.internalimport admin
+from.routersimport items, users
+app = FastAPI(dependencies=[Depends(get_query_token)])
+app.include_router(users.router)
+app.include_router(items.router)
+app.include_router(
+  admin.router,
+  prefix="/admin",
+  tags=["admin"],
+  dependencies=[Depends(get_token_header)],
+  responses={418: {"description": "I'm a teapot"}},
+)
+@app.get("/")
+async defroot():
+  return {"message": "Hello Bigger Applications!"}
+
+```
+
+### Import the `APIRouter`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#import-the-apirouter "Permanent link")
+Now we import the other submodules that have `APIRouter`s:
+app/main.py```
+fromfastapiimport Depends, FastAPI
+from.dependenciesimport get_query_token, get_token_header
+from.internalimport admin
+from.routersimport items, users
+app = FastAPI(dependencies=[Depends(get_query_token)])
+app.include_router(users.router)
+app.include_router(items.router)
+app.include_router(
+  admin.router,
+  prefix="/admin",
+  tags=["admin"],
+  dependencies=[Depends(get_token_header)],
+  responses={418: {"description": "I'm a teapot"}},
+)
+@app.get("/")
+async defroot():
+  return {"message": "Hello Bigger Applications!"}
+
+```
+
+As the files `app/routers/users.py` and `app/routers/items.py` are submodules that are part of the same Python package `app`, we can use a single dot `.` to import them using "relative imports".
+### How the importing works[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#how-the-importing-works "Permanent link")
+The section:
+```
+from.routersimport items, users

@@ -1,0 +1,31 @@
+Title: Using re.sub() and Common Problems with Regular Expressions
+URL: https://docs.python.org/3/howto/regex.html
+Summary: This section explains how to use the `re.sub()` function in Python, including how to pass patterns as strings or objects and apply regular expression flags. It also highlights common pitfalls associated with regular expressions and suggests using string methods when applicable.
+---
+
+```
+
+When using the module-level [`re.sub()`](https://docs.python.org/3/library/re.html#re.sub "re.sub") function, the pattern is passed as the first argument. The pattern may be provided as an object or as a string; if you need to specify regular expression flags, you must either use a pattern object as the first parameter, or use embedded modifiers in the pattern string, e.g. `sub("(?i)b+", "x", "bbbb BBBB")` returns `'x x'`.
+## Common Problems[¶](https://docs.python.org/3/howto/regex.html#common-problems "Link to this heading")
+Regular expressions are a powerful tool for some applications, but in some ways their behaviour isn’t intuitive and at times they don’t behave the way you may expect them to. This section will point out some of the most common pitfalls.
+### Use String Methods[¶](https://docs.python.org/3/howto/regex.html#use-string-methods "Link to this heading")
+Sometimes using the [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") module is a mistake. If you’re matching a fixed string, or a single character class, and you’re not using any [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") features such as the [`IGNORECASE`](https://docs.python.org/3/library/re.html#re.IGNORECASE "re.IGNORECASE") flag, then the full power of regular expressions may not be required. Strings have several methods for performing operations with fixed strings and they’re usually much faster, because the implementation is a single small C loop that’s been optimized for the purpose, instead of the large, more generalized regular expression engine.
+One example might be replacing a single fixed string with another one; for example, you might replace `word` with `deed`. [`re.sub()`](https://docs.python.org/3/library/re.html#re.sub "re.sub") seems like the function to use for this, but consider the [`replace()`](https://docs.python.org/3/library/stdtypes.html#str.replace "str.replace") method. Note that `replace()` will also replace `word` inside words, turning `swordfish` into `sdeedfish`, but the naive RE `word` would have done that, too. (To avoid performing the substitution on parts of words, the pattern would have to be `\bword\b`, in order to require that `word` have a word boundary on either side. This takes the job beyond `replace()`’s abilities.)
+Another common task is deleting every occurrence of a single character from a string or replacing it with another single character. You might do this with something like `re.sub('\n', ' ', S)`, but [`translate()`](https://docs.python.org/3/library/stdtypes.html#str.translate "str.translate") is capable of doing both tasks and will be faster than any regular expression operation can be.
+In short, before turning to the [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") module, consider whether your problem can be solved with a faster and simpler string method.
+### match() versus search()[¶](https://docs.python.org/3/howto/regex.html#match-versus-search "Link to this heading")
+The [`match()`](https://docs.python.org/3/library/re.html#re.match "re.match") function only checks if the RE matches at the beginning of the string while [`search()`](https://docs.python.org/3/library/re.html#re.search "re.search") will scan forward through the string for a match. It’s important to keep this distinction in mind. Remember, `match()` will only report a successful match which will start at 0; if the match wouldn’t start at zero, `match()` will _not_ report it.
+>>>```
+>>> print(re.match('super', 'superstition').span())
+(0, 5)
+>>> print(re.match('super', 'insuperable'))
+None
+
+```
+
+On the other hand, [`search()`](https://docs.python.org/3/library/re.html#re.search "re.search") will scan forward through the string, reporting the first match it finds.
+>>>```
+>>> print(re.search('super', 'superstition').span())
+(0, 5)
+>>> print(re.search('super', 'insuperable').span())
+(2, 7)

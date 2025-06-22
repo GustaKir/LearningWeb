@@ -1,0 +1,49 @@
+Title: Starting FastAPI Applications: Pre-launch Considerations
+URL: https://fastapi.tiangolo.com/deployment/concepts/
+Summary: This section discusses essential steps to perform before starting a FastAPI application, such as running database migrations. It emphasizes the need for a single process to execute these preliminary tasks, ensuring they are done only once prior to launching the main application.
+---
+
+to use, in any case, it would most probably be **a single Uvicorn process** , and the cloud service would be in charge of replicating it.
+
+
+Tip
+Don't worry if some of these items about **containers** , Docker, or Kubernetes don't make a lot of sense yet.
+I'll tell you more about container images, Docker, Kubernetes, etc. in a future chapter: [FastAPI in Containers - Docker](https://fastapi.tiangolo.com/deployment/docker/).
+## Previous Steps Before Starting[¶](https://fastapi.tiangolo.com/deployment/concepts/#previous-steps-before-starting "Permanent link")
+There are many cases where you want to perform some steps **before starting** your application.
+For example, you might want to run **database migrations**.
+But in most cases, you will want to perform these steps only **once**.
+So, you will want to have a **single process** to perform those **previous steps** , before starting the application.
+And you will have to make sure that it's a single process running those previous steps _even_ if afterwards, you start **multiple processes** (multiple workers) for the application itself. If those steps were run by **multiple processes** , they would **duplicate** the work by running it in **parallel** , and if the steps were something delicate like a database migration, they could cause conflicts with each other.
+Of course, there are some cases where there's no problem in running the previous steps multiple times, in that case, it's a lot easier to handle.
+Tip
+Also, keep in mind that depending on your setup, in some cases you **might not even need any previous steps** before starting your application.
+In that case, you wouldn't have to worry about any of this. 🤷
+### Examples of Previous Steps Strategies[¶](https://fastapi.tiangolo.com/deployment/concepts/#examples-of-previous-steps-strategies "Permanent link")
+This will **depend heavily** on the way you **deploy your system** , and it would probably be connected to the way you start programs, handling restarts, etc.
+Here are some possible ideas:
+  * An "Init Container" in Kubernetes that runs before your app container
+  * A bash script that runs the previous steps and then starts your application
+    * You would still need a way to start/restart _that_ bash script, detect errors, etc.
+
+
+Tip
+I'll give you more concrete examples for doing this with containers in a future chapter: [FastAPI in Containers - Docker](https://fastapi.tiangolo.com/deployment/docker/).
+## Resource Utilization[¶](https://fastapi.tiangolo.com/deployment/concepts/#resource-utilization "Permanent link")
+Your server(s) is (are) a **resource** , you can consume or **utilize** , with your programs, the computation time on the CPUs, and the RAM memory available.
+How much of the system resources do you want to be consuming/utilizing? It might be easy to think "not much", but in reality, you will probably want to consume **as much as possible without crashing**.
+If you are paying for 3 servers but you are using only a little bit of their RAM and CPU, you are probably **wasting money** 💸, and probably **wasting server electric power** 🌎, etc.
+In that case, it could be better to have only 2 servers and use a higher percentage of their resources (CPU, memory, disk, network bandwidth, etc).
+On the other hand, if you have 2 servers and you are using **100% of their CPU and RAM** , at some point one process will ask for more memory, and the server will have to use the disk as "memory" (which can be thousands of times slower), or even **crash**. Or one process might need to do some computation and would have to wait until the CPU is free again.
+In this case, it would be better to get **one extra server** and run some processes on it so that they all have **enough RAM and CPU time**.
+There's also the chance that for some reason you have a **spike** of usage of your API. Maybe it went viral, or maybe some other services or bots start using it. And you might want to have extra resources to be safe in those cases.
+You could put an **arbitrary number** to target, for example, something **between 50% to 90%** of resource utilization. The point is that those are probably the main things you will want to measure and use to tweak your deployments.
+You can use simple tools like `htop` to see the CPU and RAM used in your server or the amount used by each process. Or you can use more complex monitoring tools, which may be distributed across servers, etc.
+## Recap[¶](https://fastapi.tiangolo.com/deployment/concepts/#recap "Permanent link")
+You have been reading here some of the main concepts that you would probably need to keep in mind when deciding how to deploy your application:
+  * Security - HTTPS
+  * Running on startup
+  * Restarts
+  * Replication (the number of processes running)
+  * Memory
+  * Previous steps before starting

@@ -1,0 +1,37 @@
+Title: Module Specification and Source Hashing in importlib
+URL: https://docs.python.org/3/library/importlib.html
+Summary: This section describes two functions from the importlib library: `spec_from_file_location`, which creates a ModuleSpec instance from a file path and accommodates compatibility adjustments made in versions 3.4 and 3.6, and `source_hash`, which returns the hash of source bytes, essential for .pyc file creation.
+---
+
+importlib.util.spec_from_file_location(_name_ , _location_ , _*_ , _loader =None_, _submodule_search_locations =None_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.spec_from_file_location "Link to this definition")
+    
+A factory function for creating a [`ModuleSpec`](https://docs.python.org/3/library/importlib.html#importlib.machinery.ModuleSpec "importlib.machinery.ModuleSpec") instance based on the path to a file. Missing information will be filled in on the spec by making use of loader APIs and by the implication that the module will be file-based.
+Added in version 3.4.
+Changed in version 3.6: Accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object). 
+
+importlib.util.source_hash(_source_bytes_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.source_hash "Link to this definition")
+    
+Return the hash of _source_bytes_ as bytes. A hash-based `.pyc` file embeds the [`source_hash()`](https://docs.python.org/3/library/importlib.html#importlib.util.source_hash "importlib.util.source_hash") of the corresponding source file’s contents in its header.
+Added in version 3.7. 
+
+importlib.util._incompatible_extension_module_restrictions(_*_ , _disable_check_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util._incompatible_extension_module_restrictions "Link to this definition")
+    
+A context manager that can temporarily skip the compatibility check for extension modules. By default the check is enabled and will fail when a single-phase init module is imported in a subinterpreter. It will also fail for a multi-phase init module that doesn’t explicitly support a per-interpreter GIL, when imported in an interpreter with its own GIL.
+Note that this function is meant to accommodate an unusual case; one which is likely to eventually go away. There’s is a pretty good chance this is not what you were looking for.
+You can get the same effect as this function by implementing the basic interface of multi-phase init ([**PEP 489**](https://peps.python.org/pep-0489/)) and lying about support for multiple interpreters (or per-interpreter GIL).
+Warning
+Using this function to disable the check can lead to unexpected behavior and even crashes. It should only be used during extension module development.
+Added in version 3.12. 
+
+_class_ importlib.util.LazyLoader(_loader_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.LazyLoader "Link to this definition")
+    
+A class which postpones the execution of the loader of a module until the module has an attribute accessed.
+This class **only** works with loaders that define [`exec_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "importlib.abc.Loader.exec_module") as control over what module type is used for the module is required. For those same reasons, the loader’s [`create_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "importlib.abc.Loader.create_module") method must return `None` or a type for which its `__class__` attribute can be mutated along with not using [slots](https://docs.python.org/3/glossary.html#term-__slots__). Finally, modules which substitute the object placed into [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules") will not work as there is no way to properly replace the module references throughout the interpreter safely; [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised if such a substitution is detected.
+Note
+For projects where startup time is critical, this class allows for potentially minimizing the cost of loading a module if it is never used. For projects where startup time is not essential then use of this class is **heavily** discouraged due to error messages created during loading being postponed and thus occurring out of context.
+Added in version 3.5.
+Changed in version 3.6: Began calling [`create_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "importlib.abc.Loader.create_module"), removing the compatibility warning for [`importlib.machinery.BuiltinImporter`](https://docs.python.org/3/library/importlib.html#importlib.machinery.BuiltinImporter "importlib.machinery.BuiltinImporter") and [`importlib.machinery.ExtensionFileLoader`](https://docs.python.org/3/library/importlib.html#importlib.machinery.ExtensionFileLoader "importlib.machinery.ExtensionFileLoader"). 
+
+_classmethod_ factory(_loader_)[¶](https://docs.python.org/3/library/importlib.html#importlib.util.LazyLoader.factory "Link to this definition")
+    
+A class method which returns a callable that creates a lazy loader. This is meant to be used in situations where the loader is passed by class instead of by instance.

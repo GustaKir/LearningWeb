@@ -1,0 +1,44 @@
+Title: Warning Handling in Python
+URL: https://docs.python.org/3/library/warnings.html
+Summary: The `Warning` class in Python, derived from the `Exception` class, allows warnings to be converted into errors. Warnings have a default action when not matched by registered filters. Repeated warnings can be suppressed based on specified criteria, impacting how they are recognized as repeats across different filters: 'default', 'module', and 'once'.
+---
+
+Since the [`Warning`](https://docs.python.org/3/library/exceptions.html#Warning "Warning") class is derived from the built-in [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") class, to turn a warning into an error we simply raise `category(message)`.
+If a warning is reported and doesn’t match any registered filter then the “default” action is applied (hence its name).
+### Repeated Warning Suppression Criteria[¶](https://docs.python.org/3/library/warnings.html#repeated-warning-suppression-criteria "Link to this heading")
+The filters that suppress repeated warnings apply the following criteria to determine if a warning is considered a repeat:
+  * `"default"`: A warning is considered a repeat only if the (_message_ , _category_ , _module_ , _lineno_) are all the same.
+  * `"module"`: A warning is considered a repeat if the (_message_ , _category_ , _module_) are the same, ignoring the line number.
+  * `"once"`: A warning is considered a repeat if the (_message_ , _category_) are the same, ignoring the module and line number.
+
+
+### Describing Warning Filters[¶](https://docs.python.org/3/library/warnings.html#describing-warning-filters "Link to this heading")
+The warnings filter is initialized by [`-W`](https://docs.python.org/3/using/cmdline.html#cmdoption-W) options passed to the Python interpreter command line and the [`PYTHONWARNINGS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS) environment variable. The interpreter saves the arguments for all supplied entries without interpretation in [`sys.warnoptions`](https://docs.python.org/3/library/sys.html#sys.warnoptions "sys.warnoptions"); the [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module parses these when it is first imported (invalid options are ignored, after printing a message to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr")).
+Individual warnings filters are specified as a sequence of fields separated by colons:
+```
+action:message:category:module:line
+
+```
+
+The meaning of each of these fields is as described in [The Warnings Filter](https://docs.python.org/3/library/warnings.html#warning-filter). When listing multiple filters on a single line (as for [`PYTHONWARNINGS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS)), the individual filters are separated by commas and the filters listed later take precedence over those listed before them (as they’re applied left-to-right, and the most recently applied filters take precedence over earlier ones).
+Commonly used warning filters apply to either all warnings, warnings in a particular category, or warnings raised by particular modules or packages. Some examples:
+```
+default           # Show all warnings (even those ignored by default)
+ignore            # Ignore all warnings
+error            # Convert all warnings to errors
+error::ResourceWarning    # Treat ResourceWarning messages as errors
+default::DeprecationWarning # Show DeprecationWarning messages
+ignore,default:::mymodule  # Only report warnings triggered by "mymodule"
+error:::mymodule       # Convert warnings to errors in "mymodule"
+
+```
+
+### Default Warning Filter[¶](https://docs.python.org/3/library/warnings.html#default-warning-filter "Link to this heading")
+By default, Python installs several warning filters, which can be overridden by the [`-W`](https://docs.python.org/3/using/cmdline.html#cmdoption-W) command-line option, the [`PYTHONWARNINGS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS) environment variable and calls to [`filterwarnings()`](https://docs.python.org/3/library/warnings.html#warnings.filterwarnings "warnings.filterwarnings").
+In regular release builds, the default warning filter has the following entries (in order of precedence):
+```
+default::DeprecationWarning:__main__
+ignore::DeprecationWarning
+ignore::PendingDeprecationWarning
+ignore::ImportWarning
+ignore::ResourceWarning

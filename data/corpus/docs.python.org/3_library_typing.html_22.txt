@@ -1,0 +1,41 @@
+Title: Using Protocols in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section discusses protocol classes in Python's typing module, specifically those decorated with '@runtime_checkable'. It highlights that such protocols check only for the presence of attributes, not their types. It also explains the limitations of protocols without this decorator regarding their use with 'isinstance()' and 'issubclass()'. Additionally, it covers how to write generic protocols for compatibility with Python 3.11 or earlier.
+---
+
+```
+
+See [**PEP 544**](https://peps.python.org/pep-0544/) for more details. Protocol classes decorated with [`runtime_checkable()`](https://docs.python.org/3/library/typing.html#typing.runtime_checkable "typing.runtime_checkable") (described later) act as simple-minded runtime protocols that check only the presence of given attributes, ignoring their type signatures. Protocol classes without this decorator cannot be used as the second argument to [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") or [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass").
+Protocol classes can be generic, for example:
+```
+classGenProto[T](Protocol):
+  defmeth(self) -> T:
+    ...
+
+```
+
+In code that needs to be compatible with Python 3.11 or older, generic Protocols can be written as follows:
+```
+T = TypeVar("T")
+classGenProto(Protocol[T]):
+  defmeth(self) -> T:
+    ...
+
+```
+
+Added in version 3.8. 
+
+@typing.runtime_checkable[¶](https://docs.python.org/3/library/typing.html#typing.runtime_checkable "Link to this definition")
+    
+Mark a protocol class as a runtime protocol.
+Such a protocol can be used with [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") and [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass"). This allows a simple-minded structural check, very similar to “one trick ponies” in [`collections.abc`](https://docs.python.org/3/library/collections.abc.html#module-collections.abc "collections.abc: Abstract base classes for containers") such as [`Iterable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable "collections.abc.Iterable"). For example:
+```
+@runtime_checkable
+classClosable(Protocol):
+  defclose(self): ...
+assert isinstance(open('/some/file'), Closable)
+@runtime_checkable
+classNamed(Protocol):
+  name: str
+importthreading
+assert isinstance(threading.Thread(name='Bob'), Named)

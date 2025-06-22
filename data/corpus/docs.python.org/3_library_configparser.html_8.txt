@@ -1,0 +1,123 @@
+Title: Using ConfigParser in Python
+URL: https://docs.python.org/3/library/configparser.html
+Summary: Demonstrates how to use the ConfigParser module to read configuration strings with sections and keys. It includes an example of both ConfigParser and RawConfigParser, highlighting the use of the optionxform function to customize option name transformations.
+---
+
+```
+>>> config = """
+... [Section1]
+... Key = Value
+...
+... [Section2]
+... AnotherKey = Value
+... """
+>>> typical = configparser.ConfigParser()
+>>> typical.read_string(config)
+>>> list(typical['Section1'].keys())
+['key']
+>>> list(typical['Section2'].keys())
+['anotherkey']
+>>> custom = configparser.RawConfigParser()
+>>> custom.optionxform = lambda option: option
+>>> custom.read_string(config)
+>>> list(custom['Section1'].keys())
+['Key']
+>>> list(custom['Section2'].keys())
+['AnotherKey']
+
+```
+
+Note
+The optionxform function transforms option names to a canonical form. This should be an idempotent function: if the name is already in canonical form, it should be returned unchanged. 
+
+ConfigParser.SECTCRE[¶](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.SECTCRE "Link to this definition")
+    
+A compiled regular expression used to parse section headers. The default matches `[section]` to the name `"section"`. Whitespace is considered part of the section name, thus `[  larch  ]` will be read as a section of name `"  larch  "`. Override this attribute if that’s unsuitable. For example:
+>>>```
+>>> importre
+>>> config = """
+... [Section 1]
+... option = value
+...
+... [ Section 2 ]
+... another = val
+... """
+>>> typical = configparser.ConfigParser()
+>>> typical.read_string(config)
+>>> typical.sections()
+['Section 1', ' Section 2 ']
+>>> custom = configparser.ConfigParser()
+>>> custom.SECTCRE = re.compile(r"\[ *(?P<header>[^]]+?) *\]")
+>>> custom.read_string(config)
+>>> custom.sections()
+['Section 1', 'Section 2']
+
+```
+
+Note
+While ConfigParser objects also use an `OPTCRE` attribute for recognizing option lines, it’s not recommended to override it because that would interfere with constructor options _allow_no_value_ and _delimiters_.
+## Legacy API Examples[¶](https://docs.python.org/3/library/configparser.html#legacy-api-examples "Link to this heading")
+Mainly because of backwards compatibility concerns, [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") provides also a legacy API with explicit `get`/`set` methods. While there are valid use cases for the methods outlined below, mapping protocol access is preferred for new projects. The legacy API is at times more advanced, low-level and downright counterintuitive.
+An example of writing to a configuration file:
+```
+importconfigparser
+config = configparser.RawConfigParser()
+# Please note that using RawConfigParser's set functions, you can assign
+# non-string values to keys internally, but will receive an error when
+# attempting to write to a file or when you get it in non-raw mode. Setting
+# values using the mapping protocol or ConfigParser's set() does not allow
+# such assignments to take place.
+config.add_section('Section1')
+config.set('Section1', 'an_int', '15')
+config.set('Section1', 'a_bool', 'true')
+config.set('Section1', 'a_float', '3.1415')
+config.set('Section1', 'baz', 'fun')
+config.set('Section1', 'bar', 'Python')
+config.set('Section1', 'foo', '%(bar)s is %(baz)s!')
+# Writing our configuration file to 'example.cfg'
+with open('example.cfg', 'w') as configfile:
+  config.write(configfile)
+
+```
+
+An example of reading the configuration file again:
+```
+importconfigparser
+config = configparser.RawConfigParser()
+config.read('example.cfg')
+# getfloat() raises an exception if the value is not a float
+# getint() and getboolean() also do this for their respective types
+a_float = config.getfloat('Section1', 'a_float')
+an_int = config.getint('Section1', 'an_int')
+print(a_float + an_int)
+# Notice that the next output does not interpolate '%(bar)s' or '%(baz)s'.
+# This is because we are using a RawConfigParser().
+if config.getboolean('Section1', 'a_bool'):
+  print(config.get('Section1', 'foo'))
+
+```
+
+To get interpolation, use [`ConfigParser`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser "configparser.ConfigParser"):
+```
+importconfigparser
+cfg = configparser.ConfigParser()
+cfg.read('example.cfg')
+# Set the optional *raw* argument of get() to True if you wish to disable
+# interpolation in a single get operation.
+print(cfg.get('Section1', 'foo', raw=False)) # -> "Python is fun!"
+print(cfg.get('Section1', 'foo', raw=True))  # -> "%(bar)s is %(baz)s!"
+# The optional *vars* argument is a dict with members that will take
+# precedence in interpolation.
+print(cfg.get('Section1', 'foo', vars={'bar': 'Documentation',
+                    'baz': 'evil'}))
+# The optional *fallback* argument can be used to provide a fallback value
+print(cfg.get('Section1', 'foo'))
+   # -> "Python is fun!"
+print(cfg.get('Section1', 'foo', fallback='Monty is not.'))
+   # -> "Python is fun!"
+print(cfg.get('Section1', 'monster', fallback='No such things as monsters.'))
+   # -> "No such things as monsters."
+# A bare print(cfg.get('Section1', 'monster')) would raise NoOptionError
+# but we can also use:
+print(cfg.get('Section1', 'monster', fallback=None))
+   # -> None

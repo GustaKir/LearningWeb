@@ -1,0 +1,37 @@
+Title: pickle.PickleBuffer Class
+URL: https://docs.python.org/3/library/pickle.html
+Summary: The `pickle.PickleBuffer` class is a wrapper for buffers containing picklable data. It must be created from a buffer-providing object and is itself a buffer provider, allowing compatibility with APIs that require such objects. `PickleBuffer` can only be serialized using pickle protocol 5 or higher.
+---
+
+_class_ pickle.PickleBuffer(_buffer_)[¶](https://docs.python.org/3/library/pickle.html#pickle.PickleBuffer "Link to this definition")
+    
+A wrapper for a buffer representing picklable data. _buffer_ must be a [buffer-providing](https://docs.python.org/3/c-api/buffer.html#bufferobjects) object, such as a [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object) or a N-dimensional array.
+[`PickleBuffer`](https://docs.python.org/3/library/pickle.html#pickle.PickleBuffer "pickle.PickleBuffer") is itself a buffer provider, therefore it is possible to pass it to other APIs expecting a buffer-providing object, such as [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview").
+[`PickleBuffer`](https://docs.python.org/3/library/pickle.html#pickle.PickleBuffer "pickle.PickleBuffer") objects can only be serialized using pickle protocol 5 or higher. They are eligible for [out-of-band serialization](https://docs.python.org/3/library/pickle.html#pickle-oob).
+Added in version 3.8. 
+
+raw()[¶](https://docs.python.org/3/library/pickle.html#pickle.PickleBuffer.raw "Link to this definition")
+    
+Return a [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview") of the memory area underlying this buffer. The returned object is a one-dimensional, C-contiguous memoryview with format `B` (unsigned bytes). [`BufferError`](https://docs.python.org/3/library/exceptions.html#BufferError "BufferError") is raised if the buffer is neither C- nor Fortran-contiguous. 
+
+release()[¶](https://docs.python.org/3/library/pickle.html#pickle.PickleBuffer.release "Link to this definition")
+    
+Release the underlying buffer exposed by the PickleBuffer object.
+## What can be pickled and unpickled?[¶](https://docs.python.org/3/library/pickle.html#what-can-be-pickled-and-unpickled "Link to this heading")
+The following types can be pickled:
+  * built-in constants (`None`, `True`, `False`, `Ellipsis`, and [`NotImplemented`](https://docs.python.org/3/library/constants.html#NotImplemented "NotImplemented"));
+  * integers, floating-point numbers, complex numbers;
+  * strings, bytes, bytearrays;
+  * tuples, lists, sets, and dictionaries containing only picklable objects;
+  * functions (built-in and user-defined) accessible from the top level of a module (using [`def`](https://docs.python.org/3/reference/compound_stmts.html#def), not [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda));
+  * classes accessible from the top level of a module;
+  * instances of such classes whose the result of calling [`__getstate__()`](https://docs.python.org/3/library/pickle.html#object.__getstate__ "object.__getstate__") is picklable (see section [Pickling Class Instances](https://docs.python.org/3/library/pickle.html#pickle-inst) for details).
+
+
+Attempts to pickle unpicklable objects will raise the [`PicklingError`](https://docs.python.org/3/library/pickle.html#pickle.PicklingError "pickle.PicklingError") exception; when this happens, an unspecified number of bytes may have already been written to the underlying file. Trying to pickle a highly recursive data structure may exceed the maximum recursion depth, a [`RecursionError`](https://docs.python.org/3/library/exceptions.html#RecursionError "RecursionError") will be raised in this case. You can carefully raise this limit with [`sys.setrecursionlimit()`](https://docs.python.org/3/library/sys.html#sys.setrecursionlimit "sys.setrecursionlimit").
+Note that functions (built-in and user-defined) are pickled by fully [qualified name](https://docs.python.org/3/glossary.html#term-qualified-name), not by value. [[2]](https://docs.python.org/3/library/pickle.html#id8) This means that only the function name is pickled, along with the name of the containing module and classes. Neither the function’s code, nor any of its function attributes are pickled. Thus the defining module must be importable in the unpickling environment, and the module must contain the named object, otherwise an exception will be raised. [[3]](https://docs.python.org/3/library/pickle.html#id9)
+Similarly, classes are pickled by fully qualified name, so the same restrictions in the unpickling environment apply. Note that none of the class’s code or data is pickled, so in the following example the class attribute `attr` is not restored in the unpickling environment:
+```
+classFoo:
+  attr = 'A class attribute'
+picklestring = pickle.dumps(Foo)

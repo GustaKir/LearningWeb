@@ -1,0 +1,85 @@
+Title: Using patch.object and patch.dict in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section demonstrates how to use the `patch.object()` function from the `unittest.mock` module to mock methods in classes. It includes an example of how to assert that a class method was called with specific arguments. Additionally, it introduces `patch.dict()`, which allows the modification of dictionaries within tests while ensuring they are restored afterward.
+---
+
+```
+>>> @patch.object(SomeClass, 'class_method')
+... deftest(mock_method):
+...   SomeClass.class_method(3)
+...   mock_method.assert_called_with(3)
+...
+>>> test()
+
+```
+
+_spec_ , _create_ and the other arguments to [`patch.object()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.object "unittest.mock.patch.object") have the same meaning as they do for [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch").
+### patch.dict[¶](https://docs.python.org/3/library/unittest.mock.html#patch-dict "Link to this heading") 
+
+patch.dict(_in_dict_ , _values =()_, _clear =False_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "Link to this definition")
+    
+Patch a dictionary, or dictionary like object, and restore the dictionary to its original state after the test.
+_in_dict_ can be a dictionary or a mapping like container. If it is a mapping then it must at least support getting, setting and deleting items plus iterating over keys.
+_in_dict_ can also be a string specifying the name of the dictionary, which will then be fetched by importing it.
+_values_ can be a dictionary of values to set in the dictionary. _values_ can also be an iterable of `(key, value)` pairs.
+If _clear_ is true then the dictionary will be cleared before the new values are set.
+[`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") can also be called with arbitrary keyword arguments to set values in the dictionary.
+Changed in version 3.8: [`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") now returns the patched dictionary when used as a context manager.
+[`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") can be used as a context manager, decorator or class decorator:
+>>>```
+>>> foo = {}
+>>> @patch.dict(foo, {'newkey': 'newvalue'})
+... deftest():
+...   assert foo == {'newkey': 'newvalue'}
+...
+>>> test()
+>>> assert foo == {}
+
+```
+
+When used as a class decorator [`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") honours `patch.TEST_PREFIX` (default to `'test'`) for choosing which methods to wrap:
+>>>```
+>>> importos
+>>> importunittest
+>>> fromunittest.mockimport patch
+>>> @patch.dict('os.environ', {'newkey': 'newvalue'})
+... classTestSample(unittest.TestCase):
+...   deftest_sample(self):
+...     self.assertEqual(os.environ['newkey'], 'newvalue')
+
+```
+
+If you want to use a different prefix for your test, you can inform the patchers of the different prefix by setting `patch.TEST_PREFIX`. For more details about how to change the value of see [TEST_PREFIX](https://docs.python.org/3/library/unittest.mock.html#test-prefix).
+[`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") can be used to add members to a dictionary, or simply let a test change a dictionary, and ensure the dictionary is restored when the test ends.
+>>>```
+>>> foo = {}
+>>> with patch.dict(foo, {'newkey': 'newvalue'}) as patched_foo:
+...   assert foo == {'newkey': 'newvalue'}
+...   assert patched_foo == {'newkey': 'newvalue'}
+...   # You can add, update or delete keys of foo (or patched_foo, it's the same dict)
+...   patched_foo['spam'] = 'eggs'
+...
+>>> assert foo == {}
+>>> assert patched_foo == {}
+
+```
+
+>>>```
+>>> importos
+>>> with patch.dict('os.environ', {'newkey': 'newvalue'}):
+...   print(os.environ['newkey'])
+...
+newvalue
+>>> assert 'newkey' not in os.environ
+
+```
+
+Keywords can be used in the [`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") call to set values in the dictionary:
+>>>```
+>>> mymodule = MagicMock()
+>>> mymodule.function.return_value = 'fish'
+>>> with patch.dict('sys.modules', mymodule=mymodule):
+...   importmymodule
+...   mymodule.function('some', 'args')
+...
+'fish'

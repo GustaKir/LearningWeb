@@ -1,0 +1,75 @@
+Title: multiprocessing.connection.wait Method
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The multiprocessing.connection.wait method allows you to wait until an object from a specified list is ready. It returns the list of ready objects, blocking for a given timeout period or indefinitely if no timeout is specified. The objects can include readable Connection objects, connected and readable socket objects, or a sentinel.
+---
+
+multiprocessing.connection.wait(_object_list_ , _timeout =None_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.wait "Link to this definition")
+    
+Wait till an object in _object_list_ is ready. Returns the list of those objects in _object_list_ which are ready. If _timeout_ is a float then the call blocks for at most that many seconds. If _timeout_ is `None` then it will block for an unlimited period. A negative timeout is equivalent to a zero timeout.
+For both POSIX and Windows, an object can appear in _object_list_ if it is
+  * a readable [`Connection`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection "multiprocessing.connection.Connection") object;
+  * a connected and readable [`socket.socket`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket") object; or
+  * the [`sentinel`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.sentinel "multiprocessing.Process.sentinel") attribute of a [`Process`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process "multiprocessing.Process") object.
+
+
+A connection or socket object is ready when there is data available to be read from it, or the other end has been closed.
+**POSIX** : `wait(object_list, timeout)` almost equivalent `select.select(object_list, [], [], timeout)`. The difference is that, if [`select.select()`](https://docs.python.org/3/library/select.html#select.select "select.select") is interrupted by a signal, it can raise [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") with an error number of `EINTR`, whereas [`wait()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.wait "multiprocessing.connection.wait") will not.
+**Windows** : An item in _object_list_ must either be an integer handle which is waitable (according to the definition used by the documentation of the Win32 function `WaitForMultipleObjects()`) or it can be an object with a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method which returns a socket handle or pipe handle. (Note that pipe handles and socket handles are **not** waitable handles.)
+Added in version 3.3.
+**Examples**
+The following server code creates a listener which uses `'secret password'` as an authentication key. It then waits for a connection and sends some data to the client:
+```
+frommultiprocessing.connectionimport Listener
+fromarrayimport array
+address = ('localhost', 6000)   # family is deduced to be 'AF_INET'
+with Listener(address, authkey=b'secret password') as listener:
+  with listener.accept() as conn:
+    print('connection accepted from', listener.last_accepted)
+    conn.send([2.25, None, 'junk', float])
+    conn.send_bytes(b'hello')
+    conn.send_bytes(array('i', [42, 1729]))
+
+```
+
+The following code connects to the server and receives some data from the server:
+```
+frommultiprocessing.connectionimport Client
+fromarrayimport array
+address = ('localhost', 6000)
+with Client(address, authkey=b'secret password') as conn:
+  print(conn.recv())         # => [2.25, None, 'junk', float]
+  print(conn.recv_bytes())      # => 'hello'
+  arr = array('i', [0, 0, 0, 0, 0])
+  print(conn.recv_bytes_into(arr))  # => 8
+  print(arr)             # => array('i', [42, 1729, 0, 0, 0])
+
+```
+
+The following code uses [`wait()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.wait "multiprocessing.connection.wait") to wait for messages from multiple processes at once:
+```
+frommultiprocessingimport Process, Pipe, current_process
+frommultiprocessing.connectionimport wait
+deffoo(w):
+  for i in range(10):
+    w.send((i, current_process().name))
+  w.close()
+if __name__ == '__main__':
+  readers = []
+  for i in range(4):
+    r, w = Pipe(duplex=False)
+    readers.append(r)
+    p = Process(target=foo, args=(w,))
+    p.start()
+    # We close the writable end of the pipe now to be sure that
+    # p is the only process which owns a handle for it. This
+    # ensures that when p closes its handle for the writable end,
+    # wait() will promptly report the readable end as being ready.
+    w.close()
+  while readers:
+    for r in wait(readers):
+      try:
+        msg = r.recv()
+      except EOFError:
+        readers.remove(r)
+      else:
+        print(msg)

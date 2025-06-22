@@ -1,0 +1,58 @@
+Title: Using Executor with Asyncio Event Loop
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This documentation chunk illustrates how to use the asyncio event loop with blocking I/O and CPU-bound operations. It covers running blocking I/O in both the default and custom thread pools, and executing CPU-bound operations in a custom process pool using executor patterns with asyncio.
+---
+
+```
+importasyncio
+importconcurrent.futures
+defblocking_io():
+  # File operations (such as logging) can block the
+  # event loop: run them in a thread pool.
+  with open('/dev/urandom', 'rb') as f:
+    return f.read(100)
+defcpu_bound():
+  # CPU-bound operations will block the event loop:
+  # in general it is preferable to run them in a
+  # process pool.
+  return sum(i * i for i in range(10 ** 7))
+async defmain():
+  loop = asyncio.get_running_loop()
+  ## Options:
+  # 1. Run in the default loop's executor:
+  result = await loop.run_in_executor(
+    None, blocking_io)
+  print('default thread pool', result)
+  # 2. Run in a custom thread pool:
+  with concurrent.futures.ThreadPoolExecutor() as pool:
+    result = await loop.run_in_executor(
+      pool, blocking_io)
+    print('custom thread pool', result)
+  # 3. Run in a custom process pool:
+  with concurrent.futures.ProcessPoolExecutor() as pool:
+    result = await loop.run_in_executor(
+      pool, cpu_bound)
+    print('custom process pool', result)
+if __name__ == '__main__':
+  asyncio.run(main())
+
+```
+
+Note that the entry point guard (`if __name__ == '__main__'`) is required for option 3 due to the peculiarities of [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism."), which is used by [`ProcessPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ProcessPoolExecutor "concurrent.futures.ProcessPoolExecutor"). See [Safe importing of main module](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-safe-main-import).
+This method returns a [`asyncio.Future`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future") object.
+Use [`functools.partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") [to pass keyword arguments](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-pass-keywords) to _func_.
+Changed in version 3.5.3: [`loop.run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor") no longer configures the `max_workers` of the thread pool executor it creates, instead leaving it up to the thread pool executor ([`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor")) to set the default. 
+
+loop.set_default_executor(_executor_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.set_default_executor "Link to this definition")
+    
+Set _executor_ as the default executor used by [`run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor"). _executor_ must be an instance of [`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor").
+Changed in version 3.11: _executor_ must be an instance of [`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor").
+### [Error Handling API](https://docs.python.org/3/library/asyncio-eventloop.html#id15)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#error-handling-api "Link to this heading")
+Allows customizing how exceptions are handled in the event loop. 
+
+loop.set_exception_handler(_handler_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.set_exception_handler "Link to this definition")
+    
+Set _handler_ as the new event loop exception handler.
+If _handler_ is `None`, the default exception handler will be set. Otherwise, _handler_ must be a callable with the signature matching `(loop, context)`, where `loop` is a reference to the active event loop, and `context` is a `dict` object containing the details of the exception (see [`call_exception_handler()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_exception_handler "asyncio.loop.call_exception_handler") documentation for details about context).
+If the handler is called on behalf of a [`Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") or [`Handle`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.Handle "asyncio.Handle"), it is run in the [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") of that task or callback handle.
+Changed in version 3.12: The handler may be called in the [`Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") of the task or handle where the exception originated.

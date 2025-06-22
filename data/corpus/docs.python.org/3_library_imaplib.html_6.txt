@@ -1,0 +1,64 @@
+Title: imaplib Documentation - IMAP Flags and Mailbox Subscriptions
+URL: https://docs.python.org/3/library/imaplib.html
+Summary: This section notes that creating IMAP flags containing ‘]’ violates RFC 3501, but imaplib allows it for compatibility with popular IMAP servers like Gmail. Additionally, it details the methods IMAP4.subscribe and IMAP4.thread for subscribing to mailboxes and threading messages, respectively.
+---
+
+```
+
+Note
+Creating flags containing ‘]’ (for example: “[test]”) violates [**RFC 3501**](https://datatracker.ietf.org/doc/html/rfc3501.html) (the IMAP protocol). However, imaplib has historically allowed creation of such tags, and popular IMAP servers, such as Gmail, accept and produce such flags. There are non-Python programs which also create such tags. Although it is an RFC violation and IMAP clients and servers are supposed to be strict, imaplib still continues to allow such tags to be created for backward compatibility reasons, and as of Python 3.6, handles them if they are sent from the server, since this improves real-world compatibility. 
+
+IMAP4.subscribe(_mailbox_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.subscribe "Link to this definition")
+    
+Subscribe to new mailbox. 
+
+IMAP4.thread(_threading_algorithm_ , _charset_ , _search_criterion_[, _..._])[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.thread "Link to this definition")
+    
+The `thread` command is a variant of `search` with threading semantics for the results. Returned data contains a space separated list of thread members.
+Thread members consist of zero or more messages numbers, delimited by spaces, indicating successive parent and child.
+Thread has two arguments before the _search_criterion_ argument(s); a _threading_algorithm_ , and the searching _charset_. Note that unlike `search`, the searching _charset_ argument is mandatory. There is also a `uid thread` command which corresponds to `thread` the way that `uid search` corresponds to `search`. The `thread` command first searches the mailbox for messages that match the given searching criteria using the _charset_ argument for the interpretation of strings in the searching criteria. It then returns the matching messages threaded according to the specified threading algorithm.
+This is an `IMAP4rev1` extension command. 
+
+IMAP4.uid(_command_ , _arg_[, _..._])[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.uid "Link to this definition")
+    
+Execute command args with messages identified by UID, rather than message number. Returns response appropriate to command. At least one argument must be supplied; if none are provided, the server will return an error and an exception will be raised. 
+
+IMAP4.unsubscribe(_mailbox_)[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.unsubscribe "Link to this definition")
+    
+Unsubscribe from old mailbox. 
+
+IMAP4.unselect()[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.unselect "Link to this definition")
+    
+[`imaplib.IMAP4.unselect()`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.unselect "imaplib.IMAP4.unselect") frees server’s resources associated with the selected mailbox and returns the server to the authenticated state. This command performs the same actions as [`imaplib.IMAP4.close()`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.close "imaplib.IMAP4.close"), except that no messages are permanently removed from the currently selected mailbox.
+Added in version 3.9. 
+
+IMAP4.xatom(_name_[, _..._])[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.xatom "Link to this definition")
+    
+Allow simple extension commands notified by server in `CAPABILITY` response.
+The following attributes are defined on instances of [`IMAP4`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4 "imaplib.IMAP4"): 
+
+IMAP4.PROTOCOL_VERSION[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.PROTOCOL_VERSION "Link to this definition")
+    
+The most recent supported protocol in the `CAPABILITY` response from the server. 
+
+IMAP4.debug[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.debug "Link to this definition")
+    
+Integer value to control debugging output. The initialize value is taken from the module variable `Debug`. Values greater than three trace each command. 
+
+IMAP4.utf8_enabled[¶](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.utf8_enabled "Link to this definition")
+    
+Boolean value that is normally `False`, but is set to `True` if an [`enable()`](https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.enable "imaplib.IMAP4.enable") command is successfully issued for the `UTF8=ACCEPT` capability.
+Added in version 3.5.
+## IMAP4 Example[¶](https://docs.python.org/3/library/imaplib.html#imap4-example "Link to this heading")
+Here is a minimal example (without error checking) that opens a mailbox and retrieves and prints all messages:
+```
+importgetpass,imaplib
+M = imaplib.IMAP4(host='example.org')
+M.login(getpass.getuser(), getpass.getpass())
+M.select()
+typ, data = M.search(None, 'ALL')
+for num in data[0].split():
+  typ, data = M.fetch(num, '(RFC822)')
+  print('Message %s\n%s\n' % (num, data[0][1]))
+M.close()
+M.logout()

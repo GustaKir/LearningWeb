@@ -1,0 +1,35 @@
+Title: Methods of the Popen Class in Python's subprocess Module
+URL: https://docs.python.org/3/library/subprocess.html
+Summary: The `Popen` class features methods such as `poll` to check if a child process has terminated and return its return code, and `wait` to wait for the child process to finish, potentially raising a `TimeoutExpired` exception if a given timeout is exceeded.
+---
+
+he [`Popen`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") class have the following methods: 
+
+Popen.poll()[¶](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.poll "Link to this definition")
+    
+Check if child process has terminated. Set and return [`returncode`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.returncode "subprocess.Popen.returncode") attribute. Otherwise, returns `None`. 
+
+Popen.wait(_timeout =None_)[¶](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.wait "Link to this definition")
+    
+Wait for child process to terminate. Set and return [`returncode`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.returncode "subprocess.Popen.returncode") attribute.
+If the process does not terminate after _timeout_ seconds, raise a [`TimeoutExpired`](https://docs.python.org/3/library/subprocess.html#subprocess.TimeoutExpired "subprocess.TimeoutExpired") exception. It is safe to catch this exception and retry the wait.
+Note
+This will deadlock when using `stdout=PIPE` or `stderr=PIPE` and the child process generates enough output to a pipe such that it blocks waiting for the OS pipe buffer to accept more data. Use [`Popen.communicate()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.communicate "subprocess.Popen.communicate") when using pipes to avoid that.
+Note
+When the `timeout` parameter is not `None`, then (on POSIX) the function is implemented using a busy loop (non-blocking call and short sleeps). Use the [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") module for an asynchronous wait: see [`asyncio.create_subprocess_exec`](https://docs.python.org/3/library/asyncio-subprocess.html#asyncio.create_subprocess_exec "asyncio.create_subprocess_exec").
+Changed in version 3.3: _timeout_ was added. 
+
+Popen.communicate(_input =None_, _timeout =None_)[¶](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.communicate "Link to this definition")
+    
+Interact with process: Send data to stdin. Read data from stdout and stderr, until end-of-file is reached. Wait for process to terminate and set the [`returncode`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.returncode "subprocess.Popen.returncode") attribute. The optional _input_ argument should be data to be sent to the child process, or `None`, if no data should be sent to the child. If streams were opened in text mode, _input_ must be a string. Otherwise, it must be bytes.
+[`communicate()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.communicate "subprocess.Popen.communicate") returns a tuple `(stdout_data, stderr_data)`. The data will be strings if streams were opened in text mode; otherwise, bytes.
+Note that if you want to send data to the process’s stdin, you need to create the Popen object with `stdin=PIPE`. Similarly, to get anything other than `None` in the result tuple, you need to give `stdout=PIPE` and/or `stderr=PIPE` too.
+If the process does not terminate after _timeout_ seconds, a [`TimeoutExpired`](https://docs.python.org/3/library/subprocess.html#subprocess.TimeoutExpired "subprocess.TimeoutExpired") exception will be raised. Catching this exception and retrying communication will not lose any output.
+The child process is not killed if the timeout expires, so in order to cleanup properly a well-behaved application should kill the child process and finish communication:
+```
+proc = subprocess.Popen(...)
+try:
+  outs, errs = proc.communicate(timeout=15)
+except TimeoutExpired:
+  proc.kill()
+  outs, errs = proc.communicate()

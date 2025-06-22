@@ -1,0 +1,75 @@
+Title: Using BLAKE2b in Python's hashlib
+URL: https://docs.python.org/3/library/hashlib.html
+Summary: This chunk demonstrates how to use the BLAKE2b hashing function from Python's hashlib library, including initialization with parameters such as fanout, depth, leaf size, and inner size. It illustrates creating hash values for left and right leaves, generating a root node, and combining hashes to produce a final digest.
+---
+
+```
+>>> fromhashlibimport blake2b
+>>>
+>>> FANOUT = 2
+>>> DEPTH = 2
+>>> LEAF_SIZE = 4096
+>>> INNER_SIZE = 64
+>>>
+>>> buf = bytearray(6000)
+>>>
+>>> # Left leaf
+... h00 = blake2b(buf[0:LEAF_SIZE], fanout=FANOUT, depth=DEPTH,
+...        leaf_size=LEAF_SIZE, inner_size=INNER_SIZE,
+...        node_offset=0, node_depth=0, last_node=False)
+>>> # Right leaf
+... h01 = blake2b(buf[LEAF_SIZE:], fanout=FANOUT, depth=DEPTH,
+...        leaf_size=LEAF_SIZE, inner_size=INNER_SIZE,
+...        node_offset=1, node_depth=0, last_node=True)
+>>> # Root node
+... h10 = blake2b(digest_size=32, fanout=FANOUT, depth=DEPTH,
+...        leaf_size=LEAF_SIZE, inner_size=INNER_SIZE,
+...        node_offset=0, node_depth=1, last_node=True)
+>>> h10.update(h00.digest())
+>>> h10.update(h01.digest())
+>>> h10.hexdigest()
+'3ad2a9b37c6070e374c7a8c508fe20ca86b6ed54e286e93a0318e95e881db5aa'
+
+```
+
+### Credits[¶](https://docs.python.org/3/library/hashlib.html#credits "Link to this heading")
+[BLAKE2](https://www.blake2.net) was designed by _Jean-Philippe Aumasson_ , _Samuel Neves_ , _Zooko Wilcox-O’Hearn_ , and _Christian Winnerlein_ based on [SHA-3](https://en.wikipedia.org/wiki/Secure_Hash_Algorithms) finalist [BLAKE](https://web.archive.org/web/20200918190133/https://131002.net/blake/) created by _Jean-Philippe Aumasson_ , _Luca Henzen_ , _Willi Meier_ , and _Raphael C.-W. Phan_.
+It uses core algorithm from [ChaCha](https://cr.yp.to/chacha.html) cipher designed by _Daniel J. Bernstein_.
+The stdlib implementation is based on [pyblake2](https://pythonhosted.org/pyblake2/) module. It was written by _Dmitry Chestnykh_ based on C implementation written by _Samuel Neves_. The documentation was copied from [pyblake2](https://pythonhosted.org/pyblake2/) and written by _Dmitry Chestnykh_.
+The C code was partly rewritten for Python by _Christian Heimes_.
+The following public domain dedication applies for both C hash function implementation, extension code, and this documentation:
+> To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
+> You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <https://creativecommons.org/publicdomain/zero/1.0/>.
+The following people have helped with development or contributed their changes to the project and the public domain according to the Creative Commons Public Domain Dedication 1.0 Universal:
+  * _Alexandr Sokolovskiy_
+
+
+See also 
+
+Module [`hmac`](https://docs.python.org/3/library/hmac.html#module-hmac "hmac: Keyed-Hashing for Message Authentication \(HMAC\) implementation")
+    
+A module to generate message authentication codes using hashes. 
+
+Module [`base64`](https://docs.python.org/3/library/base64.html#module-base64 "base64: RFC 4648: Base16, Base32, Base64 Data Encodings; Base85 and Ascii85")
+    
+Another way to encode binary hashes for non-binary environments. 
+
+<https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.180-4.pdf>
+    
+The FIPS 180-4 publication on Secure Hash Algorithms. 
+
+<https://csrc.nist.gov/pubs/fips/202/final>
+    
+The FIPS 202 publication on the SHA-3 Standard. 
+
+<https://www.blake2.net/>
+    
+Official BLAKE2 website. 
+
+<https://en.wikipedia.org/wiki/Cryptographic_hash_function>
+    
+Wikipedia article with information on which algorithms have known issues and what that means regarding their use. 
+
+<https://www.ietf.org/rfc/rfc8018.txt>
+    
+PKCS #5: Password-Based Cryptography Specification Version 2.1

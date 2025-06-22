@@ -1,0 +1,80 @@
+Title: OpenAPI Callbacks in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/openapi-callbacks/
+Summary: This documentation outlines how to implement and document callbacks in a FastAPI application, including creating a callback `APIRouter`, defining path operations, and utilizing callback path expressions.
+---
+
+Table of contents 
+  * [ An app with callbacks  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#an-app-with-callbacks)
+  * [ The normal **FastAPI** app  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#the-normal-fastapi-app)
+  * [ Documenting the callback  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#documenting-the-callback)
+  * [ Write the callback documentation code  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#write-the-callback-documentation-code)
+    * [ Create a callback `APIRouter` ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#create-a-callback-apirouter)
+    * [ Create the callback _path operation_ ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#create-the-callback-path-operation)
+    * [ The callback path expression  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#the-callback-path-expression)
+    * [ Add the callback router  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#add-the-callback-router)
+    * [ Check the docs  ](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#check-the-docs)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Advanced User Guide  ](https://fastapi.tiangolo.com/advanced/)
+
+
+# OpenAPI Callbacks[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#openapi-callbacks "Permanent link")
+You could create an API with a _path operation_ that could trigger a request to an _external API_ created by someone else (probably the same developer that would be _using_ your API).
+The process that happens when your API app calls the _external API_ is named a "callback". Because the software that the external developer wrote sends a request to your API and then your API _calls back_ , sending a request to an _external API_ (that was probably created by the same developer).
+In this case, you could want to document how that external API _should_ look like. What _path operation_ it should have, what body it should expect, what response it should return, etc.
+## An app with callbacks[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#an-app-with-callbacks "Permanent link")
+Let's see all this with an example.
+Imagine you develop an app that allows creating invoices.
+These invoices will have an `id`, `title` (optional), `customer`, and `total`.
+The user of your API (an external developer) will create an invoice in your API with a POST request.
+Then your API will (let's imagine):
+  * Send the invoice to some customer of the external developer.
+  * Collect the money.
+  * Send a notification back to the API user (the external developer).
+    * This will be done by sending a POST request (from _your API_) to some _external API_ provided by that external developer (this is the "callback").
+
+
+## The normal **FastAPI** app[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#the-normal-fastapi-app "Permanent link")
+Let's first see how the normal API app would look like before adding the callback.
+It will have a _path operation_ that will receive an `Invoice` body, and a query parameter `callback_url` that will contain the URL for the callback.
+This part is pretty normal, most of the code is probably already familiar to you:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#__tabbed_1_1)
+```
+fromtypingimport Union
+fromfastapiimport APIRouter, FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classInvoice(BaseModel):
+  id: str
+  title: Union[str, None] = None
+  customer: str
+  total: float
+classInvoiceEvent(BaseModel):
+  description: str
+  paid: bool
+classInvoiceEventReceived(BaseModel):
+  ok: bool
+invoices_callback_router = APIRouter()
+@invoices_callback_router.post(
+  "{$callback_url}/invoices/{$request.body.id}", response_model=InvoiceEventReceived
+)
+definvoice_notification(body: InvoiceEvent):
+  pass
+@app.post("/invoices/", callbacks=invoices_callback_router.routes)
+defcreate_invoice(invoice: Invoice, callback_url: Union[HttpUrl, None] = None):
+"""
+  Create an invoice.
+  This will (let's imagine) let the API user (some external developer) create an
+  invoice.
+  And this path operation will:
+  * Send the invoice to the client.
+  * Collect the money from the client.
+  * Send a notification back to the API user (the external developer), as a callback.
+    * At this point is that the API will somehow send a POST request to the
+      external API with the notification of the invoice event
+      (e.g. "payment successful").
+  """
+  # Send the invoice, collect the money, send the notification (the callback)
+  return {"msg": "Invoice received"}

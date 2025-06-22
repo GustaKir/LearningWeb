@@ -1,0 +1,44 @@
+Title: Generating Random Data for Time Series
+URL: https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns
+Summary: This section explains how to define a function that generates random data for two time series labeled 'A' and 'B.' The function, `get_recent_data`, produces data points from the last timestamp to the current time, ensuring data generation occurs within a 60-second window.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#build-a-function-to-generate-random-recent-data)Build a function to generate random, recent data
+To begin with, you'll define a function to randomly generate some data for two time series, which you'll call "A" and "B." It's okay to skip this section if you just want to copy the function.
+Complete function to randomly generate sales data _expand_more_
+`def get_recent_data(last_timestamp): """Generate and return data from last timestamp to now, at most 60 seconds."""   now = datetime.now() if now - last_timestamp > timedelta(seconds=60):     last_timestamp = now - timedelta(seconds=60)   sample_time = timedelta(seconds=0.5) # time between data points   next_timestamp = last_timestamp + sample_time   timestamps = np.arange(next_timestamp, now, sample_time)   sample_values = np.random.randn(len(timestamps), 2)   data = pd.DataFrame(sample_values, index=timestamps, columns=["A", "B"]) return data `
+  1. Start your function definition.
+`def get_recent_data(last_timestamp): """Generate and return data from last timestamp to now, at most 60 seconds.""" `
+You'll pass the timestamp of your most recent datapoint to your data-generating function. Your function will use this to only return new data.
+  2. Get the current time and adjust the last timestamp if it is over 60 seconds ago.
+`  now = datetime.now() if now - last_timestamp > timedelta(seconds=60):     last_timestamp = now - timedelta(seconds=60) `
+By updating the last timestamp, you'll ensure the function never returns more than 60 seconds of data.
+  3. Declare a new variable, `sample_time`, to define the time between datapoints. Calculate the timestamp of the first, new datapoint.
+`  sample_time = timedelta(seconds=0.5) # time between data points   next_timestamp = last_timestamp + sample_time `
+  4. Create a `datetime.datetime` index and generate two data series of the same length.
+`  timestamps = np.arange(next_timestamp, now, sample_time)   sample_values = np.random.randn(len(timestamps), 2) `
+  5. Combine the data series with the index into a `pandas.DataFrame` and return the data.
+`  data = pd.DataFrame(sample_values, index=timestamps, columns=["A", "B"]) return data `
+  6. Optional: Test out your function by calling it and displaying the data.
+`data = get_recent_data(datetime.now() - timedelta(seconds=60)) data `
+Save your `app.py` file to see the preview. Delete these two lines when finished.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#initialize-session-state-values-for-your-app)Initialize Session State values for your app
+Since you will dynamically change the `run_every` parameter of `@st.fragment()`, you'll need to initialize the associated variables and Session State values before defining your fragment function. Your fragment function will also read and update values in Session State, so you can define those now to make the fragment function easier to understand.
+  1. Initialize your data for the first app load in a session.
+`if "data" not in st.session_state:   st.session_state.data = get_recent_data(datetime.now() - timedelta(seconds=60)) `
+Your app will display this initial data in a static line chart before a user starts streaming data.
+  2. Initialize `"stream"` in Session State to turn streaming on and off. Set the default to off (`False`).
+`if "stream" not in st.session_state:   st.session_state.stream = False `
+  3. Create a callback function to toggle `"stream"` between `True` and `False`.
+`def toggle_streaming():   st.session_state.stream = not st.session_state.stream `
+  4. Add a title to your app.
+`st.title("Data feed") `
+  5. Add a slider to the sidebar to set how frequently to check for data while streaming.
+`st.sidebar.slider( "Check for updates every: (seconds)", 0.5, 5.0, value=1.0, key="run_every" ) `
+  6. Add buttons to the sidebar to turn streaming on and off.
+`st.sidebar.button( "Start streaming", disabled=st.session_state.stream, on_click=toggle_streaming ) st.sidebar.button( "Stop streaming", disabled=not st.session_state.stream, on_click=toggle_streaming ) `
+Both functions use the same callback to toggle `"stream"` in Session State. Use the current value `"stream"` to disable one of the buttons. This ensures the buttons are always consistent with the current state; "**Start streaming** " is only clickable when streaming is off, and "**Stop streaming** " is only clickable when streaming is on. The buttons also provide status to the user by highlighting which action is available to them.
+  7. Create and set a new variable, `run_every`, that will determine whether or not the fragment function will rerun automatically (and how fast).
+`if st.session_state.stream is True:   run_every = st.session_state.run_every else:   run_every = None `

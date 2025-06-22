@@ -1,0 +1,221 @@
+Title: Sending Requests with FastAPI TestClient
+URL: https://fastapi.tiangolo.com/reference/testclient/
+Summary: This section describes the 'send' method in the FastAPI TestClient, which sends an unmodified HTTP request. It highlights the importance of using 'Client.build_request()' for merging client-level configurations, discusses handling request states (opened or closed), and mentions options for handling authentication and follow redirects.
+---
+
+```
+defsend(
+  self,
+  request: Request,
+  *,
+  stream: bool = False,
+  auth: AuthTypes | UseClientDefault | None = USE_CLIENT_DEFAULT,
+  follow_redirects: bool | UseClientDefault = USE_CLIENT_DEFAULT,
+) -> Response:
+"""
+  Send a request.
+  The request is sent as-is, unmodified.
+  Typically you'll want to build one with `Client.build_request()`
+  so that any client-level configuration is merged into the request,
+  but passing an explicit `httpx.Request()` is supported as well.
+  See also: [Request instances][0]
+  [0]: /advanced/clients/#request-instances
+  """
+  if self._state == ClientState.CLOSED:
+    raise RuntimeError("Cannot send a request, as the client has been closed.")
+  self._state = ClientState.OPENED
+  follow_redirects = (
+    self.follow_redirects
+    if isinstance(follow_redirects, UseClientDefault)
+    else follow_redirects
+  )
+  self._set_timeout(request)
+  auth = self._build_request_auth(request, auth)
+  response = self._send_handling_auth(
+    request,
+    auth=auth,
+    follow_redirects=follow_redirects,
+    history=[],
+  )
+  try:
+    if not stream:
+      response.read()
+    return response
+  except BaseException as exc:
+    response.close()
+    raise exc
+
+```
+  
+---|---  
+###  close [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.close "Permanent link")
+```
+close()
+
+```
+
+Close transport and proxies.
+Source code in `httpx/_client.py`
+```
+1276
+1277
+1278
+1279
+1280
+1281
+1282
+1283
+1284
+1285
+1286
+```
+| ```
+defclose(self) -> None:
+"""
+  Close transport and proxies.
+  """
+  if self._state != ClientState.CLOSED:
+    self._state = ClientState.CLOSED
+    self._transport.close()
+    for transport in self._mounts.values():
+      if transport is not None:
+        transport.close()
+
+```
+  
+---|---  
+###  request [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.request "Permanent link")
+```
+request(
+  method,
+  url,
+  *,
+  content=None,
+  data=None,
+  files=None,
+  json=None,
+  params=None,
+  headers=None,
+  cookies=None,
+  auth=USE_CLIENT_DEFAULT,
+  follow_redirects=USE_CLIENT_DEFAULT,
+  timeout=USE_CLIENT_DEFAULT,
+  extensions=None
+)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`method` |  **TYPE:** `str`  
+`url` |  **TYPE:** `URLTypes`  
+`content` |  **TYPE:** `RequestContent | None` **DEFAULT:** `None`  
+`data` |  **TYPE:** `_RequestData | None` **DEFAULT:** `None`  
+`files` |  **TYPE:** `RequestFiles | None` **DEFAULT:** `None`  
+`json` |  **TYPE:** `Any` **DEFAULT:** `None`  
+`params` |  **TYPE:** `QueryParamTypes | None` **DEFAULT:** `None`  
+`headers` |  **TYPE:** `HeaderTypes | None` **DEFAULT:** `None`  
+`cookies` |  **TYPE:** `CookieTypes | None` **DEFAULT:** `None`  
+`auth` |  **TYPE:** `AuthTypes | UseClientDefault` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+`follow_redirects` |  **TYPE:** `bool | UseClientDefault` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+`timeout` |  **TYPE:** `TimeoutTypes | UseClientDefault` **DEFAULT:** `USE_CLIENT_DEFAULT`  
+`extensions` |  **TYPE:** `dict[str, Any] | None` **DEFAULT:** `None`  
+Source code in `starlette/testclient.py`
+```
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+```
+| ```
+defrequest( # type: ignore[override]
+  self,
+  method: str,
+  url: httpx._types.URLTypes,
+  *,
+  content: httpx._types.RequestContent | None = None,
+  data: _RequestData | None = None,
+  files: httpx._types.RequestFiles | None = None,
+  json: typing.Any = None,
+  params: httpx._types.QueryParamTypes | None = None,
+  headers: httpx._types.HeaderTypes | None = None,
+  cookies: httpx._types.CookieTypes | None = None,
+  auth: httpx._types.AuthTypes | httpx._client.UseClientDefault = httpx._client.USE_CLIENT_DEFAULT,
+  follow_redirects: bool | httpx._client.UseClientDefault = httpx._client.USE_CLIENT_DEFAULT,
+  timeout: httpx._types.TimeoutTypes | httpx._client.UseClientDefault = httpx._client.USE_CLIENT_DEFAULT,
+  extensions: dict[str, typing.Any] | None = None,
+) -> httpx.Response:
+  if timeout is not httpx.USE_CLIENT_DEFAULT:
+    warnings.warn(
+      "You should not use the 'timeout' argument with the TestClient. "
+      "See https://github.com/encode/starlette/issues/1108 for more information.",
+      DeprecationWarning,
+    )
+  url = self._merge_url(url)
+  return super().request(
+    method,
+    url,
+    content=content,
+    data=data,
+    files=files,
+    json=json,
+    params=params,
+    headers=headers,
+    cookies=cookies,
+    auth=auth,
+    follow_redirects=follow_redirects,
+    timeout=timeout,
+    extensions=extensions,
+  )
+
+```
+  
+---|---  
+###  get [¶](https://fastapi.tiangolo.com/reference/testclient/#fastapi.testclient.TestClient.get "Permanent link")
+```
+get(
+  url,
+  *,
+  params=None,
+  headers=None,
+  cookies=None,
+  auth=USE_CLIENT_DEFAULT,
+  follow_redirects=USE_CLIENT_DEFAULT,
+  timeout=USE_CLIENT_DEFAULT,
+  extensions=None
+)

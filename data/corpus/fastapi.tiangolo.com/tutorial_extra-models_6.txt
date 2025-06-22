@@ -1,0 +1,149 @@
+Title: Creating Extra Models in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/extra-models/
+Summary: This document illustrates how to create extra models in FastAPI, highlighting the use of Pydantic's BaseModel to define user models. It includes examples of UserIn, UserOut, and UserInDB classes, a password hashing function, and a route to create users.
+---
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/extra-models/#__tabbed_4_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserBase(BaseModel):
+  username: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+classUserIn(UserBase):
+  password: str
+classUserOut(UserBase):
+  pass
+classUserInDB(UserBase):
+  hashed_password: str
+deffake_password_hasher(raw_password: str):
+  return "supersecret" + raw_password
+deffake_save_user(user_in: UserIn):
+  hashed_password = fake_password_hasher(user_in.password)
+  user_in_db = UserInDB(**user_in.dict(), hashed_password=hashed_password)
+  print("User saved! ..not really")
+  return user_in_db
+@app.post("/user/", response_model=UserOut)
+async defcreate_user(user_in: UserIn):
+  user_saved = fake_save_user(user_in)
+  return user_saved
+
+```
+
+## `Union` or `anyOf`[¶](https://fastapi.tiangolo.com/tutorial/extra-models/#union-or-anyof "Permanent link")
+You can declare a response to be the `Union` of two or more types, that means, that the response would be any of them.
+It will be defined in OpenAPI with `anyOf`.
+To do that, use the standard Python type hint [`typing.Union`](https://docs.python.org/3/library/typing.html#typing.Union):
+Note
+When defining a [`Union`](https://docs.pydantic.dev/latest/concepts/types/#unions), include the most specific type first, followed by the less specific type. In the example below, the more specific `PlaneItem` comes before `CarItem` in `Union[PlaneItem, CarItem]`.
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/extra-models/#__tabbed_5_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classBaseItem(BaseModel):
+  description: str
+  type: str
+classCarItem(BaseItem):
+  type: str = "car"
+classPlaneItem(BaseItem):
+  type: str = "plane"
+  size: int
+items = {
+  "item1": {"description": "All my friends drive a low rider", "type": "car"},
+  "item2": {
+    "description": "Music is my aeroplane, it's my aeroplane",
+    "type": "plane",
+    "size": 5,
+  },
+}
+@app.get("/items/{item_id}", response_model=Union[PlaneItem, CarItem])
+async defread_item(item_id: str):
+  return items[item_id]
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/extra-models/#__tabbed_6_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classBaseItem(BaseModel):
+  description: str
+  type: str
+classCarItem(BaseItem):
+  type: str = "car"
+classPlaneItem(BaseItem):
+  type: str = "plane"
+  size: int
+items = {
+  "item1": {"description": "All my friends drive a low rider", "type": "car"},
+  "item2": {
+    "description": "Music is my aeroplane, it's my aeroplane",
+    "type": "plane",
+    "size": 5,
+  },
+}
+@app.get("/items/{item_id}", response_model=Union[PlaneItem, CarItem])
+async defread_item(item_id: str):
+  return items[item_id]
+
+```
+
+### `Union` in Python 3.10[¶](https://fastapi.tiangolo.com/tutorial/extra-models/#union-in-python-310 "Permanent link")
+In this example we pass `Union[PlaneItem, CarItem]` as the value of the argument `response_model`.
+Because we are passing it as a **value to an argument** instead of putting it in a **type annotation** , we have to use `Union` even in Python 3.10.
+If it was in a type annotation we could have used the vertical bar, as:
+```
+some_variable: PlaneItem | CarItem
+
+```
+
+But if we put that in the assignment `response_model=PlaneItem | CarItem` we would get an error, because Python would try to perform an **invalid operation** between `PlaneItem` and `CarItem` instead of interpreting that as a type annotation.
+## List of models[¶](https://fastapi.tiangolo.com/tutorial/extra-models/#list-of-models "Permanent link")
+The same way, you can declare responses of lists of objects.
+For that, use the standard Python `typing.List` (or just `list` in Python 3.9 and above):
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/extra-models/#__tabbed_7_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str
+items = [
+  {"name": "Foo", "description": "There comes my hero"},
+  {"name": "Red", "description": "It's my aeroplane"},
+]
+@app.get("/items/", response_model=list[Item])
+async defread_items():
+  return items
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/extra-models/#__tabbed_8_1)
+```
+fromtypingimport List
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str
+items = [
+  {"name": "Foo", "description": "There comes my hero"},
+  {"name": "Red", "description": "It's my aeroplane"},
+]
+@app.get("/items/", response_model=List[Item])
+async defread_items():
+  return items

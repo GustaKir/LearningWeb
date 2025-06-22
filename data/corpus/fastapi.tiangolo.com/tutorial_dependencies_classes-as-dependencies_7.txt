@@ -1,0 +1,144 @@
+Title: Using Classes as Dependencies in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/
+Summary: This documentation chunk illustrates how to use classes as dependencies in FastAPI. It defines a `CommonQueryParams` class for handling query parameters and demonstrates its integration into a GET endpoint for fetching items from a mock database. The code showcases how to effectively use dependency injection with FastAPI to manage query parameters.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+classCommonQueryParams:
+  def__init__(self, q: Union[str, None] = None, skip: int = 0, limit: int = 100):
+    self.q = q
+    self.skip = skip
+    self.limit = limit
+@app.get("/items/")
+async defread_items(commons: CommonQueryParams = Depends(CommonQueryParams)):
+  response = {}
+  if commons.q:
+    response.update({"q": commons.q})
+  items = fake_items_db[commons.skip : commons.skip + commons.limit]
+  response.update({"items": items})
+  return response
+
+```
+
+...it has the same parameters as our previous `common_parameters`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_7_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_8_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_8_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_8_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_8_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+@app.get("/users/")
+async defread_users(commons: Annotated[dict, Depends(common_parameters)]):
+  return commons
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(q: str | None = None, skip: int = 0, limit: int = 100):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: dict = Depends(common_parameters)):
+  return commons
+@app.get("/users/")
+async defread_users(commons: dict = Depends(common_parameters)):
+  return commons
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: dict = Depends(common_parameters)):
+  return commons
+@app.get("/users/")
+async defread_users(commons: dict = Depends(common_parameters)):
+  return commons
+
+```
+
+Those parameters are what **FastAPI** will use to "solve" the dependency.
+In both cases, it will have:
+  * An optional `q` query parameter that is a `str`.
+  * A `skip` query parameter that is an `int`, with a default of `0`.
+  * A `limit` query parameter that is an `int`, with a default of `100`.
+
+
+In both cases the data will be converted, validated, documented on the OpenAPI schema, etc.
+## Use it[¶](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#use-it "Permanent link")
+Now you can declare your dependency using this class.
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/#__tabbed_9_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+fake_items_db = [{"item_name": "Foo"}, {"item_name": "Bar"}, {"item_name": "Baz"}]
+classCommonQueryParams:
+  def__init__(self, q: str | None = None, skip: int = 0, limit: int = 100):
+    self.q = q
+    self.skip = skip
+    self.limit = limit
+@app.get("/items/")
+async defread_items(commons: Annotated[CommonQueryParams, Depends(CommonQueryParams)]):
+  response = {}
+  if commons.q:
+    response.update({"q": commons.q})
+  items = fake_items_db[commons.skip : commons.skip + commons.limit]
+  response.update({"items": items})
+  return response

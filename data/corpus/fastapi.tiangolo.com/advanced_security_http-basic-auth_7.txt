@@ -1,0 +1,42 @@
+Title: HTTP Basic Authentication in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/security/http-basic-auth/
+Summary: This documentation chunk provides an example of implementing HTTP Basic Authentication in a FastAPI application. It includes the setup for verifying user credentials using secrets for comparison, raising an HTTP 401 error for incorrect username or password, and demonstrates how to retrieve the current username through a dependency.
+---
+
+```
+importsecrets
+fromfastapiimport Depends, FastAPI, HTTPException, status
+fromfastapi.securityimport HTTPBasic, HTTPBasicCredentials
+app = FastAPI()
+security = HTTPBasic()
+defget_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+  current_username_bytes = credentials.username.encode("utf8")
+  correct_username_bytes = b"stanleyjobson"
+  is_correct_username = secrets.compare_digest(
+    current_username_bytes, correct_username_bytes
+  )
+  current_password_bytes = credentials.password.encode("utf8")
+  correct_password_bytes = b"swordfish"
+  is_correct_password = secrets.compare_digest(
+    current_password_bytes, correct_password_bytes
+  )
+  if not (is_correct_username and is_correct_password):
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Incorrect username or password",
+      headers={"WWW-Authenticate": "Basic"},
+    )
+  return credentials.username
+@app.get("/users/me")
+defread_current_user(username: str = Depends(get_current_username)):
+  return {"username": username}
+
+```
+
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  OAuth2 scopes  ](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/) [ Next  Using the Request Directly  ](https://fastapi.tiangolo.com/advanced/using-request-directly/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

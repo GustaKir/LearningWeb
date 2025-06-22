@@ -1,0 +1,36 @@
+Title: Function Definitions in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: A function definition in Python is an executable statement that associates a function name with a function object, linking it to the current local and global namespaces. The function body executes only upon calling the function. Additionally, function definitions may include decorators which are evaluated in the defining scope and modify the function object.
+---
+
+```
+
+A function definition is an executable statement. Its execution binds the function name in the current local namespace to a function object (a wrapper around the executable code for the function). This function object contains a reference to the current global namespace as the global namespace to be used when the function is called.
+The function definition does not execute the function body; this gets executed only when the function is called. [[4]](https://docs.python.org/3/reference/compound_stmts.html#id23)
+A function definition may be wrapped by one or more [decorator](https://docs.python.org/3/glossary.html#term-decorator) expressions. Decorator expressions are evaluated when the function is defined, in the scope that contains the function definition. The result must be a callable, which is invoked with the function object as the only argument. The returned value is bound to the function name instead of the function object. Multiple decorators are applied in nested fashion. For example, the following code
+```
+@f1(arg)
+@f2
+deffunc(): pass
+
+```
+
+is roughly equivalent to
+```
+deffunc(): pass
+func = f1(arg)(f2(func))
+
+```
+
+except that the original function is not temporarily bound to the name `func`.
+Changed in version 3.9: Functions may be decorated with any valid [`assignment_expression`](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-assignment_expression). Previously, the grammar was much more restrictive; see [**PEP 614**](https://peps.python.org/pep-0614/) for details.
+A list of [type parameters](https://docs.python.org/3/reference/compound_stmts.html#type-params) may be given in square brackets between the function’s name and the opening parenthesis for its parameter list. This indicates to static type checkers that the function is generic. At runtime, the type parameters can be retrieved from the function’s [`__type_params__`](https://docs.python.org/3/reference/datamodel.html#function.__type_params__ "function.__type_params__") attribute. See [Generic functions](https://docs.python.org/3/reference/compound_stmts.html#generic-functions) for more.
+Changed in version 3.12: Type parameter lists are new in Python 3.12.
+When one or more [parameters](https://docs.python.org/3/glossary.html#term-parameter) have the form _parameter_ `=` _expression_ , the function is said to have “default parameter values.” For a parameter with a default value, the corresponding [argument](https://docs.python.org/3/glossary.html#term-argument) may be omitted from a call, in which case the parameter’s default value is substituted. If a parameter has a default value, all following parameters up until the “`*`” must also have a default value — this is a syntactic restriction that is not expressed by the grammar.
+**Default parameter values are evaluated from left to right when the function definition is executed.** This means that the expression is evaluated once, when the function is defined, and that the same “pre-computed” value is used for each call. This is especially important to understand when a default parameter value is a mutable object, such as a list or a dictionary: if the function modifies the object (e.g. by appending an item to a list), the default parameter value is in effect modified. This is generally not what was intended. A way around this is to use `None` as the default, and explicitly test for it in the body of the function, e.g.:
+```
+defwhats_on_the_telly(penguin=None):
+  if penguin is None:
+    penguin = []
+  penguin.append("property of the zoo")
+  return penguin

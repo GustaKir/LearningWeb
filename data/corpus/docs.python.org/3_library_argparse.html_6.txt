@@ -1,0 +1,47 @@
+Title: Reading Arguments from a File in argparse
+URL: https://docs.python.org/3/library/argparse.html
+Summary: Arguments can be read from a file, with each argument on a new line, treated as if they were specified directly on the command line. The default for `fromfile_prefix_chars` is `None`, so files won't be referenced unless explicitly set. This behavior was updated in version 3.12.
+---
+
+```
+
+Arguments read from a file must by default be one per line (but see also [`convert_arg_line_to_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.convert_arg_line_to_args "argparse.ArgumentParser.convert_arg_line_to_args")) and are treated as if they were in the same place as the original file referencing argument on the command line. So in the example above, the expression `['-f', 'foo', '@args.txt']` is considered equivalent to the expression `['-f', 'foo', '-f', 'bar']`.
+[`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") uses [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler) to read the file containing arguments.
+The `fromfile_prefix_chars=` argument defaults to `None`, meaning that arguments will never be treated as file references.
+Changed in version 3.12: [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") changed encoding and errors to read arguments files from default (e.g. [`locale.getpreferredencoding(False)`](https://docs.python.org/3/library/locale.html#locale.getpreferredencoding "locale.getpreferredencoding") and `"strict"`) to the [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler). Arguments file should be encoded in UTF-8 instead of ANSI Codepage on Windows.
+### argument_default[¶](https://docs.python.org/3/library/argparse.html#argument-default "Link to this heading")
+Generally, argument defaults are specified either by passing a default to [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") or by calling the [`set_defaults()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.set_defaults "argparse.ArgumentParser.set_defaults") methods with a specific set of name-value pairs. Sometimes however, it may be useful to specify a single parser-wide default for arguments. This can be accomplished by passing the `argument_default=` keyword argument to [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser"). For example, to globally suppress attribute creation on [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") calls, we supply `argument_default=SUPPRESS`:
+>>>```
+>>> parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+>>> parser.add_argument('--foo')
+>>> parser.add_argument('bar', nargs='?')
+>>> parser.parse_args(['--foo', '1', 'BAR'])
+Namespace(bar='BAR', foo='1')
+>>> parser.parse_args([])
+Namespace()
+
+```
+
+### allow_abbrev[¶](https://docs.python.org/3/library/argparse.html#allow-abbrev "Link to this heading")
+Normally, when you pass an argument list to the [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") method of an [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser"), it [recognizes abbreviations](https://docs.python.org/3/library/argparse.html#prefix-matching) of long options.
+This feature can be disabled by setting `allow_abbrev` to `False`:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG', allow_abbrev=False)
+>>> parser.add_argument('--foobar', action='store_true')
+>>> parser.add_argument('--foonley', action='store_false')
+>>> parser.parse_args(['--foon'])
+usage: PROG [-h] [--foobar] [--foonley]
+PROG: error: unrecognized arguments: --foon
+
+```
+
+Added in version 3.5.
+### conflict_handler[¶](https://docs.python.org/3/library/argparse.html#conflict-handler "Link to this heading")
+[`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") objects do not allow two actions with the same option string. By default, [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") objects raise an exception if an attempt is made to create an argument with an option string that is already in use:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('-f', '--foo', help='old foo help')
+>>> parser.add_argument('--foo', help='new foo help')
+Traceback (most recent call last):
+ ..
+ArgumentError: argument --foo: conflicting option string(s): --foo

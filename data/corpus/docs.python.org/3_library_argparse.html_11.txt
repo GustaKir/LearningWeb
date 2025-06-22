@@ -1,0 +1,67 @@
+Title: Using nargs in argparse
+URL: https://docs.python.org/3/library/argparse.html
+Summary: This section describes the use of `nargs` in the argparse module for handling command-line arguments. It explains two options: `'*'`, which gathers all positional arguments into a list, allowing multiple optional arguments, and `'+'`, which requires at least one argument and also gathers them into a list, generating an error if none are provided.
+---
+
+```
+
+
+
+  * `'*'`. All command-line arguments present are gathered into a list. Note that it generally doesn’t make much sense to have more than one positional argument with `nargs='*'`, but multiple optional arguments with `nargs='*'` is possible. For example:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', nargs='*')
+>>> parser.add_argument('--bar', nargs='*')
+>>> parser.add_argument('baz', nargs='*')
+>>> parser.parse_args('a b --foo x y --bar 1 2'.split())
+Namespace(bar=['1', '2'], baz=['a', 'b'], foo=['x', 'y'])
+
+```
+
+
+
+  * `'+'`. Just like `'*'`, all command-line args present are gathered into a list. Additionally, an error message will be generated if there wasn’t at least one command-line argument present. For example:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('foo', nargs='+')
+>>> parser.parse_args(['a', 'b'])
+Namespace(foo=['a', 'b'])
+>>> parser.parse_args([])
+usage: PROG [-h] foo [foo ...]
+PROG: error: the following arguments are required: foo
+
+```
+
+
+
+If the `nargs` keyword argument is not provided, the number of arguments consumed is determined by the [action](https://docs.python.org/3/library/argparse.html#action). Generally this means a single command-line argument will be consumed and a single item (not a list) will be produced. Actions that do not consume command-line arguments (e.g. `'store_const'`) set `nargs=0`.
+### const[¶](https://docs.python.org/3/library/argparse.html#const "Link to this heading")
+The `const` argument of [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") is used to hold constant values that are not read from the command line but are required for the various [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") actions. The two most common uses of it are:
+  * When [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") is called with `action='store_const'` or `action='append_const'`. These actions add the `const` value to one of the attributes of the object returned by [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args"). See the [action](https://docs.python.org/3/library/argparse.html#action) description for examples. If `const` is not provided to [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"), it will receive a default value of `None`.
+  * When [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") is called with option strings (like `-f` or `--foo`) and `nargs='?'`. This creates an optional argument that can be followed by zero or one command-line arguments. When parsing the command line, if the option string is encountered with no command-line argument following it, the value of `const` will be assumed to be `None` instead. See the [nargs](https://docs.python.org/3/library/argparse.html#nargs) description for examples.
+
+
+Changed in version 3.11: `const=None` by default, including when `action='append_const'` or `action='store_const'`.
+### default[¶](https://docs.python.org/3/library/argparse.html#default "Link to this heading")
+All optional arguments and some positional arguments may be omitted at the command line. The `default` keyword argument of [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"), whose value defaults to `None`, specifies what value should be used if the command-line argument is not present. For optional arguments, the `default` value is used when the option string was not present at the command line:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', default=42)
+>>> parser.parse_args(['--foo', '2'])
+Namespace(foo='2')
+>>> parser.parse_args([])
+Namespace(foo=42)
+
+```
+
+If the target namespace already has an attribute set, the action _default_ will not overwrite it:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', default=42)
+>>> parser.parse_args([], namespace=argparse.Namespace(foo=101))
+Namespace(foo=101)
+
+```
+
+If the `default` value is a string, the parser parses the value as if it were a command-line argument. In particular, the parser applies any [type](https://docs.python.org/3/library/argparse.html#type) conversion argument, if provided, before setting the attribute on the [`Namespace`](https://docs.python.org/3/library/argparse.html#argparse.Namespace "argparse.Namespace") return value. Otherwise, the parser uses the value as is:
+>>>

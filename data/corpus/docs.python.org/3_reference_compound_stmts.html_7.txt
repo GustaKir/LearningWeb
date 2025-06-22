@@ -1,0 +1,75 @@
+Title: With Statement Grammar in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section outlines the grammar for the 'with' statement in Python, detailing its structure, including 'with_stmt', 'with_stmt_contents', and 'with_item'. It specifies how to properly format a 'with' statement to manage resources effectively.
+---
+
+```
+**with_stmt**     ::= "with" ( "(" [with_stmt_contents](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-with_stmt_contents) ","? ")" | [with_stmt_contents](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-with_stmt_contents) ) ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)
+**with_stmt_contents** ::= [with_item](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-with_item) ("," [with_item](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-with_item))*
+**with_item**     ::= [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression) ["as" [target](https://docs.python.org/3/reference/simple_stmts.html#grammar-token-python-grammar-target)]
+
+```
+
+The execution of the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement with one “item” proceeds as follows:
+  1. The context expression (the expression given in the [`with_item`](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-with_item)) is evaluated to obtain a context manager.
+  2. The context manager’s [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") is loaded for later use.
+  3. The context manager’s [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") is loaded for later use.
+  4. The context manager’s [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method is invoked.
+  5. If a target was included in the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, the return value from [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") is assigned to it.
+Note
+The [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement guarantees that if the [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method returns without an error, then [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") will always be called. Thus, if an error occurs during the assignment to the target list, it will be treated the same as an error occurring within the suite would be. See step 7 below.
+  6. The suite is executed.
+  7. The context manager’s [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method is invoked. If an exception caused the suite to be exited, its type, value, and traceback are passed as arguments to [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__"). Otherwise, three [`None`](https://docs.python.org/3/library/constants.html#None "None") arguments are supplied.
+If the suite was exited due to an exception, and the return value from the [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method was false, the exception is reraised. If the return value was true, the exception is suppressed, and execution continues with the statement following the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement.
+If the suite was exited for any reason other than an exception, the return value from [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") is ignored, and execution proceeds at the normal location for the kind of exit that was taken.
+
+
+The following code:
+```
+with EXPRESSION as TARGET:
+  SUITE
+
+```
+
+is semantically equivalent to:
+```
+manager = (EXPRESSION)
+enter = type(manager).__enter__
+exit = type(manager).__exit__
+value = enter(manager)
+hit_except = False
+try:
+  TARGET = value
+  SUITE
+except:
+  hit_except = True
+  if not exit(manager, *sys.exc_info()):
+    raise
+finally:
+  if not hit_except:
+    exit(manager, None, None, None)
+
+```
+
+With more than one item, the context managers are processed as if multiple [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statements were nested:
+```
+with A() as a, B() as b:
+  SUITE
+
+```
+
+is semantically equivalent to:
+```
+with A() as a:
+  with B() as b:
+    SUITE
+
+```
+
+You can also write multi-item context managers in multiple lines if the items are surrounded by parentheses. For example:
+```
+with (
+  A() as a,
+  B() as b,
+):
+  SUITE

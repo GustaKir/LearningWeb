@@ -1,0 +1,73 @@
+Title: CA Certificates and Combined Key and Certificate in SSL
+URL: https://docs.python.org/3/library/ssl.html
+Summary: To validate the other side of an SSL connection, a 'CA certs' file containing trusted certificate chains is necessary. Python can use the platform’s certificates file via `SSLContext.load_default_certs()`, or this process can be automated with `create_default_context()`. Additionally, the document discusses the storage of private keys in conjunction with certificates.
+---
+
+```
+
+### CA certificates[¶](https://docs.python.org/3/library/ssl.html#ca-certificates "Link to this heading")
+If you are going to require validation of the other side of the connection’s certificate, you need to provide a “CA certs” file, filled with the certificate chains for each issuer you are willing to trust. Again, this file just contains these chains concatenated together. For validation, Python will use the first chain it finds in the file which matches. The platform’s certificates file can be used by calling [`SSLContext.load_default_certs()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.load_default_certs "ssl.SSLContext.load_default_certs"), this is done automatically with [`create_default_context()`](https://docs.python.org/3/library/ssl.html#ssl.create_default_context "ssl.create_default_context").
+### Combined key and certificate[¶](https://docs.python.org/3/library/ssl.html#combined-key-and-certificate "Link to this heading")
+Often the private key is stored in the same file as the certificate; in this case, only the `certfile` parameter to [`SSLContext.load_cert_chain()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.load_cert_chain "ssl.SSLContext.load_cert_chain") needs to be passed. If the private key is stored with the certificate, it should come before the first certificate in the certificate chain:
+```
+-----BEGIN RSA PRIVATE KEY-----
+... (private key in base64 encoding) ...
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+... (certificate in base64 PEM encoding) ...
+-----END CERTIFICATE-----
+
+```
+
+### Self-signed certificates[¶](https://docs.python.org/3/library/ssl.html#self-signed-certificates "Link to this heading")
+If you are going to create a server that provides SSL-encrypted connection services, you will need to acquire a certificate for that service. There are many ways of acquiring appropriate certificates, such as buying one from a certification authority. Another common practice is to generate a self-signed certificate. The simplest way to do this is with the OpenSSL package, using something like the following:
+```
+% openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout cert.pem
+Generating a 1024 bit RSA private key
+.......++++++
+.............................++++++
+writing new private key to 'cert.pem'
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:US
+State or Province Name (full name) [Some-State]:MyState
+Locality Name (eg, city) []:Some City
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc.
+Organizational Unit Name (eg, section) []:My Group
+Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com
+Email Address []:ops@myserver.mygroup.myorganization.com
+%
+
+```
+
+The disadvantage of a self-signed certificate is that it is its own root certificate, and no one else will have it in their cache of known (and trusted) root certificates.
+## Examples[¶](https://docs.python.org/3/library/ssl.html#examples "Link to this heading")
+### Testing for SSL support[¶](https://docs.python.org/3/library/ssl.html#testing-for-ssl-support "Link to this heading")
+To test for the presence of SSL support in a Python installation, user code should use the following idiom:
+```
+try:
+  importssl
+except ImportError:
+  pass
+else:
+  ... # do something that requires SSL support
+
+```
+
+### Client-side operation[¶](https://docs.python.org/3/library/ssl.html#client-side-operation "Link to this heading")
+This example creates a SSL context with the recommended security settings for client sockets, including automatic certificate verification:
+>>>```
+>>> context = ssl.create_default_context()
+
+```
+
+If you prefer to tune security settings yourself, you might create a context from scratch (but beware that you might not get the settings right):
+>>>```
+>>> context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+>>> context.load_verify_locations("/etc/ssl/certs/ca-bundle.crt")

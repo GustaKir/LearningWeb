@@ -1,0 +1,50 @@
+Title: Managers in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: Managers in Python's multiprocessing library allow for the creation of shared data between processes, including across networks. A manager object controls a server process to manage shared objects, accessible by other processes through proxies. The `multiprocessing.Manager()` function returns a `SyncManager` for sharing objects between processes, which will shut down once garbage collected.
+---
+
+```
+
+### Managers[¶](https://docs.python.org/3/library/multiprocessing.html#managers "Link to this heading")
+Managers provide a way to create data which can be shared between different processes, including sharing over a network between processes running on different machines. A manager object controls a server process which manages _shared objects_. Other processes can access the shared objects by using proxies. 
+
+multiprocessing.Manager()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Manager "Link to this definition")
+    
+Returns a started [`SyncManager`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager "multiprocessing.managers.SyncManager") object which can be used for sharing objects between processes. The returned manager object corresponds to a spawned child process and has methods which will create shared objects and return corresponding proxies.
+Manager processes will be shutdown as soon as they are garbage collected or their parent process exits. The manager classes are defined in the [`multiprocessing.managers`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing.managers "multiprocessing.managers: Share data between process with shared objects.") module: 
+
+_class_ multiprocessing.managers.BaseManager(_address =None_, _authkey =None_, _serializer ='pickle'_, _ctx =None_, _*_ , _shutdown_timeout =1.0_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager "Link to this definition")
+    
+Create a BaseManager object.
+Once created one should call [`start()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.start "multiprocessing.managers.BaseManager.start") or `get_server().serve_forever()` to ensure that the manager object refers to a started manager process.
+_address_ is the address on which the manager process listens for new connections. If _address_ is `None` then an arbitrary one is chosen.
+_authkey_ is the authentication key which will be used to check the validity of incoming connections to the server process. If _authkey_ is `None` then `current_process().authkey` is used. Otherwise _authkey_ is used and it must be a byte string.
+_serializer_ must be `'pickle'` (use [`pickle`](https://docs.python.org/3/library/pickle.html#module-pickle "pickle: Convert Python objects to streams of bytes and back.") serialization) or `'xmlrpclib'` (use [`xmlrpc.client`](https://docs.python.org/3/library/xmlrpc.client.html#module-xmlrpc.client "xmlrpc.client: XML-RPC client access.") serialization).
+_ctx_ is a context object, or `None` (use the current context). See the `get_context()` function.
+_shutdown_timeout_ is a timeout in seconds used to wait until the process used by the manager completes in the [`shutdown()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.shutdown "multiprocessing.managers.BaseManager.shutdown") method. If the shutdown times out, the process is terminated. If terminating the process also times out, the process is killed.
+Changed in version 3.11: Added the _shutdown_timeout_ parameter. 
+
+start([_initializer_[, _initargs_]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.start "Link to this definition")
+    
+Start a subprocess to start the manager. If _initializer_ is not `None` then the subprocess will call `initializer(*initargs)` when it starts. 
+
+get_server()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.get_server "Link to this definition")
+    
+Returns a `Server` object which represents the actual server under the control of the Manager. The `Server` object supports the `serve_forever()` method:
+>>>```
+>>> frommultiprocessing.managersimport BaseManager
+>>> manager = BaseManager(address=('', 50000), authkey=b'abc')
+>>> server = manager.get_server()
+>>> server.serve_forever()
+
+```
+
+`Server` additionally has an [`address`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.address "multiprocessing.managers.BaseManager.address") attribute. 
+
+connect()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.BaseManager.connect "Link to this definition")
+    
+Connect a local manager object to a remote manager process:
+>>>```
+>>> frommultiprocessing.managersimport BaseManager
+>>> m = BaseManager(address=('127.0.0.1', 50000), authkey=b'abc')
+>>> m.connect()

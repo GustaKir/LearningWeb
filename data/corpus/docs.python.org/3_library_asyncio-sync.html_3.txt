@@ -1,0 +1,78 @@
+Title: asyncio.Semaphore Class
+URL: https://docs.python.org/3/library/asyncio-sync.html
+Summary: The asyncio.Semaphore class manages a counter for controlling access to a shared resource. It decrements its counter upon calling acquire() and increments it with release(). A semaphore blocks if acquire() is called with a zero counter, waiting for a release(). The initial counter value can be specified; it defaults to 1.
+---
+
+_class_ asyncio.Semaphore(_value =1_)[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore "Link to this definition")
+    
+A Semaphore object. Not thread-safe.
+A semaphore manages an internal counter which is decremented by each [`acquire()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.acquire "asyncio.Semaphore.acquire") call and incremented by each [`release()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.release "asyncio.Semaphore.release") call. The counter can never go below zero; when [`acquire()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.acquire "asyncio.Semaphore.acquire") finds that it is zero, it blocks, waiting until some task calls [`release()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.release "asyncio.Semaphore.release").
+The optional _value_ argument gives the initial value for the internal counter (`1` by default). If the given value is less than `0` a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised.
+Changed in version 3.10: Removed the _loop_ parameter.
+The preferred way to use a Semaphore is an [`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) statement:
+```
+sem = asyncio.Semaphore(10)
+# ... later
+async with sem:
+  # work with shared resource
+
+```
+
+which is equivalent to:
+```
+sem = asyncio.Semaphore(10)
+# ... later
+await sem.acquire()
+try:
+  # work with shared resource
+finally:
+  sem.release()
+
+```
+
+
+_async_ acquire()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.acquire "Link to this definition")
+    
+Acquire a semaphore.
+If the internal counter is greater than zero, decrement it by one and return `True` immediately. If it is zero, wait until a [`release()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.release "asyncio.Semaphore.release") is called and return `True`. 
+
+locked()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.locked "Link to this definition")
+    
+Returns `True` if semaphore can not be acquired immediately. 
+
+release()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.release "Link to this definition")
+    
+Release a semaphore, incrementing the internal counter by one. Can wake up a task waiting to acquire the semaphore.
+Unlike [`BoundedSemaphore`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.BoundedSemaphore "asyncio.BoundedSemaphore"), [`Semaphore`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore "asyncio.Semaphore") allows making more `release()` calls than `acquire()` calls.
+## BoundedSemaphore[¶](https://docs.python.org/3/library/asyncio-sync.html#boundedsemaphore "Link to this heading") 
+
+_class_ asyncio.BoundedSemaphore(_value =1_)[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.BoundedSemaphore "Link to this definition")
+    
+A bounded semaphore object. Not thread-safe.
+Bounded Semaphore is a version of [`Semaphore`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore "asyncio.Semaphore") that raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") in [`release()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore.release "asyncio.Semaphore.release") if it increases the internal counter above the initial _value_.
+Changed in version 3.10: Removed the _loop_ parameter.
+## Barrier[¶](https://docs.python.org/3/library/asyncio-sync.html#barrier "Link to this heading") 
+
+_class_ asyncio.Barrier(_parties_)[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier "Link to this definition")
+    
+A barrier object. Not thread-safe.
+A barrier is a simple synchronization primitive that allows to block until _parties_ number of tasks are waiting on it. Tasks can wait on the [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.wait "asyncio.Barrier.wait") method and would be blocked until the specified number of tasks end up waiting on [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.wait "asyncio.Barrier.wait"). At that point all of the waiting tasks would unblock simultaneously.
+[`async with`](https://docs.python.org/3/reference/compound_stmts.html#async-with) can be used as an alternative to awaiting on [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Barrier.wait "asyncio.Barrier.wait").
+The barrier can be reused any number of times.
+Example:
+```
+async defexample_barrier():
+  # barrier with 3 parties
+  b = asyncio.Barrier(3)
+  # create 2 new waiting tasks
+  asyncio.create_task(b.wait())
+  asyncio.create_task(b.wait())
+  await asyncio.sleep(0)
+  print(b)
+  # The third .wait() call passes the barrier
+  await b.wait()
+  print(b)
+  print("barrier passed")
+  await asyncio.sleep(0)
+  print(b)
+asyncio.run(example_barrier())

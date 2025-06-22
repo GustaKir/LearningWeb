@@ -1,0 +1,25 @@
+Title: Temporary File Object in Python
+URL: https://docs.python.org/3/library/tempfile.html
+Summary: This section explains the behavior of the temporary file object returned by the `tempfile` module, detailing its characteristics as a file-like object, the retrieval of its name, and the conditions under which files are deleted based on flags such as `_delete` and `_delete_on_close`.
+---
+
+The returned object is always a [file-like object](https://docs.python.org/3/glossary.html#term-file-like-object) whose `file` attribute is the underlying true file object. This file-like object can be used in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, just like a normal file. The name of the temporary file can be retrieved from the `name` attribute of the returned file-like object. On Unix, unlike with the [`TemporaryFile()`](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile "tempfile.TemporaryFile"), the directory entry does not get unlinked immediately after the file creation.
+If _delete_ is true (the default) and _delete_on_close_ is true (the default), the file is deleted as soon as it is closed. If _delete_ is true and _delete_on_close_ is false, the file is deleted on context manager exit only, or else when the [file-like object](https://docs.python.org/3/glossary.html#term-file-like-object) is finalized. Deletion is not always guaranteed in this case (see [`object.__del__()`](https://docs.python.org/3/reference/datamodel.html#object.__del__ "object.__del__")). If _delete_ is false, the value of _delete_on_close_ is ignored.
+Therefore to use the name of the temporary file to reopen the file after closing it, either make sure not to delete the file upon closure (set the _delete_ parameter to be false) or, in case the temporary file is created in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, set the _delete_on_close_ parameter to be false. The latter approach is recommended as it provides assistance in automatic cleaning of the temporary file upon the context manager exit.
+Opening the temporary file again by its name while it is still open works as follows:
+  * On POSIX the file can always be opened again.
+  * On Windows, make sure that at least one of the following conditions are fulfilled:
+    * _delete_ is false
+    * additional open shares delete access (e.g. by calling [`os.open()`](https://docs.python.org/3/library/os.html#os.open "os.open") with the flag `O_TEMPORARY`)
+    * _delete_ is true but _delete_on_close_ is false. Note, that in this case the additional opens that do not share delete access (e.g. created via builtin [`open()`](https://docs.python.org/3/library/functions.html#open "open")) must be closed before exiting the context manager, else the [`os.unlink()`](https://docs.python.org/3/library/os.html#os.unlink "os.unlink") call on context manager exit will fail with a [`PermissionError`](https://docs.python.org/3/library/exceptions.html#PermissionError "PermissionError").
+
+
+On Windows, if _delete_on_close_ is false, and the file is created in a directory for which the user lacks delete access, then the [`os.unlink()`](https://docs.python.org/3/library/os.html#os.unlink "os.unlink") call on exit of the context manager will fail with a [`PermissionError`](https://docs.python.org/3/library/exceptions.html#PermissionError "PermissionError"). This cannot happen when _delete_on_close_ is true because delete access is requested by the open, which fails immediately if the requested access is not granted.
+On POSIX (only), a process that is terminated abruptly with SIGKILL cannot automatically delete any NamedTemporaryFiles it created.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `tempfile.mkstemp` with argument `fullpath`.
+Changed in version 3.8: Added _errors_ parameter.
+Changed in version 3.12: Added _delete_on_close_ parameter. 
+
+_class_ tempfile.SpooledTemporaryFile(_max_size =0_, _mode ='w+b'_, _buffering =-1_, _encoding =None_, _newline =None_, _suffix =None_, _prefix =None_, _dir =None_, _*_ , _errors =None_)[¶](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile "Link to this definition")
+    
+This class operates exactly as [`TemporaryFile()`](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile "tempfile.TemporaryFile") does, except that data is spooled in memory until the file size exceeds _max_size_ , or until the file’s [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method is called, at which point the contents are written to disk and operation proceeds as with [`TemporaryFile()`](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile "tempfile.TemporaryFile").

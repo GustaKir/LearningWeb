@@ -1,0 +1,59 @@
+Title: Using Socket Interface for CAN Network Communication
+URL: https://docs.python.org/3/library/socket.html
+Summary: This section explains using the socket interface to communicate with a CAN network via raw socket protocol. To use the broadcast manager protocol, one should create a socket with the CAN_BCM type. After binding or connecting, standard socket operations like send and receive can be performed. Special privileges may be required for certain operations, and an example of CAN frame packing/unpacking is provided.
+---
+
+```
+
+The next example shows how to use the socket interface to communicate to a CAN network using the raw socket protocol. To use CAN with the broadcast manager protocol instead, open a socket with:
+```
+socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM)
+
+```
+
+After binding (`CAN_RAW`) or connecting ([`CAN_BCM`](https://docs.python.org/3/library/socket.html#socket.CAN_BCM "socket.CAN_BCM")) the socket, you can use the [`socket.send()`](https://docs.python.org/3/library/socket.html#socket.socket.send "socket.socket.send") and [`socket.recv()`](https://docs.python.org/3/library/socket.html#socket.socket.recv "socket.socket.recv") operations (and their counterparts) on the socket object as usual.
+This last example might require special privileges:
+```
+importsocket
+importstruct
+
+# CAN frame packing/unpacking (see 'struct can_frame' in <linux/can.h>)
+can_frame_fmt = "=IB3x8s"
+can_frame_size = struct.calcsize(can_frame_fmt)
+defbuild_can_frame(can_id, data):
+  can_dlc = len(data)
+  data = data.ljust(8, b'\x00')
+  return struct.pack(can_frame_fmt, can_id, can_dlc, data)
+defdissect_can_frame(frame):
+  can_id, can_dlc, data = struct.unpack(can_frame_fmt, frame)
+  return (can_id, can_dlc, data[:can_dlc])
+
+# create a raw socket and bind it to the 'vcan0' interface
+s = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)
+s.bind(('vcan0',))
+while True:
+  cf, addr = s.recvfrom(can_frame_size)
+  print('Received: can_id=%x, can_dlc=%x, data=%s' % dissect_can_frame(cf))
+  try:
+    s.send(cf)
+  except OSError:
+    print('Error sending CAN frame')
+  try:
+    s.send(build_can_frame(0x01, b'\x01\x02\x03'))
+  except OSError:
+    print('Error sending CAN frame')
+
+```
+
+Running an example several times with too small delay between executions, could lead to this error:
+```
+OSError: [Errno 98] Address already in use
+
+```
+
+This is because the previous execution has left the socket in a `TIME_WAIT` state, and can’t be immediately reused.
+There is a [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.") flag to set, in order to prevent this, `socket.SO_REUSEADDR`:
+```
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind((HOST, PORT))

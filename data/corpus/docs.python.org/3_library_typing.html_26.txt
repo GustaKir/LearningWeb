@@ -1,0 +1,78 @@
+Title: Introduction to Typing in Python
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section covers the `typing` module, specifically the `BinaryIO` and its relationship to `IO` streams, along with the functions `typing.cast` and `typing.assert_type` for type casting and type checking in Python.
+---
+
+_class_ typing.BinaryIO[¶](https://docs.python.org/3/library/typing.html#typing.BinaryIO "Link to this definition")
+    
+Generic type `IO[AnyStr]` and its subclasses `TextIO(IO[str])` and `BinaryIO(IO[bytes])` represent the types of I/O streams such as returned by [`open()`](https://docs.python.org/3/library/functions.html#open "open").
+### Functions and decorators[¶](https://docs.python.org/3/library/typing.html#functions-and-decorators "Link to this heading") 
+
+typing.cast(_typ_ , _val_)[¶](https://docs.python.org/3/library/typing.html#typing.cast "Link to this definition")
+    
+Cast a value to a type.
+This returns the value unchanged. To the type checker this signals that the return value has the designated type, but at runtime we intentionally don’t check anything (we want this to be as fast as possible). 
+
+typing.assert_type(_val_ , _typ_ , _/_)[¶](https://docs.python.org/3/library/typing.html#typing.assert_type "Link to this definition")
+    
+Ask a static type checker to confirm that _val_ has an inferred type of _typ_.
+At runtime this does nothing: it returns the first argument unchanged with no checks or side effects, no matter the actual type of the argument.
+When a static type checker encounters a call to `assert_type()`, it emits an error if the value is not of the specified type:
+```
+defgreet(name: str) -> None:
+  assert_type(name, str) # OK, inferred type of `name` is `str`
+  assert_type(name, int) # type checker error
+
+```
+
+This function is useful for ensuring the type checker’s understanding of a script is in line with the developer’s intentions:
+```
+defcomplex_function(arg: object):
+  # Do some complex type-narrowing logic,
+  # after which we hope the inferred type will be `int`
+  ...
+  # Test whether the type checker correctly understands our function
+  assert_type(arg, int)
+
+```
+
+Added in version 3.11. 
+
+typing.assert_never(_arg_ , _/_)[¶](https://docs.python.org/3/library/typing.html#typing.assert_never "Link to this definition")
+    
+Ask a static type checker to confirm that a line of code is unreachable.
+Example:
+```
+defint_or_str(arg: int | str) -> None:
+  match arg:
+    case int():
+      print("It's an int")
+    case str():
+      print("It's a str")
+    case_ as unreachable:
+      assert_never(unreachable)
+
+```
+
+Here, the annotations allow the type checker to infer that the last case can never execute, because `arg` is either an [`int`](https://docs.python.org/3/library/functions.html#int "int") or a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), and both options are covered by earlier cases.
+If a type checker finds that a call to `assert_never()` is reachable, it will emit an error. For example, if the type annotation for `arg` was instead `int | str | float`, the type checker would emit an error pointing out that `unreachable` is of type [`float`](https://docs.python.org/3/library/functions.html#float "float"). For a call to `assert_never` to pass type checking, the inferred type of the argument passed in must be the bottom type, [`Never`](https://docs.python.org/3/library/typing.html#typing.Never "typing.Never"), and nothing else.
+At runtime, this throws an exception when called.
+See also
+[Unreachable Code and Exhaustiveness Checking](https://typing.python.org/en/latest/guides/unreachable.html) has more information about exhaustiveness checking with static typing.
+Added in version 3.11. 
+
+typing.reveal_type(_obj_ , _/_)[¶](https://docs.python.org/3/library/typing.html#typing.reveal_type "Link to this definition")
+    
+Ask a static type checker to reveal the inferred type of an expression.
+When a static type checker encounters a call to this function, it emits a diagnostic with the inferred type of the argument. For example:
+```
+x: int = 1
+reveal_type(x) # Revealed type is "builtins.int"
+
+```
+
+This can be useful when you want to debug how your type checker handles a particular piece of code.
+At runtime, this function prints the runtime type of its argument to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") and returns the argument unchanged (allowing the call to be used within an expression):
+```
+x = reveal_type(1) # prints "Runtime type is int"
+print(x) # prints "1"

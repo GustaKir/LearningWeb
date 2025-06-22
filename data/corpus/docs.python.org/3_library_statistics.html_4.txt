@@ -1,0 +1,66 @@
+Title: Statistics Error and Kernel Density Estimation in Python Statistics Library
+URL: https://docs.python.org/3/library/statistics.html
+Summary: This section outlines the `StatisticsError` in Python's statistics library, which occurs under specific conditions related to data validity. It also introduces the `statistics.kde()` function for performing Kernel Density Estimation (KDE), which transforms discrete samples into a continuous probability density function.
+---
+
+```
+
+[`StatisticsError`](https://docs.python.org/3/library/statistics.html#statistics.StatisticsError "statistics.StatisticsError") is raised if _data_ is empty, any element is less than zero, or if the weighted sum isn’t positive.
+The current algorithm has an early-out when it encounters a zero in the input. This means that the subsequent inputs are not tested for validity. (This behavior may change in the future.)
+Added in version 3.6.
+Changed in version 3.10: Added support for _weights_. 
+
+statistics.kde(_data_ , _h_ , _kernel ='normal'_, _*_ , _cumulative =False_)[¶](https://docs.python.org/3/library/statistics.html#statistics.kde "Link to this definition")
+    
+[Kernel Density Estimation (KDE)](https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf): Create a continuous probability density function or cumulative distribution function from discrete samples.
+The basic idea is to smooth the data using [a kernel function](https://en.wikipedia.org/wiki/Kernel_\(statistics\)). to help draw inferences about a population from a sample.
+The degree of smoothing is controlled by the scaling parameter _h_ which is called the bandwidth. Smaller values emphasize local features while larger values give smoother results.
+The _kernel_ determines the relative weights of the sample data points. Generally, the choice of kernel shape does not matter as much as the more influential bandwidth smoothing parameter.
+Kernels that give some weight to every sample point include _normal_ (_gauss_), _logistic_ , and _sigmoid_.
+Kernels that only give weight to sample points within the bandwidth include _rectangular_ (_uniform_), _triangular_ , _parabolic_ (_epanechnikov_), _quartic_ (_biweight_), _triweight_ , and _cosine_.
+If _cumulative_ is true, will return a cumulative distribution function.
+A [`StatisticsError`](https://docs.python.org/3/library/statistics.html#statistics.StatisticsError "statistics.StatisticsError") will be raised if the _data_ sequence is empty.
+[Wikipedia has an example](https://en.wikipedia.org/wiki/Kernel_density_estimation#Example) where we can use [`kde()`](https://docs.python.org/3/library/statistics.html#statistics.kde "statistics.kde") to generate and plot a probability density function estimated from a small sample:
+>>>```
+>>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+>>> f_hat = kde(sample, h=1.5)
+>>> xarr = [i/100 for i in range(-750, 1100)]
+>>> yarr = [f_hat(x) for x in xarr]
+
+```
+
+The points in `xarr` and `yarr` can be used to make a PDF plot:
+![Scatter plot of the estimated probability density function.](https://docs.python.org/3/_images/kde_example.png)
+Added in version 3.13. 
+
+statistics.kde_random(_data_ , _h_ , _kernel ='normal'_, _*_ , _seed =None_)[¶](https://docs.python.org/3/library/statistics.html#statistics.kde_random "Link to this definition")
+    
+Return a function that makes a random selection from the estimated probability density function produced by `kde(data, h, kernel)`.
+Providing a _seed_ allows reproducible selections. In the future, the values may change slightly as more accurate kernel inverse CDF estimates are implemented. The seed may be an integer, float, str, or bytes.
+A [`StatisticsError`](https://docs.python.org/3/library/statistics.html#statistics.StatisticsError "statistics.StatisticsError") will be raised if the _data_ sequence is empty.
+Continuing the example for [`kde()`](https://docs.python.org/3/library/statistics.html#statistics.kde "statistics.kde"), we can use [`kde_random()`](https://docs.python.org/3/library/statistics.html#statistics.kde_random "statistics.kde_random") to generate new random selections from an estimated probability density function:
+>>>```
+>>> data = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+>>> rand = kde_random(data, h=1.5, seed=8675309)
+>>> new_selections = [rand() for i in range(10)]
+>>> [round(x, 1) for x in new_selections]
+[0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
+
+```
+
+Added in version 3.13. 
+
+statistics.median(_data_)[¶](https://docs.python.org/3/library/statistics.html#statistics.median "Link to this definition")
+    
+Return the median (middle value) of numeric data, using the common “mean of middle two” method. If _data_ is empty, [`StatisticsError`](https://docs.python.org/3/library/statistics.html#statistics.StatisticsError "statistics.StatisticsError") is raised. _data_ can be a sequence or iterable.
+The median is a robust measure of central location and is less affected by the presence of outliers. When the number of data points is odd, the middle data point is returned:
+>>>```
+>>> median([1, 3, 5])
+3
+
+```
+
+When the number of data points is even, the median is interpolated by taking the average of the two middle values:
+>>>```
+>>> median([1, 3, 5, 7])
+4.0

@@ -1,0 +1,29 @@
+Title: Asynchronous Generator `aclose` Method
+URL: https://docs.python.org/3/reference/expressions.html
+Summary: The `_async_ agen.aclose()` method returns an awaitable that throws a `GeneratorExit` into an asynchronous generator, allowing it to exit gracefully. If already closed or raises `GeneratorExit`, it results in a `StopIteration` exception. Subsequent awaitables from the generator will raise `StopAsyncIteration` if the generator yields values afterward.
+---
+
+_async_ agen.aclose()[¶](https://docs.python.org/3/reference/expressions.html#agen.aclose "Link to this definition")
+    
+Returns an awaitable that when run will throw a [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") into the asynchronous generator function at the point where it was paused. If the asynchronous generator function then exits gracefully, is already closed, or raises [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") (by not catching the exception), then the returned awaitable will raise a [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") exception. Any further awaitables returned by subsequent calls to the asynchronous generator will raise a [`StopAsyncIteration`](https://docs.python.org/3/library/exceptions.html#StopAsyncIteration "StopAsyncIteration") exception. If the asynchronous generator yields a value, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised by the awaitable. If the asynchronous generator raises any other exception, it is propagated to the caller of the awaitable. If the asynchronous generator has already exited due to an exception or normal exit, then further calls to [`aclose()`](https://docs.python.org/3/reference/expressions.html#agen.aclose "agen.aclose") will return an awaitable that does nothing.
+## 6.3. Primaries[¶](https://docs.python.org/3/reference/expressions.html#primaries "Link to this heading")
+Primaries represent the most tightly bound operations of the language. Their syntax is:
+```
+**primary** ::= [atom](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-atom) | [attributeref](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-attributeref) | [subscription](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-subscription) | [slicing](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-slicing) | [call](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-call)
+
+```
+
+### 6.3.1. Attribute references[¶](https://docs.python.org/3/reference/expressions.html#attribute-references "Link to this heading")
+An attribute reference is a primary followed by a period and a name:
+```
+**attributeref** ::= [primary](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-primary) "." [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier)
+
+```
+
+The primary must evaluate to an object of a type that supports attribute references, which most objects do. This object is then asked to produce the attribute whose name is the identifier. The type and value produced is determined by the object. Multiple evaluations of the same attribute reference may yield different objects.
+This production can be customized by overriding the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") method or the [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") method. The `__getattribute__()` method is called first and either returns a value or raises [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") if the attribute is not available.
+If an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") is raised and the object has a `__getattr__()` method, that method is called as a fallback.
+### 6.3.2. Subscriptions[¶](https://docs.python.org/3/reference/expressions.html#subscriptions "Link to this heading")
+The subscription of an instance of a [container class](https://docs.python.org/3/reference/datamodel.html#sequence-types) will generally select an element from the container. The subscription of a [generic class](https://docs.python.org/3/glossary.html#term-generic-type) will generally return a [GenericAlias](https://docs.python.org/3/library/stdtypes.html#types-genericalias) object.
+```
+**subscription** ::= [primary](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-primary) "[" [flexible_expression_list](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-flexible_expression_list) "]"

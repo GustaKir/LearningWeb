@@ -1,0 +1,42 @@
+Title: Closing Thoughts on Descriptors
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section provides a final overview of descriptors in Python, defining them as objects that implement `__get__()`, `__set__()`, or `__delete__()` methods. It also highlights the optional `__set_name__()` method, which allows descriptors to access the class of their creation or the name of the class variable they are assigned to.
+---
+
+```
+
+### [Closing thoughts](https://docs.python.org/3/howto/descriptor.html#id7)[¶](https://docs.python.org/3/howto/descriptor.html#closing-thoughts "Link to this heading")
+A [descriptor](https://docs.python.org/3/glossary.html#term-descriptor) is what we call any object that defines [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__"), [`__set__()`](https://docs.python.org/3/reference/datamodel.html#object.__set__ "object.__set__"), or [`__delete__()`](https://docs.python.org/3/reference/datamodel.html#object.__delete__ "object.__delete__").
+Optionally, descriptors can have a [`__set_name__()`](https://docs.python.org/3/reference/datamodel.html#object.__set_name__ "object.__set_name__") method. This is only used in cases where a descriptor needs to know either the class where it was created or the name of class variable it was assigned to. (This method, if present, is called even if the class is not a descriptor.)
+Descriptors get invoked by the dot operator during attribute lookup. If a descriptor is accessed indirectly with `vars(some_class)[descriptor_name]`, the descriptor instance is returned without invoking it.
+Descriptors only work when used as class variables. When put in instances, they have no effect.
+The main motivation for descriptors is to provide a hook allowing objects stored in class variables to control what happens during attribute lookup.
+Traditionally, the calling class controls what happens during lookup. Descriptors invert that relationship and allow the data being looked-up to have a say in the matter.
+Descriptors are used throughout the language. It is how functions turn into bound methods. Common tools like [`classmethod()`](https://docs.python.org/3/library/functions.html#classmethod "classmethod"), [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod"), [`property()`](https://docs.python.org/3/library/functions.html#property "property"), and [`functools.cached_property()`](https://docs.python.org/3/library/functools.html#functools.cached_property "functools.cached_property") are all implemented as descriptors.
+## [Complete Practical Example](https://docs.python.org/3/howto/descriptor.html#id8)[¶](https://docs.python.org/3/howto/descriptor.html#complete-practical-example "Link to this heading")
+In this example, we create a practical and powerful tool for locating notoriously hard to find data corruption bugs.
+### [Validator class](https://docs.python.org/3/howto/descriptor.html#id9)[¶](https://docs.python.org/3/howto/descriptor.html#validator-class "Link to this heading")
+A validator is a descriptor for managed attribute access. Prior to storing any data, it verifies that the new value meets various type and range restrictions. If those restrictions aren’t met, it raises an exception to prevent data corruption at its source.
+This `Validator` class is both an [abstract base class](https://docs.python.org/3/glossary.html#term-abstract-base-class) and a managed attribute descriptor:
+```
+fromabcimport ABC, abstractmethod
+classValidator(ABC):
+  def__set_name__(self, owner, name):
+    self.private_name = '_' + name
+  def__get__(self, obj, objtype=None):
+    return getattr(obj, self.private_name)
+  def__set__(self, obj, value):
+    self.validate(value)
+    setattr(obj, self.private_name, value)
+  @abstractmethod
+  defvalidate(self, value):
+    pass
+
+```
+
+Custom validators need to inherit from `Validator` and must supply a `validate()` method to test various restrictions as needed.
+### [Custom validators](https://docs.python.org/3/howto/descriptor.html#id10)[¶](https://docs.python.org/3/howto/descriptor.html#custom-validators "Link to this heading")
+Here are three practical data validation utilities:
+  1. `OneOf` verifies that a value is one of a restricted set of options.
+  2. `Number` verifies that a value is either an [`int`](https://docs.python.org/3/library/functions.html#int "int") or [`float`](https://docs.python.org/3/library/functions.html#float "float"). Optionally, it verifies that a value is between a given minimum or maximum.
+  3. `String` verifies that a value is a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"). Optionally, it validates a given minimum or maximum length. It can validate a user-defined [predicate](https://en.wikipedia.org/wiki/Predicate_\(mathematical_logic\)) as well.

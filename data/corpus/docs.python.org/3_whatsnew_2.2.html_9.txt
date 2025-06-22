@@ -1,0 +1,27 @@
+Title: Changes in Integer Handling and Division Operator in Python 2.2
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: Python 2.2 simplifies integer handling by treating integers and long integers identically, allowing distinction only through the `type()` function. Additionally, PEP 238 introduces a change to the division operator, `/`, to address a long-standing issue where integer division truncates results, changing the behavior to more closely align with mathematical expectations.
+---
+
+```
+
+In most cases, integers and long integers will now be treated identically. You can still distinguish them with the [`type()`](https://docs.python.org/3/library/functions.html#type "type") built-in function, but that’s rarely needed.
+See also 
+
+[**PEP 237**](https://peps.python.org/pep-0237/) - Unifying Long Integers and Integers
+    
+Written by Moshe Zadka and Guido van Rossum. Implemented mostly by Guido van Rossum.
+## PEP 238: Changing the Division Operator[¶](https://docs.python.org/3/whatsnew/2.2.html#pep-238-changing-the-division-operator "Link to this heading")
+The most controversial change in Python 2.2 heralds the start of an effort to fix an old design flaw that’s been in Python from the beginning. Currently Python’s division operator, `/`, behaves like C’s division operator when presented with two integer arguments: it returns an integer result that’s truncated down when there would be a fractional part. For example, `3/2` is 1, not 1.5, and `(-1)/2` is -1, not -0.5. This means that the results of division can vary unexpectedly depending on the type of the two operands and because Python is dynamically typed, it can be difficult to determine the possible types of the operands.
+(The controversy is over whether this is _really_ a design flaw, and whether it’s worth breaking existing code to fix this. It’s caused endless discussions on python-dev, and in July 2001 erupted into a storm of acidly sarcastic postings on _comp.lang.python_. I won’t argue for either side here and will stick to describing what’s implemented in 2.2. Read [**PEP 238**](https://peps.python.org/pep-0238/) for a summary of arguments and counter-arguments.)
+Because this change might break code, it’s being introduced very gradually. Python 2.2 begins the transition, but the switch won’t be complete until Python 3.0.
+First, I’ll borrow some terminology from [**PEP 238**](https://peps.python.org/pep-0238/). “True division” is the division that most non-programmers are familiar with: 3/2 is 1.5, 1/4 is 0.25, and so forth. “Floor division” is what Python’s `/` operator currently does when given integer operands; the result is the floor of the value returned by true division. “Classic division” is the current mixed behaviour of `/`; it returns the result of floor division when the operands are integers, and returns the result of true division when one of the operands is a floating-point number.
+Here are the changes 2.2 introduces:
+  * A new operator, `//`, is the floor division operator. (Yes, we know it looks like C++’s comment symbol.) `//` _always_ performs floor division no matter what the types of its operands are, so `1 // 2` is 0 and `1.0 // 2.0` is also 0.0.
+`//` is always available in Python 2.2; you don’t need to enable it using a `__future__` statement.
+  * By including a `from __future__ import division` in a module, the `/` operator will be changed to return the result of true division, so `1/2` is 0.5. Without the `__future__` statement, `/` still means classic division. The default meaning of `/` will not change until Python 3.0.
+  * Classes can define methods called [`__truediv__()`](https://docs.python.org/3/reference/datamodel.html#object.__truediv__ "object.__truediv__") and [`__floordiv__()`](https://docs.python.org/3/reference/datamodel.html#object.__floordiv__ "object.__floordiv__") to overload the two division operators. At the C level, there are also slots in the [`PyNumberMethods`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods "PyNumberMethods") structure so extension types can define the two operators.
+  * Python 2.2 supports some command-line arguments for testing whether code will work with the changed division semantics. Running python with `-Q warn` will cause a warning to be issued whenever division is applied to two integers. You can use this to find code that’s affected by the change and fix it. By default, Python 2.2 will simply perform classic division without a warning; the warning will be turned on by default in Python 2.3.
+
+
+See also

@@ -1,0 +1,83 @@
+Title: GDB Python Helpers Overview
+URL: https://docs.python.org/3/howto/gdb_helpers.html
+Summary: This document section describes the `py-print` and `py-locals` commands in GDB, which are used for inspecting Python variables. `py-print` attempts to print a Python name by searching through locals, globals, and builtins, while `py-locals` retrieves all local variables in the current Python frame.
+---
+
+```
+
+> The frame numbers correspond to those displayed by GDB’s standard `backtrace` command.
+### `py-print`[¶](https://docs.python.org/3/howto/gdb_helpers.html#py-print "Link to this heading")
+> The `py-print` command looks up a Python name and tries to print it. It looks in locals within the current thread, then globals, then finally builtins:
+> ```
+(gdb) py-print self
+local 'self' = <SwappableArea(running=<gtk.Dialog at remote 0x98faaa4>,
+main_page=0) at remote 0x98fa6e4>
+(gdb) py-print __name__
+global '__name__' = 'gnome_sudoku.dialog_swallower'
+(gdb) py-print len
+builtin 'len' = <built-in function len>
+(gdb) py-print scarlet_pimpernel
+'scarlet_pimpernel' not found
+
+```
+
+> If the current C frame corresponds to multiple Python frames, `py-print` only considers the first one.
+### `py-locals`[¶](https://docs.python.org/3/howto/gdb_helpers.html#py-locals "Link to this heading")
+> The `py-locals` command looks up all Python locals within the current Python frame in the selected thread, and prints their representations:
+> ```
+(gdb) py-locals
+self = <SwappableArea(running=<gtk.Dialog at remote 0x98faaa4>,
+main_page=0) at remote 0x98fa6e4>
+d = <gtk.Dialog at remote 0x98faaa4>
+
+```
+
+> If the current C frame corresponds to multiple Python frames, locals from all of them will be shown:
+> ```
+(gdb) py-locals
+Locals for recursive_function
+n = 0
+Locals for recursive_function
+n = 1
+Locals for recursive_function
+n = 2
+Locals for recursive_function
+n = 3
+Locals for recursive_function
+n = 4
+Locals for recursive_function
+n = 5
+Locals for <module>
+
+```
+
+## Use with GDB commands[¶](https://docs.python.org/3/howto/gdb_helpers.html#use-with-gdb-commands "Link to this heading")
+The extension commands complement GDB’s built-in commands. For example, you can use a frame numbers shown by `py-bt` with the `frame` command to go a specific frame within the selected thread, like this:
+```
+(gdb) py-bt
+(output snipped)
+#68 Frame 0xaa4560, for file Lib/test/regrtest.py, line 1548, in <module> ()
+    main()
+(gdb) frame 68
+#68 0x00000000004cd1e6 in PyEval_EvalFrameEx (f=Frame 0xaa4560, for file Lib/test/regrtest.py, line 1548, in <module> (), throwflag=0) at Python/ceval.c:2665
+2665              x = call_function(&sp, oparg);
+(gdb) py-list
+1543    # Run the tests in a context manager that temporary changes the CWD to a
+1544    # temporary and writable directory. If it's not possible to create or
+1545    # change the CWD, the original CWD will be used. The original CWD is
+1546    # available from test_support.SAVEDCWD.
+1547    with test_support.temp_cwd(TESTCWD, quiet=True):
+>1548      main()
+
+```
+
+The `info threads` command will give you a list of the threads within the process, and you can use the `thread` command to select a different one:
+```
+(gdb) info threads
+ 105 Thread 0x7fffefa18710 (LWP 10260) sem_wait () at ../nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S:86
+ 104 Thread 0x7fffdf5fe710 (LWP 10259) sem_wait () at ../nptl/sysdeps/unix/sysv/linux/x86_64/sem_wait.S:86
+* 1 Thread 0x7ffff7fe2700 (LWP 10145) 0x00000038e46d73e3 in select () at ../sysdeps/unix/syscall-template.S:82
+
+```
+
+You can use `thread apply all COMMAND` or (`t a a COMMAND` for short) to run a command on all threads. With `py-bt`, this lets you see what every thread is doing at the Python level:

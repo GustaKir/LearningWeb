@@ -1,0 +1,171 @@
+Title: FastAPI Security Tools
+URL: https://fastapi.tiangolo.com/reference/security/
+Summary: This section introduces security tools in FastAPI, specifically focusing on declaring dependencies with OAuth2 scopes using `Security()`. It emphasizes the need for defining dependables, which can be integrated with OpenAPI documentation and used in generated clients and SDKs. Various security utilities are available in `fastapi.security` for API key handling and authentication.
+---
+
+1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Reference  ](https://fastapi.tiangolo.com/reference/)
+
+
+# Security Tools[¶](https://fastapi.tiangolo.com/reference/security/#security-tools "Permanent link")
+When you need to declare dependencies with OAuth2 scopes you use `Security()`.
+But you still need to define what is the dependable, the callable that you pass as a parameter to `Depends()` or `Security()`.
+There are multiple tools that you can use to create those dependables, and they get integrated into OpenAPI so they are shown in the automatic docs UI, they can be used by automatically generated clients and SDKs, etc.
+You can import them from `fastapi.security`:
+```
+fromfastapi.securityimport (
+  APIKeyCookie,
+  APIKeyHeader,
+  APIKeyQuery,
+  HTTPAuthorizationCredentials,
+  HTTPBasic,
+  HTTPBasicCredentials,
+  HTTPBearer,
+  HTTPDigest,
+  OAuth2,
+  OAuth2AuthorizationCodeBearer,
+  OAuth2PasswordBearer,
+  OAuth2PasswordRequestForm,
+  OAuth2PasswordRequestFormStrict,
+  OpenIdConnect,
+  SecurityScopes,
+)
+
+```
+
+## API Key Security Schemes[¶](https://fastapi.tiangolo.com/reference/security/#api-key-security-schemes "Permanent link")
+##  fastapi.security.APIKeyCookie [¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.APIKeyCookie "Permanent link")
+```
+APIKeyCookie(
+  *,
+  name,
+  scheme_name=None,
+  description=None,
+  auto_error=True
+)
+
+```
+
+Bases: `APIKeyBase`
+API key authentication using a cookie.
+This defines the name of the cookie that should be provided in the request with the API key and integrates that into the OpenAPI documentation. It extracts the key value sent in the cookie automatically and provides it as the dependency result. But it doesn't define how to set that cookie.
+#### Usage[¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.APIKeyCookie--usage "Permanent link")
+Create an instance object and use that object as the dependency in `Depends()`.
+The dependency result will be a string containing the key value.
+#### Example[¶](https://fastapi.tiangolo.com/reference/security/#fastapi.security.APIKeyCookie--example "Permanent link")
+```
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport APIKeyCookie
+app = FastAPI()
+cookie_scheme = APIKeyCookie(name="session")
+@app.get("/items/")
+async defread_items(session: str = Depends(cookie_scheme)):
+  return {"session": session}
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`name` |  Cookie name. **TYPE:** `str`  
+`scheme_name` |  Security scheme name. It will be included in the generated OpenAPI (e.g. visible at `/docs`). **TYPE:** `Optional[str]` **DEFAULT:** `None`  
+`description` |  Security scheme description. It will be included in the generated OpenAPI (e.g. visible at `/docs`). **TYPE:** `Optional[str]` **DEFAULT:** `None`  
+`auto_error` |  By default, if the cookie is not provided, `APIKeyCookie` will automatically cancel the request and send the client an error. If `auto_error` is set to `False`, when the cookie is not available, instead of erroring out, the dependency result will be `None`. This is useful when you want to have optional authentication. It is also useful when you want to have authentication that can be provided in one of multiple optional ways (for example, in a cookie or in an HTTP Bearer token). **TYPE:** `bool` **DEFAULT:** `True`  
+Source code in `fastapi/security/api_key.py`
+```
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+```
+| ```
+def__init__(
+  self,
+  *,
+  name: Annotated[str, Doc("Cookie name.")],
+  scheme_name: Annotated[
+    Optional[str],
+    Doc(
+"""
+      Security scheme name.
+      It will be included in the generated OpenAPI (e.g. visible at `/docs`).
+      """
+    ),
+  ] = None,
+  description: Annotated[
+    Optional[str],
+    Doc(
+"""
+      Security scheme description.
+      It will be included in the generated OpenAPI (e.g. visible at `/docs`).
+      """
+    ),
+  ] = None,
+  auto_error: Annotated[
+    bool,
+    Doc(
+"""
+      By default, if the cookie is not provided, `APIKeyCookie` will
+      automatically cancel the request and send the client an error.
+      If `auto_error` is set to `False`, when the cookie is not available,
+      instead of erroring out, the dependency result will be `None`.
+      This is useful when you want to have optional authentication.
+      It is also useful when you want to have authentication that can be
+      provided in one of multiple optional ways (for example, in a cookie or
+      in an HTTP Bearer token).
+      """
+    ),
+  ] = True,
+):
+  self.model: APIKey = APIKey(
+    **{"in": APIKeyIn.cookie}, # type: ignore[arg-type]
+    name=name,
+    description=description,
+  )
+  self.scheme_name = scheme_name or self.__class__.__name__
+  self.auto_error = auto_error

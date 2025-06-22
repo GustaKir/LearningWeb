@@ -1,0 +1,77 @@
+Title: Custom Request and Route in FastAPI
+URL: https://fastapi.tiangolo.com/how-to/custom-request-and-route/
+Summary: This document discusses how to handle custom request body encodings in FastAPI, including the creation of custom classes such as `GzipRequest` and `GzipRoute`. It also covers accessing the request body in an exception handler and implementing a custom `APIRoute` class in a router.
+---
+
+Table of contents 
+  * [ Use cases  ](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#use-cases)
+  * [ Handling custom request body encodings  ](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#handling-custom-request-body-encodings)
+    * [ Create a custom `GzipRequest` class  ](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#create-a-custom-gziprequest-class)
+    * [ Create a custom `GzipRoute` class  ](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#create-a-custom-gziproute-class)
+  * [ Accessing the request body in an exception handler  ](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#accessing-the-request-body-in-an-exception-handler)
+  * [ Custom `APIRoute` class in a router  ](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#custom-apiroute-class-in-a-router)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ How To - Recipes  ](https://fastapi.tiangolo.com/how-to/)
+
+
+# Custom Request and APIRoute class[¶](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#custom-request-and-apiroute-class "Permanent link")
+In some cases, you may want to override the logic used by the `Request` and `APIRoute` classes.
+In particular, this may be a good alternative to logic in a middleware.
+For example, if you want to read or manipulate the request body before it is processed by your application.
+Danger
+This is an "advanced" feature.
+If you are just starting with **FastAPI** you might want to skip this section.
+## Use cases[¶](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#use-cases "Permanent link")
+Some use cases include:
+  * Converting non-JSON request bodies to JSON (e.g. [`msgpack`](https://msgpack.org/index.html)).
+  * Decompressing gzip-compressed request bodies.
+  * Automatically logging all request bodies.
+
+
+## Handling custom request body encodings[¶](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#handling-custom-request-body-encodings "Permanent link")
+Let's see how to make use of a custom `Request` subclass to decompress gzip requests.
+And an `APIRoute` subclass to use that custom request class.
+### Create a custom `GzipRequest` class[¶](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#create-a-custom-gziprequest-class "Permanent link")
+Tip
+This is a toy example to demonstrate how it works, if you need Gzip support, you can use the provided [`GzipMiddleware`](https://fastapi.tiangolo.com/advanced/middleware/#gzipmiddleware).
+First, we create a `GzipRequest` class, which will overwrite the `Request.body()` method to decompress the body in the presence of an appropriate header.
+If there's no `gzip` in the header, it will not try to decompress the body.
+That way, the same route class can handle gzip compressed or uncompressed requests.
+[Python 3.8+](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#__tabbed_1_1)
+```
+importgzip
+fromtypingimport Callable, List
+fromfastapiimport Body, FastAPI, Request, Response
+fromfastapi.routingimport APIRoute
+classGzipRequest(Request):
+  async defbody(self) -> bytes:
+    if not hasattr(self, "_body"):
+      body = await super().body()
+      if "gzip" in self.headers.getlist("Content-Encoding"):
+        body = gzip.decompress(body)
+      self._body = body
+    return self._body
+classGzipRoute(APIRoute):
+  defget_route_handler(self) -> Callable:
+    original_route_handler = super().get_route_handler()
+    async defcustom_route_handler(request: Request) -> Response:
+      request = GzipRequest(request.scope, request.receive)
+      return await original_route_handler(request)
+    return custom_route_handler
+app = FastAPI()
+app.router.route_class = GzipRoute
+@app.post("/sum")
+async defsum_numbers(numbers: List[int] = Body()):
+  return {"sum": sum(numbers)}
+
+```
+
+### Create a custom `GzipRoute` class[¶](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#create-a-custom-gziproute-class "Permanent link")
+Next, we create a custom subclass of `fastapi.routing.APIRoute` that will make use of the `GzipRequest`.
+This time, it will overwrite the method `APIRoute.get_route_handler()`.
+This method returns a function. And that function is what will receive a request and return a response.
+Here we use it to create a `GzipRequest` from the original request.
+[Python 3.8+](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#__tabbed_2_1)

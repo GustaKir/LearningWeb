@@ -1,0 +1,42 @@
+Title: Generator.throw() Method in Python
+URL: https://docs.python.org/3/reference/expressions.html
+Summary: The generator.throw() method raises an exception at the point where the generator was paused and returns the next value yielded. If the generator exits without yielding, a StopIteration exception is raised. The method can accept a single exception instance or an exception class with an optional instance. If the generator does not handle the exception, it propagates to the caller.
+---
+
+generator.throw(_type_[, _value_[, _traceback_]])
+    
+Raises an exception at the point where the generator was paused, and returns the next value yielded by the generator function. If the generator exits without yielding another value, a [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") exception is raised. If the generator function does not catch the passed-in exception, or raises a different exception, then that exception propagates to the caller.
+In typical use, this is called with a single exception instance similar to the way the [`raise`](https://docs.python.org/3/reference/simple_stmts.html#raise) keyword is used.
+For backwards compatibility, however, the second signature is supported, following a convention from older versions of Python. The _type_ argument should be an exception class, and _value_ should be an exception instance. If the _value_ is not provided, the _type_ constructor is called to get an instance. If _traceback_ is provided, it is set on the exception, otherwise any existing [`__traceback__`](https://docs.python.org/3/library/exceptions.html#BaseException.__traceback__ "BaseException.__traceback__") attribute stored in _value_ may be cleared.
+Changed in version 3.12: The second signature (type[, value[, traceback]]) is deprecated and may be removed in a future version of Python. 
+
+generator.close()[¶](https://docs.python.org/3/reference/expressions.html#generator.close "Link to this definition")
+    
+Raises a [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") at the point where the generator function was paused. If the generator function catches the exception and returns a value, this value is returned from [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close"). If the generator function is already closed, or raises [`GeneratorExit`](https://docs.python.org/3/library/exceptions.html#GeneratorExit "GeneratorExit") (by not catching the exception), [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close") returns [`None`](https://docs.python.org/3/library/constants.html#None "None"). If the generator yields a value, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised. If the generator raises any other exception, it is propagated to the caller. If the generator has already exited due to an exception or normal exit, [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close") returns [`None`](https://docs.python.org/3/library/constants.html#None "None") and has no other effect.
+Changed in version 3.13: If a generator returns a value upon being closed, the value is returned by [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close").
+#### 6.2.9.2. Examples[¶](https://docs.python.org/3/reference/expressions.html#examples "Link to this heading")
+Here is a simple example that demonstrates the behavior of generators and generator functions:
+>>>```
+>>> defecho(value=None):
+...   print("Execution starts when 'next()' is called for the first time.")
+...   try:
+...     while True:
+...       try:
+...         value = (yield value)
+...       except Exception as e:
+...         value = e
+...   finally:
+...     print("Don't forget to clean up when 'close()' is called.")
+...
+>>> generator = echo(1)
+>>> print(next(generator))
+Execution starts when 'next()' is called for the first time.
+1
+>>> print(next(generator))
+None
+>>> print(generator.send(2))
+2
+>>> generator.throw(TypeError, "spam")
+TypeError('spam',)
+>>> generator.close()
+Don't forget to clean up when 'close()' is called.

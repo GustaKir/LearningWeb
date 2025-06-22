@@ -1,0 +1,46 @@
+Title: Module State Access in Python 3.11
+URL: https://docs.python.org/3/howto/isolating-extensions.html
+Summary: This section discusses the new ability in Python 3.11 to access module state from slot methods, such as `nb_add` for `__add__` and `tp_new` for initialization, highlighting the limitations of their APIs compared to `PyCMethod` and the use of `PyGetSetDef` for getters and setters.
+---
+
+```
+
+### Module State Access from Slot Methods, Getters and Setters[¶](https://docs.python.org/3/howto/isolating-extensions.html#module-state-access-from-slot-methods-getters-and-setters "Link to this heading")
+Note
+This is new in Python 3.11.
+Slot methods—the fast C equivalents for special methods, such as [`nb_add`](https://docs.python.org/3/c-api/typeobj.html#c.PyNumberMethods.nb_add "PyNumberMethods.nb_add") for [`__add__`](https://docs.python.org/3/reference/datamodel.html#object.__add__ "object.__add__") or [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") for initialization—have a very simple API that doesn’t allow passing in the defining class, unlike with [`PyCMethod`](https://docs.python.org/3/c-api/structures.html#c.PyCMethod "PyCMethod"). The same goes for getters and setters defined with [`PyGetSetDef`](https://docs.python.org/3/c-api/structures.html#c.PyGetSetDef "PyGetSetDef").
+To access the module state in these cases, use the [`PyType_GetModuleByDef()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetModuleByDef "PyType_GetModuleByDef") function, and pass in the module definition. Once you have the module, call [`PyModule_GetState()`](https://docs.python.org/3/c-api/module.html#c.PyModule_GetState "PyModule_GetState") to get the state:
+```
+PyObject*module=PyType_GetModuleByDef(Py_TYPE(self),&module_def);
+my_struct*state=(my_struct*)PyModule_GetState(module);
+if(state==NULL){
+returnNULL;
+}
+
+```
+
+`PyType_GetModuleByDef()` works by searching the [method resolution order](https://docs.python.org/3/glossary.html#term-method-resolution-order) (i.e. all superclasses) for the first superclass that has a corresponding module.
+Note
+In very exotic cases (inheritance chains spanning multiple modules created from the same definition), `PyType_GetModuleByDef()` might not return the module of the true defining class. However, it will always return a module with the same definition, ensuring a compatible C memory layout.
+### Lifetime of the Module State[¶](https://docs.python.org/3/howto/isolating-extensions.html#lifetime-of-the-module-state "Link to this heading")
+When a module object is garbage-collected, its module state is freed. For each pointer to (a part of) the module state, you must hold a reference to the module object.
+Usually this is not an issue, because types created with [`PyType_FromModuleAndSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromModuleAndSpec "PyType_FromModuleAndSpec"), and their instances, hold a reference to the module. However, you must be careful in reference counting when you reference module state from other places, such as callbacks for external libraries.
+## Open Issues[¶](https://docs.python.org/3/howto/isolating-extensions.html#open-issues "Link to this heading")
+Several issues around per-module state and heap types are still open.
+Discussions about improving the situation are best held on the [capi-sig mailing list](https://mail.python.org/mailman3/lists/capi-sig.python.org/).
+### Per-Class Scope[¶](https://docs.python.org/3/howto/isolating-extensions.html#per-class-scope "Link to this heading")
+It is currently (as of Python 3.11) not possible to attach state to individual _types_ without relying on CPython implementation details (which may change in the future—perhaps, ironically, to allow a proper solution for per-class scope).
+### Lossless Conversion to Heap Types[¶](https://docs.python.org/3/howto/isolating-extensions.html#lossless-conversion-to-heap-types "Link to this heading")
+The heap type API was not designed for “lossless” conversion from static types; that is, creating a type that works exactly like a given static type.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Isolating Extension Modules](https://docs.python.org/3/howto/isolating-extensions.html)
+    * [Who should read this](https://docs.python.org/3/howto/isolating-extensions.html#who-should-read-this)
+    * [Background](https://docs.python.org/3/howto/isolating-extensions.html#background)
+      * [Enter Per-Module State](https://docs.python.org/3/howto/isolating-extensions.html#enter-per-module-state)
+      * [Isolated Module Objects](https://docs.python.org/3/howto/isolating-extensions.html#isolated-module-objects)
+      * [Surprising Edge Cases](https://docs.python.org/3/howto/isolating-extensions.html#surprising-edge-cases)
+    * [Making Modules Safe with Multiple Interpreters](https://docs.python.org/3/howto/isolating-extensions.html#making-modules-safe-with-multiple-interpreters)
+      * [Managing Global State](https://docs.python.org/3/howto/isolating-extensions.html#managing-global-state)
+      * [Managing Per-Module State](https://docs.python.org/3/howto/isolating-extensions.html#managing-per-module-state)
+      * [Opt-Out: Limiting to One Module Object per Process](https://docs.python.org/3/howto/isolating-extensions.html#opt-out-limiting-to-one-module-object-per-process)
+      * [Module State Acc

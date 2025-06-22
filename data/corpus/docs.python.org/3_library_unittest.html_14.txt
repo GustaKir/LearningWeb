@@ -1,0 +1,32 @@
+Title: Testing Logging with assertLogs
+URL: https://docs.python.org/3/library/unittest.html
+Summary: The assertLogs method, added in version 3.2 and modified in 3.3, is a context manager that verifies if at least one log message is recorded by a specified logger at a given level. The logger can be a logging.Logger object or its name as a string, defaulting to the root logger. The log level can be specified numerically or as a string, with defaults applied if not provided.
+---
+
+```
+
+Added in version 3.2.
+Changed in version 3.3: Added the _msg_ keyword argument when used as a context manager. 
+
+assertLogs(_logger =None_, _level =None_)[¶](https://docs.python.org/3/library/unittest.html#unittest.TestCase.assertLogs "Link to this definition")
+    
+A context manager to test that at least one message is logged on the _logger_ or one of its children, with at least the given _level_.
+If given, _logger_ should be a [`logging.Logger`](https://docs.python.org/3/library/logging.html#logging.Logger "logging.Logger") object or a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") giving the name of a logger. The default is the root logger, which will catch all messages that were not blocked by a non-propagating descendent logger.
+If given, _level_ should be either a numeric logging level or its string equivalent (for example either `"ERROR"` or [`logging.ERROR`](https://docs.python.org/3/library/logging.html#logging.ERROR "logging.ERROR")). The default is [`logging.INFO`](https://docs.python.org/3/library/logging.html#logging.INFO "logging.INFO").
+The test passes if at least one message emitted inside the `with` block matches the _logger_ and _level_ conditions, otherwise it fails.
+The object returned by the context manager is a recording helper which keeps tracks of the matching log messages. It has two attributes: 
+
+records[¶](https://docs.python.org/3/library/unittest.html#unittest.TestCase.records "Link to this definition")
+    
+A list of [`logging.LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") objects of the matching log messages. 
+
+output[¶](https://docs.python.org/3/library/unittest.html#unittest.TestCase.output "Link to this definition")
+    
+A list of [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") objects with the formatted output of matching messages.
+Example:
+```
+with self.assertLogs('foo', level='INFO') as cm:
+  logging.getLogger('foo').info('first message')
+  logging.getLogger('foo.bar').error('second message')
+self.assertEqual(cm.output, ['INFO:foo:first message',
+               'ERROR:foo.bar:second message'])

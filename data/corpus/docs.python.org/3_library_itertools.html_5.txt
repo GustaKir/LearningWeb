@@ -1,0 +1,121 @@
+Title: Grouping Elements with itertools.groupby
+URL: https://docs.python.org/3/library/itertools.html
+Summary: The itertools.groupby function groups consecutive elements in an iterable that have the same value or meet a condition defined by a key function. It returns pairs of the unique key and a generator for the grouped items. This implementation features error handling for empty iterables and utilizes a nested generator for grouping.
+---
+
+```
+defgroupby(iterable, key=None):
+  # [k for k, g in groupby('AAAABBBCCDAABBB')] → A B C D A B
+  # [list(g) for k, g in groupby('AAAABBBCCD')] → AAAA BBB CC D
+  keyfunc = (lambda x: x) if key is None else key
+  iterator = iter(iterable)
+  exhausted = False
+  def_grouper(target_key):
+    nonlocal curr_value, curr_key, exhausted
+    yield curr_value
+    for curr_value in iterator:
+      curr_key = keyfunc(curr_value)
+      if curr_key != target_key:
+        return
+      yield curr_value
+    exhausted = True
+  try:
+    curr_value = next(iterator)
+  except StopIteration:
+    return
+  curr_key = keyfunc(curr_value)
+  while not exhausted:
+    target_key = curr_key
+    curr_group = _grouper(target_key)
+    yield curr_key, curr_group
+    if curr_key == target_key:
+      for _ in curr_group:
+        pass
+
+```
+
+
+itertools.islice(_iterable_ , _stop_)[¶](https://docs.python.org/3/library/itertools.html#itertools.islice "Link to this definition")
+
+
+itertools.islice(_iterable_ , _start_ , _stop_[, _step_])
+    
+Make an iterator that returns selected elements from the iterable. Works like sequence slicing but does not support negative values for _start_ , _stop_ , or _step_.
+If _start_ is zero or `None`, iteration starts at zero. Otherwise, elements from the iterable are skipped until _start_ is reached.
+If _stop_ is `None`, iteration continues until the input is exhausted, if at all. Otherwise, it stops at the specified position.
+If _step_ is `None`, the step defaults to one. Elements are returned consecutively unless _step_ is set higher than one which results in items being skipped.
+Roughly equivalent to:
+```
+defislice(iterable, *args):
+  # islice('ABCDEFG', 2) → A B
+  # islice('ABCDEFG', 2, 4) → C D
+  # islice('ABCDEFG', 2, None) → C D E F G
+  # islice('ABCDEFG', 0, None, 2) → A C E G
+  s = slice(*args)
+  start = 0 if s.start is None else s.start
+  stop = s.stop
+  step = 1 if s.step is None else s.step
+  if start < 0 or (stop is not None and stop < 0) or step <= 0:
+    raise ValueError
+  indices = count() if stop is None else range(max(start, stop))
+  next_i = start
+  for i, element in zip(indices, iterable):
+    if i == next_i:
+      yield element
+      next_i += step
+
+```
+
+If the input is an iterator, then fully consuming the _islice_ advances the input iterator by `max(start, stop)` steps regardless of the _step_ value. 
+
+itertools.pairwise(_iterable_)[¶](https://docs.python.org/3/library/itertools.html#itertools.pairwise "Link to this definition")
+    
+Return successive overlapping pairs taken from the input _iterable_.
+The number of 2-tuples in the output iterator will be one fewer than the number of inputs. It will be empty if the input iterable has fewer than two values.
+Roughly equivalent to:
+```
+defpairwise(iterable):
+  # pairwise('ABCDEFG') → AB BC CD DE EF FG
+  iterator = iter(iterable)
+  a = next(iterator, None)
+  for b in iterator:
+    yield a, b
+    a = b
+
+```
+
+Added in version 3.10. 
+
+itertools.permutations(_iterable_ , _r =None_)[¶](https://docs.python.org/3/library/itertools.html#itertools.permutations "Link to this definition")
+    
+Return successive _r_ length [permutations of elements](https://www.britannica.com/science/permutation) from the _iterable_.
+If _r_ is not specified or is `None`, then _r_ defaults to the length of the _iterable_ and all possible full-length permutations are generated.
+The output is a subsequence of [`product()`](https://docs.python.org/3/library/itertools.html#itertools.product "itertools.product") where entries with repeated elements have been filtered out. The length of the output is given by [`math.perm()`](https://docs.python.org/3/library/math.html#math.perm "math.perm") which computes `n! / (n - r)!` when `0 ≤ r ≤ n` or zero when `r > n`.
+The permutation tuples are emitted in lexicographic order according to the order of the input _iterable_. If the input _iterable_ is sorted, the output tuples will be produced in sorted order.
+Elements are treated as unique based on their position, not on their value. If the input elements are unique, there will be no repeated values within a permutation.
+Roughly equivalent to:
+```
+defpermutations(iterable, r=None):
+  # permutations('ABCD', 2) → AB AC AD BA BC BD CA CB CD DA DB DC
+  # permutations(range(3)) → 012 021 102 120 201 210
+  pool = tuple(iterable)
+  n = len(pool)
+  r = n if r is None else r
+  if r > n:
+    return
+  indices = list(range(n))
+  cycles = list(range(n, n-r, -1))
+  yield tuple(pool[i] for i in indices[:r])
+  while n:
+    for i in reversed(range(r)):
+      cycles[i] -= 1
+      if cycles[i] == 0:
+        indices[i:] = indices[i+1:] + indices[i:i+1]
+        cycles[i] = n - i
+      else:
+        j = cycles[i]
+        indices[i], indices[-j] = indices[-j], indices[i]
+        yield tuple(pool[i] for i in indices[:r])
+        break
+    else:
+      return

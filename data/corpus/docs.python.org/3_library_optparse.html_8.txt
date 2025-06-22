@@ -1,0 +1,75 @@
+Title: Setting Default Values in optparse Options
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section details how to set default values for options using the `add_option` method in Python's `optparse`. It explains that the last specified default value takes precedence and suggests using the `set_defaults()` method for clarity. It also mentions to avoid mixing the two methods of setting defaults.
+---
+
+```
+parser.add_option("-v", action="store_true", dest="verbose", default=False)
+parser.add_option("-q", action="store_false", dest="verbose", default=True)
+
+```
+
+Again, the default value for `verbose` will be `True`: the last default value supplied for any particular destination is the one that counts.
+A clearer way to specify default values is the `set_defaults()` method of OptionParser, which you can call at any time before calling [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args"):
+```
+parser.set_defaults(verbose=True)
+parser.add_option(...)
+(options, args) = parser.parse_args()
+
+```
+
+As before, the last value specified for a given option destination is the one that counts. For clarity, try to use one method or the other of setting default values, not both.
+### Generating help[¶](https://docs.python.org/3/library/optparse.html#generating-help "Link to this heading")
+[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.")’s ability to generate help and usage text automatically is useful for creating user-friendly command-line interfaces. All you have to do is supply a [`help`](https://docs.python.org/3/library/optparse.html#optparse.Option.help "optparse.Option.help") value for each option, and optionally a short usage message for your whole program. Here’s an OptionParser populated with user-friendly (documented) options:
+```
+usage = "usage: %prog [options] arg1 arg2"
+parser = OptionParser(usage=usage)
+parser.add_option("-v", "--verbose",
+         action="store_true", dest="verbose", default=True,
+         help="make lots of noise [default]")
+parser.add_option("-q", "--quiet",
+         action="store_false", dest="verbose",
+         help="be vewwy quiet (I'm hunting wabbits)")
+parser.add_option("-f", "--filename",
+         metavar="FILE", help="write output to FILE")
+parser.add_option("-m", "--mode",
+         default="intermediate",
+         help="interaction mode: novice, intermediate, "
+            "or expert [default: %default]")
+
+```
+
+If [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") encounters either `-h` or `--help` on the command-line, or if you just call `parser.print_help()`, it prints the following to standard output:
+```
+Usage: <yourscript> [options] arg1 arg2
+Options:
+ -h, --help      show this help message and exit
+ -v, --verbose     make lots of noise [default]
+ -q, --quiet      be vewwy quiet (I'm hunting wabbits)
+ -f FILE, --filename=FILE
+            write output to FILE
+ -m MODE, --mode=MODE interaction mode: novice, intermediate, or
+            expert [default: intermediate]
+
+```
+
+(If the help output is triggered by a help option, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") exits after printing the help text.)
+There’s a lot going on here to help [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") generate the best possible help message:
+  * the script defines its own usage message:
+```
+usage = "usage: %prog [options] arg1 arg2"
+
+```
+
+[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") expands `%prog` in the usage string to the name of the current program, i.e. `os.path.basename(sys.argv[0])`. The expanded string is then printed before the detailed option help.
+If you don’t supply a usage string, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") uses a bland but sensible default: `"Usage: %prog [options]"`, which is fine if your script doesn’t take any positional arguments.
+  * every option defines a help string, and doesn’t worry about line-wrapping—[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") takes care of wrapping lines and making the help output look good.
+  * options that take a value indicate this fact in their automatically generated help message, e.g. for the “mode” option:
+```
+-m MODE, --mode=MODE
+
+```
+
+Here, “MODE” is called the meta-variable: it stands for the argument that the user is expected to supply to `-m`/`--mode`. By default, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") converts the destination variable name to uppercase and uses that for the meta-variable. Sometimes, that’s not what you want—for example, the `--filename` option explicitly sets `metavar="FILE"`, resulting in this automatically generated option description:
+```
+-f FILE, --filename=FILE

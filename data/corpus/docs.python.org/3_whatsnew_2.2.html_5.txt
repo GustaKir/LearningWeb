@@ -1,0 +1,53 @@
+Title: Python 2.2 Property Definitions
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: This section discusses the use of properties in Python, specifically illustrating how to define a property using getter and setter methods. It highlights the benefits of properties over using `__getattr__()` and `__setattr__()` methods for special attribute management, improving clarity and performance.
+---
+
+```
+classC(object):
+  defget_size (self):
+    result = ... computation ...
+    return result
+  defset_size (self, size):
+    ... compute something based on the size
+    and set internal state appropriately ...
+  # Define a property. The 'delete this attribute'
+  # method is defined as None, so the attribute
+  # can't be deleted.
+  size = property(get_size, set_size,
+          None,
+          "Storage size of this instance")
+
+```
+
+That is certainly clearer and easier to write than a pair of `__getattr__()`/`__setattr__()` methods that check for the `size` attribute and handle it specially while retrieving all other attributes from the instance’s [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__"). Accesses to `size` are also the only ones which have to perform the work of calling a function, so references to other attributes run at their usual speed.
+Finally, it’s possible to constrain the list of attributes that can be referenced on an object using the new [`__slots__`](https://docs.python.org/3/reference/datamodel.html#object.__slots__ "object.__slots__") class attribute. Python objects are usually very dynamic; at any time it’s possible to define a new attribute on an instance by just doing `obj.new_attr=1`. A new-style class can define a class attribute named [`__slots__`](https://docs.python.org/3/reference/datamodel.html#object.__slots__ "object.__slots__") to limit the legal attributes to a particular set of names. An example will make this clear:
+>>>```
+>>> classC(object):
+...   __slots__ = ('template', 'name')
+...
+>>> obj = C()
+>>> print obj.template
+None
+>>> obj.template = 'Test'
+>>> print obj.template
+Test
+>>> obj.newattr = None
+Traceback (most recent call last):
+ File "<stdin>", line 1, in ?
+AttributeError: 'C' object has no attribute 'newattr'
+
+```
+
+Note how you get an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") on the attempt to assign to an attribute not listed in [`__slots__`](https://docs.python.org/3/reference/datamodel.html#object.__slots__ "object.__slots__").
+### Related Links[¶](https://docs.python.org/3/whatsnew/2.2.html#related-links "Link to this heading")
+This section has just been a quick overview of the new features, giving enough of an explanation to start you programming, but many details have been simplified or ignored. Where should you go to get a more complete picture?
+The [Descriptor Guide](https://docs.python.org/3/howto/descriptor.html#descriptorhowto) is a lengthy tutorial introduction to the descriptor features, written by Guido van Rossum. If my description has whetted your appetite, go read this tutorial next, because it goes into much more detail about the new features while still remaining quite easy to read.
+Next, there are two relevant PEPs, [**PEP 252**](https://peps.python.org/pep-0252/) and [**PEP 253**](https://peps.python.org/pep-0253/). [**PEP 252**](https://peps.python.org/pep-0252/) is titled “Making Types Look More Like Classes”, and covers the descriptor API. [**PEP 253**](https://peps.python.org/pep-0253/) is titled “Subtyping Built-in Types”, and describes the changes to type objects that make it possible to subtype built-in objects. [**PEP 253**](https://peps.python.org/pep-0253/) is the more complicated PEP of the two, and at a few points the necessary explanations of types and meta-types may cause your head to explode. Both PEPs were written and implemented by Guido van Rossum, with substantial assistance from the rest of the Zope Corp. team.
+Finally, there’s the ultimate authority: the source code. Most of the machinery for the type handling is in `Objects/typeobject.c`, but you should only resort to it after all other avenues have been exhausted, including posting a question to python-list or python-dev.
+## PEP 234: Iterators[¶](https://docs.python.org/3/whatsnew/2.2.html#pep-234-iterators "Link to this heading")
+Another significant addition to 2.2 is an iteration interface at both the C and Python levels. Objects can define how they can be looped over by callers.
+In Python versions up to 2.1, the usual way to make `for item in obj` work is to define a [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") method that looks something like this:
+```
+def__getitem__(self, index):
+  return <next item>

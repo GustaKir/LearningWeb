@@ -1,0 +1,45 @@
+Title: Enhancing Streamlit Apps with Interactive Elements
+URL: https://docs.streamlit.io/get-started/tutorials/create-an-app
+Summary: This section illustrates how to use Streamlit's built-in functions, such as `st.map` and `st.pydeck_chart`, for visualizing map data. It also explains how to integrate a dynamic slider with the `st.slider()` method to allow users to filter results in real time, enhancing interactivity within the app.
+---
+
+To draw this map we used the [`st.map`](https://docs.streamlit.io/develop/api-reference/charts/st.map) function that's built into Streamlit, but if you'd like to visualize complex map data, we encourage you to take a look at the [`st.pydeck_chart`](https://docs.streamlit.io/develop/api-reference/charts/st.pydeck_chart).
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#filter-results-with-a-slider)Filter results with a slider
+In the last section, when you drew the map, the time used to filter results was hardcoded into the script, but what if we wanted to let a reader dynamically filter the data in real time? Using Streamlit's widgets you can. Let's add a slider to the app with the `st.slider()` method.
+  1. Locate `hour_to_filter` and replace it with this code snippet:
+`hour_to_filter = st.slider('hour', 0, 23, 17) # min: 0h, max: 23h, default: 17h `
+  2. Use the slider and watch the map update in real time.
+
+
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#use-a-button-to-toggle-data)Use a button to toggle data
+Sliders are just one way to dynamically change the composition of your app. Let's use the [`st.checkbox`](https://docs.streamlit.io/develop/api-reference/widgets/st.checkbox) function to add a checkbox to your app. We'll use this checkbox to show/hide the raw data table at the top of your app.
+  1. Locate these lines:
+`st.subheader('Raw data') st.write(data) `
+  2. Replace these lines with the following code:
+`if st.checkbox('Show raw data'):   st.subheader('Raw data')   st.write(data) `
+
+
+We're sure you've got your own ideas. When you're done with this tutorial, check out all the widgets that Streamlit exposes in our [API Reference](https://docs.streamlit.io/develop/api-reference).
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#lets-put-it-all-together)Let's put it all together
+That's it, you've made it to the end. Here's the complete script for our interactive app.
+_star_
+#### Tip
+If you've skipped ahead, after you've created your script, the command to run Streamlit is `streamlit run [app name]`.
+`import streamlit as st import pandas as pd import numpy as np st.title('Uber pickups in NYC') DATE_COLUMN = 'date/time' DATA_URL = ('https://s3-us-west-2.amazonaws.com/' 'streamlit-demo-data/uber-raw-data-sep14.csv.gz') @st.cache_data def load_data(nrows):   data = pd.read_csv(DATA_URL, nrows=nrows)   lowercase = lambda x: str(x).lower()   data.rename(lowercase, axis='columns', inplace=True)   data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN]) return data data_load_state = st.text('Loading data...') data = load_data(10000) data_load_state.text("Done! (using st.cache_data)") if st.checkbox('Show raw data'):   st.subheader('Raw data')   st.write(data) st.subheader('Number of pickups by hour') hist_values = np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0,24))[0] st.bar_chart(hist_values) # Some number in the range 0-23 hour_to_filter = st.slider('hour', 0, 23, 17) filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter] st.subheader('Map of all pickups at %s:00' % hour_to_filter) st.map(filtered_data) `
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#share-your-app)Share your app
+After you’ve built a Streamlit app, it's time to share it! To show it off to the world you can use **Streamlit Community Cloud** to deploy, manage, and share your app for free.
+It works in 3 simple steps:
+  1. Put your app in a public GitHub repo (and make sure it has a requirements.txt!)
+  2. Sign into [share.streamlit.io](https://share.streamlit.io)
+  3. Click 'Deploy an app' and then paste in your GitHub URL
+
+
+That's it! 🎈 You now have a publicly deployed app that you can share with the world. Click to learn more about [how to use Streamlit Community Cloud](https://docs.streamlit.io/deploy/streamlit-community-cloud).
+## [](https://docs.streamlit.io/get-started/tutorials/create-an-app#get-help)Get help
+That's it for getting started, now you can go and build your own apps! If you run into difficulties here are a few things you can do.
+  * Check out our [community forum](https://discuss.streamlit.io/) and post a question
+  * Quick help from command line with `streamlit help`
+  * Go through our [Knowledge Base](https://docs.streamlit.io/knowledge-base) for tips, step-by-step tutorials, and articles that answer your questions about creating and deploying Streamlit apps.
+  * Read more documentation! Check out: 
+    * [Concepts](https://docs.streamlit.io/develop/concepts) for things like caching, theming, and adding statefulness to apps.
+    * [API reference](https://docs.streamlit.io/develop/api-reference) for examples of every Streamlit command.

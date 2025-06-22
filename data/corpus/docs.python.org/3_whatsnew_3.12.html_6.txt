@@ -1,0 +1,32 @@
+Title: PEP 669: Low Impact Monitoring for CPython
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: PEP 669 introduces a new API for monitoring events in CPython without significant performance costs. This API caters to profilers and debuggers by allowing them to monitor various events, ensuring that tools can operate with minimal overhead.
+---
+
+```
+
+For further examples how to use the C-API for sub-interpreters with a per-interpreter GIL, see `Modules/_xxsubinterpretersmodule.c`.
+(Contributed by Eric Snow in [gh-104210](https://github.com/python/cpython/issues/104210), etc.)
+### PEP 669: Low impact monitoring for CPython[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-669-low-impact-monitoring-for-cpython "Link to this heading")
+[**PEP 669**](https://peps.python.org/pep-0669/) defines a new [`API`](https://docs.python.org/3/library/sys.monitoring.html#module-sys.monitoring "sys.monitoring: Access and control event monitoring") for profilers, debuggers, and other tools to monitor events in CPython. It covers a wide range of events, including calls, returns, lines, exceptions, jumps, and more. This means that you only pay for what you use, providing support for near-zero overhead debuggers and coverage tools. See [`sys.monitoring`](https://docs.python.org/3/library/sys.monitoring.html#module-sys.monitoring "sys.monitoring: Access and control event monitoring") for details.
+(Contributed by Mark Shannon in [gh-103082](https://github.com/python/cpython/issues/103082).)
+### PEP 688: Making the buffer protocol accessible in Python[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-688-making-the-buffer-protocol-accessible-in-python "Link to this heading")
+[**PEP 688**](https://peps.python.org/pep-0688/) introduces a way to use the [buffer protocol](https://docs.python.org/3/c-api/buffer.html#bufferobjects) from Python code. Classes that implement the [`__buffer__()`](https://docs.python.org/3/reference/datamodel.html#object.__buffer__ "object.__buffer__") method are now usable as buffer types.
+The new [`collections.abc.Buffer`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Buffer "collections.abc.Buffer") ABC provides a standard way to represent buffer objects, for example in type annotations. The new [`inspect.BufferFlags`](https://docs.python.org/3/library/inspect.html#inspect.BufferFlags "inspect.BufferFlags") enum represents the flags that can be used to customize buffer creation. (Contributed by Jelle Zijlstra in [gh-102500](https://github.com/python/cpython/issues/102500).)
+### PEP 709: Comprehension inlining[¶](https://docs.python.org/3/whatsnew/3.12.html#pep-709-comprehension-inlining "Link to this heading")
+Dictionary, list, and set comprehensions are now inlined, rather than creating a new single-use function object for each execution of the comprehension. This speeds up execution of a comprehension by up to two times. See [**PEP 709**](https://peps.python.org/pep-0709/) for further details.
+Comprehension iteration variables remain isolated and don’t overwrite a variable of the same name in the outer scope, nor are they visible after the comprehension. Inlining does result in a few visible behavior changes:
+  * There is no longer a separate frame for the comprehension in tracebacks, and tracing/profiling no longer shows the comprehension as a function call.
+  * The [`symtable`](https://docs.python.org/3/library/symtable.html#module-symtable "symtable: Interface to the compiler's internal symbol tables.") module will no longer produce child symbol tables for each comprehension; instead, the comprehension’s locals will be included in the parent function’s symbol table.
+  * Calling [`locals()`](https://docs.python.org/3/library/functions.html#locals "locals") inside a comprehension now includes variables from outside the comprehension, and no longer includes the synthetic `.0` variable for the comprehension “argument”.
+  * A comprehension iterating directly over `locals()` (e.g. `[k for k in locals()]`) may see “RuntimeError: dictionary changed size during iteration” when run under tracing (e.g. code coverage measurement). This is the same behavior already seen in e.g. `for k in locals():`. To avoid the error, first create a list of keys to iterate over: `keys = list(locals()); [k for k in keys]`.
+
+
+(Contributed by Carl Meyer and Vladimir Matveev in [**PEP 709**](https://peps.python.org/pep-0709/).)
+### Improved Error Messages[¶](https://docs.python.org/3/whatsnew/3.12.html#improved-error-messages "Link to this heading")
+  * Modules from the standard library are now potentially suggested as part of the error messages displayed by the interpreter when a [`NameError`](https://docs.python.org/3/library/exceptions.html#NameError "NameError") is raised to the top level. (Contributed by Pablo Galindo in [gh-98254](https://github.com/python/cpython/issues/98254).)
+>>>```
+>>> sys.version_info
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+NameError: name 'sys' is not defined. Did you forget to import 'sys'?

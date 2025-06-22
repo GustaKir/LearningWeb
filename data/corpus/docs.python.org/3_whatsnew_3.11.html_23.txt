@@ -1,0 +1,20 @@
+Title: Faster CPython in Version 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: CPython 3.11 introduces an average performance improvement of 25% over 3.10, with potential speedups ranging from 10-60% depending on the workload. Key optimizations focus on faster startup and runtime, with additional optimizations documented separately.
+---
+
+## Faster CPython[¶](https://docs.python.org/3/whatsnew/3.11.html#faster-cpython "Link to this heading")
+CPython 3.11 is an average of [25% faster](https://github.com/faster-cpython/ideas#published-results) than CPython 3.10 as measured with the [pyperformance](https://github.com/python/pyperformance) benchmark suite, when compiled with GCC on Ubuntu Linux. Depending on your workload, the overall speedup could be 10-60%.
+This project focuses on two major areas in Python: [Faster Startup](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-faster-startup) and [Faster Runtime](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-faster-runtime). Optimizations not covered by this project are listed separately under [Optimizations](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-optimizations).
+### Faster Startup[¶](https://docs.python.org/3/whatsnew/3.11.html#faster-startup "Link to this heading")
+#### Frozen imports / Static code objects[¶](https://docs.python.org/3/whatsnew/3.11.html#frozen-imports-static-code-objects "Link to this heading")
+Python caches [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) in the [__pycache__](https://docs.python.org/3/tutorial/modules.html#tut-pycache) directory to speed up module loading.
+Previously in 3.10, Python module execution looked like this:
+```
+Read __pycache__ -> Unmarshal -> Heap allocated code object -> Evaluate
+
+```
+
+In Python 3.11, the core modules essential for Python startup are “frozen”. This means that their [Code Objects](https://docs.python.org/3/c-api/code.html#codeobjects) (and bytecode) are statically allocated by the interpreter. This reduces the steps in module execution process to:
+```
+Statically allocated code object -> Evaluate

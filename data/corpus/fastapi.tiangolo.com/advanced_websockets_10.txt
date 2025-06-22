@@ -1,0 +1,115 @@
+Title: WebSocket Integration in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/websockets/
+Summary: This document provides an overview of implementing WebSocket in FastAPI, including a sample HTML template for a chat application. The example demonstrates how to establish a WebSocket connection, send messages, and handle user inputs in a user-friendly interface.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport (
+  Cookie,
+  Depends,
+  FastAPI,
+  Query,
+  WebSocket,
+  WebSocketException,
+  status,
+)
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <form action="" onsubmit="sendMessage(event)">
+      <label>Item ID: <input type="text" id="itemId" autocomplete="off" value="foo"/></label>
+      <label>Token: <input type="text" id="token" autocomplete="off" value="some-key-token"/></label>
+      <button onclick="connect(event)">Connect</button>
+      <hr>
+      <label>Message: <input type="text" id="messageText" autocomplete="off"/></label>
+      <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
+    <script>
+    var ws = null;
+      function connect(event) {
+        var itemId = document.getElementById("itemId")
+        var token = document.getElementById("token")
+        ws = new WebSocket("ws://localhost:8000/items/" + itemId.value + "/ws?token=" + token.value);
+        ws.onmessage = function(event) {
+          var messages = document.getElementById('messages')
+          var message = document.createElement('li')
+          var content = document.createTextNode(event.data)
+          message.appendChild(content)
+          messages.appendChild(message)
+        };
+        event.preventDefault()
+      }
+      function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+      }
+    </script>
+  </body>
+</html>
+"""
+@app.get("/")
+async defget():
+  return HTMLResponse(html)
+async defget_cookie_or_token(
+  websocket: WebSocket,
+  session: Union[str, None] = Cookie(default=None),
+  token: Union[str, None] = Query(default=None),
+):
+  if session is None and token is None:
+    raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+  return session or token
+@app.websocket("/items/{item_id}/ws")
+async defwebsocket_endpoint(
+  websocket: WebSocket,
+  item_id: str,
+  q: Union[int, None] = None,
+  cookie_or_token: str = Depends(get_cookie_or_token),
+):
+  await websocket.accept()
+  while True:
+    data = await websocket.receive_text()
+    await websocket.send_text(
+      f"Session cookie or query token value is: {cookie_or_token}"
+    )
+    if q is not None:
+      await websocket.send_text(f"Query parameter q is: {q}")
+    await websocket.send_text(f"Message text was: {data}, for item ID: {item_id}")
+
+```
+
+Info
+As this is a WebSocket it doesn't really make sense to raise an `HTTPException`, instead we raise a `WebSocketException`.
+You can use a closing code from the [valid codes defined in the specification](https://tools.ietf.org/html/rfc6455#section-7.4.1).
+### Try the WebSockets with dependencies[¶](https://fastapi.tiangolo.com/advanced/websockets/#try-the-websockets-with-dependencies "Permanent link")
+If your file is named `main.py`, run your application with:
+```
+
+fast →[](https://fastapi.tiangolo.com/advanced/websockets/)fastapi dev main.pyINFO:   Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)restart ↻[](https://fastapi.tiangolo.com/advanced/websockets/)
+
+```
+
+Open your browser at <http://127.0.0.1:8000>.
+There you can set:
+  * The "Item ID", used in the path.
+  * The "Token" used as a query parameter.
+
+
+Tip
+Notice that the query `token` will be handled by a dependency.
+With that you can connect the WebSocket and then send and receive messages:
+![](https://fastapi.tiangolo.com/img/tutorial/websockets/image05.png)
+## Handling disconnections and multiple clients[¶](https://fastapi.tiangolo.com/advanced/websockets/#handling-disconnections-and-multiple-clients "Permanent link")
+When a WebSocket connection is closed, the `await websocket.receive_text()` will raise a `WebSocketDisconnect` exception, which you can then catch and handle like in this example.
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/websockets/#__tabbed_6_1)

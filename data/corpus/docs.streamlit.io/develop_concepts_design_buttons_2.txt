@@ -1,0 +1,27 @@
+Title: Using Buttons for Temporary Result Validation in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/design/buttons
+Summary: This document discusses the use of buttons in Streamlit for disposable result validations, such as a 'Validate' button that provides immediate feedback without needing to retain the information. It includes an example where a user checks for the availability of an animal in a list with a button that displays a temporary message based on their input.
+---
+
+* This can be appropriate when disposable results are desired. If you have a "Validate" button, that could be a process conditioned directly on a button. It could be used to create an alert to say 'Valid' or 'Invalid' with no need to keep that info.
+## [](https://docs.streamlit.io/develop/concepts/design/buttons#common-logic-with-buttons)Common logic with buttons
+### [](https://docs.streamlit.io/develop/concepts/design/buttons#show-a-temporary-message-with-a-button)Show a temporary message with a button
+If you want to give the user a quick button to check if an entry is valid, but not keep that check displayed as the user continues.
+In this example, a user can click a button to check if their `animal` string is in the `animal_shelter` list. When the user clicks "**Check availability** " they will see "We have that animal!" or "We don't have that animal." If they change the animal in [`st.text_input`](https://docs.streamlit.io/develop/api-reference/widgets/st.text_input), the script reruns and the message disappears until they click "**Check availability** " again.
+`import streamlit as st animal_shelter = ['cat', 'dog', 'rabbit', 'bird'] animal = st.text_input('Type an animal') if st.button('Check availability'):   have_it = animal.lower() in animal_shelter   'We have that animal!' if have_it else 'We don\'t have that animal.' `
+Note: The above example uses [magic](https://docs.streamlit.io/develop/api-reference/write-magic/magic) to render the message on the frontend.
+### [](https://docs.streamlit.io/develop/concepts/design/buttons#stateful-button)Stateful button
+If you want a clicked button to continue to be `True`, create a value in `st.session_state` and use the button to set that value to `True` in a callback.
+`import streamlit as st if 'clicked' not in st.session_state:   st.session_state.clicked = False def click_button():   st.session_state.clicked = True st.button('Click me', on_click=click_button) if st.session_state.clicked: # The message and nested widget will remain on the page   st.write('Button clicked!')   st.slider('Select a value') `
+### [](https://docs.streamlit.io/develop/concepts/design/buttons#toggle-button)Toggle button
+If you want a button to work like a toggle switch, consider using [`st.checkbox`](https://docs.streamlit.io/develop/api-reference/widgets/st.checkbox). Otherwise, you can use a button with a callback function to reverse a boolean value saved in `st.session_state`.
+In this example, we use `st.button` to toggle another widget on and off. By displaying [`st.slider`](https://docs.streamlit.io/develop/api-reference/widgets/st.slider) conditionally on a value in `st.session_state`, the user can interact with the slider without it disappearing.
+`import streamlit as st if 'button' not in st.session_state:   st.session_state.button = False def click_button():   st.session_state.button = not st.session_state.button st.button('Click me', on_click=click_button) if st.session_state.button: # The message and nested widget will remain on the page   st.write('Button is on!')   st.slider('Select a value') else:   st.write('Button is off!') `
+Alternatively, you can use the value in `st.session_state` on the slider's `disabled` parameter.
+`import streamlit as st if 'button' not in st.session_state:   st.session_state.button = False def click_button():   st.session_state.button = not st.session_state.button st.button('Click me', on_click=click_button) st.slider('Select a value', disabled=st.session_state.button) `
+### [](https://docs.streamlit.io/develop/concepts/design/buttons#buttons-to-continue-or-control-stages-of-a-process)Buttons to continue or control stages of a process
+Another alternative to nesting content inside a button is to use a value in `st.session_state` that designates the "step" or "stage" of a process. In this example, we have four stages in our script:
+  1. Before the user begins.
+  2. User enters their name.
+  3. User chooses a color.
+  4. User gets a thank-you message.

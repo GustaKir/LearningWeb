@@ -1,0 +1,54 @@
+Title: Magic Methods in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: Calls to magic methods are not logged in `method_calls` but are in `mock_calls`. Using the `_spec_` keyword with mocks will raise an `AttributeError` for unsupported magic methods. Supported magic methods include `__hash__`, `__repr__`, comparison methods, and container methods.
+---
+
+```
+
+Calls to magic methods do not appear in [`method_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.method_calls "unittest.mock.Mock.method_calls"), but they are recorded in [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls").
+Note
+If you use the _spec_ keyword argument to create a mock then attempting to set a magic method that isn’t in the spec will raise an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError").
+The full list of supported magic methods is:
+  * `__hash__`, `__sizeof__`, `__repr__` and `__str__`
+  * `__dir__`, `__format__` and `__subclasses__`
+  * `__round__`, `__floor__`, `__trunc__` and `__ceil__`
+  * Comparisons: `__lt__`, `__gt__`, `__le__`, `__ge__`, `__eq__` and `__ne__`
+  * Container methods: `__getitem__`, `__setitem__`, `__delitem__`, `__contains__`, `__len__`, `__iter__`, `__reversed__` and `__missing__`
+  * Context manager: `__enter__`, `__exit__`, `__aenter__` and `__aexit__`
+  * Unary numeric methods: `__neg__`, `__pos__` and `__invert__`
+  * The numeric methods (including right hand and in-place variants): `__add__`, `__sub__`, `__mul__`, `__matmul__`, `__truediv__`, `__floordiv__`, `__mod__`, `__divmod__`, `__lshift__`, `__rshift__`, `__and__`, `__xor__`, `__or__`, and `__pow__`
+  * Numeric conversion methods: `__complex__`, `__int__`, `__float__` and `__index__`
+  * Descriptor methods: `__get__`, `__set__` and `__delete__`
+  * Pickling: `__reduce__`, `__reduce_ex__`, `__getinitargs__`, `__getnewargs__`, `__getstate__` and `__setstate__`
+  * File system path representation: `__fspath__`
+  * Asynchronous iteration methods: `__aiter__` and `__anext__`
+
+
+Changed in version 3.8: Added support for [`os.PathLike.__fspath__()`](https://docs.python.org/3/library/os.html#os.PathLike.__fspath__ "os.PathLike.__fspath__").
+Changed in version 3.8: Added support for `__aenter__`, `__aexit__`, `__aiter__` and `__anext__`.
+The following methods exist but are _not_ supported as they are either in use by mock, can’t be set dynamically, or can cause problems:
+  * `__getattr__`, `__setattr__`, `__init__` and `__new__`
+  * `__prepare__`, `__instancecheck__`, `__subclasscheck__`, `__del__`
+
+
+### Magic Mock[¶](https://docs.python.org/3/library/unittest.mock.html#magic-mock "Link to this heading")
+There are two `MagicMock` variants: [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") and [`NonCallableMagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.NonCallableMagicMock "unittest.mock.NonCallableMagicMock"). 
+
+_class_ unittest.mock.MagicMock(_* args_, _** kw_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "Link to this definition")
+    
+`MagicMock` is a subclass of [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock") with default implementations of most of the [magic methods](https://docs.python.org/3/glossary.html#term-magic-method). You can use `MagicMock` without having to configure the magic methods yourself.
+The constructor parameters have the same meaning as for [`Mock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock "unittest.mock.Mock").
+If you use the _spec_ or _spec_set_ arguments then _only_ magic methods that exist in the spec will be created. 
+
+_class_ unittest.mock.NonCallableMagicMock(_* args_, _** kw_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.NonCallableMagicMock "Link to this definition")
+    
+A non-callable version of [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock").
+The constructor parameters have the same meaning as for [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock"), with the exception of _return_value_ and _side_effect_ which have no meaning on a non-callable mock.
+The magic methods are setup with [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") objects, so you can configure them and use them in the usual way:
+>>>```
+>>> mock = MagicMock()
+>>> mock[3] = 'fish'
+>>> mock.__setitem__.assert_called_with(3, 'fish')
+>>> mock.__getitem__.return_value = 'result'
+>>> mock[2]
+'result'

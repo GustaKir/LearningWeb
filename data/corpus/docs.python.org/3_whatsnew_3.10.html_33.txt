@@ -1,0 +1,33 @@
+Title: Deprecations and Changes in Python 3.10
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: This section outlines the removal of `PyOS_ReadlineFunctionPointer()` from the limited C API due to ABI stability concerns, and notes that the `Py_SymtableString()` function was mistakenly included in the stable ABI but cannot be used because of the exclusion of the symtable header. It advises using the Python `symtable` module instead.
+---
+
+e_Build()`
+    * `PySymtable_BuildObject()`
+    * `PySymtable_Free()`
+    * `Py_SymtableString()`
+    * `Py_SymtableStringObject()`
+The `Py_SymtableString()` function was part the stable ABI by mistake but it could not be used, because the `symtable.h` header file was excluded from the limited C API.
+Use Python [`symtable`](https://docs.python.org/3/library/symtable.html#module-symtable "symtable: Interface to the compiler's internal symbol tables.") module instead. (Contributed by Victor Stinner in [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244).)
+  * Remove [`PyOS_ReadlineFunctionPointer()`](https://docs.python.org/3/c-api/veryhigh.html#c.PyOS_ReadlineFunctionPointer "PyOS_ReadlineFunctionPointer") from the limited C API headers and from `python3.dll`, the library that provides the stable ABI on Windows. Since the function takes a `FILE*` argument, its ABI stability cannot be guaranteed. (Contributed by Petr Viktorin in [bpo-43868](https://bugs.python.org/issue?@action=redirect&bpo=43868).)
+  * Remove `ast.h`, `asdl.h`, and `Python-ast.h` header files. These functions were undocumented and excluded from the limited C API. Most names defined by these header files were not prefixed by `Py` and so could create names conflicts. For example, `Python-ast.h` defined a `Yield` macro which was conflict with the `Yield` name used by the Windows `<winbase.h>` header. Use the Python [`ast`](https://docs.python.org/3/library/ast.html#module-ast "ast: Abstract Syntax Tree classes and manipulation.") module instead. (Contributed by Victor Stinner in [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244).)
+  * Remove the compiler and parser functions using `struct _mod` type, because the public AST C API was removed:
+    * `PyAST_Compile()`
+    * `PyAST_CompileEx()`
+    * `PyAST_CompileObject()`
+    * `PyFuture_FromAST()`
+    * `PyFuture_FromASTObject()`
+    * `PyParser_ASTFromFile()`
+    * `PyParser_ASTFromFileObject()`
+    * `PyParser_ASTFromFilename()`
+    * `PyParser_ASTFromString()`
+    * `PyParser_ASTFromStringObject()`
+These functions were undocumented and excluded from the limited C API. (Contributed by Victor Stinner in [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244).)
+  * Remove the `pyarena.h` header file with functions:
+    * `PyArena_New()`
+    * `PyArena_Free()`
+    * `PyArena_Malloc()`
+    * `PyArena_AddPyObject()`
+These functions were undocumented, excluded from the limited C API, and were only used internally by the compiler. (Contributed by Victor Stinner in [bpo-43244](https://bugs.python.org/issue?@action=redirect&bpo=43244).)
+  * The `PyThreadState.use_tracing` member has been removed to optimize Python. (Contributed by Mark Shannon in [bpo-43760](https://bugs.python.org/issue?@action=redirect&bpo=43760).)

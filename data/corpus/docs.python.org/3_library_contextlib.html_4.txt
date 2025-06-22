@@ -1,0 +1,66 @@
+Title: Contextlib Module: Suppressing Exceptions
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: The `contextlib.suppress` function, introduced in version 3.7 and updated in 3.10 to support asynchronous context managers, provides a context manager that suppresses specified exceptions within a `with` statement. It should be used carefully to handle specific errors where ignoring the exception is appropriate.
+---
+
+```
+
+Added in version 3.7.
+Changed in version 3.10: [asynchronous context manager](https://docs.python.org/3/glossary.html#term-asynchronous-context-manager) support was added. 
+
+contextlib.suppress(_* exceptions_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.suppress "Link to this definition")
+    
+Return a context manager that suppresses any of the specified exceptions if they occur in the body of a `with` statement and then resumes execution with the first statement following the end of the `with` statement.
+As with any other mechanism that completely suppresses exceptions, this context manager should be used only to cover very specific errors where silently continuing with program execution is known to be the right thing to do.
+For example:
+```
+fromcontextlibimport suppress
+with suppress(FileNotFoundError):
+  os.remove('somefile.tmp')
+with suppress(FileNotFoundError):
+  os.remove('someotherfile.tmp')
+
+```
+
+This code is equivalent to:
+```
+try:
+  os.remove('somefile.tmp')
+except FileNotFoundError:
+  pass
+try:
+  os.remove('someotherfile.tmp')
+except FileNotFoundError:
+  pass
+
+```
+
+This context manager is [reentrant](https://docs.python.org/3/library/contextlib.html#reentrant-cms).
+If the code within the `with` block raises a [`BaseExceptionGroup`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup "BaseExceptionGroup"), suppressed exceptions are removed from the group. Any exceptions of the group which are not suppressed are re-raised in a new group which is created using the original group’s [`derive()`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup.derive "BaseExceptionGroup.derive") method.
+Added in version 3.4.
+Changed in version 3.12: `suppress` now supports suppressing exceptions raised as part of a [`BaseExceptionGroup`](https://docs.python.org/3/library/exceptions.html#BaseExceptionGroup "BaseExceptionGroup"). 
+
+contextlib.redirect_stdout(_new_target_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout "Link to this definition")
+    
+Context manager for temporarily redirecting [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") to another file or file-like object.
+This tool adds flexibility to existing functions or classes whose output is hardwired to stdout.
+For example, the output of [`help()`](https://docs.python.org/3/library/functions.html#help "help") normally is sent to _sys.stdout_. You can capture that output in a string by redirecting the output to an [`io.StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") object. The replacement stream is returned from the `__enter__` method and so is available as the target of the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement:
+```
+with redirect_stdout(io.StringIO()) as f:
+  help(pow)
+s = f.getvalue()
+
+```
+
+To send the output of [`help()`](https://docs.python.org/3/library/functions.html#help "help") to a file on disk, redirect the output to a regular file:
+```
+with open('help.txt', 'w') as f:
+  with redirect_stdout(f):
+    help(pow)
+
+```
+
+To send the output of [`help()`](https://docs.python.org/3/library/functions.html#help "help") to _sys.stderr_ :
+```
+with redirect_stdout(sys.stderr):
+  help(pow)

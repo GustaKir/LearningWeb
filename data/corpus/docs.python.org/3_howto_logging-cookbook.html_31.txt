@@ -1,0 +1,98 @@
+Title: Custom Logging Filter Example
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This example demonstrates how to create a custom logging filter in Python. The filter, MyFilter, modifies log messages based on a specified parameter. It prevents logs containing the parameter value from being displayed, while preceding allowed messages with 'changed: '. The logging configuration is defined using a dictionary, and upon execution, only the modified log message is printed.
+---
+
+```
+importlogging
+importlogging.config
+importsys
+classMyFilter(logging.Filter):
+  def__init__(self, param=None):
+    self.param = param
+  deffilter(self, record):
+    if self.param is None:
+      allow = True
+    else:
+      allow = self.param not in record.msg
+    if allow:
+      record.msg = 'changed: ' + record.msg
+    return allow
+LOGGING = {
+  'version': 1,
+  'filters': {
+    'myfilter': {
+      '()': MyFilter,
+      'param': 'noshow',
+    }
+  },
+  'handlers': {
+    'console': {
+      'class': 'logging.StreamHandler',
+      'filters': ['myfilter']
+    }
+  },
+  'root': {
+    'level': 'DEBUG',
+    'handlers': ['console']
+  },
+}
+if __name__ == '__main__':
+  logging.config.dictConfig(LOGGING)
+  logging.debug('hello')
+  logging.debug('hello - noshow')
+
+```
+
+This example shows how you can pass configuration data to the callable which constructs the instance, in the form of keyword parameters. When run, the above script will print:
+```
+changed: hello
+
+```
+
+which shows that the filter is working as configured.
+A couple of extra points to note:
+  * If you can’t refer to the callable directly in the configuration (e.g. if it lives in a different module, and you can’t import it directly where the configuration dictionary is), you can use the form `ext://...` as described in [Access to external objects](https://docs.python.org/3/library/logging.config.html#logging-config-dict-externalobj). For example, you could have used the text `'ext://__main__.MyFilter'` instead of `MyFilter` in the above example.
+  * As well as for filters, this technique can also be used to configure custom handlers and formatters. See [User-defined objects](https://docs.python.org/3/library/logging.config.html#logging-config-dict-userdef) for more information on how logging supports using user-defined objects in its configuration, and see the other cookbook recipe [Customizing handlers with dictConfig()](https://docs.python.org/3/howto/logging-cookbook.html#custom-handlers) above.
+
+
+## Customized exception formatting[¶](https://docs.python.org/3/howto/logging-cookbook.html#customized-exception-formatting "Link to this heading")
+There might be times when you want to do customized exception formatting - for argument’s sake, let’s say you want exactly one line per logged event, even when exception information is present. You can do this with a custom formatter class, as shown in the following example:
+```
+importlogging
+classOneLineExceptionFormatter(logging.Formatter):
+  defformatException(self, exc_info):
+"""
+    Format an exception so that it prints on a single line.
+    """
+    result = super().formatException(exc_info)
+    return repr(result) # or format into one line however you want to
+  defformat(self, record):
+    s = super().format(record)
+    if record.exc_text:
+      s = s.replace('\n', '') + '|'
+    return s
+defconfigure_logging():
+  fh = logging.FileHandler('output.txt', 'w')
+  f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
+                 '%d/%m/%Y %H:%M:%S')
+  fh.setFormatter(f)
+  root = logging.getLogger()
+  root.setLevel(logging.DEBUG)
+  root.addHandler(fh)
+defmain():
+  configure_logging()
+  logging.info('Sample message')
+  try:
+    x = 1 / 0
+  except ZeroDivisionError as e:
+    logging.exception('ZeroDivisionError: %s', e)
+if __name__ == '__main__':
+  main()
+
+```
+
+When run, this produces a file with exactly two lines:
+```
+28/01/2015 07:21:23|INFO|Sample message|
+28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n File "logtest7.py", line 30, in main\n  x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|

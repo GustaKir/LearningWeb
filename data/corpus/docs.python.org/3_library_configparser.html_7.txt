@@ -1,0 +1,41 @@
+Title: ConfigParser: Handling Empty Lines and Default Sections
+URL: https://docs.python.org/3/library/configparser.html
+Summary: This section discusses the implications of using empty lines in configuration files, specifically how they can split keys and lead to issues for users. It also describes the concept of a default section in ConfigParser, which allows for shared default values across other sections, typically named 'DEFAULT', but customizable. This feature aids in creating complex configurations.
+---
+
+```
+
+This can be especially problematic for the user to see if she’s using a proportional font to edit the file. That is why when your application does not need values with empty lines, you should consider disallowing them. This will make empty lines split keys every time. In the example above, it would produce two keys, `key` and `this`.
+  * _default_section_ , default value: `configparser.DEFAULTSECT` (that is: `"DEFAULT"`)
+The convention of allowing a special section of default values for other sections or interpolation purposes is a powerful concept of this library, letting users create complex declarative configurations. This section is normally called `"DEFAULT"` but this can be customized to point to any other valid section name. Some typical values include: `"general"` or `"common"`. The name provided is used for recognizing default sections when reading from any source and is used when writing configuration back to a file. Its current value can be retrieved using the `parser_instance.default_section` attribute and may be modified at runtime (i.e. to convert files from one format to another).
+  * _interpolation_ , default value: `configparser.BasicInterpolation`
+Interpolation behaviour may be customized by providing a custom handler through the _interpolation_ argument. `None` can be used to turn off interpolation completely, `ExtendedInterpolation()` provides a more advanced variant inspired by `zc.buildout`. More on the subject in the [dedicated documentation section](https://docs.python.org/3/library/configparser.html#interpolation-of-values). [`RawConfigParser`](https://docs.python.org/3/library/configparser.html#configparser.RawConfigParser "configparser.RawConfigParser") has a default value of `None`.
+  * _converters_ , default value: not set
+Config parsers provide option value getters that perform type conversion. By default [`getint()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getint "configparser.ConfigParser.getint"), [`getfloat()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getfloat "configparser.ConfigParser.getfloat"), and [`getboolean()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean "configparser.ConfigParser.getboolean") are implemented. Should other getters be desirable, users may define them in a subclass or pass a dictionary where each key is a name of the converter and each value is a callable implementing said conversion. For instance, passing `{'decimal': decimal.Decimal}` would add `getdecimal()` on both the parser object and all section proxies. In other words, it will be possible to write both `parser_instance.getdecimal('section', 'key', fallback=0)` and `parser_instance['section'].getdecimal('key', 0)`.
+If the converter needs to access the state of the parser, it can be implemented as a method on a config parser subclass. If the name of this method starts with `get`, it will be available on all section proxies, in the dict-compatible form (see the `getdecimal()` example above).
+
+
+More advanced customization may be achieved by overriding default values of these parser attributes. The defaults are defined on the classes, so they may be overridden by subclasses or by attribute assignment. 
+
+ConfigParser.BOOLEAN_STATES[¶](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.BOOLEAN_STATES "Link to this definition")
+    
+By default when using [`getboolean()`](https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean "configparser.ConfigParser.getboolean"), config parsers consider the following values `True`: `'1'`, `'yes'`, `'true'`, `'on'` and the following values `False`: `'0'`, `'no'`, `'false'`, `'off'`. You can override this by specifying a custom dictionary of strings and their Boolean outcomes. For example:
+>>>```
+>>> custom = configparser.ConfigParser()
+>>> custom['section1'] = {'funky': 'nope'}
+>>> custom['section1'].getboolean('funky')
+Traceback (most recent call last):
+...
+ValueError: Not a boolean: nope
+>>> custom.BOOLEAN_STATES = {'sure': True, 'nope': False}
+>>> custom['section1'].getboolean('funky')
+False
+
+```
+
+Other typical Boolean pairs include `accept`/`reject` or `enabled`/`disabled`. 
+
+ConfigParser.optionxform(_option_)
+    
+This method transforms option names on every read, get, or set operation. The default converts the name to lowercase. This also means that when a configuration file gets written, all keys will be lowercase. Override this method if that’s unsuitable. For example:
+>>>

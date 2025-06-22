@@ -1,0 +1,28 @@
+Title: Managing App Secrets and Dependencies in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/databases/tidb
+Summary: This section describes how to copy your application's secrets to Streamlit Community Cloud and emphasizes the need to manage `secrets.toml` securely. It also instructs users to add necessary dependencies, such as `mysqlclient` and `SQLAlchemy`, to the `requirements.txt` file.
+---
+
+://docs.streamlit.io/develop/tutorials/databases/tidb#copy-your-app-secrets-to-the-cloud)Copy your app secrets to the cloud
+As the `secrets.toml` file above is not committed to GitHub, you need to pass its content to your deployed app (on Streamlit Community Cloud) separately. Go to the [app dashboard](https://share.streamlit.io/) and in the app's dropdown menu, click on **Edit Secrets**. Copy the content of `secrets.toml` into the text area. More information is available at [Secrets management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management).
+![Secrets manager screenshot](https://docs.streamlit.io/images/databases/edit-secrets.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/tidb#add-dependencies-to-your-requirements-file)Add dependencies to your requirements file
+Add the [mysqlclient](https://github.com/PyMySQL/mysqlclient) and [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) packages to your `requirements.txt` file, preferably pinning its version (replace `x.x.x` with the version you want installed):
+`# requirements.txt mysqlclient==x.x.x SQLAlchemy==x.x.x `
+## [](https://docs.streamlit.io/develop/tutorials/databases/tidb#write-your-streamlit-app)Write your Streamlit app
+Copy the code below to your Streamlit app and run it. Make sure to adapt `query` to use the name of your table.
+`# streamlit_app.py import streamlit as st # Initialize connection. conn = st.connection('tidb', type='sql') # Perform query. df = conn.query('SELECT * from mytable;', ttl=600) # Print results. for row in df.itertuples():   st.write(f"{row.name} has a :{row.pet}:") `
+See `st.connection` above? This handles secrets retrieval, setup, query caching and retries. By default, `query()` results are cached without expiring. In this case, we set `ttl=600` to ensure the query result is cached for no longer than 10 minutes. You can also set `ttl=0` to disable caching. Learn more in [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+If everything worked out (and you used the example table we created above), your app should look like this:
+![Finished app screenshot](https://docs.streamlit.io/images/databases/streamlit-app.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/tidb#connect-with-pymysql)Connect with PyMySQL
+Other than [mysqlclient](https://github.com/PyMySQL/mysqlclient), [PyMySQL](https://github.com/PyMySQL/PyMySQL) is another popular MySQL Python client. To use PyMySQL, first you need to adapt your requirements file:
+`# requirements.txt PyMySQL==x.x.x SQLAlchemy==x.x.x `
+Then adapt your secrets file:
+`# .streamlit/secrets.toml [connections.tidb] dialect = "mysql" driver = "pymysql" host = "<TiDB_cluster_host>" port = 4000 database = "pets" username = "<TiDB_cluster_user>" password = "<TiDB_cluster_password>" create_engine_kwargs = { connect_args = { ssl = { ca = "<path_to_CA_store>" }}} `
+[Previous: Tableau](https://docs.streamlit.io/develop/tutorials/databases/tableau)[Next: TigerGraph](https://docs.streamlit.io/develop/tutorials/databases/tigergraph) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

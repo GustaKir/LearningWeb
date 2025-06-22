@@ -1,0 +1,63 @@
+Title: Defining Module Initialization in Python C Extensions
+URL: https://docs.python.org/3/extending/extending.html
+Summary: This section explains the role of `PyMODINIT_FUNC` in declaring the module initialization function `PyInit_spam()`, which is invoked when the module is first imported. It details how this function uses `PyModule_Create()` to create a module object and populate it with built-in function objects based on the provided `PyMethodDef` structures.
+---
+
+```
+
+Note that [`PyMODINIT_FUNC`](https://docs.python.org/3/c-api/intro.html#c.PyMODINIT_FUNC "PyMODINIT_FUNC") declares the function as `PyObject *` return type, declares any special linkage declarations required by the platform, and for C++ declares the function as `extern "C"`.
+When the Python program imports module `spam` for the first time, `PyInit_spam()` is called. (See below for comments about embedding Python.) It calls [`PyModule_Create()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Create "PyModule_Create"), which returns a module object, and inserts built-in function objects into the newly created module based upon the table (an array of [`PyMethodDef`](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef "PyMethodDef") structures) found in the module definition. [`PyModule_Create()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Create "PyModule_Create") returns a pointer to the module object that it creates. It may abort with a fatal error for certain errors, or return `NULL` if the module could not be initialized satisfactorily. The init function must return the module object to its caller, so that it then gets inserted into `sys.modules`.
+When embedding Python, the `PyInit_spam()` function is not called automatically unless there’s an entry in the `PyImport_Inittab` table. To add the module to the initialization table, use [`PyImport_AppendInittab()`](https://docs.python.org/3/c-api/import.html#c.PyImport_AppendInittab "PyImport_AppendInittab"), optionally followed by an import of the module:
+```
+#define PY_SSIZE_T_CLEAN
+#include<Python.h>
+int
+main(intargc,char*argv[])
+{
+PyStatusstatus;
+PyConfigconfig;
+PyConfig_InitPythonConfig(&config);
+/* Add a built-in module, before Py_Initialize */
+if(PyImport_AppendInittab("spam",PyInit_spam)==-1){
+fprintf(stderr,"Error: could not extend in-built modules table\n");
+exit(1);
+}
+/* Pass argv[0] to the Python interpreter */
+status=PyConfig_SetBytesString(&config,&config.program_name,argv[0]);
+if(PyStatus_Exception(status)){
+gotoexception;
+}
+/* Initialize the Python interpreter. Required.
+    If this step fails, it will be a fatal error. */
+status=Py_InitializeFromConfig(&config);
+if(PyStatus_Exception(status)){
+gotoexception;
+}
+PyConfig_Clear(&config);
+/* Optionally import the module; alternatively,
+    import can be deferred until the embedded script
+    imports it. */
+PyObject*pmodule=PyImport_ImportModule("spam");
+if(!pmodule){
+PyErr_Print();
+fprintf(stderr,"Error: could not import module 'spam'\n");
+}
+// ... use Python C API here ...
+return0;
+exception:
+PyConfig_Clear(&config);
+Py_ExitStatusException(status);
+}
+
+```
+
+Note
+Removing entries from `sys.modules` or importing compiled modules into multiple interpreters within a process (or following a `fork()` without an intervening `exec()`) can create problems for some extension modules. Extension module authors should exercise caution when initializing internal data structures.
+A more substantial example module is included in the Python source distribution as `Modules/xxmodule.c`. This file may be used as a template or simply read as an example.
+Note
+Unlike our `spam` example, `xxmodule` uses _multi-phase initialization_ (new in Python 3.5), where a PyModuleDef structure is returned from `PyInit_spam`, and creation of the module is left to the import machinery. For details on multi-phase initialization, see [**PEP 489**](https://peps.python.org/pep-0489/).
+## 1.5. Compilation and Linkage[¶](https://docs.python.org/3/extending/extending.html#compilation-and-linkage "Link to this heading")
+There are two more things to do before you can use your new extension: compiling and linking it with the Python system. If you use dynamic loading, the details may depend on the style of dynamic loading your system uses; see the chapters about building extension modules (chapter [Building C and C++ Extensions](https://docs.python.org/3/extending/building.html#building)) and additional information that pertains only to building on Windows (chapter [Building C and C++ Extensions on Windows](https://docs.python.org/3/extending/windows.html#building-on-windows)) for more information about this.
+If you can’t use dynamic loading, or if you want to make your module a permanent part of the Python interpreter, you will have to change the configuration setup and rebuild the interpreter. Luckily, this is very simple on Unix: just place your file (`spammodule.c` for example) in the `Modules/` directory of an unpacked source distribution, add a line to the file `Modules/Setup.local` describing your file:
+```
+spamspammodule.o

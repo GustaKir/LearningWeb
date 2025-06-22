@@ -1,0 +1,74 @@
+Title: Packing and Unpacking with Struct in Python
+URL: https://docs.python.org/3/library/struct.html
+Summary: The struct module handles data packing and unpacking, ensuring strings are properly truncated or padded. Format characters can be repeated with a count, and whitespace is ignored between formats. Certain integer formats will raise a struct.error if the value is out of range. Changes in version 3.1 eliminated wrapping for out-of-range integer values.
+---
+
+For packing, the string is truncated or padded with null bytes as appropriate to make it fit. For unpacking, the resulting bytes object always has exactly the specified number of bytes. As a special case, `'0s'` means a single, empty string (while `'0c'` means 0 characters).
+
+
+A format character may be preceded by an integral repeat count. For example, the format string `'4h'` means exactly the same as `'hhhh'`.
+Whitespace characters between formats are ignored; a count and its format must not contain whitespace though.
+When packing a value `x` using one of the integer formats (`'b'`, `'B'`, `'h'`, `'H'`, `'i'`, `'I'`, `'l'`, `'L'`, `'q'`, `'Q'`), if `x` is outside the valid range for that format then [`struct.error`](https://docs.python.org/3/library/struct.html#struct.error "struct.error") is raised.
+Changed in version 3.1: Previously, some of the integer formats wrapped out-of-range values and raised [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") instead of [`struct.error`](https://docs.python.org/3/library/struct.html#struct.error "struct.error").
+For the `'?'` format character, the return value is either [`True`](https://docs.python.org/3/library/constants.html#True "True") or [`False`](https://docs.python.org/3/library/constants.html#False "False"). When packing, the truth value of the argument object is used. Either 0 or 1 in the native or standard bool representation will be packed, and any non-zero value will be `True` when unpacking.
+### Examples[¶](https://docs.python.org/3/library/struct.html#examples "Link to this heading")
+Note
+Native byte order examples (designated by the `'@'` format prefix or lack of any prefix character) may not match what the reader’s machine produces as that depends on the platform and compiler.
+Pack and unpack integers of three different sizes, using big endian ordering:
+>>>```
+>>> fromstructimport *
+>>> pack(">bhl", 1, 2, 3)
+b'\x01\x00\x02\x00\x00\x00\x03'
+>>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03')
+(1, 2, 3)
+>>> calcsize('>bhl')
+7
+
+```
+
+Attempt to pack an integer which is too large for the defined field:
+>>>```
+>>> pack(">h", 99999)
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+struct.error: 'h' format requires -32768 <= number <= 32767
+
+```
+
+Demonstrate the difference between `'s'` and `'c'` format characters:
+>>>```
+>>> pack("@ccc", b'1', b'2', b'3')
+b'123'
+>>> pack("@3s", b'123')
+b'123'
+
+```
+
+Unpacked fields can be named by assigning them to variables or by wrapping the result in a named tuple:
+>>>```
+>>> record = b'raymond  \x32\x12\x08\x01\x08'
+>>> name, serialnum, school, gradelevel = unpack('<10sHHb', record)
+>>> fromcollectionsimport namedtuple
+>>> Student = namedtuple('Student', 'name serialnum school gradelevel')
+>>> Student._make(unpack('<10sHHb', record))
+Student(name=b'raymond  ', serialnum=4658, school=264, gradelevel=8)
+
+```
+
+The ordering of format characters may have an impact on size in native mode since padding is implicit. In standard mode, the user is responsible for inserting any desired padding. Note in the first `pack` call below that three NUL bytes were added after the packed `'#'` to align the following integer on a four-byte boundary. In this example, the output was produced on a little endian machine:
+>>>```
+>>> pack('@ci', b'#', 0x12131415)
+b'#\x00\x00\x00\x15\x14\x13\x12'
+>>> pack('@ic', 0x12131415, b'#')
+b'\x15\x14\x13\x12#'
+>>> calcsize('@ci')
+8
+>>> calcsize('@ic')
+5
+
+```
+
+The following format `'llh0l'` results in two pad bytes being added at the end, assuming the platform’s longs are aligned on 4-byte boundaries:
+>>>```
+>>> pack('@llh0l', 1, 2, 3)
+b'\x00\x00\x00\x01\x00\x00\x00\x02\x00\x03\x00\x00'

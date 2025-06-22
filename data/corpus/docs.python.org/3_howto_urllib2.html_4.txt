@@ -1,0 +1,63 @@
+Title: Handling HTTP Errors in urllib
+URL: https://docs.python.org/3/howto/urllib2.html
+Summary: This section explains how to handle HTTP errors using the `HTTPError` instance in the `urllib` package. It details the properties and methods available in `HTTPError`, and provides a code example demonstrating how to capture an HTTP error response, including accessing the error code and the response body.
+---
+
+```
+
+When an error is raised the server responds by returning an HTTP error code _and_ an error page. You can use the [`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError") instance as a response on the page returned. This means that as well as the code attribute, it also has read, geturl, and info, methods as returned by the `urllib.response` module:
+>>>```
+>>> req = urllib.request.Request('http://www.python.org/fish.html')
+>>> try:
+...   urllib.request.urlopen(req)
+... except urllib.error.HTTPError as e:
+...   print(e.code)
+...   print(e.read())
+...
+404
+b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n\n\n<html
+ ...
+ <title>Page Not Found</title>\n
+ ...
+
+```
+
+### Wrapping it Up[¶](https://docs.python.org/3/howto/urllib2.html#wrapping-it-up "Link to this heading")
+So if you want to be prepared for [`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError") _or_ [`URLError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.URLError "urllib.error.URLError") there are two basic approaches. I prefer the second approach.
+#### Number 1[¶](https://docs.python.org/3/howto/urllib2.html#number-1 "Link to this heading")
+```
+fromurllib.requestimport Request, urlopen
+fromurllib.errorimport URLError, HTTPError
+req = Request(someurl)
+try:
+  response = urlopen(req)
+except HTTPError as e:
+  print('The server couldn\'t fulfill the request.')
+  print('Error code: ', e.code)
+except URLError as e:
+  print('We failed to reach a server.')
+  print('Reason: ', e.reason)
+else:
+  # everything is fine
+
+```
+
+Note
+The `except HTTPError` _must_ come first, otherwise `except URLError` will _also_ catch an [`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError").
+#### Number 2[¶](https://docs.python.org/3/howto/urllib2.html#number-2 "Link to this heading")
+```
+fromurllib.requestimport Request, urlopen
+fromurllib.errorimport URLError
+req = Request(someurl)
+try:
+  response = urlopen(req)
+except URLError as e:
+  if hasattr(e, 'reason'):
+    print('We failed to reach a server.')
+    print('Reason: ', e.reason)
+  elif hasattr(e, 'code'):
+    print('The server couldn\'t fulfill the request.')
+    print('Error code: ', e.code)
+else:
+  # everything is fine

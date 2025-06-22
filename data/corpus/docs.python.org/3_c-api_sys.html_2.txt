@@ -1,0 +1,21 @@
+Title: Py_DecodeLocale Function Documentation
+URL: https://docs.python.org/3/c-api/sys.html
+Summary: The `Py_DecodeLocale` function is part of the Stable ABI since version 3.7. It is advised not to call this function directly; instead, use the `PyConfig` API along with `PyConfig_SetBytesString()` to ensure proper preinitialization of Python. It must not be invoked before preinitialization and the correct configuration of the LC_CTYPE locale.
+---
+
+wchar_t*Py_DecodeLocale(constchar*arg, size_t*size)[¶](https://docs.python.org/3/c-api/sys.html#c.Py_DecodeLocale "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Warning
+This function should not be called directly: use the [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig") API with the [`PyConfig_SetBytesString()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_SetBytesString "PyConfig_SetBytesString") function which ensures that [Python is preinitialized](https://docs.python.org/3/c-api/init_config.html#c-preinit).
+This function must not be called before [Python is preinitialized](https://docs.python.org/3/c-api/init_config.html#c-preinit) and so that the LC_CTYPE locale is properly configured: see the [`Py_PreInitialize()`](https://docs.python.org/3/c-api/init_config.html#c.Py_PreInitialize "Py_PreInitialize") function.
+Decode a byte string from the [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler). If the error handler is [surrogateescape error handler](https://docs.python.org/3/library/codecs.html#surrogateescape), undecodable bytes are decoded as characters in range U+DC80..U+DCFF; and if a byte sequence can be decoded as a surrogate character, the bytes are escaped using the surrogateescape error handler instead of decoding them.
+Return a pointer to a newly allocated wide character string, use [`PyMem_RawFree()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawFree "PyMem_RawFree") to free the memory. If size is not `NULL`, write the number of wide characters excluding the null character into `*size`
+Return `NULL` on decoding error or memory allocation error. If _size_ is not `NULL`, `*size` is set to `(size_t)-1` on memory error or set to `(size_t)-2` on decoding error.
+The [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler) are selected by [`PyConfig_Read()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_Read "PyConfig_Read"): see [`filesystem_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.filesystem_encoding "PyConfig.filesystem_encoding") and [`filesystem_errors`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.filesystem_errors "PyConfig.filesystem_errors") members of [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig").
+Decoding errors should never happen, unless there is a bug in the C library.
+Use the [`Py_EncodeLocale()`](https://docs.python.org/3/c-api/sys.html#c.Py_EncodeLocale "Py_EncodeLocale") function to encode the character string back to a byte string.
+See also
+The [`PyUnicode_DecodeFSDefaultAndSize()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_DecodeFSDefaultAndSize "PyUnicode_DecodeFSDefaultAndSize") and [`PyUnicode_DecodeLocaleAndSize()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_DecodeLocaleAndSize "PyUnicode_DecodeLocaleAndSize") functions.
+Added in version 3.5.
+Changed in version 3.7: The function now uses the UTF-8 encoding in the [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode).
+Changed in version 3.8: The function now uses the UTF-8 encoding on Windows if [`PyPreConfig.legacy_windows_fs_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.legacy_windows_fs_encoding "PyPreConfig.legacy_windows_fs_encoding") is zero;

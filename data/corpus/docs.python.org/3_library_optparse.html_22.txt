@@ -1,0 +1,32 @@
+Title: Defining Option Callbacks in optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section explains how to use option callbacks in Python's optparse module when its built-in actions aren't sufficient. It highlights the choice between extending optparse and defining a simple callback, suggesting that often a callback will suffice for specific needs.
+---
+
+```
+parser.set_defaults(mode="advanced")
+parser.add_option("--advanced", action="store_const",
+         dest="mode", const="advanced")
+parser.add_option("--novice", action="store_const",
+         dest="mode", const="novice")
+
+```
+
+## Option Callbacks[¶](https://docs.python.org/3/library/optparse.html#option-callbacks "Link to this heading")
+When [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.")’s built-in actions and types aren’t quite enough for your needs, you have two choices: extend [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") or define a callback option. Extending [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") is more general, but overkill for a lot of simple cases. Quite often a simple callback is all you need.
+There are two steps to defining a callback option:
+  * define the option itself using the `"callback"` action
+  * write the callback; this is a function (or method) that takes at least four arguments, as described below
+
+
+### Defining a callback option[¶](https://docs.python.org/3/library/optparse.html#defining-a-callback-option "Link to this heading")
+As always, the easiest way to define a callback option is by using the [`OptionParser.add_option()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.add_option "optparse.OptionParser.add_option") method. Apart from [`action`](https://docs.python.org/3/library/optparse.html#optparse.Option.action "optparse.Option.action"), the only option attribute you must specify is `callback`, the function to call:
+```
+parser.add_option("-c", action="callback", callback=my_callback)
+
+```
+
+`callback` is a function (or other callable object), so you must have already defined `my_callback()` when you create this callback option. In this simple case, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") doesn’t even know if `-c` takes any arguments, which usually means that the option takes no arguments—the mere presence of `-c` on the command-line is all it needs to know. In some circumstances, though, you might want your callback to consume an arbitrary number of command-line arguments. This is where writing callbacks gets tricky; it’s covered later in this section.
+[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") always passes four particular arguments to your callback, and it will only pass additional arguments if you specify them via [`callback_args`](https://docs.python.org/3/library/optparse.html#optparse.Option.callback_args "optparse.Option.callback_args") and [`callback_kwargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.callback_kwargs "optparse.Option.callback_kwargs"). Thus, the minimal callback function signature is:
+```
+defmy_callback(option, opt, value, parser):

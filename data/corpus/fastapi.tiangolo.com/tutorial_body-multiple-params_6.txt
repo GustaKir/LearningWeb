@@ -1,0 +1,198 @@
+Title: FastAPI Tutorial: Handling Multiple Body Parameters
+URL: https://fastapi.tiangolo.com/tutorial/body-multiple-params/
+Summary: This tutorial chunk demonstrates how to define a FastAPI endpoint that accepts multiple body parameters using Pydantic models. It includes a sample implementation featuring 'Item' and 'User' models, showcasing the use of the 'Annotated' type for body parameters. A PUT request to update an item involves receiving an item ID, item data, user information, and an importance level.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+classUser(BaseModel):
+  username: str
+  full_name: Union[str, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  item_id: int, item: Item, user: User, importance: Annotated[int, Body()]
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+classUser(BaseModel):
+  username: str
+  full_name: str | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item, user: User, importance: int = Body()):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+classUser(BaseModel):
+  username: str
+  full_name: Union[str, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item, user: User, importance: int = Body()):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  return results
+
+```
+
+In this case, **FastAPI** will expect a body like:
+```
+{
+"item":{
+"name":"Foo",
+"description":"The pretender",
+"price":42.0,
+"tax":3.2
+},
+"user":{
+"username":"dave",
+"full_name":"Dave Grohl"
+},
+"importance":5
+}
+
+```
+
+Again, it will convert the data types, validate, document, etc.
+## Multiple body params and query[¶](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#multiple-body-params-and-query "Permanent link")
+Of course, you can also declare additional query parameters whenever you need, additional to any body parameters.
+As, by default, singular values are interpreted as query parameters, you don't have to explicitly add a `Query`, you can just do:
+```
+q: Union[str, None] = None
+
+```
+
+Or in Python 3.10 and above:
+```
+q: str | None = None
+
+```
+
+For example:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_7_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+classUser(BaseModel):
+  username: str
+  full_name: str | None = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Item,
+  user: User,
+  importance: Annotated[int, Body(gt=0)],
+  q: str | None = None,
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_8_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_8_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_8_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/body-multiple-params/#__tabbed_8_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+classUser(BaseModel):
+  username: str
+  full_name: Union[str, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Item,
+  user: User,
+  importance: Annotated[int, Body(gt=0)],
+  q: Union[str, None] = None,
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport Body, FastAPI
+frompydanticimport BaseModel
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+classUser(BaseModel):
+  username: str
+  full_name: Union[str, None] = None
+@app.put("/items/{item_id}")
+async defupdate_item(
+  *,
+  item_id: int,
+  item: Item,
+  user: User,
+  importance: Annotated[int, Body(gt=0)],
+  q: Union[str, None] = None,
+):
+  results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

@@ -1,0 +1,103 @@
+Title: Exception Handling Enhancements in Python 3.3
+URL: https://docs.python.org/3/whatsnew/3.3.html
+Summary: The document discusses the enhancement of exception handling in Python 3.3, particularly focusing on the preservation of the original exception context when handling exceptions. It provides an example demonstrating how the context of a `KeyError` is retained when an `AttributeError` is raised, allowing developers to access the original error details.
+---
+
+```
+>>> classC:
+...   def__init__(self, extra):
+...     self._extra_attributes = extra
+...   def__getattr__(self, attr):
+...     try:
+...       return self._extra_attributes[attr]
+...     except KeyError:
+...       raise AttributeError(attr)
+...
+>>> C({}).x
+Traceback (most recent call last):
+ File "<stdin>", line 6, in __getattr__
+KeyError: 'x'
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+ File "<stdin>", line 8, in __getattr__
+AttributeError: x
+
+```
+
+No debugging capability is lost, as the original exception context remains available if needed (for example, if an intervening library has incorrectly suppressed valuable underlying details):
+>>>```
+>>> try:
+...   D({}).x
+... except AttributeError as exc:
+...   print(repr(exc.__context__))
+...
+KeyError('x',)
+
+```
+
+See also 
+
+[**PEP 409**](https://peps.python.org/pep-0409/) - Suppressing exception context
+    
+PEP written by Ethan Furman; implemented by Ethan Furman and Nick Coghlan.
+## PEP 414: Explicit Unicode literals[¶](https://docs.python.org/3/whatsnew/3.3.html#pep-414-explicit-unicode-literals "Link to this heading")
+To ease the transition from Python 2 for Unicode aware Python applications that make heavy use of Unicode literals, Python 3.3 once again supports the “`u`” prefix for string literals. This prefix has no semantic significance in Python 3, it is provided solely to reduce the number of purely mechanical changes in migrating to Python 3, making it easier for developers to focus on the more significant semantic changes (such as the stricter default separation of binary and text data).
+See also 
+
+[**PEP 414**](https://peps.python.org/pep-0414/) - Explicit Unicode literals
+    
+PEP written by Armin Ronacher.
+## PEP 3155: Qualified name for classes and functions[¶](https://docs.python.org/3/whatsnew/3.3.html#pep-3155-qualified-name-for-classes-and-functions "Link to this heading")
+Functions and class objects have a new [`__qualname__`](https://docs.python.org/3/library/stdtypes.html#definition.__qualname__ "definition.__qualname__") attribute representing the “path” from the module top-level to their definition. For global functions and classes, this is the same as [`__name__`](https://docs.python.org/3/library/stdtypes.html#definition.__name__ "definition.__name__"). For other functions and classes, it provides better information about where they were actually defined, and how they might be accessible from the global scope.
+Example with (non-bound) methods:
+>>>```
+>>> classC:
+...   defmeth(self):
+...     pass
+...
+>>> C.meth.__name__
+'meth'
+>>> C.meth.__qualname__
+'C.meth'
+
+```
+
+Example with nested classes:
+>>>```
+>>> classC:
+...   classD:
+...     defmeth(self):
+...       pass
+...
+>>> C.D.__name__
+'D'
+>>> C.D.__qualname__
+'C.D'
+>>> C.D.meth.__name__
+'meth'
+>>> C.D.meth.__qualname__
+'C.D.meth'
+
+```
+
+Example with nested functions:
+>>>```
+>>> defouter():
+...   definner():
+...     pass
+...   return inner
+...
+>>> outer().__name__
+'inner'
+>>> outer().__qualname__
+'outer.<locals>.inner'
+
+```
+
+The string representation of those objects is also changed to include the new, more precise information:
+>>>```
+>>> str(C.D)
+"<class '__main__.C.D'>"
+>>> str(C.D.meth)
+'<function C.D.meth at 0x7f46b9fe31e0>'

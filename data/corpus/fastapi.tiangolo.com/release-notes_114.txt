@@ -1,0 +1,74 @@
+Title: FastAPI Internal Updates and Fixes
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: This section covers recent internal updates to FastAPI, including modifications to dependencies, configuration for Dutch translations, and completion of FastAPI People generation. Notable actions include temporarily removing typer-cli from dependencies, upgrading Black, and updating sponsor links.
+---
+
+### Internal[¶](https://fastapi.tiangolo.com/release-notes/#internal_65 "Permanent link")
+  * 👥 Update FastAPI People. PR [#4752](https://github.com/tiangolo/fastapi/pull/4752) by [@github-actions[bot]](https://github.com/apps/github-actions).
+  * ➖ Temporarily remove typer-cli from dependencies and upgrade Black to unblock Pydantic CI. PR [#4754](https://github.com/tiangolo/fastapi/pull/4754) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Add configuration to notify Dutch translations. PR [#4702](https://github.com/tiangolo/fastapi/pull/4702) by [@tiangolo](https://github.com/tiangolo).
+  * 👥 Update FastAPI People. PR [#4699](https://github.com/tiangolo/fastapi/pull/4699) by [@github-actions[bot]](https://github.com/apps/github-actions).
+  * 🐛 Fix FastAPI People generation to include missing file in commit. PR [#4695](https://github.com/tiangolo/fastapi/pull/4695) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Update Classiq sponsor links. PR [#4688](https://github.com/tiangolo/fastapi/pull/4688) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Add Classiq sponsor. PR [#4671](https://github.com/tiangolo/fastapi/pull/4671) by [@tiangolo](https://github.com/tiangolo).
+  * 📝 Add Jina's QA Bot to the docs to help people that want to ask quick questions. PR [#4655](https://github.com/tiangolo/fastapi/pull/4655) by [@tiangolo](https://github.com/tiangolo) based on original PR [#4626](https://github.com/tiangolo/fastapi/pull/4626) by [@hanxiao](https://github.com/hanxiao).
+
+
+## 0.75.0[¶](https://fastapi.tiangolo.com/release-notes/#0750 "Permanent link")
+### Features[¶](https://fastapi.tiangolo.com/release-notes/#features_26 "Permanent link")
+  * ✨ Add support for custom `generate_unique_id_function` and docs for generating clients. New docs: [Advanced - Generate Clients](https://fastapi.tiangolo.com/advanced/generate-clients/). PR [#4650](https://github.com/tiangolo/fastapi/pull/4650) by [@tiangolo](https://github.com/tiangolo).
+
+
+## 0.74.1[¶](https://fastapi.tiangolo.com/release-notes/#0741 "Permanent link")
+### Features[¶](https://fastapi.tiangolo.com/release-notes/#features_27 "Permanent link")
+  * ✨ Include route in scope to allow middleware and other tools to extract its information. PR [#4603](https://github.com/tiangolo/fastapi/pull/4603) by [@tiangolo](https://github.com/tiangolo).
+
+
+## 0.74.0[¶](https://fastapi.tiangolo.com/release-notes/#0740 "Permanent link")
+### Breaking Changes[¶](https://fastapi.tiangolo.com/release-notes/#breaking-changes_4 "Permanent link")
+  * ✨ Update internal `AsyncExitStack` to fix context for dependencies with `yield`. PR [#4575](https://github.com/tiangolo/fastapi/pull/4575) by [@tiangolo](https://github.com/tiangolo).
+
+
+Dependencies with `yield` can now catch `HTTPException` and custom exceptions. For example:
+```
+async defget_database():
+  with Session() as session:
+    try:
+      yield session
+    except HTTPException:
+      session.rollback()
+      raise
+    finally:
+      session.close()
+
+```
+
+After the dependency with `yield` handles the exception (or not) the exception is raised again. So that any exception handlers can catch it, or ultimately the default internal `ServerErrorMiddleware`.
+If you depended on exceptions not being received by dependencies with `yield`, and receiving an exception breaks the code after `yield`, you can use a block with `try` and `finally`:
+```
+async defdo_something():
+  try:
+    yield something
+  finally:
+    some_cleanup()
+
+```
+
+...that way the `finally` block is run regardless of any exception that might happen.
+### Features[¶](https://fastapi.tiangolo.com/release-notes/#features_28 "Permanent link")
+  * The same PR [#4575](https://github.com/tiangolo/fastapi/pull/4575) from above also fixes the `contextvars` context for the code before and after `yield`. This was the main objective of that PR.
+
+
+This means that now, if you set a value in a context variable before `yield`, the value would still be available after `yield` (as you would intuitively expect). And it also means that you can reset the context variable with a token afterwards.
+For example, this works correctly now:
+```
+fromcontextvarsimport ContextVar
+fromtypingimport Any, Dict, Optional
+legacy_request_state_context_var: ContextVar[Optional[Dict[str, Any]]] = ContextVar(
+  "legacy_request_state_context_var", default=None
+)
+async defset_up_request_state_dependency():
+  request_state = {"user": "deadpond"}
+  contextvar_token = legacy_request_state_context_var.set(request_state)
+  yield request_state
+  legacy_request_state_context_var.reset(contextvar_token)

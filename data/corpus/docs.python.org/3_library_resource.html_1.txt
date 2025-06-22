@@ -1,0 +1,31 @@
+Title: Resource Limits in Python
+URL: https://docs.python.org/3/library/resource.html
+Summary: The `resource` module allows for querying and setting resource limits. The method `getrlimit(_resource_)` returns a tuple of current soft and hard limits for a specified resource and raises `ValueError` for invalid resources or `error` for system call failures. The `setrlimit(_resource_, _limits_)` method sets new limits, where `_limits_` is a tuple of new soft and hard limits. The special value `RLIM_INFINITY` can be used to indicate unlimited limits.
+---
+
+resource.getrlimit(_resource_)[¶](https://docs.python.org/3/library/resource.html#resource.getrlimit "Link to this definition")
+    
+Returns a tuple `(soft, hard)` with the current soft and hard limits of _resource_. Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if an invalid resource is specified, or [`error`](https://docs.python.org/3/library/resource.html#resource.error "resource.error") if the underlying system call fails unexpectedly. 
+
+resource.setrlimit(_resource_ , _limits_)[¶](https://docs.python.org/3/library/resource.html#resource.setrlimit "Link to this definition")
+    
+Sets new limits of consumption of _resource_. The _limits_ argument must be a tuple `(soft, hard)` of two integers describing the new limits. A value of [`RLIM_INFINITY`](https://docs.python.org/3/library/resource.html#resource.RLIM_INFINITY "resource.RLIM_INFINITY") can be used to request a limit that is unlimited.
+Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if an invalid resource is specified, if the new soft limit exceeds the hard limit, or if a process tries to raise its hard limit. Specifying a limit of [`RLIM_INFINITY`](https://docs.python.org/3/library/resource.html#resource.RLIM_INFINITY "resource.RLIM_INFINITY") when the hard or system limit for that resource is not unlimited will result in a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"). A process with the effective UID of super-user can request any valid limit value, including unlimited, but [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") will still be raised if the requested limit exceeds the system imposed limit.
+`setrlimit` may also raise [`error`](https://docs.python.org/3/library/resource.html#resource.error "resource.error") if the underlying system call fails.
+VxWorks only supports setting [`RLIMIT_NOFILE`](https://docs.python.org/3/library/resource.html#resource.RLIMIT_NOFILE "resource.RLIMIT_NOFILE").
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `resource.setrlimit` with arguments `resource`, `limits`. 
+
+resource.prlimit(_pid_ , _resource_[, _limits_])[¶](https://docs.python.org/3/library/resource.html#resource.prlimit "Link to this definition")
+    
+Combines [`setrlimit()`](https://docs.python.org/3/library/resource.html#resource.setrlimit "resource.setrlimit") and [`getrlimit()`](https://docs.python.org/3/library/resource.html#resource.getrlimit "resource.getrlimit") in one function and supports to get and set the resources limits of an arbitrary process. If _pid_ is 0, then the call applies to the current process. _resource_ and _limits_ have the same meaning as in [`setrlimit()`](https://docs.python.org/3/library/resource.html#resource.setrlimit "resource.setrlimit"), except that _limits_ is optional.
+When _limits_ is not given the function returns the _resource_ limit of the process _pid_. When _limits_ is given the _resource_ limit of the process is set and the former resource limit is returned.
+Raises [`ProcessLookupError`](https://docs.python.org/3/library/exceptions.html#ProcessLookupError "ProcessLookupError") when _pid_ can’t be found and [`PermissionError`](https://docs.python.org/3/library/exceptions.html#PermissionError "PermissionError") when the user doesn’t have `CAP_SYS_RESOURCE` for the process.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `resource.prlimit` with arguments `pid`, `resource`, `limits`.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Linux >= 2.6.36 with glibc >= 2.13.
+Added in version 3.4.
+These symbols define resources whose consumption can be controlled using the [`setrlimit()`](https://docs.python.org/3/library/resource.html#resource.setrlimit "resource.setrlimit") and [`getrlimit()`](https://docs.python.org/3/library/resource.html#resource.getrlimit "resource.getrlimit") functions described below. The values of these symbols are exactly the constants used by C programs.
+The Unix man page for _[getrlimit(2)](https://manpages.debian.org/getrlimit\(2\))_ lists the available resources. Note that not all systems use the same symbol or same value to denote the same resource. This module does not attempt to mask platform differences — symbols not defined for a platform will not be available from this module on that platform. 
+
+resource.RLIMIT_CORE[¶](https://docs.python.org/3/library/resource.html#resource.RLIMIT_CORE "Link to this definition")
+    
+The maximum size (in bytes) of a core file that the current process can create. This may result in the creation of a partial core file if a larger core would be required to contain the entire process image.

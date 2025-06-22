@@ -1,0 +1,61 @@
+Title: Frozen Instances in Dataclasses
+URL: https://docs.python.org/3/library/dataclasses.html
+Summary: The document explains that true immutability in Python is not possible, but it can be simulated using the `@dataclass` decorator with `frozen=True`. This makes dataclass instances behave like immutable objects by adding `__setattr__()` and `__delattr__()` methods, which raise a `FrozenInstanceError` when modification attempts are made.
+---
+
+```
+
+In this case, [`fields()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.fields "dataclasses.fields") will return [`Field`](https://docs.python.org/3/library/dataclasses.html#dataclasses.Field "dataclasses.Field") objects for `i` and `j`, but not for `database`.
+## Frozen instances[¶](https://docs.python.org/3/library/dataclasses.html#frozen-instances "Link to this heading")
+It is not possible to create truly immutable Python objects. However, by passing `frozen=True` to the [`@dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass") decorator you can emulate immutability. In that case, dataclasses will add [`__setattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__setattr__ "object.__setattr__") and [`__delattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__delattr__ "object.__delattr__") methods to the class. These methods will raise a [`FrozenInstanceError`](https://docs.python.org/3/library/dataclasses.html#dataclasses.FrozenInstanceError "dataclasses.FrozenInstanceError") when invoked.
+There is a tiny performance penalty when using `frozen=True`: [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") cannot use simple assignment to initialize fields, and must use `object.__setattr__()`.
+## Inheritance[¶](https://docs.python.org/3/library/dataclasses.html#inheritance "Link to this heading")
+When the dataclass is being created by the [`@dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass") decorator, it looks through all of the class’s base classes in reverse MRO (that is, starting at [`object`](https://docs.python.org/3/library/functions.html#object "object")) and, for each dataclass that it finds, adds the fields from that base class to an ordered mapping of fields. After all of the base class fields are added, it adds its own fields to the ordered mapping. All of the generated methods will use this combined, calculated ordered mapping of fields. Because the fields are in insertion order, derived classes override base classes. An example:
+```
+@dataclass
+classBase:
+  x: Any = 15.0
+  y: int = 0
+@dataclass
+classC(Base):
+  z: int = 10
+  x: int = 15
+
+```
+
+The final list of fields is, in order, `x`, `y`, `z`. The final type of `x` is [`int`](https://docs.python.org/3/library/functions.html#int "int"), as specified in class `C`.
+The generated [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") method for `C` will look like:
+```
+def__init__(self, x: int = 15, y: int = 0, z: int = 10):
+
+```
+
+## Re-ordering of keyword-only parameters in `__init__()`[¶](https://docs.python.org/3/library/dataclasses.html#re-ordering-of-keyword-only-parameters-in-init "Link to this heading")
+After the parameters needed for [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") are computed, any keyword-only parameters are moved to come after all regular (non-keyword-only) parameters. This is a requirement of how keyword-only parameters are implemented in Python: they must come after non-keyword-only parameters.
+In this example, `Base.y`, `Base.w`, and `D.t` are keyword-only fields, and `Base.x` and `D.z` are regular fields:
+```
+@dataclass
+classBase:
+  x: Any = 15.0
+  _: KW_ONLY
+  y: int = 0
+  w: int = 1
+@dataclass
+classD(Base):
+  z: int = 10
+  t: int = field(kw_only=True, default=0)
+
+```
+
+The generated `__init__()` method for `D` will look like:
+```
+def__init__(self, x: Any = 15.0, z: int = 10, *, y: int = 0, w: int = 1, t: int = 0):
+
+```
+
+Note that the parameters have been re-ordered from how they appear in the list of fields: parameters derived from regular fields are followed by parameters derived from keyword-only fields.
+The relative ordering of keyword-only parameters is maintained in the re-ordered `__init__()` parameter list.
+## Default factory functions[¶](https://docs.python.org/3/library/dataclasses.html#default-factory-functions "Link to this heading")
+If a [`field()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.field "dataclasses.field") specifies a _default_factory_ , it is called with zero arguments when a default value for the field is needed. For example, to create a new instance of a list, use:
+```
+mylist: list = field(default_factory=list)

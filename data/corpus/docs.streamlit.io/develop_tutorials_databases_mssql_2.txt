@@ -1,0 +1,45 @@
+Title: Creating a Table and Inserting Data in SQL Server
+URL: https://docs.streamlit.io/develop/tutorials/databases/mssql
+Summary: This section outlines the process of creating a new table called `mytable` in the `mydb` database, including switching to the database, defining the table schema, inserting sample data, and executing commands using `sqlcmd`. It also mentions how to end the `sqlcmd` session. Additionally, instructions for adding username and password details to the local app secrets file for Streamlit are provided.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/databases/mssql#insert-some-data)Insert some data
+Next create a new table, `mytable`, in the `mydb` database with three columns and two rows.
+  1. Switch to the new `mydb` database:
+`USE mydb `
+  2. Create a new table with the following schema:
+`CREATE TABLE mytable (name varchar(80), pet varchar(80)) `
+  3. Insert some data into the table:
+`INSERT INTO mytable VALUES ('Mary', 'dog'), ('John', 'cat'), ('Robert', 'bird') `
+  4. Type `GO` to execute the above commands:
+`GO `
+
+
+To end your **sqlcmd** session, type `QUIT` on a new line.
+### [](https://docs.streamlit.io/develop/tutorials/databases/mssql#add-username-and-password-to-your-local-app-secrets)Add username and password to your local app secrets
+Your local Streamlit app will read secrets from a file `.streamlit/secrets.toml` in your app's root directory. Create this file if it doesn't exist yet and add the SQL Server name, database name, username, and password as shown below:
+`# .streamlit/secrets.toml server = "localhost" database = "mydb" username = "SA" password = "xxx" `
+_priority_high_
+#### Important
+When copying your app secrets to Streamlit Community Cloud, be sure to replace the values of **server** , **database** , **username** , and **password** with those of your _remote_ SQL Server!
+And add this file to `.gitignore` and don't commit it to your GitHub repo.
+## [](https://docs.streamlit.io/develop/tutorials/databases/mssql#copy-your-app-secrets-to-streamlit-community-cloud)Copy your app secrets to Streamlit Community Cloud
+As the `secrets.toml` file above is not committed to GitHub, you need to pass its content to your deployed app (on Streamlit Community Cloud) separately. Go to the [app dashboard](https://share.streamlit.io/) and in the app's dropdown menu, click on **Edit Secrets**. Copy the content of `secrets.toml` into the text area. More information is available at [Secrets management](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management).
+![Secrets manager screenshot](https://docs.streamlit.io/images/databases/edit-secrets.png)
+## [](https://docs.streamlit.io/develop/tutorials/databases/mssql#add-pyodbc-to-your-requirements-file)Add pyodbc to your requirements file
+To connect to SQL Server _locally_ with Streamlit, you need to `pip install pyodbc`, in addition to the Microsoft ODBC driver you installed during the SQL Server installation.
+On _Streamlit Cloud_ , we have built-in support for SQL Server. On popular demand, we directly added SQL Server tools including the ODBC drivers and the executables `sqlcmd` and `bcp` to the container image for Cloud apps, so you don't need to install them.
+All you need to do is add the [`pyodbc`](https://github.com/mkleehammer/pyodbc) Python package to your `requirements.txt` file, and you're ready to go! 🎈
+`# requirements.txt pyodbc==x.x.x `
+Replace `x.x.x` ☝️ with the version of pyodbc you want installed on Cloud.
+_push_pin_
+#### Note
+At this time, Streamlit Community Cloud does not support Azure Active Directory authentication. We will update this tutorial when we add support for Azure Active Directory.
+## [](https://docs.streamlit.io/develop/tutorials/databases/mssql#write-your-streamlit-app)Write your Streamlit app
+Copy the code below to your Streamlit app and run it. Make sure to adapt `query` to use the name of your table.
+`import streamlit as st import pyodbc # Initialize connection. # Uses st.cache_resource to only run once. @st.cache_resource def init_connection(): return pyodbc.connect( "DRIVER={ODBC Driver 17 for SQL Server};SERVER=" + st.secrets["server"] + ";DATABASE=" + st.secrets["database"] + ";UID=" + st.secrets["username"] + ";PWD=" + st.secrets["password"] ) conn = init_connection() # Perform query. # Uses st.cache_data to only rerun when the query changes or after 10 min. @st.cache_data(ttl=600) def run_query(query): with conn.cursor() as cur:     cur.execute(query) return cur.fetchall() rows = run_query("SELECT * from mytable;") # Print results. for row in rows:   st.write(f"{row[0]} has a :{row[1]}:") `
+See `st.cache_data` above? Without it, Streamlit would run the query every time the app reruns (e.g. on a widget interaction). With `st.cache_data`, it only runs when the query changes or after 10 minutes (that's what `ttl` is for). Watch out: If your database updates more frequently, you should adapt `ttl` or remove caching so viewers always see the latest data. Learn more in [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+If everything worked out (and you used the example table we created above), your app should look like this:
+![Finished app screenshot](https://docs.streamlit.io/images/databases/streamlit-app.png)[Previous: Google Cloud Storage](https://docs.streamlit.io/develop/tutorials/databases/gcs)[Next: MongoDB](https://docs.streamlit.io/develop/tutorials/databases/mongodb) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io)

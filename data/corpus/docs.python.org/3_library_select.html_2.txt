@@ -1,0 +1,43 @@
+Title: File Descriptor Operations in Python Select Module
+URL: https://docs.python.org/3/library/select.html
+Summary: The select module allows the use of empty iterables, with platform-dependent acceptance for three empty iterables. A optional timeout parameter can be specified, dictating how long to wait for file descriptors to be ready. The function returns a triple of lists containing ready objects or empty lists if the timeout occurs. Acceptable object types include Python file objects and socket objects.
+---
+
+Empty iterables are allowed, but acceptance of three empty iterables is platform-dependent. (It is known to work on Unix but not on Windows.) The optional _timeout_ argument specifies a time-out as a floating-point number in seconds. When the _timeout_ argument is omitted the function blocks until at least one file descriptor is ready. A time-out value of zero specifies a poll and never blocks.
+The return value is a triple of lists of objects that are ready: subsets of the first three arguments. When the time-out is reached without a file descriptor becoming ready, three empty lists are returned.
+Among the acceptable object types in the iterables are Python [file objects](https://docs.python.org/3/glossary.html#term-file-object) (e.g. `sys.stdin`, or objects returned by [`open()`](https://docs.python.org/3/library/functions.html#open "open") or [`os.popen()`](https://docs.python.org/3/library/os.html#os.popen "os.popen")), socket objects returned by [`socket.socket()`](https://docs.python.org/3/library/socket.html#socket.socket "socket.socket"). You may also define a _wrapper_ class yourself, as long as it has an appropriate [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method (that really returns a file descriptor, not just a random integer).
+Note
+File objects on Windows are not acceptable, but sockets are. On Windows, the underlying `select()` function is provided by the WinSock library, and does not handle file descriptors that don’t originate from WinSock.
+Changed in version 3.5: The function is now retried with a recomputed timeout when interrupted by a signal, except if the signal handler raises an exception (see [**PEP 475**](https://peps.python.org/pep-0475/) for the rationale), instead of raising [`InterruptedError`](https://docs.python.org/3/library/exceptions.html#InterruptedError "InterruptedError"). 
+
+select.PIPE_BUF[¶](https://docs.python.org/3/library/select.html#select.PIPE_BUF "Link to this definition")
+    
+The minimum number of bytes which can be written without blocking to a pipe when the pipe has been reported as ready for writing by [`select()`](https://docs.python.org/3/library/select.html#select.select "select.select"), `poll()` or another interface in this module. This doesn’t apply to other kind of file-like objects such as sockets.
+This value is guaranteed by POSIX to be at least 512.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix
+Added in version 3.2.
+## `/dev/poll` Polling Objects[¶](https://docs.python.org/3/library/select.html#dev-poll-polling-objects "Link to this heading")
+Solaris and derivatives have `/dev/poll`. While `select()` is _O_(_highest file descriptor_) and `poll()` is _O_(_number of file descriptors_), `/dev/poll` is _O_(_active file descriptors_).
+`/dev/poll` behaviour is very close to the standard `poll()` object. 
+
+devpoll.close()[¶](https://docs.python.org/3/library/select.html#select.devpoll.close "Link to this definition")
+    
+Close the file descriptor of the polling object.
+Added in version 3.4. 
+
+devpoll.closed[¶](https://docs.python.org/3/library/select.html#select.devpoll.closed "Link to this definition")
+    
+`True` if the polling object is closed.
+Added in version 3.4. 
+
+devpoll.fileno()[¶](https://docs.python.org/3/library/select.html#select.devpoll.fileno "Link to this definition")
+    
+Return the file descriptor number of the polling object.
+Added in version 3.4. 
+
+devpoll.register(_fd_[, _eventmask_])[¶](https://docs.python.org/3/library/select.html#select.devpoll.register "Link to this definition")
+    
+Register a file descriptor with the polling object. Future calls to the [`poll()`](https://docs.python.org/3/library/select.html#select.poll "select.poll") method will then check whether the file descriptor has any pending I/O events. _fd_ can be either an integer, or an object with a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method that returns an integer. File objects implement `fileno()`, so they can also be used as the argument.
+_eventmask_ is an optional bitmask describing the type of events you want to check for. The constants are the same that with `poll()` object. The default value is a combination of the constants `POLLIN`, `POLLPRI`, and `POLLOUT`.
+Warning
+Registering a file descriptor that’s already registered is not an error, but the result is undefined. The appropriate action is to unregister or modify it first. This is an important difference compared with `poll()`.

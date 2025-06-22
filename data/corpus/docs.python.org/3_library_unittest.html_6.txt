@@ -1,0 +1,45 @@
+Title: Advantages of Separate Test Modules in Python Unittest
+URL: https://docs.python.org/3/library/unittest.html
+Summary: This section discusses the benefits of placing test cases and test suites in separate modules, such as improved code separation, easier command-line execution, reduced temptation to alter tests, and better consistency, especially with C modules. It also hints at accommodating existing test code within the `unittest` framework.
+---
+
+```
+
+You can place the definitions of test cases and test suites in the same modules as the code they are to test (such as `widget.py`), but there are several advantages to placing the test code in a separate module, such as `test_widget.py`:
+  * The test module can be run standalone from the command line.
+  * The test code can more easily be separated from shipped code.
+  * There is less temptation to change test code to fit the code it tests without a good reason.
+  * Test code should be modified much less frequently than the code it tests.
+  * Tested code can be refactored more easily.
+  * Tests for modules written in C must be in separate modules anyway, so why not be consistent?
+  * If the testing strategy changes, there is no need to change the source code.
+
+
+## Re-using old test code[¶](https://docs.python.org/3/library/unittest.html#re-using-old-test-code "Link to this heading")
+Some users will find that they have existing test code that they would like to run from [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python."), without converting every old test function to a [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") subclass.
+For this reason, [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") provides a [`FunctionTestCase`](https://docs.python.org/3/library/unittest.html#unittest.FunctionTestCase "unittest.FunctionTestCase") class. This subclass of [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") can be used to wrap an existing test function. Set-up and tear-down functions can also be provided.
+Given the following test function:
+```
+deftestSomething():
+  something = makeSomething()
+  assert something.name is not None
+  # ...
+
+```
+
+one can create an equivalent test case instance as follows, with optional set-up and tear-down methods:
+```
+testcase = unittest.FunctionTestCase(testSomething,
+                   setUp=makeSomethingDB,
+                   tearDown=deleteSomethingDB)
+
+```
+
+Note
+Even though [`FunctionTestCase`](https://docs.python.org/3/library/unittest.html#unittest.FunctionTestCase "unittest.FunctionTestCase") can be used to quickly convert an existing test base over to a [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.")-based system, this approach is not recommended. Taking the time to set up proper [`TestCase`](https://docs.python.org/3/library/unittest.html#unittest.TestCase "unittest.TestCase") subclasses will make future test refactorings infinitely easier.
+In some cases, the existing tests may have been written using the [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") module. If so, [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") provides a `DocTestSuite` class that can automatically build [`unittest.TestSuite`](https://docs.python.org/3/library/unittest.html#unittest.TestSuite "unittest.TestSuite") instances from the existing [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.")-based tests.
+## Skipping tests and expected failures[¶](https://docs.python.org/3/library/unittest.html#skipping-tests-and-expected-failures "Link to this heading")
+Added in version 3.1.
+Unittest supports skipping individual test methods and even whole classes of tests. In addition, it supports marking a test as an “expected failure,” a test that is broken and will fail, but shouldn’t be counted as a failure on a [`TestResult`](https://docs.python.org/3/library/unittest.html#unittest.TestResult "unittest.TestResult").
+Skipping a test is simply a matter of using the [`skip()`](https://docs.python.org/3/library/unittest.html#unittest.skip "unittest.skip") [decorator](https://docs.python.org/3/glossary.html#term-decorator) or one of its conditional variants, calling [`TestCase.skipTest()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.skipTest "unittest.TestCase.skipTest") within a [`setUp()`](https://docs.python.org/3/library/unittest.html#unittest.TestCase.setUp "unittest.TestCase.setUp") or test method, or raising [`SkipTest`](https://docs.python.org/3/library/unittest.html#unittest.SkipTest "unittest.SkipTest") directly.
+Basic skipping looks like this:

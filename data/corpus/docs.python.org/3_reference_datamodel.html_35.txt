@@ -1,0 +1,46 @@
+Title: Class Definition Execution and MRO Resolution in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: This section outlines the steps that occur during the execution of a class definition in Python, including resolving MRO entries, determining the appropriate metaclass, preparing the class namespace, executing the class body, and creating the class object. It also introduces the `__mro_entries__()` method, which is invoked if a base in a class definition is not an instance of `type`, to potentially substitute the base.
+---
+
+```
+
+Any other keyword arguments that are specified in the class definition are passed through to all metaclass operations described below.
+When a class definition is executed, the following steps occur:
+  * MRO entries are resolved;
+  * the appropriate metaclass is determined;
+  * the class namespace is prepared;
+  * the class body is executed;
+  * the class object is created.
+
+
+#### 3.3.3.2. Resolving MRO entries[¶](https://docs.python.org/3/reference/datamodel.html#resolving-mro-entries "Link to this heading") 
+
+object.__mro_entries__(_self_ , _bases_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__mro_entries__ "Link to this definition")
+    
+If a base that appears in a class definition is not an instance of [`type`](https://docs.python.org/3/library/functions.html#type "type"), then an `__mro_entries__()` method is searched on the base. If an `__mro_entries__()` method is found, the base is substituted with the result of a call to `__mro_entries__()` when creating the class. The method is called with the original bases tuple passed to the _bases_ parameter, and must return a tuple of classes that will be used instead of the base. The returned tuple may be empty: in these cases, the original base is ignored.
+See also 
+
+[`types.resolve_bases()`](https://docs.python.org/3/library/types.html#types.resolve_bases "types.resolve_bases")
+    
+Dynamically resolve bases that are not instances of [`type`](https://docs.python.org/3/library/functions.html#type "type"). 
+
+[`types.get_original_bases()`](https://docs.python.org/3/library/types.html#types.get_original_bases "types.get_original_bases")
+    
+Retrieve a class’s “original bases” prior to modifications by [`__mro_entries__()`](https://docs.python.org/3/reference/datamodel.html#object.__mro_entries__ "object.__mro_entries__"). 
+
+[**PEP 560**](https://peps.python.org/pep-0560/)
+    
+Core support for typing module and generic types.
+#### 3.3.3.3. Determining the appropriate metaclass[¶](https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass "Link to this heading")
+The appropriate metaclass for a class definition is determined as follows:
+  * if no bases and no explicit metaclass are given, then [`type()`](https://docs.python.org/3/library/functions.html#type "type") is used;
+  * if an explicit metaclass is given and it is _not_ an instance of [`type()`](https://docs.python.org/3/library/functions.html#type "type"), then it is used directly as the metaclass;
+  * if an instance of [`type()`](https://docs.python.org/3/library/functions.html#type "type") is given as the explicit metaclass, or bases are defined, then the most derived metaclass is used.
+
+
+The most derived metaclass is selected from the explicitly specified metaclass (if any) and the metaclasses (i.e. `type(cls)`) of all specified base classes. The most derived metaclass is one which is a subtype of _all_ of these candidate metaclasses. If none of the candidate metaclasses meets that criterion, then the class definition will fail with `TypeError`.
+#### 3.3.3.4. Preparing the class namespace[¶](https://docs.python.org/3/reference/datamodel.html#preparing-the-class-namespace "Link to this heading")
+Once the appropriate metaclass has been identified, then the class namespace is prepared. If the metaclass has a `__prepare__` attribute, it is called as `namespace = metaclass.__prepare__(name, bases, **kwds)` (where the additional keyword arguments, if any, come from the class definition). The `__prepare__` method should be implemented as a [`classmethod`](https://docs.python.org/3/library/functions.html#classmethod "classmethod"). The namespace returned by `__prepare__` is passed in to `__new__`, but when the final class object is created the namespace is copied into a new `dict`.
+If the metaclass has no `__prepare__` attribute, then the class namespace is initialised as an empty ordered mapping.
+See also

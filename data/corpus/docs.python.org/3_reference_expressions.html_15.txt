@@ -1,0 +1,27 @@
+Title: Function Call Syntax in Python
+URL: https://docs.python.org/3/reference/expressions.html
+Summary: This section explains the syntax of function calls in Python, highlighting the optional use of trailing commas in argument lists. It defines callable objects and the evaluation order of arguments before the call. It also describes how keyword arguments are converted to positional arguments based on formal parameter slots.
+---
+
+```
+
+An optional trailing comma may be present after the positional and keyword arguments but does not affect the semantics.
+The primary must evaluate to a callable object (user-defined functions, built-in functions, methods of built-in objects, class objects, methods of class instances, and all objects having a [`__call__()`](https://docs.python.org/3/reference/datamodel.html#object.__call__ "object.__call__") method are callable). All argument expressions are evaluated before the call is attempted. Please refer to section [Function definitions](https://docs.python.org/3/reference/compound_stmts.html#function) for the syntax of formal [parameter](https://docs.python.org/3/glossary.html#term-parameter) lists.
+If keyword arguments are present, they are first converted to positional arguments, as follows. First, a list of unfilled slots is created for the formal parameters. If there are N positional arguments, they are placed in the first N slots. Next, for each keyword argument, the identifier is used to determine the corresponding slot (if the identifier is the same as the first formal parameter name, the first slot is used, and so on). If the slot is already filled, a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception is raised. Otherwise, the argument is placed in the slot, filling it (even if the expression is `None`, it fills the slot). When all arguments have been processed, the slots that are still unfilled are filled with the corresponding default value from the function definition. (Default values are calculated, once, when the function is defined; thus, a mutable object such as a list or dictionary used as default value will be shared by all calls that don’t specify an argument value for the corresponding slot; this should usually be avoided.) If there are any unfilled slots for which no default value is specified, a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception is raised. Otherwise, the list of filled slots is used as the argument list for the call.
+**CPython implementation detail:** An implementation may provide built-in functions whose positional parameters do not have names, even if they are ‘named’ for the purpose of documentation, and which therefore cannot be supplied by keyword. In CPython, this is the case for functions implemented in C that use [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") to parse their arguments.
+If there are more positional arguments than there are formal parameter slots, a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception is raised, unless a formal parameter using the syntax `*identifier` is present; in this case, that formal parameter receives a tuple containing the excess positional arguments (or an empty tuple if there were no excess positional arguments).
+If any keyword argument does not correspond to a formal parameter name, a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception is raised, unless a formal parameter using the syntax `**identifier` is present; in this case, that formal parameter receives a dictionary containing the excess keyword arguments (using the keywords as keys and the argument values as corresponding values), or a (new) empty dictionary if there were no excess keyword arguments.
+If the syntax `*expression` appears in the function call, `expression` must evaluate to an [iterable](https://docs.python.org/3/glossary.html#term-iterable). Elements from these iterables are treated as if they were additional positional arguments. For the call `f(x1, x2, *y, x3, x4)`, if _y_ evaluates to a sequence _y1_ , …, _yM_ , this is equivalent to a call with M+4 positional arguments _x1_ , _x2_ , _y1_ , …, _yM_ , _x3_ , _x4_.
+A consequence of this is that although the `*expression` syntax may appear _after_ explicit keyword arguments, it is processed _before_ the keyword arguments (and any `**expression` arguments – see below). So:
+>>>```
+>>> deff(a, b):
+...   print(a, b)
+...
+>>> f(b=1, *(2,))
+2 1
+>>> f(a=1, *(2,))
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: f() got multiple values for keyword argument 'a'
+>>> f(1, *(2,))
+1 2

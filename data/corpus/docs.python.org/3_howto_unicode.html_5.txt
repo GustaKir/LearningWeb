@@ -1,0 +1,67 @@
+Title: Unicode Character Categories and String Comparison
+URL: https://docs.python.org/3/howto/unicode.html
+Summary: This section discusses the categorization of Unicode characters into types such as letters, numbers, punctuation, and symbols, along with their respective codes. It highlights the complexity of string comparison in Unicode, where identical characters can have multiple code point representations, exemplified by the letter ‘ê’.
+---
+
+```
+
+The category codes are abbreviations describing the nature of the character. These are grouped into categories such as “Letter”, “Number”, “Punctuation”, or “Symbol”, which in turn are broken up into subcategories. To take the codes from the above output, `'Ll'` means ‘Letter, lowercase’, `'No'` means “Number, other”, `'Mn'` is “Mark, nonspacing”, and `'So'` is “Symbol, other”. See [the General Category Values section of the Unicode Character Database documentation](https://www.unicode.org/reports/tr44/#General_Category_Values) for a list of category codes.
+### Comparing Strings[¶](https://docs.python.org/3/howto/unicode.html#comparing-strings "Link to this heading")
+Unicode adds some complication to comparing strings, because the same set of characters can be represented by different sequences of code points. For example, a letter like ‘ê’ can be represented as a single code point U+00EA, or as U+0065 U+0302, which is the code point for ‘e’ followed by a code point for ‘COMBINING CIRCUMFLEX ACCENT’. These will produce the same output when printed, but one is a string of length 1 and the other is of length 2.
+One tool for a case-insensitive comparison is the [`casefold()`](https://docs.python.org/3/library/stdtypes.html#str.casefold "str.casefold") string method that converts a string to a case-insensitive form following an algorithm described by the Unicode Standard. This algorithm has special handling for characters such as the German letter ‘ß’ (code point U+00DF), which becomes the pair of lowercase letters ‘ss’.
+>>>```
+>>> street = 'Gürzenichstraße'
+>>> street.casefold()
+'gürzenichstrasse'
+
+```
+
+A second tool is the [`unicodedata`](https://docs.python.org/3/library/unicodedata.html#module-unicodedata "unicodedata: Access the Unicode Database.") module’s [`normalize()`](https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize "unicodedata.normalize") function that converts strings to one of several normal forms, where letters followed by a combining character are replaced with single characters. [`normalize()`](https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize "unicodedata.normalize") can be used to perform string comparisons that won’t falsely report inequality if two strings use combining characters differently:
+```
+importunicodedata
+defcompare_strs(s1, s2):
+  defNFD(s):
+    return unicodedata.normalize('NFD', s)
+  return NFD(s1) == NFD(s2)
+single_char = 'ê'
+multiple_chars = '\N{LATIN SMALL LETTER E}\N{COMBINING CIRCUMFLEX ACCENT}'
+print('length of first string=', len(single_char))
+print('length of second string=', len(multiple_chars))
+print(compare_strs(single_char, multiple_chars))
+
+```
+
+When run, this outputs:
+```
+$ pythoncompare-strs.py
+length of first string= 1
+length of second string= 2
+True
+
+```
+
+The first argument to the [`normalize()`](https://docs.python.org/3/library/unicodedata.html#unicodedata.normalize "unicodedata.normalize") function is a string giving the desired normalization form, which can be one of ‘NFC’, ‘NFKC’, ‘NFD’, and ‘NFKD’.
+The Unicode Standard also specifies how to do caseless comparisons:
+```
+importunicodedata
+defcompare_caseless(s1, s2):
+  defNFD(s):
+    return unicodedata.normalize('NFD', s)
+  return NFD(NFD(s1).casefold()) == NFD(NFD(s2).casefold())
+# Example usage
+single_char = 'ê'
+multiple_chars = '\N{LATIN CAPITAL LETTER E}\N{COMBINING CIRCUMFLEX ACCENT}'
+print(compare_caseless(single_char, multiple_chars))
+
+```
+
+This will print `True`. (Why is `NFD()` invoked twice? Because there are a few characters that make [`casefold()`](https://docs.python.org/3/library/stdtypes.html#str.casefold "str.casefold") return a non-normalized string, so the result needs to be normalized again. See section 3.13 of the Unicode Standard for a discussion and an example.)
+### Unicode Regular Expressions[¶](https://docs.python.org/3/howto/unicode.html#unicode-regular-expressions "Link to this heading")
+The regular expressions supported by the [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") module can be provided either as bytes or strings. Some of the special character sequences such as `\d` and `\w` have different meanings depending on whether the pattern is supplied as bytes or a string. For example, `\d` will match the characters `[0-9]` in bytes but in strings will match any character that’s in the `'Nd'` category.
+The string in this example has the number 57 written in both Thai and Arabic numerals:
+```
+importre
+p = re.compile(r'\d+')
+s = "Over \u0e55\u0e57 57 flavours"
+m = p.search(s)
+print(repr(m.group()))

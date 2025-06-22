@@ -1,0 +1,76 @@
+Title: Understanding Mock Call Arguments in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section explains the members related to call arguments in the unittest.mock library, including call_args, call_args_list, method_calls, and mock_calls. These members are represented as call objects, which can be unpacked for more detailed assertions. Notably, version 3.8 introduced the args and kwargs properties.
+---
+
+```
+
+[`call_args`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args "unittest.mock.Mock.call_args"), along with members of the lists [`call_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "unittest.mock.Mock.call_args_list"), [`method_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.method_calls "unittest.mock.Mock.method_calls") and [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") are [`call`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "unittest.mock.call") objects. These are tuples, so they can be unpacked to get at the individual arguments and make more complex assertions. See [calls as tuples](https://docs.python.org/3/library/unittest.mock.html#calls-as-tuples).
+Changed in version 3.8: Added `args` and `kwargs` properties. 
+
+call_args_list[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "Link to this definition")
+    
+This is a list of all the calls made to the mock object in sequence (so the length of the list is the number of times it has been called). Before any calls have been made it is an empty list. The [`call`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "unittest.mock.call") object can be used for conveniently constructing lists of calls to compare with [`call_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "unittest.mock.Mock.call_args_list").
+>>>```
+>>> mock = Mock(return_value=None)
+>>> mock()
+>>> mock(3, 4)
+>>> mock(key='fish', next='w00t!')
+>>> mock.call_args_list
+[call(), call(3, 4), call(key='fish', next='w00t!')]
+>>> expected = [(), ((3, 4),), ({'key': 'fish', 'next': 'w00t!'},)]
+>>> mock.call_args_list == expected
+True
+
+```
+
+Members of [`call_args_list`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.call_args_list "unittest.mock.Mock.call_args_list") are [`call`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "unittest.mock.call") objects. These can be unpacked as tuples to get at the individual arguments. See [calls as tuples](https://docs.python.org/3/library/unittest.mock.html#calls-as-tuples). 
+
+method_calls[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.method_calls "Link to this definition")
+    
+As well as tracking calls to themselves, mocks also track calls to methods and attributes, and _their_ methods and attributes:
+>>>```
+>>> mock = Mock()
+>>> mock.method()
+<Mock name='mock.method()' id='...'>
+>>> mock.property.method.attribute()
+<Mock name='mock.property.method.attribute()' id='...'>
+>>> mock.method_calls
+[call.method(), call.property.method.attribute()]
+
+```
+
+Members of [`method_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.method_calls "unittest.mock.Mock.method_calls") are [`call`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "unittest.mock.call") objects. These can be unpacked as tuples to get at the individual arguments. See [calls as tuples](https://docs.python.org/3/library/unittest.mock.html#calls-as-tuples). 
+
+mock_calls[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "Link to this definition")
+    
+[`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") records _all_ calls to the mock object, its methods, magic methods _and_ return value mocks.
+>>>```
+>>> mock = MagicMock()
+>>> result = mock(1, 2, 3)
+>>> mock.first(a=3)
+<MagicMock name='mock.first()' id='...'>
+>>> mock.second()
+<MagicMock name='mock.second()' id='...'>
+>>> int(mock)
+1
+>>> result(1)
+<MagicMock name='mock()()' id='...'>
+>>> expected = [call(1, 2, 3), call.first(a=3), call.second(),
+... call.__int__(), call()(1)]
+>>> mock.mock_calls == expected
+True
+
+```
+
+Members of [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") are [`call`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.call "unittest.mock.call") objects. These can be unpacked as tuples to get at the individual arguments. See [calls as tuples](https://docs.python.org/3/library/unittest.mock.html#calls-as-tuples).
+Note
+The way [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") are recorded means that where nested calls are made, the parameters of ancestor calls are not recorded and so will always compare equal:
+>>>```
+>>> mock = MagicMock()
+>>> mock.top(a=3).bottom()
+<MagicMock name='mock.top().bottom()' id='...'>
+>>> mock.mock_calls
+[call.top(a=3), call.top().bottom()]
+>>> mock.mock_calls[-1] == call.top(a=-1).bottom()
+True

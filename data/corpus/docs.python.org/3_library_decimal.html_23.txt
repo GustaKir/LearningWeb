@@ -1,0 +1,29 @@
+Title: Working with Threads in Decimal Module
+URL: https://docs.python.org/3/library/decimal.html
+Summary: The `getcontext()` function retrieves a unique `Context` object for each thread, allowing separate thread configurations. This enables individual threads to modify settings like precision without affecting others. The `setcontext()` function assigns the specified context to the current thread, maintaining isolation between threads.
+---
+
+```
+
+## Working with threads[¶](https://docs.python.org/3/library/decimal.html#working-with-threads "Link to this heading")
+The [`getcontext()`](https://docs.python.org/3/library/decimal.html#decimal.getcontext "decimal.getcontext") function accesses a different [`Context`](https://docs.python.org/3/library/decimal.html#decimal.Context "decimal.Context") object for each thread. Having separate thread contexts means that threads may make changes (such as `getcontext().prec=10`) without interfering with other threads.
+Likewise, the [`setcontext()`](https://docs.python.org/3/library/decimal.html#decimal.setcontext "decimal.setcontext") function automatically assigns its target to the current thread.
+If [`setcontext()`](https://docs.python.org/3/library/decimal.html#decimal.setcontext "decimal.setcontext") has not been called before [`getcontext()`](https://docs.python.org/3/library/decimal.html#decimal.getcontext "decimal.getcontext"), then [`getcontext()`](https://docs.python.org/3/library/decimal.html#decimal.getcontext "decimal.getcontext") will automatically create a new context for use in the current thread.
+The new context is copied from a prototype context called _DefaultContext_. To control the defaults so that each thread will use the same values throughout the application, directly modify the _DefaultContext_ object. This should be done _before_ any threads are started so that there won’t be a race condition between threads calling [`getcontext()`](https://docs.python.org/3/library/decimal.html#decimal.getcontext "decimal.getcontext"). For example:
+```
+# Set applicationwide defaults for all threads about to be launched
+DefaultContext.prec = 12
+DefaultContext.rounding = ROUND_DOWN
+DefaultContext.traps = ExtendedContext.traps.copy()
+DefaultContext.traps[InvalidOperation] = 1
+setcontext(DefaultContext)
+# Afterwards, the threads can be started
+t1.start()
+t2.start()
+t3.start()
+ . . .
+
+```
+
+## Recipes[¶](https://docs.python.org/3/library/decimal.html#recipes "Link to this heading")
+Here are a few recipes that serve as utility functions and that demonstrate ways to work with the [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") class:

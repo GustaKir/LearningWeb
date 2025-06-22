@@ -1,0 +1,46 @@
+Title: Overview of Runtime Types and dataclass_transform in Python Typing
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section discusses the difference between runtime and statically inferred types by type checkers, emphasizing the importance of using 'reveal_type()' for clarity and preventing runtime errors. It introduces the '@typing.dataclass_transform' decorator, which enables dataclass-like behavior in classes, metaclasses, or function decorators, enhancing static type checking.
+---
+
+```
+
+Note that the runtime type may be different from (more or less specific than) the type statically inferred by a type checker.
+Most type checkers support `reveal_type()` anywhere, even if the name is not imported from `typing`. Importing the name from `typing`, however, allows your code to run without runtime errors and communicates intent more clearly.
+Added in version 3.11. 
+
+@typing.dataclass_transform(_*_ , _eq_default =True_, _order_default =False_, _kw_only_default =False_, _frozen_default =False_, _field_specifiers =()_, _** kwargs_)[¶](https://docs.python.org/3/library/typing.html#typing.dataclass_transform "Link to this definition")
+    
+Decorator to mark an object as providing [`dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass")-like behavior.
+`dataclass_transform` may be used to decorate a class, metaclass, or a function that is itself a decorator. The presence of `@dataclass_transform()` tells a static type checker that the decorated object performs runtime “magic” that transforms a class in a similar way to [`@dataclasses.dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass "dataclasses.dataclass").
+Example usage with a decorator function:
+```
+@dataclass_transform()
+defcreate_model[T](cls: type[T]) -> type[T]:
+  ...
+  return cls
+@create_model
+classCustomerModel:
+  id: int
+  name: str
+
+```
+
+On a base class:
+```
+@dataclass_transform()
+classModelBase: ...
+classCustomerModel(ModelBase):
+  id: int
+  name: str
+
+```
+
+On a metaclass:
+```
+@dataclass_transform()
+classModelMeta(type): ...
+classModelBase(metaclass=ModelMeta): ...
+classCustomerModel(ModelBase):
+  id: int
+  name: str

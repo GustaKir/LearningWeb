@@ -1,0 +1,21 @@
+Title: Python C API - Thread State Functions
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This documentation details two functions related to Python's thread state management. The `PyThreadState_GetDict` function returns a dictionary for storing thread-specific state information, allowing extensions to maintain unique state information per thread. The `PyThreadState_SetAsyncExc` function is used to set an asynchronous exception for a specific thread identified by its ID. Both functions are part of the Stable ABI.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyThreadState_GetDict()[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState_GetDict "Link to this definition")
+    _Return value: Borrowed reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return a dictionary in which extensions can store thread-specific state information. Each extension should use a unique key to use to store state in the dictionary. It is okay to call this function when no current thread state is available. If this function returns `NULL`, no exception has been raised and the caller should assume no current thread state is available. 
+
+intPyThreadState_SetAsyncExc(unsignedlongid, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exc)[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState_SetAsyncExc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Asynchronously raise an exception in a thread. The _id_ argument is the thread id of the target thread; _exc_ is the exception object to be raised. This function does not steal any references to _exc_. To prevent naive misuse, you must write your own C extension to call this. Must be called with the GIL held. Returns the number of thread states modified; this is normally one, but will be zero if the thread id isn’t found. If _exc_ is `NULL`, the pending exception (if any) for the thread is cleared. This raises no exceptions.
+Changed in version 3.7: The type of the _id_ parameter changed from long to unsignedlong. 
+
+voidPyEval_AcquireThread([PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*tstate)[¶](https://docs.python.org/3/c-api/init.html#c.PyEval_AcquireThread "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Acquire the global interpreter lock and set the current thread state to _tstate_ , which must not be `NULL`. The lock must have been created earlier. If this thread already has the lock, deadlock ensues.
+Note
+Calling this function from a thread when the runtime is finalizing will terminate the thread, even if the thread was not created by Python. You can use [`Py_IsFinalizing()`](https://docs.python.org/3/c-api/init.html#c.Py_IsFinalizing "Py_IsFinalizing") or [`sys.is_finalizing()`](https://docs.python.org/3/library/sys.html#sys.is_finalizing "sys.is_finalizing") to check if the interpreter is in process of being finalized before calling this function to avoid unwanted termination.
+Changed in version 3.8: Updated to be consistent with [`PyEval_RestoreThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread"), [`Py_END_ALLOW_THREADS()`](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Py_END_ALLOW_THREADS"), and [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure"), and terminate the current thread if called while the interpreter is finalizing.
+[`PyEval_RestoreThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread") is a higher-level function which is always available (even when threads have not been initialized).

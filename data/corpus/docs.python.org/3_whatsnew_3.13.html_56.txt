@@ -1,0 +1,37 @@
+Title: Changes in the C API for Python 3.13
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: This section details modifications in the C API for Python 3.13, including the removal of specific standard headers from `Python.h`. Notably, `<ieeefp.h>` is replaced by `<math.h>`, and several headers are no longer included by default, necessitating explicit inclusion if needed.
+---
+
+rary or application that provides a custom `_thread` module must provide `_is_main_interpreter()`, just like the module’s other “private” attributes. ([gh-112826](https://github.com/python/cpython/issues/112826).)
+
+
+### Changes in the C API[¶](https://docs.python.org/3/whatsnew/3.13.html#changes-in-the-c-api "Link to this heading")
+  * `Python.h` no longer includes the `<ieeefp.h>` standard header. It was included for the `finite()` function which is now provided by the `<math.h>` header. It should now be included explicitly if needed. Remove also the `HAVE_IEEEFP_H` macro. (Contributed by Victor Stinner in [gh-108765](https://github.com/python/cpython/issues/108765).)
+  * `Python.h` no longer includes these standard header files: `<time.h>`, `<sys/select.h>` and `<sys/time.h>`. If needed, they should now be included explicitly. For example, `<time.h>` provides the `clock()` and `gmtime()` functions, `<sys/select.h>` provides the `select()` function, and `<sys/time.h>` provides the `futimes()`, `gettimeofday()` and `setitimer()` functions. (Contributed by Victor Stinner in [gh-108765](https://github.com/python/cpython/issues/108765).)
+  * On Windows, `Python.h` no longer includes the `<stddef.h>` standard header file. If needed, it should now be included explicitly. For example, it provides `offsetof()` function, and `size_t` and `ptrdiff_t` types. Including `<stddef.h>` explicitly was already needed by all other platforms, the `HAVE_STDDEF_H` macro is only defined on Windows. (Contributed by Victor Stinner in [gh-108765](https://github.com/python/cpython/issues/108765).)
+  * If the [`Py_LIMITED_API`](https://docs.python.org/3/c-api/stable.html#c.Py_LIMITED_API "Py_LIMITED_API") macro is defined, `Py_BUILD_CORE`, `Py_BUILD_CORE_BUILTIN` and `Py_BUILD_CORE_MODULE` macros are now undefined by `<Python.h>`. (Contributed by Victor Stinner in [gh-85283](https://github.com/python/cpython/issues/85283).)
+  * The old trashcan macros `Py_TRASHCAN_SAFE_BEGIN` and `Py_TRASHCAN_SAFE_END` were removed. They should be replaced by the new macros `Py_TRASHCAN_BEGIN` and `Py_TRASHCAN_END`.
+A `tp_dealloc` function that has the old macros, such as:
+```
+static void
+mytype_dealloc(mytype *p)
+{
+  PyObject_GC_UnTrack(p);
+  Py_TRASHCAN_SAFE_BEGIN(p);
+  ...
+  Py_TRASHCAN_SAFE_END
+}
+
+```
+
+should migrate to the new macros as follows:
+```
+static void
+mytype_dealloc(mytype *p)
+{
+  PyObject_GC_UnTrack(p);
+  Py_TRASHCAN_BEGIN(p, mytype_dealloc)
+  ...
+  Py_TRASHCAN_END
+}

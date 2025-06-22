@@ -1,0 +1,44 @@
+Title: faulthandler.dump_traceback_later
+URL: https://docs.python.org/3/library/faulthandler.html
+Summary: This function dumps tracebacks of all threads after a specified timeout. It can repeat the process based on the _repeat_ parameter and potentially exit the process if _exit_ is set to True. If called multiple times, it resets the parameters of the previous call. The function requires the specified _file_ to remain open until the dump is complete or if canceled.
+---
+
+faulthandler.dump_traceback_later(_timeout_ , _repeat =False_, _file =sys.stderr_, _exit =False_)[¶](https://docs.python.org/3/library/faulthandler.html#faulthandler.dump_traceback_later "Link to this definition")
+    
+Dump the tracebacks of all threads, after a timeout of _timeout_ seconds, or every _timeout_ seconds if _repeat_ is `True`. If _exit_ is `True`, call `_exit()` with status=1 after dumping the tracebacks. (Note `_exit()` exits the process immediately, which means it doesn’t do any cleanup like flushing file buffers.) If the function is called twice, the new call replaces previous parameters and resets the timeout. The timer has a sub-second resolution.
+The _file_ must be kept open until the traceback is dumped or [`cancel_dump_traceback_later()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.cancel_dump_traceback_later "faulthandler.cancel_dump_traceback_later") is called: see [issue with file descriptors](https://docs.python.org/3/library/faulthandler.html#faulthandler-fd).
+This function is implemented using a watchdog thread.
+Changed in version 3.5: Added support for passing file descriptor to this function.
+Changed in version 3.7: This function is now always available. 
+
+faulthandler.cancel_dump_traceback_later()[¶](https://docs.python.org/3/library/faulthandler.html#faulthandler.cancel_dump_traceback_later "Link to this definition")
+    
+Cancel the last call to [`dump_traceback_later()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.dump_traceback_later "faulthandler.dump_traceback_later").
+## Dumping the traceback on a user signal[¶](https://docs.python.org/3/library/faulthandler.html#dumping-the-traceback-on-a-user-signal "Link to this heading") 
+
+faulthandler.register(_signum_ , _file =sys.stderr_, _all_threads =True_, _chain =False_)[¶](https://docs.python.org/3/library/faulthandler.html#faulthandler.register "Link to this definition")
+    
+Register a user signal: install a handler for the _signum_ signal to dump the traceback of all threads, or of the current thread if _all_threads_ is `False`, into _file_. Call the previous handler if chain is `True`.
+The _file_ must be kept open until the signal is unregistered by [`unregister()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.unregister "faulthandler.unregister"): see [issue with file descriptors](https://docs.python.org/3/library/faulthandler.html#faulthandler-fd).
+Not available on Windows.
+Changed in version 3.5: Added support for passing file descriptor to this function. 
+
+faulthandler.unregister(_signum_)[¶](https://docs.python.org/3/library/faulthandler.html#faulthandler.unregister "Link to this definition")
+    
+Unregister a user signal: uninstall the handler of the _signum_ signal installed by [`register()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.register "faulthandler.register"). Return `True` if the signal was registered, `False` otherwise.
+Not available on Windows.
+## Issue with file descriptors[¶](https://docs.python.org/3/library/faulthandler.html#issue-with-file-descriptors "Link to this heading")
+[`enable()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.enable "faulthandler.enable"), [`dump_traceback_later()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.dump_traceback_later "faulthandler.dump_traceback_later") and [`register()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.register "faulthandler.register") keep the file descriptor of their _file_ argument. If the file is closed and its file descriptor is reused by a new file, or if [`os.dup2()`](https://docs.python.org/3/library/os.html#os.dup2 "os.dup2") is used to replace the file descriptor, the traceback will be written into a different file. Call these functions again each time that the file is replaced.
+## Example[¶](https://docs.python.org/3/library/faulthandler.html#example "Link to this heading")
+Example of a segmentation fault on Linux with and without enabling the fault handler:
+```
+$ python-c"import ctypes; ctypes.string_at(0)"
+Segmentation fault
+$ python-q-Xfaulthandler
+>>> import ctypes
+>>> ctypes.string_at(0)
+Fatal Python error: Segmentation fault
+Current thread 0x00007fb899f39700 (most recent call first):
+ File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
+ File "<stdin>", line 1 in <module>
+Segmentation fault

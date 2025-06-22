@@ -1,0 +1,24 @@
+Title: Introduction to the fileinput Module
+URL: https://docs.python.org/3/library/fileinput.html
+Summary: The fileinput module iterates over lines from files specified in `sys.argv[1:]`, defaulting to `sys.stdin` if none are provided. It replaces '-' with `sys.stdin`. Files are opened in text mode by default, with an option to specify the mode. An `OSError` is raised for I/O errors. The behavior has changed since version 3.3.
+---
+
+```
+
+This iterates over the lines of all files listed in `sys.argv[1:]`, defaulting to `sys.stdin` if the list is empty. If a filename is `'-'`, it is also replaced by `sys.stdin` and the optional arguments _mode_ and _openhook_ are ignored. To specify an alternative list of filenames, pass it as the first argument to [`input()`](https://docs.python.org/3/library/fileinput.html#fileinput.input "fileinput.input"). A single file name is also allowed.
+All files are opened in text mode by default, but you can override this by specifying the _mode_ parameter in the call to [`input()`](https://docs.python.org/3/library/fileinput.html#fileinput.input "fileinput.input") or [`FileInput`](https://docs.python.org/3/library/fileinput.html#fileinput.FileInput "fileinput.FileInput"). If an I/O error occurs during opening or reading a file, [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised.
+Changed in version 3.3: [`IOError`](https://docs.python.org/3/library/exceptions.html#IOError "IOError") used to be raised; it is now an alias of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError").
+If `sys.stdin` is used more than once, the second and further use will return no lines, except perhaps for interactive use, or if it has been explicitly reset (e.g. using `sys.stdin.seek(0)`).
+Empty files are opened and immediately closed; the only time their presence in the list of filenames is noticeable at all is when the last file opened is empty.
+Lines are returned with any newlines intact, which means that the last line in a file may not have one.
+You can control how files are opened by providing an opening hook via the _openhook_ parameter to [`fileinput.input()`](https://docs.python.org/3/library/fileinput.html#fileinput.input "fileinput.input") or [`FileInput()`](https://docs.python.org/3/library/fileinput.html#fileinput.FileInput "fileinput.FileInput"). The hook must be a function that takes two arguments, _filename_ and _mode_ , and returns an accordingly opened file-like object. If _encoding_ and/or _errors_ are specified, they will be passed to the hook as additional keyword arguments. This module provides a [`hook_compressed()`](https://docs.python.org/3/library/fileinput.html#fileinput.hook_compressed "fileinput.hook_compressed") to support compressed files.
+The following function is the primary interface of this module: 
+
+fileinput.input(_files =None_, _inplace =False_, _backup =''_, _*_ , _mode ='r'_, _openhook =None_, _encoding =None_, _errors =None_)[¶](https://docs.python.org/3/library/fileinput.html#fileinput.input "Link to this definition")
+    
+Create an instance of the [`FileInput`](https://docs.python.org/3/library/fileinput.html#fileinput.FileInput "fileinput.FileInput") class. The instance will be used as global state for the functions of this module, and is also returned to use during iteration. The parameters to this function will be passed along to the constructor of the [`FileInput`](https://docs.python.org/3/library/fileinput.html#fileinput.FileInput "fileinput.FileInput") class.
+The [`FileInput`](https://docs.python.org/3/library/fileinput.html#fileinput.FileInput "fileinput.FileInput") instance can be used as a context manager in the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement. In this example, _input_ is closed after the `with` statement is exited, even if an exception occurs:
+```
+with fileinput.input(files=('spam.txt', 'eggs.txt'), encoding="utf-8") as f:
+  for line in f:
+    process(line)

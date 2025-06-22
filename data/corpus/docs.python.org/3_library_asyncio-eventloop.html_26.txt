@@ -1,0 +1,65 @@
+Title: Watching File Descriptors with Asyncio
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This section discusses how to use the `loop.add_reader()` method in Python's asyncio library to monitor a file descriptor for incoming data. It includes a code example demonstrating the creation of connected file descriptors and the registration of a reader function that processes received data before stopping the event loop.
+---
+
+```
+
+See also
+A similar [current date](https://docs.python.org/3/library/asyncio-task.html#asyncio-example-sleep) example created with a coroutine and the [`run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run") function.
+### Watch a file descriptor for read events[¶](https://docs.python.org/3/library/asyncio-eventloop.html#watch-a-file-descriptor-for-read-events "Link to this heading")
+Wait until a file descriptor received some data using the [`loop.add_reader()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_reader "asyncio.loop.add_reader") method and then close the event loop:
+```
+importasyncio
+fromsocketimport socketpair
+# Create a pair of connected file descriptors
+rsock, wsock = socketpair()
+loop = asyncio.new_event_loop()
+defreader():
+  data = rsock.recv(100)
+  print("Received:", data.decode())
+  # We are done: unregister the file descriptor
+  loop.remove_reader(rsock)
+  # Stop the event loop
+  loop.stop()
+# Register the file descriptor for read event
+loop.add_reader(rsock, reader)
+# Simulate the reception of data from the network
+loop.call_soon(wsock.send, 'abc'.encode())
+try:
+  # Run the event loop
+  loop.run_forever()
+finally:
+  # We are done. Close sockets and the event loop.
+  rsock.close()
+  wsock.close()
+  loop.close()
+
+```
+
+See also
+  * A similar [example](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-example-create-connection) using transports, protocols, and the [`loop.create_connection()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_connection "asyncio.loop.create_connection") method.
+  * Another similar [example](https://docs.python.org/3/library/asyncio-stream.html#asyncio-example-create-connection-streams) using the high-level [`asyncio.open_connection()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.open_connection "asyncio.open_connection") function and streams.
+
+
+### Set signal handlers for SIGINT and SIGTERM[¶](https://docs.python.org/3/library/asyncio-eventloop.html#set-signal-handlers-for-sigint-and-sigterm "Link to this heading")
+(This `signals` example only works on Unix.)
+Register handlers for signals [`SIGINT`](https://docs.python.org/3/library/signal.html#signal.SIGINT "signal.SIGINT") and [`SIGTERM`](https://docs.python.org/3/library/signal.html#signal.SIGTERM "signal.SIGTERM") using the [`loop.add_signal_handler()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.add_signal_handler "asyncio.loop.add_signal_handler") method:
+```
+importasyncio
+importfunctools
+importos
+importsignal
+defask_exit(signame, loop):
+  print("got signal %s: exit" % signame)
+  loop.stop()
+async defmain():
+  loop = asyncio.get_running_loop()
+  for signame in {'SIGINT', 'SIGTERM'}:
+    loop.add_signal_handler(
+      getattr(signal, signame),
+      functools.partial(ask_exit, signame, loop))
+  await asyncio.sleep(3600)
+print("Event loop running for 1 hour, press Ctrl+C to interrupt.")
+print(f"pid {os.getpid()}: send SIGINT or SIGTERM to exit.")
+asyncio.run(main())

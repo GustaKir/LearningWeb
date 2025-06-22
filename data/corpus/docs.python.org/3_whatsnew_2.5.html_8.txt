@@ -1,0 +1,66 @@
+Title: Writing Context Managers
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This section explains the intricacies of the 'with' statement and context managers in Python. It emphasizes that while most users will utilize existing context managers, developers creating new ones must understand the context management protocol, which includes the required methods '__enter__()' and '__exit__()'.
+---
+
+```
+
+### Writing Context Managers[¶](https://docs.python.org/3/whatsnew/2.5.html#writing-context-managers "Link to this heading")
+Under the hood, the ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement is fairly complicated. Most people will only use ‘`with`’ in company with existing objects and don’t need to know these details, so you can skip the rest of this section if you like. Authors of new objects will need to understand the details of the underlying implementation and should keep reading.
+A high-level explanation of the context management protocol is:
+  * The expression is evaluated and should result in an object called a “context manager”. The context manager must have [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") and [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") methods.
+  * The context manager’s [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method is called. The value returned is assigned to _VAR_. If no `'as VAR'` clause is present, the value is simply discarded.
+  * The code in _BLOCK_ is executed.
+  * If _BLOCK_ raises an exception, the `__exit__(type, value, traceback)` is called with the exception details, the same values returned by [`sys.exc_info()`](https://docs.python.org/3/library/sys.html#sys.exc_info "sys.exc_info"). The method’s return value controls whether the exception is re-raised: any false value re-raises the exception, and `True` will result in suppressing it. You’ll only rarely want to suppress the exception, because if you do the author of the code containing the ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement will never realize anything went wrong.
+  * If _BLOCK_ didn’t raise an exception, the [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method is still called, but _type_ , _value_ , and _traceback_ are all `None`.
+
+
+Let’s think through an example. I won’t present detailed code but will only sketch the methods necessary for a database that supports transactions.
+(For people unfamiliar with database terminology: a set of changes to the database are grouped into a transaction. Transactions can be either committed, meaning that all the changes are written into the database, or rolled back, meaning that the changes are all discarded and the database is unchanged. See any database textbook for more information.)
+Let’s assume there’s an object representing a database connection. Our goal will be to let the user write code like this:
+```
+db_connection = DatabaseConnection()
+with db_connection as cursor:
+  cursor.execute('insert into ...')
+  cursor.execute('delete from ...')
+  # ... more operations ...
+
+```
+
+The transaction should be committed if the code in the block runs flawlessly or rolled back if there’s an exception. Here’s the basic interface for `DatabaseConnection` that I’ll assume:
+```
+classDatabaseConnection:
+  # Database interface
+  defcursor (self):
+    "Returns a cursor object and starts a new transaction"
+  defcommit (self):
+    "Commits current transaction"
+  defrollback (self):
+    "Rolls back current transaction"
+
+```
+
+The [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method is pretty easy, having only to start a new transaction. For this application the resulting cursor object would be a useful result, so the method will return it. The user can then add `as cursor` to their ‘[`with`](https://docs.python.org/3/reference/compound_stmts.html#with)’ statement to bind the cursor to a variable name.
+```
+classDatabaseConnection:
+  ...
+  def__enter__ (self):
+    # Code to start a new transaction
+    cursor = self.cursor()
+    return cursor
+
+```
+
+The [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method is the most complicated because it’s where most of the work has to be done. The method has to check if an exception occurred. If there was no exception, the transaction is committed. The transaction is rolled back if there was an exception.
+In the code below, execution will just fall off the end of the function, returning the default value of `None`. `None` is false, so the exception will be re-raised automatically. If you wished, you could be more explicit and add a [`return`](https://docs.python.org/3/reference/simple_stmts.html#return) statement at the marked location.
+```
+classDatabaseConnection:
+  ...
+  def__exit__ (self, type, value, tb):
+    if tb is None:
+      # No exception, so commit
+      self.commit()
+    else:
+      # Exception occurred, so rollback.
+      self.rollback()
+      # return False

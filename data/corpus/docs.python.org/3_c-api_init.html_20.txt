@@ -1,0 +1,41 @@
+Title: Thread Management Macros in Python C API
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This section describes two key macros in the Python C API for managing threads: `Py_BEGIN_ALLOW_THREADS` and `Py_END_ALLOW_THREADS`. The former saves the current thread state and must be matched with the latter, which restores the thread state. Proper usage is emphasized for correct thread management.
+---
+
+Py_BEGIN_ALLOW_THREADS[¶](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This macro expands to `{ PyThreadState *_save; _save = PyEval_SaveThread();`. Note that it contains an opening brace; it must be matched with a following [`Py_END_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Py_END_ALLOW_THREADS") macro. See above for further discussion of this macro. 
+
+Py_END_ALLOW_THREADS[¶](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This macro expands to `PyEval_RestoreThread(_save); }`. Note that it contains a closing brace; it must be matched with an earlier [`Py_BEGIN_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Py_BEGIN_ALLOW_THREADS") macro. See above for further discussion of this macro. 
+
+Py_BLOCK_THREADS[¶](https://docs.python.org/3/c-api/init.html#c.Py_BLOCK_THREADS "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This macro expands to `PyEval_RestoreThread(_save);`: it is equivalent to [`Py_END_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Py_END_ALLOW_THREADS") without the closing brace. 
+
+Py_UNBLOCK_THREADS[¶](https://docs.python.org/3/c-api/init.html#c.Py_UNBLOCK_THREADS "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This macro expands to `_save = PyEval_SaveThread();`: it is equivalent to [`Py_BEGIN_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Py_BEGIN_ALLOW_THREADS") without the opening brace and variable declaration.
+### Low-level API[¶](https://docs.python.org/3/c-api/init.html#low-level-api "Link to this heading")
+All of the following functions must be called after [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize").
+Changed in version 3.7: [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize") now initializes the [GIL](https://docs.python.org/3/glossary.html#term-GIL). 
+
+[PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*PyInterpreterState_New()[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_New "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a new interpreter state object. The global interpreter lock need not be held, but may be held if it is necessary to serialize calls to this function.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `cpython.PyInterpreterState_New` with no arguments. 
+
+voidPyInterpreterState_Clear([PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*interp)[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_Clear "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Reset all information in an interpreter state object. The global interpreter lock must be held.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `cpython.PyInterpreterState_Clear` with no arguments. 
+
+voidPyInterpreterState_Delete([PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*interp)[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_Delete "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Destroy an interpreter state object. The global interpreter lock need not be held. The interpreter state must have been reset with a previous call to [`PyInterpreterState_Clear()`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState_Clear "PyInterpreterState_Clear"). 
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*PyThreadState_New([PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*interp)[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState_New "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a new thread state object belonging to the given interpreter object. The global interpreter lock need not be held, but may be held if it is necessary to serialize calls to this function.

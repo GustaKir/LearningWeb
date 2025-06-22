@@ -1,0 +1,85 @@
+Title: PDB List Commands
+URL: https://docs.python.org/3/library/pdb.html
+Summary: The 'list' command (l) displays source code lines around the current line in a Python file. It accepts up to two arguments to customize the range of lines listed, with the current line marked by '->' and exceptions by '>>'. The 'longlist' command (ll) shows all source code for the current function or frame.
+---
+
+l(ist) [first[, last]][¶](https://docs.python.org/3/library/pdb.html#pdbcommand-list "Link to this definition")
+    
+List source code for the current file. Without arguments, list 11 lines around the current line or continue the previous listing. With `.` as argument, list 11 lines around the current line. With one argument, list 11 lines around at that line. With two arguments, list the given range; if the second argument is less than the first, it is interpreted as a count.
+The current line in the current frame is indicated by `->`. If an exception is being debugged, the line where the exception was originally raised or propagated is indicated by `>>`, if it differs from the current line.
+Changed in version 3.2: Added the `>>` marker. 
+
+ll | longlist[¶](https://docs.python.org/3/library/pdb.html#pdbcommand-ll "Link to this definition")
+    
+List all source code for the current function or frame. Interesting lines are marked as for [`list`](https://docs.python.org/3/library/pdb.html#pdbcommand-list).
+Added in version 3.2. 
+
+a(rgs)[¶](https://docs.python.org/3/library/pdb.html#pdbcommand-args "Link to this definition")
+    
+Print the arguments of the current function and their current values. 
+
+p expression[¶](https://docs.python.org/3/library/pdb.html#pdbcommand-p "Link to this definition")
+    
+Evaluate _expression_ in the current context and print its value.
+Note
+`print()` can also be used, but is not a debugger command — this executes the Python [`print()`](https://docs.python.org/3/library/functions.html#print "print") function. 
+
+pp expression[¶](https://docs.python.org/3/library/pdb.html#pdbcommand-pp "Link to this definition")
+    
+Like the [`p`](https://docs.python.org/3/library/pdb.html#pdbcommand-p) command, except the value of _expression_ is pretty-printed using the [`pprint`](https://docs.python.org/3/library/pprint.html#module-pprint "pprint: Data pretty printer.") module. 
+
+whatis expression[¶](https://docs.python.org/3/library/pdb.html#pdbcommand-whatis "Link to this definition")
+    
+Print the type of _expression_. 
+
+source expression[¶](https://docs.python.org/3/library/pdb.html#pdbcommand-source "Link to this definition")
+    
+Try to get source code of _expression_ and display it.
+Added in version 3.2. 
+
+display [expression][¶](https://docs.python.org/3/library/pdb.html#pdbcommand-display "Link to this definition")
+    
+Display the value of _expression_ if it changed, each time execution stops in the current frame.
+Without _expression_ , list all display expressions for the current frame.
+Note
+Display evaluates _expression_ and compares to the result of the previous evaluation of _expression_ , so when the result is mutable, display may not be able to pick up the changes.
+Example:
+```
+lst = []
+breakpoint()
+pass
+lst.append(1)
+print(lst)
+
+```
+
+Display won’t realize `lst` has been changed because the result of evaluation is modified in place by `lst.append(1)` before being compared:
+```
+> example.py(3)<module>()
+-> pass
+(Pdb) display lst
+display lst: []
+(Pdb) n
+> example.py(4)<module>()
+-> lst.append(1)
+(Pdb) n
+> example.py(5)<module>()
+-> print(lst)
+(Pdb)
+
+```
+
+You can do some tricks with copy mechanism to make it work:
+```
+> example.py(3)<module>()
+-> pass
+(Pdb) display lst[:]
+display lst[:]: []
+(Pdb) n
+> example.py(4)<module>()
+-> lst.append(1)
+(Pdb) n
+> example.py(5)<module>()
+-> print(lst)
+display lst[:]: [1] [old: []]
+(Pdb)

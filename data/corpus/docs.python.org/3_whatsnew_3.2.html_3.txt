@@ -1,0 +1,47 @@
+Title: Enhancements in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: This document discusses PEP 389, which introduces a new command line parsing module, and PEP 391, which enables dictionary-based configuration for the logging module. Additional resources are provided for migrating from optparse to argparse.
+---
+
+```
+
+See also 
+
+[**PEP 389**](https://peps.python.org/pep-0389/) - New Command Line Parsing Module
+    
+PEP written by Steven Bethard.
+[Migrating optparse code to argparse](https://docs.python.org/3/howto/argparse-optparse.html#upgrading-optparse-code) for details on the differences from [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.").
+## PEP 391: Dictionary Based Configuration for Logging[¶](https://docs.python.org/3/whatsnew/3.2.html#pep-391-dictionary-based-configuration-for-logging "Link to this heading")
+The [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") module provided two kinds of configuration, one style with function calls for each option or another style driven by an external file saved in a [`configparser`](https://docs.python.org/3/library/configparser.html#module-configparser "configparser: Configuration file parser.") format. Those options did not provide the flexibility to create configurations from JSON or YAML files, nor did they support incremental configuration, which is needed for specifying logger options from a command line.
+To support a more flexible style, the module now offers [`logging.config.dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig") for specifying logging configuration with plain Python dictionaries. The configuration options include formatters, handlers, filters, and loggers. Here’s a working example of a configuration dictionary:
+```
+{"version": 1,
+ "formatters": {"brief": {"format": "%(levelname)-8s: %(name)-15s: %(message)s"},
+        "full": {"format": "%(asctime)s%(name)-15s%(levelname)-8s%(message)s"}
+        },
+ "handlers": {"console": {
+          "class": "logging.StreamHandler",
+          "formatter": "brief",
+          "level": "INFO",
+          "stream": "ext://sys.stdout"},
+       "console_priority": {
+          "class": "logging.StreamHandler",
+          "formatter": "full",
+          "level": "ERROR",
+          "stream": "ext://sys.stderr"}
+       },
+ "root": {"level": "DEBUG", "handlers": ["console", "console_priority"]}}
+
+```
+
+If that dictionary is stored in a file called `conf.json`, it can be loaded and called with code like this:
+>>>```
+>>> importjson,logging.config
+>>> with open('conf.json') as f:
+...   conf = json.load(f)
+...
+>>> logging.config.dictConfig(conf)
+>>> logging.info("Transaction completed normally")
+INFO  : root      : Transaction completed normally
+>>> logging.critical("Abnormal termination")
+2011-02-17 11:14:36,694 root      CRITICAL Abnormal termination

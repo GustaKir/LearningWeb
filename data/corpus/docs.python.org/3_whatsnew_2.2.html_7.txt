@@ -1,0 +1,57 @@
+Title: PEP 255: Simple Generators
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: This section introduces generators, a new feature in Python that works in conjunction with iterators. It discusses the behavior of function calls and the creation of a private namespace for local variables, as well as the mechanics of returning from functions.
+---
+
+```
+
+Note that you can only go forward in an iterator; there’s no way to get the previous element, reset the iterator, or make a copy of it. An iterator object could provide such additional capabilities, but the iterator protocol only requires a [`next()`](https://docs.python.org/3/library/functions.html#next "next") method.
+See also 
+
+[**PEP 234**](https://peps.python.org/pep-0234/) - Iterators
+    
+Written by Ka-Ping Yee and GvR; implemented by the Python Labs crew, mostly by GvR and Tim Peters.
+## PEP 255: Simple Generators[¶](https://docs.python.org/3/whatsnew/2.2.html#pep-255-simple-generators "Link to this heading")
+Generators are another new feature, one that interacts with the introduction of iterators.
+You’re doubtless familiar with how function calls work in Python or C. When you call a function, it gets a private namespace where its local variables are created. When the function reaches a [`return`](https://docs.python.org/3/reference/simple_stmts.html#return) statement, the local variables are destroyed and the resulting value is returned to the caller. A later call to the same function will get a fresh new set of local variables. But, what if the local variables weren’t thrown away on exiting a function? What if you could later resume the function where it left off? This is what generators provide; they can be thought of as resumable functions.
+Here’s the simplest example of a generator function:
+```
+defgenerate_ints(N):
+  for i in range(N):
+    yield i
+
+```
+
+A new keyword, [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield), was introduced for generators. Any function containing a `yield` statement is a generator function; this is detected by Python’s bytecode compiler which compiles the function specially as a result. Because a new keyword was introduced, generators must be explicitly enabled in a module by including a `from __future__ import generators` statement near the top of the module’s source code. In Python 2.3 this statement will become unnecessary.
+When you call a generator function, it doesn’t return a single value; instead it returns a generator object that supports the iterator protocol. On executing the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) statement, the generator outputs the value of `i`, similar to a [`return`](https://docs.python.org/3/reference/simple_stmts.html#return) statement. The big difference between `yield` and a `return` statement is that on reaching a `yield` the generator’s state of execution is suspended and local variables are preserved. On the next call to the generator’s `next()` method, the function will resume executing immediately after the `yield` statement. (For complicated reasons, the `yield` statement isn’t allowed inside the `try` block of a [`try`](https://docs.python.org/3/reference/compound_stmts.html#try)…[`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) statement; read [**PEP 255**](https://peps.python.org/pep-0255/) for a full explanation of the interaction between `yield` and exceptions.)
+Here’s a sample usage of the `generate_ints()` generator:
+>>>```
+>>> gen = generate_ints(3)
+>>> gen
+<generator object at 0x8117f90>
+>>> gen.next()
+0
+>>> gen.next()
+1
+>>> gen.next()
+2
+>>> gen.next()
+Traceback (most recent call last):
+ File "<stdin>", line 1, in ?
+ File "<stdin>", line 2, in generate_ints
+StopIteration
+
+```
+
+You could equally write `for i in generate_ints(5)`, or `a,b,c = generate_ints(3)`.
+Inside a generator function, the [`return`](https://docs.python.org/3/reference/simple_stmts.html#return) statement can only be used without a value, and signals the end of the procession of values; afterwards the generator cannot return any further values. `return` with a value, such as `return 5`, is a syntax error inside a generator function. The end of the generator’s results can also be indicated by raising [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") manually, or by just letting the flow of execution fall off the bottom of the function.
+You could achieve the effect of generators manually by writing your own class and storing all the local variables of the generator as instance variables. For example, returning a list of integers could be done by setting `self.count` to 0, and having the [`next()`](https://docs.python.org/3/library/functions.html#next "next") method increment `self.count` and return it. However, for a moderately complicated generator, writing a corresponding class would be much messier. `Lib/test/test_generators.py` contains a number of more interesting examples. The simplest one implements an in-order traversal of a tree using generators recursively.
+```
+# A recursive generator that generates Tree leaves in in-order.
+definorder(t):
+  if t:
+    for x in inorder(t.left):
+      yield x
+    yield t.label
+    for x in inorder(t.right):
+      yield x

@@ -1,0 +1,67 @@
+Title: Setting Up Python GDB Helpers
+URL: https://docs.python.org/3/howto/gdb_helpers.html
+Summary: This section provides guidance on setting up GDB helpers for Python, particularly when CPython is built from source. It explains the need to add the directory containing the `python-gdb.py` file to GDB’s 'auto-load-safe-path' and includes a note on handling potential warnings in recent GDB versions.
+---
+
+The extension is built with Python, but might be distributed separately or not at all. Below, we include tips for a few common systems as examples. Note that even if the instructions match your system, they might be outdated.
+### Setup with Python built from source[¶](https://docs.python.org/3/howto/gdb_helpers.html#setup-with-python-built-from-source "Link to this heading")
+When you build CPython from source, debugging information should be available, and the build should add a `python-gdb.py` file to the root directory of your repository.
+To activate support, you must add the directory containing `python-gdb.py` to GDB’s “auto-load-safe-path”. If you haven’t done this, recent versions of GDB will print out a warning with instructions on how to do this.
+Note
+If you do not see instructions for your version of GDB, put this in your configuration file (`~/.gdbinit` or `~/.config/gdb/gdbinit`):
+```
+add-auto-load-safe-path /path/to/cpython
+
+```
+
+You can also add multiple paths, separated by `:`.
+### Setup for Python from a Linux distro[¶](https://docs.python.org/3/howto/gdb_helpers.html#setup-for-python-from-a-linux-distro "Link to this heading")
+Most Linux systems provide debug information for the system Python in a package called `python-debuginfo`, `python-dbg` or similar. For example:
+  * Fedora:
+> ```
+sudodnfinstallgdb
+sudodnfdebuginfo-installpython3
+
+```
+
+  * Ubuntu:
+> ```
+sudoaptinstallgdbpython3-dbg
+
+```
+
+
+
+On several recent Linux systems, GDB can download debugging symbols automatically using _debuginfod_. However, this will not install the `python-gdb.py` extension; you generally do need to install the debug info package separately.
+## Using the Debug build and Development mode[¶](https://docs.python.org/3/howto/gdb_helpers.html#using-the-debug-build-and-development-mode "Link to this heading")
+For easier debugging, you might want to:
+  * Use a [debug build](https://docs.python.org/3/using/configure.html#debug-build) of Python. (When building from source, use `configure --with-pydebug`. On Linux distros, install and run a package like `python-debug` or `python-dbg`, if available.)
+  * Use the runtime [development mode](https://docs.python.org/3/library/devmode.html#devmode) (`-X dev`).
+
+
+Both enable extra assertions and disable some optimizations. Sometimes this hides the bug you are trying to find, but in most cases they make the process easier.
+## Using the `python-gdb` extension[¶](https://docs.python.org/3/howto/gdb_helpers.html#using-the-python-gdb-extension "Link to this heading")
+When the extension is loaded, it provides two main features: pretty printers for Python values, and additional commands.
+### Pretty-printers[¶](https://docs.python.org/3/howto/gdb_helpers.html#pretty-printers "Link to this heading")
+This is what a GDB backtrace looks like (truncated) when this extension is enabled:
+```
+#0 0x000000000041a6b1 in PyObject_Malloc (nbytes=Cannot access memory at address 0x7fffff7fefe8
+) at Objects/obmalloc.c:748
+#1 0x000000000041b7c0 in _PyObject_DebugMallocApi (id=111 'o', nbytes=24) at Objects/obmalloc.c:1445
+#2 0x000000000041b717 in _PyObject_DebugMalloc (nbytes=24) at Objects/obmalloc.c:1412
+#3 0x000000000044060a in _PyUnicode_New (length=11) at Objects/unicodeobject.c:346
+#4 0x00000000004466aa in PyUnicodeUCS2_DecodeUTF8Stateful (s=0x5c2b8d "__lltrace__", size=11, errors=0x0, consumed=
+  0x0) at Objects/unicodeobject.c:2531
+#5 0x0000000000446647 in PyUnicodeUCS2_DecodeUTF8 (s=0x5c2b8d "__lltrace__", size=11, errors=0x0)
+  at Objects/unicodeobject.c:2495
+#6 0x0000000000440d1b in PyUnicodeUCS2_FromStringAndSize (u=0x5c2b8d "__lltrace__", size=11)
+  at Objects/unicodeobject.c:551
+#7 0x0000000000440d94 in PyUnicodeUCS2_FromString (u=0x5c2b8d "__lltrace__") at Objects/unicodeobject.c:569
+#8 0x0000000000584abd in PyDict_GetItemString (v=
+  {'Yuck': <type at remote 0xad4730>, '__builtins__': <module at remote 0x7ffff7fd5ee8>, '__file__': 'Lib/test/crashers/nasty_eq_vs_dict.py', '__package__': None, 'y': <Yuck(i=0) at remote 0xaacd80>, 'dict': {0: 0, 1: 1, 2: 2, 3: 3}, '__cached__': None, '__name__': '__main__', 'z': <Yuck(i=0) at remote 0xaace60>, '__doc__': None}, key=
+  0x5c2b8d "__lltrace__") at Objects/dictobject.c:2171
+
+```
+
+Notice how the dictionary argument to `PyDict_GetItemString` is displayed as its `repr()`, rather than an opaque `PyObject *` pointer.
+The extension works by supplying a custom printing routine for values of type `PyObject *`. If you need to access lower-level details of an object, then cast the value to a pointer of the appropriate type. For example:

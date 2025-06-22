@@ -1,0 +1,52 @@
+Title: Using HTTPBasicAuthHandler in urllib
+URL: https://docs.python.org/3/howto/urllib2.html
+Summary: This section demonstrates how to create a password manager using urllib, add credentials for HTTP Basic Authentication, and build an opener to handle authenticated requests. It also mentions that the opener includes handlers for normal situations by default.
+---
+
+```
+# create a password manager
+password_mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+# Add the username and password.
+# If we knew the realm, we could use it instead of None.
+top_level_url = "http://example.com/foo/"
+password_mgr.add_password(None, top_level_url, username, password)
+handler = urllib.request.HTTPBasicAuthHandler(password_mgr)
+# create "opener" (OpenerDirector instance)
+opener = urllib.request.build_opener(handler)
+# use the opener to fetch a URL
+opener.open(a_url)
+# Install the opener.
+# Now all calls to urllib.request.urlopen use our opener.
+urllib.request.install_opener(opener)
+
+```
+
+Note
+In the above example we only supplied our `HTTPBasicAuthHandler` to `build_opener`. By default openers have the handlers for normal situations – `ProxyHandler` (if a proxy setting such as an `http_proxy` environment variable is set), `UnknownHandler`, `HTTPHandler`, `HTTPDefaultErrorHandler`, `HTTPRedirectHandler`, `FTPHandler`, `FileHandler`, `DataHandler`, `HTTPErrorProcessor`.
+`top_level_url` is in fact _either_ a full URL (including the ‘http:’ scheme component and the hostname and optionally the port number) e.g. `"http://example.com/"` _or_ an “authority” (i.e. the hostname, optionally including the port number) e.g. `"example.com"` or `"example.com:8080"` (the latter example includes a port number). The authority, if present, must NOT contain the “userinfo” component - for example `"joe:password@example.com"` is not correct.
+## Proxies[¶](https://docs.python.org/3/howto/urllib2.html#proxies "Link to this heading")
+**urllib** will auto-detect your proxy settings and use those. This is through the `ProxyHandler`, which is part of the normal handler chain when a proxy setting is detected. Normally that’s a good thing, but there are occasions when it may not be helpful [[5]](https://docs.python.org/3/howto/urllib2.html#id12). One way to do this is to setup our own `ProxyHandler`, with no proxies defined. This is done using similar steps to setting up a [Basic Authentication](https://web.archive.org/web/20201215133350/http://www.voidspace.org.uk/python/articles/authentication.shtml) handler:
+>>>```
+>>> proxy_support = urllib.request.ProxyHandler({})
+>>> opener = urllib.request.build_opener(proxy_support)
+>>> urllib.request.install_opener(opener)
+
+```
+
+Note
+Currently `urllib.request` _does not_ support fetching of `https` locations through a proxy. However, this can be enabled by extending urllib.request as shown in the recipe [[6]](https://docs.python.org/3/howto/urllib2.html#id13).
+Note
+`HTTP_PROXY` will be ignored if a variable `REQUEST_METHOD` is set; see the documentation on [`getproxies()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies "urllib.request.getproxies").
+## Sockets and Layers[¶](https://docs.python.org/3/howto/urllib2.html#sockets-and-layers "Link to this heading")
+The Python support for fetching resources from the web is layered. urllib uses the [`http.client`](https://docs.python.org/3/library/http.client.html#module-http.client "http.client: HTTP and HTTPS protocol client \(requires sockets\).") library, which in turn uses the socket library.
+As of Python 2.3 you can specify how long a socket should wait for a response before timing out. This can be useful in applications which have to fetch web pages. By default the socket module has _no timeout_ and can hang. Currently, the socket timeout is not exposed at the http.client or urllib.request levels. However, you can set the default timeout globally for all sockets using
+```
+importsocket
+importurllib.request
+# timeout in seconds
+timeout = 10
+socket.setdefaulttimeout(timeout)
+# this call to urllib.request.urlopen now uses the default timeout
+# we have set in the socket module
+req = urllib.request.Request('http://www.voidspace.org.uk')
+response = urllib.request.urlopen(req)

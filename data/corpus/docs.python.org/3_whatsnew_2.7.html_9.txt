@@ -1,0 +1,88 @@
+Title: Introduction to Memoryview in Python
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: This section demonstrates the usage of the `memoryview` object in Python, showcasing its ability to provide access to the memory of byte-like objects. It illustrates operations like indexing, slicing, and converting memoryviews to bytes and lists, while also highlighting the immutability of memoryviews created from immutable objects and how mutable objects can be modified.
+---
+
+```
+>>> importstring
+>>> m = memoryview(string.letters)
+>>> m
+<memory at 0x37f850>
+>>> len(m)      # Returns length of underlying object
+52
+>>> m[0], m[25], m[26]  # Indexing returns one byte
+('a', 'z', 'A')
+>>> m2 = m[0:26]     # Slicing returns another memoryview
+>>> m2
+<memory at 0x37f080>
+
+```
+
+The content of the view can be converted to a string of bytes or a list of integers:
+>>>```
+>>> m2.tobytes()
+'abcdefghijklmnopqrstuvwxyz'
+>>> m2.tolist()
+[97, 98, 99, 100, 101, 102, 103, ... 121, 122]
+>>>
+
+```
+
+[`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview") objects allow modifying the underlying object if it’s a mutable object.
+>>>```
+>>> m2[0] = 75
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: cannot modify read-only memory
+>>> b = bytearray(string.letters) # Creating a mutable object
+>>> b
+bytearray(b'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+>>> mb = memoryview(b)
+>>> mb[0] = '*'     # Assign to view, changing the bytearray.
+>>> b[0:5]       # The bytearray has been changed.
+bytearray(b'*bcde')
+>>>
+
+```
+
+See also 
+
+[**PEP 3137**](https://peps.python.org/pep-3137/) - Immutable Bytes and Mutable Buffer
+    
+PEP written by Guido van Rossum. Implemented by Travis Oliphant, Antoine Pitrou and others. Backported to 2.7 by Antoine Pitrou; [bpo-2396](https://bugs.python.org/issue?@action=redirect&bpo=2396).
+## Other Language Changes[¶](https://docs.python.org/3/whatsnew/2.7.html#other-language-changes "Link to this heading")
+Some smaller changes made to the core Python language are:
+  * The syntax for set literals has been backported from Python 3.x. Curly brackets are used to surround the contents of the resulting mutable set; set literals are distinguished from dictionaries by not containing colons and values. `{}` continues to represent an empty dictionary; use `set()` for an empty set.
+>>>```
+>>> {1, 2, 3, 4, 5}
+set([1, 2, 3, 4, 5])
+>>> set() # empty set
+set([])
+>>> {}  # empty dict
+{}
+
+```
+
+Backported by Alexandre Vassalotti; [bpo-2335](https://bugs.python.org/issue?@action=redirect&bpo=2335).
+  * Dictionary and set comprehensions are another feature backported from 3.x, generalizing list/generator comprehensions to use the literal syntax for sets and dictionaries.
+>>>```
+>>> {x: x*x for x in range(6)}
+{0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
+>>> {('a'*x) for x in range(6)}
+set(['', 'a', 'aa', 'aaa', 'aaaa', 'aaaaa'])
+
+```
+
+Backported by Alexandre Vassalotti; [bpo-2333](https://bugs.python.org/issue?@action=redirect&bpo=2333).
+  * The [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement can now use multiple context managers in one statement. Context managers are processed from left to right and each one is treated as beginning a new `with` statement. This means that:
+```
+with A() as a, B() as b:
+  ... suite of statements ...
+
+```
+
+is equivalent to:
+```
+with A() as a:
+  with B() as b:
+    ... suite of statements ...

@@ -1,0 +1,31 @@
+Title: C API Updates in Python
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section outlines recent changes to the C API, including improvements to lock handling, modifications to `BufferedReader.peek()` behavior, the introduction of the `Py_ALWAYS_INLINE` macro for function inlining, and other enhancements to the Python API.
+---
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id288 "Link to this heading")
+  * [bpo-41710](https://bugs.python.org/issue?@action=redirect&bpo=41710): The PyThread_acquire_lock_timed() function now clamps the timeout if it is too large, rather than aborting the process. Patch by Victor Stinner.
+  * [bpo-44687](https://bugs.python.org/issue?@action=redirect&bpo=44687): `BufferedReader.peek()` no longer raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") when the entire file has already been buffered.
+  * [bpo-45116](https://bugs.python.org/issue?@action=redirect&bpo=45116): Add the [`Py_ALWAYS_INLINE`](https://docs.python.org/3/c-api/intro.html#c.Py_ALWAYS_INLINE "Py_ALWAYS_INLINE") macro to ask the compiler to always inline a static inline function. The compiler can ignore it and decides to not inline the function. Patch by Victor Stinner.
+  * [bpo-45094](https://bugs.python.org/issue?@action=redirect&bpo=45094): Add the [`Py_NO_INLINE`](https://docs.python.org/3/c-api/intro.html#c.Py_NO_INLINE "Py_NO_INLINE") macro to disable inlining on a function. Patch by Victor Stinner.
+  * [bpo-45061](https://bugs.python.org/issue?@action=redirect&bpo=45061): Add a deallocator to the [`bool`](https://docs.python.org/3/library/functions.html#bool "bool") type to detect refcount bugs in C extensions which call `Py_DECREF(Py_True);` or `Py_DECREF(Py_False);` by mistake. Patch by Victor Stinner.
+  * [bpo-42035](https://bugs.python.org/issue?@action=redirect&bpo=42035): Add a new [`PyType_GetQualName()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetQualName "PyType_GetQualName") function to get type’s qualified name.
+  * [bpo-41103](https://bugs.python.org/issue?@action=redirect&bpo=41103): Reverts removal of the old buffer protocol because they are part of stable ABI.
+  * [bpo-44751](https://bugs.python.org/issue?@action=redirect&bpo=44751): Remove `crypt.h` include from the public `Python.h` header.
+  * [bpo-42747](https://bugs.python.org/issue?@action=redirect&bpo=42747): The `Py_TPFLAGS_HAVE_VERSION_TAG` type flag now does nothing. The `Py_TPFLAGS_HAVE_AM_SEND` flag (which was added in 3.10) is removed. Both were unnecessary because it is not possible to have type objects with the relevant fields missing.
+  * [bpo-44530](https://bugs.python.org/issue?@action=redirect&bpo=44530): Added the `co_qualname` to the `PyCodeObject` structure to propagate the qualified name from the compiler to code objects.
+Patch by Gabriele N. Tornetta
+  * [bpo-44441](https://bugs.python.org/issue?@action=redirect&bpo=44441): [`Py_RunMain()`](https://docs.python.org/3/c-api/init.html#c.Py_RunMain "Py_RunMain") now resets `PyImport_Inittab` to its initial value at exit. It must be possible to call [`PyImport_AppendInittab()`](https://docs.python.org/3/c-api/import.html#c.PyImport_AppendInittab "PyImport_AppendInittab") or [`PyImport_ExtendInittab()`](https://docs.python.org/3/c-api/import.html#c.PyImport_ExtendInittab "PyImport_ExtendInittab") at each Python initialization. Patch by Victor Stinner.
+  * [bpo-39947](https://bugs.python.org/issue?@action=redirect&bpo=39947): Remove 4 private trashcan C API functions which were only kept for the backward compatibility of the stable ABI with Python 3.8 and older, since the trashcan API was not usable with the limited C API on Python 3.8 and older. The trashcan API was excluded from the limited C API in Python 3.9.
+Removed functions:
+    * _PyTrash_deposit_object()
+    * _PyTrash_destroy_chain()
+    * _PyTrash_thread_deposit_object()
+    * _PyTrash_thread_destroy_chain()
+The trashcan C API was never usable with the limited C API, since old trashcan macros accessed directly [`PyThreadState`](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState") members like `_tstate->trash_delete_nesting`, whereas the [`PyThreadState`](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState") structure is opaque in the limited C API.
+Exclude also the `PyTrash_UNWIND_LEVEL` constant from the C API.
+Patch by Victor Stinner.
+  * [bpo-40939](https://bugs.python.org/issue?@action=redirect&bpo=40939): Removed documentation for the removed `PyParser_*` C API.
+  * [bpo-43795](https://bugs.python.org/issue?@action=redirect&bpo=43795): The list in [Contents of Limited API](https://docs.python.org/3/c-api/stable.html#limited-api-list) now shows the public name [`PyFrameObject`](https://docs.python.org/3/c-api/frame.html#c.PyFrameObject "PyFrameObject") rather than `_frame`. The non-existing entry `_node` no longer appears in the list.
+  * [bpo-44378](https://bugs.python.org/issue?@action=redirect&bpo=44378): [`Py_IS_TYPE()`](https://docs.python.org/3/c-api/structures.html#c.Py_IS_TYPE "Py_IS_TYPE") no longer uses [`Py_TYPE()`](https://docs.python.org/3/c-api/structures.html#c.Py_TYPE "Py_TYPE") to avoid a compiler warning: no longer cast `const PyObject*` to `PyObject*`. Patch by Victor Stinner.
+  * [bpo-39573](https:/

@@ -1,0 +1,40 @@
+Title: Registering Archive Formats in shutil
+URL: https://docs.python.org/3/library/shutil.html
+Summary: The document discusses the function `shutil.register_archive_format()` which allows users to register a new archiver for a specified format. The function requires a name, a callable for unpacking archives, and optional extra arguments such as `owner`, `group`, `dry_run`, and `logger`. The callable receives the base name of the file and the base directory as parameters.
+---
+
+You can register new formats or provide your own archiver for any existing formats, by using [`register_archive_format()`](https://docs.python.org/3/library/shutil.html#shutil.register_archive_format "shutil.register_archive_format"). 
+
+shutil.register_archive_format(_name_ , _function_[, _extra_args_[, _description_]])[¶](https://docs.python.org/3/library/shutil.html#shutil.register_archive_format "Link to this definition")
+    
+Register an archiver for the format _name_.
+_function_ is the callable that will be used to unpack archives. The callable will receive the _base_name_ of the file to create, followed by the _base_dir_ (which defaults to [`os.curdir`](https://docs.python.org/3/library/os.html#os.curdir "os.curdir")) to start archiving from. Further arguments are passed as keyword arguments: _owner_ , _group_ , _dry_run_ and _logger_ (as passed in [`make_archive()`](https://docs.python.org/3/library/shutil.html#shutil.make_archive "shutil.make_archive")).
+If _function_ has the custom attribute `function.supports_root_dir` set to `True`, the _root_dir_ argument is passed as a keyword argument. Otherwise the current working directory of the process is temporarily changed to _root_dir_ before calling _function_. In this case [`make_archive()`](https://docs.python.org/3/library/shutil.html#shutil.make_archive "shutil.make_archive") is not thread-safe.
+If given, _extra_args_ is a sequence of `(name, value)` pairs that will be used as extra keywords arguments when the archiver callable is used.
+_description_ is used by [`get_archive_formats()`](https://docs.python.org/3/library/shutil.html#shutil.get_archive_formats "shutil.get_archive_formats") which returns the list of archivers. Defaults to an empty string.
+Changed in version 3.12: Added support for functions supporting the _root_dir_ argument. 
+
+shutil.unregister_archive_format(_name_)[¶](https://docs.python.org/3/library/shutil.html#shutil.unregister_archive_format "Link to this definition")
+    
+Remove the archive format _name_ from the list of supported formats. 
+
+shutil.unpack_archive(_filename_[, _extract_dir_[, _format_[, _filter_]]])[¶](https://docs.python.org/3/library/shutil.html#shutil.unpack_archive "Link to this definition")
+    
+Unpack an archive. _filename_ is the full path of the archive.
+_extract_dir_ is the name of the target directory where the archive is unpacked. If not provided, the current working directory is used.
+_format_ is the archive format: one of “zip”, “tar”, “gztar”, “bztar”, or “xztar”. Or any other format registered with [`register_unpack_format()`](https://docs.python.org/3/library/shutil.html#shutil.register_unpack_format "shutil.register_unpack_format"). If not provided, [`unpack_archive()`](https://docs.python.org/3/library/shutil.html#shutil.unpack_archive "shutil.unpack_archive") will use the archive file name extension and see if an unpacker was registered for that extension. In case none is found, a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised.
+The keyword-only _filter_ argument is passed to the underlying unpacking function. For zip files, _filter_ is not accepted. For tar files, it is recommended to set it to `'data'`, unless using features specific to tar and UNIX-like filesystems. (See [Extraction filters](https://docs.python.org/3/library/tarfile.html#tarfile-extraction-filter) for details.) The `'data'` filter will become the default for tar files in Python 3.14.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `shutil.unpack_archive` with arguments `filename`, `extract_dir`, `format`.
+Warning
+Never extract archives from untrusted sources without prior inspection. It is possible that files are created outside of the path specified in the _extract_dir_ argument, e.g. members that have absolute filenames starting with “/” or filenames with two dots “..”.
+Changed in version 3.7: Accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object) for _filename_ and _extract_dir_.
+Changed in version 3.12: Added the _filter_ argument. 
+
+shutil.register_unpack_format(_name_ , _extensions_ , _function_[, _extra_args_[, _description_]])[¶](https://docs.python.org/3/library/shutil.html#shutil.register_unpack_format "Link to this definition")
+    
+Registers an unpack format. _name_ is the name of the format and _extensions_ is a list of extensions corresponding to the format, like `.zip` for Zip files.
+_function_ is the callable that will be used to unpack archives. The callable will receive:
+  * the path of the archive, as a positional argument;
+  * the directory the archive must be extracted to, as a positional argument;
+  * possibly a _filter_ keyword argument, if it was given to [`unpack_archive()`](https://docs.python.org/3/library/shutil.html#shutil.unpack_archive "shutil.unpack_archive");
+  * additional keyword arguments, specified by _extra_args_ as a sequence of `(name, value)` tuples.

@@ -1,0 +1,26 @@
+Title: Python 3.10 New Features: Asyncio and FunctionType Inheritance
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: Python 3.10 introduces `asyncio.run_coroutine_threadsafe()` for running coroutines in different thread event loops. Additionally, the `types.FunctionType` constructor now inherits current builtins if the globals dictionary lacks a `__builtins__` key, aligning its behavior with `eval()` and `exec()` functions.
+---
+
+```
+
+If `foo()` was specifically designed _not_ to run in the current thread’s running event loop (e.g. running in another thread’s event loop), consider using [`asyncio.run_coroutine_threadsafe()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.run_coroutine_threadsafe "asyncio.run_coroutine_threadsafe") instead.
+(Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley in [bpo-42392](https://bugs.python.org/issue?@action=redirect&bpo=42392).)
+  * The [`types.FunctionType`](https://docs.python.org/3/library/types.html#types.FunctionType "types.FunctionType") constructor now inherits the current builtins if the _globals_ dictionary has no `"__builtins__"` key, rather than using `{"None": None}` as builtins: same behavior as [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval") and [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec") functions. Defining a function with `def function(...): ...` in Python is not affected, globals cannot be overridden with this syntax: it also inherits the current builtins. (Contributed by Victor Stinner in [bpo-42990](https://bugs.python.org/issue?@action=redirect&bpo=42990).)
+
+
+### Changes in the C API[¶](https://docs.python.org/3/whatsnew/3.10.html#changes-in-the-c-api "Link to this heading")
+  * The C API functions `PyParser_SimpleParseStringFlags`, `PyParser_SimpleParseStringFlagsFilename`, `PyParser_SimpleParseFileFlags`, `PyNode_Compile` and the type used by these functions, `struct _node`, were removed due to the switch to the new PEG parser.
+Source should be now be compiled directly to a code object using, for example, [`Py_CompileString()`](https://docs.python.org/3/c-api/veryhigh.html#c.Py_CompileString "Py_CompileString"). The resulting code object can then be evaluated using, for example, [`PyEval_EvalCode()`](https://docs.python.org/3/c-api/veryhigh.html#c.PyEval_EvalCode "PyEval_EvalCode").
+Specifically:
+    * A call to `PyParser_SimpleParseStringFlags` followed by `PyNode_Compile` can be replaced by calling [`Py_CompileString()`](https://docs.python.org/3/c-api/veryhigh.html#c.Py_CompileString "Py_CompileString").
+    * There is no direct replacement for `PyParser_SimpleParseFileFlags`. To compile code from a `FILE *` argument, you will need to read the file in C and pass the resulting buffer to [`Py_CompileString()`](https://docs.python.org/3/c-api/veryhigh.html#c.Py_CompileString "Py_CompileString").
+    * To compile a file given a `char *` filename, explicitly open the file, read it and compile the result. One way to do this is using the [`io`](https://docs.python.org/3/library/io.html#module-io "io: Core tools for working with streams.") module with [`PyImport_ImportModule()`](https://docs.python.org/3/c-api/import.html#c.PyImport_ImportModule "PyImport_ImportModule"), [`PyObject_CallMethod()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethod "PyObject_CallMethod"), [`PyBytes_AsString()`](https://docs.python.org/3/c-api/bytes.html#c.PyBytes_AsString "PyBytes_AsString") and [`Py_CompileString()`](https://docs.python.org/3/c-api/veryhigh.html#c.Py_CompileString "Py_CompileString"), as sketched below. (Declarations and error handling are omitted.)
+```
+io_module = Import_ImportModule("io");
+fileobject = PyObject_CallMethod(io_module, "open", "ss", filename, "rb");
+source_bytes_object = PyObject_CallMethod(fileobject, "read", "");
+result = PyObject_CallMethod(fileobject, "close", "");
+source_buf = PyBytes_AsString(source_bytes_object);
+code = Py_CompileString(source_buf, filename, Py_file_input);

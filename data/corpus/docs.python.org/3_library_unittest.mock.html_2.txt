@@ -1,0 +1,96 @@
+Title: Configuring Mock Behavior in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section discusses ways to configure the behavior of mocks in Python's unittest.mock library, including using side effects to return specific values and the _spec_ argument to enforce attribute presence. It also introduces the patch() decorator/context manager for replacing objects or classes with mocks during tests.
+---
+
+```
+>>> values = {'a': 1, 'b': 2, 'c': 3}
+>>> defside_effect(arg):
+...   return values[arg]
+...
+>>> mock.side_effect = side_effect
+>>> mock('a'), mock('b'), mock('c')
+(1, 2, 3)
+>>> mock.side_effect = [5, 4, 3, 2, 1]
+>>> mock(), mock(), mock()
+(5, 4, 3)
+
+```
+
+Mock has many other ways you can configure it and control its behaviour. For example the _spec_ argument configures the mock to take its specification from another object. Attempting to access attributes or methods on the mock that don’t exist on the spec will fail with an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError").
+The [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") decorator / context manager makes it easy to mock classes or objects in a module under test. The object you specify will be replaced with a mock (or other object) during the test and restored when the test ends:
+>>>```
+>>> fromunittest.mockimport patch
+>>> @patch('module.ClassName2')
+... @patch('module.ClassName1')
+... deftest(MockClass1, MockClass2):
+...   module.ClassName1()
+...   module.ClassName2()
+...   assert MockClass1 is module.ClassName1
+...   assert MockClass2 is module.ClassName2
+...   assert MockClass1.called
+...   assert MockClass2.called
+...
+>>> test()
+
+```
+
+Note
+When you nest patch decorators the mocks are passed in to the decorated function in the same order they applied (the normal _Python_ order that decorators are applied). This means from the bottom up, so in the example above the mock for `module.ClassName1` is passed in first.
+With [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") it matters that you patch objects in the namespace where they are looked up. This is normally straightforward, but for a quick guide read [where to patch](https://docs.python.org/3/library/unittest.mock.html#where-to-patch).
+As well as a decorator [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") can be used as a context manager in a with statement:
+>>>```
+>>> with patch.object(ProductionClass, 'method', return_value=None) as mock_method:
+...   thing = ProductionClass()
+...   thing.method(1, 2, 3)
+...
+>>> mock_method.assert_called_once_with(1, 2, 3)
+
+```
+
+There is also [`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") for setting values in a dictionary just during a scope and restoring the dictionary to its original state when the test ends:
+>>>```
+>>> foo = {'key': 'value'}
+>>> original = foo.copy()
+>>> with patch.dict(foo, {'newkey': 'newvalue'}, clear=True):
+...   assert foo == {'newkey': 'newvalue'}
+...
+>>> assert foo == original
+
+```
+
+Mock supports the mocking of Python [magic methods](https://docs.python.org/3/library/unittest.mock.html#magic-methods). The easiest way of using magic methods is with the [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") class. It allows you to do things like:
+>>>```
+>>> mock = MagicMock()
+>>> mock.__str__.return_value = 'foobarbaz'
+>>> str(mock)
+'foobarbaz'
+>>> mock.__str__.assert_called_with()
+
+```
+
+Mock allows you to assign functions (or other Mock instances) to magic methods and they will be called appropriately. The [`MagicMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.MagicMock "unittest.mock.MagicMock") class is just a Mock variant that has all of the magic methods pre-created for you (well, all the useful ones anyway).
+The following is an example of using magic methods with the ordinary Mock class:
+>>>```
+>>> mock = Mock()
+>>> mock.__str__ = Mock(return_value='wheeeeee')
+>>> str(mock)
+'wheeeeee'
+
+```
+
+For ensuring that the mock objects in your tests have the same api as the objects they are replacing, you can use [auto-speccing](https://docs.python.org/3/library/unittest.mock.html#auto-speccing). Auto-speccing can be done through the _autospec_ argument to patch, or the [`create_autospec()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.create_autospec "unittest.mock.create_autospec") function. Auto-speccing creates mock objects that have the same attributes and methods as the objects they are replacing, and any functions and methods (including constructors) have the same call signature as the real object.
+This ensures that your mocks will fail in the same way as your production code if they are used incorrectly:
+>>>```
+>>> fromunittest.mockimport create_autospec
+>>> deffunction(a, b, c):
+...   pass
+...
+>>> mock_function = create_autospec(function, return_value='fishy')
+>>> mock_function(1, 2, 3)
+'fishy'
+>>> mock_function.assert_called_once_with(1, 2, 3)
+>>> mock_function('wrong arguments')
+Traceback (most recent call last):
+...
+TypeError: missing a required argument: 'b'

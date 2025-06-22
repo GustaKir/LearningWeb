@@ -1,0 +1,51 @@
+Title: Building Python DLLs on Windows with MSVC++
+URL: https://docs.python.org/3/extending/windows.html
+Summary: This section explains how to create DLLs in Windows using Microsoft Visual C++. It highlights the need to link against `pythonXY.lib` and provides command examples for building two DLLs: 'spam' and 'ni'. It mentions the files generated and clarifies that 'spam.dll' does not contain Python functions directly but can access them via the library link.
+---
+
+in Microsoft Visual C++; using other compilers may or may not work. The rest of this section is MSVC++ specific.
+When creating DLLs in Windows, you must pass `pythonXY.lib` to the linker. To build two DLLs, spam and ni (which uses C functions found in spam), you could use these commands:
+```
+cl/LD/I/python/includespam.c../libs/pythonXY.lib
+cl/LD/I/python/includeni.cspam.lib../libs/pythonXY.lib
+
+```
+
+The first command created three files: `spam.obj`, `spam.dll` and `spam.lib`. `Spam.dll` does not contain any Python functions (such as [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple")), but it does know how to find the Python code thanks to `pythonXY.lib`.
+The second command created `ni.dll` (and `.obj` and `.lib`), which knows how to find the necessary functions from spam, and also from the Python executable.
+Not every identifier is exported to the lookup table. If you want any other modules (including Python) to be able to see your identifiers, you have to say `_declspec(dllexport)`, as in `void _declspec(dllexport) initspam(void)` or `PyObject _declspec(dllexport) *NiGetSpamData(void)`.
+Developer Studio will throw in a lot of import libraries that you do not really need, adding about 100K to your executable. To get rid of them, use the Project Settings dialog, Link tab, to specify _ignore default libraries_. Add the correct `msvcrt_xx_.lib`to the list of libraries.
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [5. Building C and C++ Extensions on Windows](https://docs.python.org/3/extending/windows.html)
+    * [5.1. A Cookbook Approach](https://docs.python.org/3/extending/windows.html#a-cookbook-approach)
+    * [5.2. Differences Between Unix and Windows](https://docs.python.org/3/extending/windows.html#differences-between-unix-and-windows)
+    * [5.3. Using DLLs in Practice](https://docs.python.org/3/extending/windows.html#using-dlls-in-practice)
+
+
+#### Previous topic
+[4. Building C and C++ Extensions](https://docs.python.org/3/extending/building.html "previous chapter")
+#### Next topic
+[1. Embedding Python in Another Application](https://docs.python.org/3/extending/embedding.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/extending/windows.rst)
+
+
+«
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/extending/embedding.html "1. Embedding Python in Another Application") |
+  * [previous](https://docs.python.org/3/extending/building.html "4. Building C and C++ Extensions") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Extending and Embedding the Python Interpreter](https://docs.python.org/3/extending/index.html) »
+  * [5. Building C and C++ Extensions on Windows](https://docs.python.org/3/extending/windows.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+© [ Copyright ](https://docs.python.org/3/copyright.html) 2001-2025, Python Software Foundation. This page is licensed under the Python Software Foundation License Version 2. Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License. See [History and License](https://docs.python.org/license.html) for more information. The Python Software Foundation is a non-profit corporation. [Please donate.](https://www.python.org/psf/donations/) Last updated on Apr 27, 2025 (05:38 UTC). [Found a bug](https://docs.python.org/bugs.html)? Created using [Sphinx](https://www.sphinx-doc.org/) 8.2.3.

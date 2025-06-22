@@ -1,0 +1,41 @@
+Title: SSLContext.wrap_bio Method
+URL: https://docs.python.org/3/library/ssl.html
+Summary: The `wrap_bio` method of `SSLContext` wraps the incoming and outgoing BIO objects, returning an instance of `SSLObject`. It utilizes parameters like `server_side`, `server_hostname`, and `session` with the same meanings as in `wrap_socket()`. The method was updated in version 3.6 to include the `session` argument and in version 3.7 to specify the return type as `SSLContext.sslobject_class`.
+---
+
+SSLContext.wrap_bio(_incoming_ , _outgoing_ , _server_side =False_, _server_hostname =None_, _session =None_)[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_bio "Link to this definition")
+    
+Wrap the BIO objects _incoming_ and _outgoing_ and return an instance of [`SSLContext.sslobject_class`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.sslobject_class "ssl.SSLContext.sslobject_class") (default [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject")). The SSL routines will read input data from the incoming BIO and write data to the outgoing BIO.
+The _server_side_ , _server_hostname_ and _session_ parameters have the same meaning as in [`SSLContext.wrap_socket()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_socket "ssl.SSLContext.wrap_socket").
+Changed in version 3.6: _session_ argument was added.
+Changed in version 3.7: The method returns an instance of [`SSLContext.sslobject_class`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.sslobject_class "ssl.SSLContext.sslobject_class") instead of hard-coded [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject"). 
+
+SSLContext.sslobject_class[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.sslobject_class "Link to this definition")
+    
+The return type of [`SSLContext.wrap_bio()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_bio "ssl.SSLContext.wrap_bio"), defaults to [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject"). The attribute can be overridden on instance of class in order to return a custom subclass of [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject").
+Added in version 3.7. 
+
+SSLContext.session_stats()[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.session_stats "Link to this definition")
+    
+Get statistics about the SSL sessions created or managed by this context. A dictionary is returned which maps the names of each [piece of information](https://docs.openssl.org/1.1.1/man3/SSL_CTX_sess_number/) to their numeric values. For example, here is the total number of hits and misses in the session cache since the context was created:
+>>>```
+>>> stats = context.session_stats()
+>>> stats['hits'], stats['misses']
+(0, 0)
+
+```
+
+
+SSLContext.check_hostname[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.check_hostname "Link to this definition")
+    
+Whether to match the peer cert’s hostname in [`SSLSocket.do_handshake()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.do_handshake "ssl.SSLSocket.do_handshake"). The context’s [`verify_mode`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.verify_mode "ssl.SSLContext.verify_mode") must be set to [`CERT_OPTIONAL`](https://docs.python.org/3/library/ssl.html#ssl.CERT_OPTIONAL "ssl.CERT_OPTIONAL") or [`CERT_REQUIRED`](https://docs.python.org/3/library/ssl.html#ssl.CERT_REQUIRED "ssl.CERT_REQUIRED"), and you must pass _server_hostname_ to [`wrap_socket()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_socket "ssl.SSLContext.wrap_socket") in order to match the hostname. Enabling hostname checking automatically sets [`verify_mode`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.verify_mode "ssl.SSLContext.verify_mode") from [`CERT_NONE`](https://docs.python.org/3/library/ssl.html#ssl.CERT_NONE "ssl.CERT_NONE") to [`CERT_REQUIRED`](https://docs.python.org/3/library/ssl.html#ssl.CERT_REQUIRED "ssl.CERT_REQUIRED"). It cannot be set back to [`CERT_NONE`](https://docs.python.org/3/library/ssl.html#ssl.CERT_NONE "ssl.CERT_NONE") as long as hostname checking is enabled. The [`PROTOCOL_TLS_CLIENT`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS_CLIENT "ssl.PROTOCOL_TLS_CLIENT") protocol enables hostname checking by default. With other protocols, hostname checking must be enabled explicitly.
+Example:
+```
+importsocket,ssl
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+context.verify_mode = ssl.CERT_REQUIRED
+context.check_hostname = True
+context.load_default_certs()
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ssl_sock = context.wrap_socket(s, server_hostname='www.verisign.com')
+ssl_sock.connect(('www.verisign.com', 443))

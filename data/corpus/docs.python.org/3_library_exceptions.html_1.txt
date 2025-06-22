@@ -1,0 +1,33 @@
+Title: Handling Exceptions in Python
+URL: https://docs.python.org/3/library/exceptions.html
+Summary: This section details how Python manages exceptions when a new exception is raised during the handling of another. The `__context__` attribute is set to the currently handled exception, and developers can specify an explicit cause using the `from` syntax in the `raise` statement.
+---
+
+BaseException.__cause__[¶](https://docs.python.org/3/library/exceptions.html#BaseException.__cause__ "Link to this definition")
+
+
+BaseException.__suppress_context__[¶](https://docs.python.org/3/library/exceptions.html#BaseException.__suppress_context__ "Link to this definition")
+    
+When raising a new exception while another exception is already being handled, the new exception’s `__context__` attribute is automatically set to the handled exception. An exception may be handled when an [`except`](https://docs.python.org/3/reference/compound_stmts.html#except) or [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) clause, or a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, is used.
+This implicit exception context can be supplemented with an explicit cause by using `from` with [`raise`](https://docs.python.org/3/reference/simple_stmts.html#raise):
+```
+raise new_exc fromoriginal_exc
+
+```
+
+The expression following [`from`](https://docs.python.org/3/reference/simple_stmts.html#raise) must be an exception or `None`. It will be set as `__cause__` on the raised exception. Setting `__cause__` also implicitly sets the `__suppress_context__` attribute to `True`, so that using `raise new_exc from None` effectively replaces the old exception with the new one for display purposes (e.g. converting [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") to [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError")), while leaving the old exception available in `__context__` for introspection when debugging.
+The default traceback display code shows these chained exceptions in addition to the traceback for the exception itself. An explicitly chained exception in `__cause__` is always shown when present. An implicitly chained exception in `__context__` is shown only if `__cause__` is [`None`](https://docs.python.org/3/library/constants.html#None "None") and `__suppress_context__` is false.
+In either case, the exception itself is always shown after any chained exceptions so that the final line of the traceback always shows the last exception that was raised.
+## Inheriting from built-in exceptions[¶](https://docs.python.org/3/library/exceptions.html#inheriting-from-built-in-exceptions "Link to this heading")
+User code can create subclasses that inherit from an exception type. It’s recommended to only subclass one exception type at a time to avoid any possible conflicts between how the bases handle the `args` attribute, as well as due to possible memory layout incompatibilities.
+**CPython implementation detail:** Most built-in exceptions are implemented in C for efficiency, see: [Objects/exceptions.c](https://github.com/python/cpython/tree/3.13/Objects/exceptions.c). Some have custom memory layouts which makes it impossible to create a subclass that inherits from multiple exception types. The memory layout of a type is an implementation detail and might change between Python versions, leading to new conflicts in the future. Therefore, it’s recommended to avoid subclassing multiple exception types altogether.
+## Base classes[¶](https://docs.python.org/3/library/exceptions.html#base-classes "Link to this heading")
+The following exceptions are used mostly as base classes for other exceptions. 
+
+_exception_ BaseException[¶](https://docs.python.org/3/library/exceptions.html#BaseException "Link to this definition")
+    
+The base class for all built-in exceptions. It is not meant to be directly inherited by user-defined classes (for that, use [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception")). If [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") is called on an instance of this class, the representation of the argument(s) to the instance are returned, or the empty string when there were no arguments. 
+
+args[¶](https://docs.python.org/3/library/exceptions.html#BaseException.args "Link to this definition")
+    
+The tuple of arguments given to the exception constructor. Some built-in exceptions (like [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError")) expect a certain number of arguments and assign a special meaning to the elements of this tuple, while others are usually called only with a single string giving an error message.

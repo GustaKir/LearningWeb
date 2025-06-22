@@ -1,0 +1,43 @@
+Title: Handling Exceptions in Threading
+URL: https://docs.python.org/3/library/threading.html
+Summary: This section discusses how exceptions are managed in Python's threading module. If a SystemExit exception occurs, it is ignored; otherwise, the exception is printed to sys.stderr. The sys.excepthook() function can handle exceptions raised during thread execution, and a custom thread exception hook can be set. Care must be taken to manage reference cycles when storing exceptions or thread references in custom hooks.
+---
+
+If _exc_type_ is [`SystemExit`](https://docs.python.org/3/library/exceptions.html#SystemExit "SystemExit"), the exception is silently ignored. Otherwise, the exception is printed out on [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr").
+If this function raises an exception, [`sys.excepthook()`](https://docs.python.org/3/library/sys.html#sys.excepthook "sys.excepthook") is called to handle it.
+[`threading.excepthook()`](https://docs.python.org/3/library/threading.html#threading.excepthook "threading.excepthook") can be overridden to control how uncaught exceptions raised by [`Thread.run()`](https://docs.python.org/3/library/threading.html#threading.Thread.run "threading.Thread.run") are handled.
+Storing _exc_value_ using a custom hook can create a reference cycle. It should be cleared explicitly to break the reference cycle when the exception is no longer needed.
+Storing _thread_ using a custom hook can resurrect it if it is set to an object which is being finalized. Avoid storing _thread_ after the custom hook completes to avoid resurrecting objects.
+See also
+[`sys.excepthook()`](https://docs.python.org/3/library/sys.html#sys.excepthook "sys.excepthook") handles uncaught exceptions.
+Added in version 3.8. 
+
+threading.__excepthook__[¶](https://docs.python.org/3/library/threading.html#threading.__excepthook__ "Link to this definition")
+    
+Holds the original value of [`threading.excepthook()`](https://docs.python.org/3/library/threading.html#threading.excepthook "threading.excepthook"). It is saved so that the original value can be restored in case they happen to get replaced with broken or alternative objects.
+Added in version 3.10. 
+
+threading.get_ident()[¶](https://docs.python.org/3/library/threading.html#threading.get_ident "Link to this definition")
+    
+Return the ‘thread identifier’ of the current thread. This is a nonzero integer. Its value has no direct meaning; it is intended as a magic cookie to be used e.g. to index a dictionary of thread-specific data. Thread identifiers may be recycled when a thread exits and another thread is created.
+Added in version 3.3. 
+
+threading.get_native_id()[¶](https://docs.python.org/3/library/threading.html#threading.get_native_id "Link to this definition")
+    
+Return the native integral Thread ID of the current thread assigned by the kernel. This is a non-negative integer. Its value may be used to uniquely identify this particular thread system-wide (until the thread terminates, after which the value may be recycled by the OS).
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
+Added in version 3.8.
+Changed in version 3.13: Added support for GNU/kFreeBSD. 
+
+threading.enumerate()[¶](https://docs.python.org/3/library/threading.html#threading.enumerate "Link to this definition")
+    
+Return a list of all [`Thread`](https://docs.python.org/3/library/threading.html#threading.Thread "threading.Thread") objects currently active. The list includes daemonic threads and dummy thread objects created by [`current_thread()`](https://docs.python.org/3/library/threading.html#threading.current_thread "threading.current_thread"). It excludes terminated threads and threads that have not yet been started. However, the main thread is always part of the result, even when terminated. 
+
+threading.main_thread()[¶](https://docs.python.org/3/library/threading.html#threading.main_thread "Link to this definition")
+    
+Return the main [`Thread`](https://docs.python.org/3/library/threading.html#threading.Thread "threading.Thread") object. In normal conditions, the main thread is the thread from which the Python interpreter was started.
+Added in version 3.4. 
+
+threading.settrace(_func_)[¶](https://docs.python.org/3/library/threading.html#threading.settrace "Link to this definition")
+    
+Set a trace function for all threads started from the [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module. The _func_ will be passed to [`sys.settrace()`](https://docs.python.org/3/library/sys.html#sys.settrace "sys.settrace") for each thread, before its [`run()`](https://docs.python.org/3/library/threading.html#threading.Thread.run "threading.Thread.run") method is called.

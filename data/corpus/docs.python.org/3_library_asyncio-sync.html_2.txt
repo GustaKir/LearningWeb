@@ -1,0 +1,57 @@
+Title: Asynchronous Condition Operations in asyncio
+URL: https://docs.python.org/3/library/asyncio-sync.html
+Summary: This section details the usage of `asyncio.Condition` for managing concurrency in Python. It includes methods such as `acquire()` for obtaining a lock, `notify(n=1)` for waking up waiting tasks, and `locked()` to check if the condition is currently locked. Proper lock management is emphasized to avoid `RuntimeError`.
+---
+
+```
+
+which is equivalent to:
+```
+cond = asyncio.Condition()
+# ... later
+await cond.acquire()
+try:
+  await cond.wait()
+finally:
+  cond.release()
+
+```
+
+
+_async_ acquire()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.acquire "Link to this definition")
+    
+Acquire the underlying lock.
+This method waits until the underlying lock is _unlocked_ , sets it to _locked_ and returns `True`. 
+
+notify(_n =1_)[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.notify "Link to this definition")
+    
+Wake up _n_ tasks (1 by default) waiting on this condition. If fewer than _n_ tasks are waiting they are all awakened.
+The lock must be acquired before this method is called and released shortly after. If called with an _unlocked_ lock a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") error is raised. 
+
+locked()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.locked "Link to this definition")
+    
+Return `True` if the underlying lock is acquired. 
+
+notify_all()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.notify_all "Link to this definition")
+    
+Wake up all tasks waiting on this condition.
+This method acts like [`notify()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.notify "asyncio.Condition.notify"), but wakes up all waiting tasks.
+The lock must be acquired before this method is called and released shortly after. If called with an _unlocked_ lock a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") error is raised. 
+
+release()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.release "Link to this definition")
+    
+Release the underlying lock.
+When invoked on an unlocked lock, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised. 
+
+_async_ wait()[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.wait "Link to this definition")
+    
+Wait until notified.
+If the calling task has not acquired the lock when this method is called, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised.
+This method releases the underlying lock, and then blocks until it is awakened by a [`notify()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.notify "asyncio.Condition.notify") or [`notify_all()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.notify_all "asyncio.Condition.notify_all") call. Once awakened, the Condition re-acquires its lock and this method returns `True`.
+Note that a task _may_ return from this call spuriously, which is why the caller should always re-check the state and be prepared to [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.wait "asyncio.Condition.wait") again. For this reason, you may prefer to use [`wait_for()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.wait_for "asyncio.Condition.wait_for") instead. 
+
+_async_ wait_for(_predicate_)[¶](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.wait_for "Link to this definition")
+    
+Wait until a predicate becomes _true_.
+The predicate must be a callable which result will be interpreted as a boolean value. The method will repeatedly [`wait()`](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Condition.wait "asyncio.Condition.wait") until the predicate evaluates to _true_. The final value is the return value.
+## Semaphore[¶](https://docs.python.org/3/library/asyncio-sync.html#semaphore "Link to this heading")

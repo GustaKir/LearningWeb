@@ -1,0 +1,104 @@
+Title: Handling Errors in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/handling-errors/
+Summary: This document provides an example of custom error handling in FastAPI using a specific exception class, `UnicornException`. It demonstrates how to define an exception handler that returns a structured JSON response with an HTTP status code of 418 when the exception is raised during a request to the `/unicorns/{name}` endpoint.
+---
+
+```
+fromfastapiimport FastAPI, Request
+fromfastapi.responsesimport JSONResponse
+classUnicornException(Exception):
+  def__init__(self, name: str):
+    self.name = name
+app = FastAPI()
+@app.exception_handler(UnicornException)
+async defunicorn_exception_handler(request: Request, exc: UnicornException):
+  return JSONResponse(
+    status_code=418,
+    content={"message": f"Oops! {exc.name} did something. There goes a rainbow..."},
+  )
+@app.get("/unicorns/{name}")
+async defread_unicorn(name: str):
+  if name == "yolo":
+    raise UnicornException(name=name)
+  return {"unicorn_name": name}
+
+```
+
+Here, if you request `/unicorns/yolo`, the _path operation_ will `raise` a `UnicornException`.
+But it will be handled by the `unicorn_exception_handler`.
+So, you will receive a clean error, with an HTTP status code of `418` and a JSON content of:
+```
+{"message":"Oops! yolo did something. There goes a rainbow..."}
+
+```
+
+Technical Details
+You could also use `from starlette.requests import Request` and `from starlette.responses import JSONResponse`.
+**FastAPI** provides the same `starlette.responses` as `fastapi.responses` just as a convenience for you, the developer. But most of the available responses come directly from Starlette. The same with `Request`.
+## Override the default exception handlers[¶](https://fastapi.tiangolo.com/tutorial/handling-errors/#override-the-default-exception-handlers "Permanent link")
+**FastAPI** has some default exception handlers.
+These handlers are in charge of returning the default JSON responses when you `raise` an `HTTPException` and when the request has invalid data.
+You can override these exception handlers with your own.
+### Override request validation exceptions[¶](https://fastapi.tiangolo.com/tutorial/handling-errors/#override-request-validation-exceptions "Permanent link")
+When a request contains invalid data, **FastAPI** internally raises a `RequestValidationError`.
+And it also includes a default exception handler for it.
+To override it, import the `RequestValidationError` and use it with `@app.exception_handler(RequestValidationError)` to decorate the exception handler.
+The exception handler will receive a `Request` and the exception.
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/handling-errors/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI, HTTPException
+fromfastapi.exceptionsimport RequestValidationError
+fromfastapi.responsesimport PlainTextResponse
+fromstarlette.exceptionsimport HTTPException as StarletteHTTPException
+app = FastAPI()
+@app.exception_handler(StarletteHTTPException)
+async defhttp_exception_handler(request, exc):
+  return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
+@app.exception_handler(RequestValidationError)
+async defvalidation_exception_handler(request, exc):
+  return PlainTextResponse(str(exc), status_code=400)
+@app.get("/items/{item_id}")
+async defread_item(item_id: int):
+  if item_id == 3:
+    raise HTTPException(status_code=418, detail="Nope! I don't like 3.")
+  return {"item_id": item_id}
+
+```
+
+Now, if you go to `/items/foo`, instead of getting the default JSON error with:
+```
+{
+"detail":[
+{
+"loc":[
+"path",
+"item_id"
+],
+"msg":"value is not a valid integer",
+"type":"type_error.integer"
+}
+]
+}
+
+```
+
+you will get a text version, with:
+```
+1 validation error
+path -> item_id
+ value is not a valid integer (type=type_error.integer)
+
+```
+
+#### `RequestValidationError` vs `ValidationError`[¶](https://fastapi.tiangolo.com/tutorial/handling-errors/#requestvalidationerror-vs-validationerror "Permanent link")
+Warning
+These are technical details that you might skip if it's not important for you now.
+`RequestValidationError` is a sub-class of Pydantic's [`ValidationError`](https://docs.pydantic.dev/latest/concepts/models/#error-handling).
+**FastAPI** uses it so that, if you use a Pydantic model in `response_model`, and your data has an error, you will see the error in your log.
+But the client/user will not see it. Instead, the client will receive an "Internal Server Error" with an HTTP status code `500`.
+It should be this way because if you have a Pydantic `ValidationError` in your _response_ or anywhere in your code (not in the client's _request_), it's actually a bug in your code.
+And while you fix it, your clients/users shouldn't have access to internal information about the error, as that could expose a security vulnerability.
+### Override the `HTTPException` error handler[¶](https://fastapi.tiangolo.com/tutorial/handling-errors/#override-the-httpexception-error-handler "Permanent link")
+The same way, you can override the `HTTPException` handler.
+For example, you could want to return a plain text response instead of JSON for these errors:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/handling-errors/#__tabbed_6_1)

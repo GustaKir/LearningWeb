@@ -1,0 +1,44 @@
+Title: Automate Your Tests with CI
+URL: https://docs.streamlit.io/develop/concepts/app-testing/automate-tests
+Summary: This section discusses the benefits of automating app tests using Continuous Integration (CI) tools like GitHub Actions, Jenkins, GitLab CI, Azure DevOps, and Circle CI. It highlights how automation helps validate app changes, catch bugs early, and prevent issues before deployment. The examples provided focus on GitHub Actions due to its popularity among Streamlit apps.
+---
+
+# [](https://docs.streamlit.io/develop/concepts/app-testing/automate-tests#automate-your-tests-with-ci)Automate your tests with CI
+One of the key benefits of app testing is that tests can be automated using Continuous Integration (CI). By running tests automatically during development, you can validate that changes to your app don't break existing functionality. You can verify app code as you commit, catch bugs early, and prevent accidental breaks before deployment.
+There are many popular CI tools, including GitHub Actions, Jenkins, GitLab CI, Azure DevOps, and Circle CI. Streamlit app testing will integrate easily with any of them similar to any other Python tests.
+## [](https://docs.streamlit.io/develop/concepts/app-testing/automate-tests#github-actions)GitHub Actions
+Since many Streamlit apps (and all Community Cloud apps) are built in GitHub, this page uses examples from [GitHub Actions](https://docs.github.com/en/actions). For more information about GitHub Actions, see:
+  * [Quickstart for GitHub Actions](https://docs.github.com/en/actions/quickstart)
+  * [GitHub Actions: About continuous integration](https://docs.github.com/en/actions/automating-builds-and-tests/about-continuous-integration)
+  * [GitHub Actions: Build & test Python](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python)
+
+
+## [](https://docs.streamlit.io/develop/concepts/app-testing/automate-tests#streamlit-app-action)Streamlit App Action
+[Streamlit App Action](https://github.com/marketplace/actions/streamlit-app-action) provides an easy way to add automated testing to your app repository in GitHub. It also includes basic smoke testing for each page of your app without you writing any test code.
+To install Streamlit App Action, add a workflow `.yml` file to your repository's `.github/workflows/` folder. For example:
+`# .github/workflows/streamlit-app.yml name: Streamlit app on: push: branches: ["main"] pull_request: branches: ["main"] permissions: contents: read jobs: streamlit: runs-on: ubuntu-latest   steps: - uses: actions/checkout@v4    - uses: actions/setup-python@v5     with: python-version: "3.11" - uses: streamlit/streamlit-app-action@v0.0.3     with: app-path: streamlit_app.py `
+Let's take a look in more detail at what this action workflow is doing.
+### [](https://docs.streamlit.io/develop/concepts/app-testing/automate-tests#triggering-the-workflow)Triggering the workflow
+`on: push: branches: ["main"] pull_request: branches: ["main"] `
+This workflow will be triggered and execute tests on pull requests targeting the `main` branch, as well as any new commits pushed to the `main` branch. Note that it will also execute the tests on subsequent commits to any open pull requests. See [GitHub Actions: Triggering a workflow](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow) for more information and examples.
+### [](https://docs.streamlit.io/develop/concepts/app-testing/automate-tests#setting-up-the-test-environment)Setting up the test environment
+`jobs: streamlit: runs-on: ubuntu-latest   steps: - uses: actions/checkout@v4    - uses: actions/setup-python@v5     with: python-version: "3.11" `
+The workflow has a `streamlit` job that executes a series of steps. The job runs on a Docker container with the `ubuntu-latest` image.
+  * `actions/checkout@v4` checks out the current repository code from GitHub and copies the code to the job environment.
+  * `actions/setup-python@v5` installs Python version 3.11.
+
+
+### [](https://docs.streamlit.io/develop/concepts/app-testing/automate-tests#running-the-app-tests)Running the app tests
+`- uses: streamlit/streamlit-app-action@v0.0.3  with: app-path: streamlit_app.py `
+Streamlit App Action does the following:
+  * Install `pytest` and install any dependencies specified in `requirements.txt`.
+  * Run the built-in app smoke tests.
+  * Run any other Python tests found in the repository.
+
+_star_
+#### Tip
+If your app doesn't include `requirements.txt` in the repository root directory, you will need to add a step to install dependencies with your chosen package manager before running Streamlit App Action.
+The built-in smoke tests have the following behavior:
+  * Run the app specified at `app-path` as an AppTest.
+  * Validate that it completes successfully and does not result in an uncaught exception.
+  * Do the same for any additional `pages/` of the app relative to `app-path`.

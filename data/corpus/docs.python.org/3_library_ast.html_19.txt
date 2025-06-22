@@ -1,0 +1,33 @@
+Title: AsyncFor and AsyncWith Classes in AST Module
+URL: https://docs.python.org/3/library/ast.html
+Summary: This section describes the `ast.AsyncFor` and `ast.AsyncWith` classes, which represent `async for` loops and `async with` context managers in the Abstract Syntax Tree (AST) module. These classes have similar fields as their synchronous counterparts, `For` and `With`, and are only valid within an `AsyncFunctionDef`. Additionally, it notes that operator nodes in the parsed tree will behave as singletons.
+---
+
+```
+
+
+_class_ ast.AsyncFor(_target_ , _iter_ , _body_ , _orelse_ , _type_comment_)[¶](https://docs.python.org/3/library/ast.html#ast.AsyncFor "Link to this definition")
+
+
+_class_ ast.AsyncWith(_items_ , _body_ , _type_comment_)[¶](https://docs.python.org/3/library/ast.html#ast.AsyncWith "Link to this definition")
+    
+`async for` loops and `async with` context managers. They have the same fields as [`For`](https://docs.python.org/3/library/ast.html#ast.For "ast.For") and [`With`](https://docs.python.org/3/library/ast.html#ast.With "ast.With"), respectively. Only valid in the body of an [`AsyncFunctionDef`](https://docs.python.org/3/library/ast.html#ast.AsyncFunctionDef "ast.AsyncFunctionDef").
+Note
+When a string is parsed by [`ast.parse()`](https://docs.python.org/3/library/ast.html#ast.parse "ast.parse"), operator nodes (subclasses of `ast.operator`, `ast.unaryop`, `ast.cmpop`, `ast.boolop` and `ast.expr_context`) on the returned tree will be singletons. Changes to one will be reflected in all other occurrences of the same value (e.g. [`ast.Add`](https://docs.python.org/3/library/ast.html#ast.Add "ast.Add")).
+## [`ast`](https://docs.python.org/3/library/ast.html#module-ast "ast: Abstract Syntax Tree classes and manipulation.") Helpers[¶](https://docs.python.org/3/library/ast.html#ast-helpers "Link to this heading")
+Apart from the node classes, the [`ast`](https://docs.python.org/3/library/ast.html#module-ast "ast: Abstract Syntax Tree classes and manipulation.") module defines these utility functions and classes for traversing abstract syntax trees: 
+
+ast.parse(_source_ , _filename ='<unknown>'_, _mode ='exec'_, _*_ , _type_comments =False_, _feature_version =None_, _optimize =-1_)[¶](https://docs.python.org/3/library/ast.html#ast.parse "Link to this definition")
+    
+Parse the source into an AST node. Equivalent to `compile(source, filename, mode, flags=FLAGS_VALUE, optimize=optimize)`, where `FLAGS_VALUE` is `ast.PyCF_ONLY_AST` if `optimize <= 0` and `ast.PyCF_OPTIMIZED_AST` otherwise.
+If `type_comments=True` is given, the parser is modified to check and return type comments as specified by [**PEP 484**](https://peps.python.org/pep-0484/) and [**PEP 526**](https://peps.python.org/pep-0526/). This is equivalent to adding [`ast.PyCF_TYPE_COMMENTS`](https://docs.python.org/3/library/ast.html#ast.PyCF_TYPE_COMMENTS "ast.PyCF_TYPE_COMMENTS") to the flags passed to [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile"). This will report syntax errors for misplaced type comments. Without this flag, type comments will be ignored, and the `type_comment` field on selected AST nodes will always be `None`. In addition, the locations of `# type: ignore` comments will be returned as the `type_ignores` attribute of [`Module`](https://docs.python.org/3/library/ast.html#ast.Module "ast.Module") (otherwise it is always an empty list).
+In addition, if `mode` is `'func_type'`, the input syntax is modified to correspond to [**PEP 484**](https://peps.python.org/pep-0484/) “signature type comments”, e.g. `(str, int) -> List[str]`.
+Setting `feature_version` to a tuple `(major, minor)` will result in a “best-effort” attempt to parse using that Python version’s grammar. For example, setting `feature_version=(3, 9)` will attempt to disallow parsing of [`match`](https://docs.python.org/3/reference/compound_stmts.html#match) statements. Currently `major` must equal to `3`. The lowest supported version is `(3, 7)` (and this may increase in future Python versions); the highest is `sys.version_info[0:2]`. “Best-effort” attempt means there is no guarantee that the parse (or success of the parse) is the same as when run on the Python version corresponding to `feature_version`.
+If source contains a null character (`\0`), [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised.
+Warning
+Note that successfully parsing source code into an AST object doesn’t guarantee that the source code provided is valid Python code that can be executed as the compilation step can raise further [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") exceptions. For instance, the source `return 42` generates a valid AST node for a return statement, but it cannot be compiled alone (it needs to be inside a function node).
+In particular, [`ast.parse()`](https://docs.python.org/3/library/ast.html#ast.parse "ast.parse") won’t do any scoping checks, which the compilation step does.
+Warning
+It is possible to crash the Python interpreter with a sufficiently large/complex string due to stack depth limitations in Python’s AST compiler.
+Changed in version 3.8: Added `type_comments`, `mode='func_type'` and `feature_version`.
+Changed in version 3.13: The minimum supported version for `feature_version` is now `(3, 7)`. The `optimize` argument was added.

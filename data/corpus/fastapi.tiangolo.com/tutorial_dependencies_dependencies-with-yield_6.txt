@@ -1,0 +1,149 @@
+Title: Using Yield in FastAPI Dependencies
+URL: https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/
+Summary: This section demonstrates how to define dependencies in FastAPI that utilize the `yield` statement. It illustrates the relationship between multiple dependencies, ensuring that exit code execution can access required resources from previously defined dependencies while managing their lifecycle properly.
+---
+
+```
+fromfastapiimport Depends
+async defdependency_a():
+  dep_a = generate_dep_a()
+  try:
+    yield dep_a
+  finally:
+    dep_a.close()
+async defdependency_b(dep_a=Depends(dependency_a)):
+  dep_b = generate_dep_b()
+  try:
+    yield dep_b
+  finally:
+    dep_b.close(dep_a)
+async defdependency_c(dep_b=Depends(dependency_b)):
+  dep_c = generate_dep_c()
+  try:
+    yield dep_c
+  finally:
+    dep_c.close(dep_b)
+
+```
+
+And all of them can use `yield`.
+In this case `dependency_c`, to execute its exit code, needs the value from `dependency_b` (here named `dep_b`) to still be available.
+And, in turn, `dependency_b` needs the value from `dependency_a` (here named `dep_a`) to be available for its exit code.
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_7_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends
+async defdependency_a():
+  dep_a = generate_dep_a()
+  try:
+    yield dep_a
+  finally:
+    dep_a.close()
+async defdependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):
+  dep_b = generate_dep_b()
+  try:
+    yield dep_b
+  finally:
+    dep_b.close(dep_a)
+async defdependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):
+  dep_c = generate_dep_c()
+  try:
+    yield dep_c
+  finally:
+    dep_c.close(dep_b)
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_8_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_8_2)
+```
+fromfastapiimport Depends
+fromtyping_extensionsimport Annotated
+async defdependency_a():
+  dep_a = generate_dep_a()
+  try:
+    yield dep_a
+  finally:
+    dep_a.close()
+async defdependency_b(dep_a: Annotated[DepA, Depends(dependency_a)]):
+  dep_b = generate_dep_b()
+  try:
+    yield dep_b
+  finally:
+    dep_b.close(dep_a)
+async defdependency_c(dep_b: Annotated[DepB, Depends(dependency_b)]):
+  dep_c = generate_dep_c()
+  try:
+    yield dep_c
+  finally:
+    dep_c.close(dep_b)
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends
+async defdependency_a():
+  dep_a = generate_dep_a()
+  try:
+    yield dep_a
+  finally:
+    dep_a.close()
+async defdependency_b(dep_a=Depends(dependency_a)):
+  dep_b = generate_dep_b()
+  try:
+    yield dep_b
+  finally:
+    dep_b.close(dep_a)
+async defdependency_c(dep_b=Depends(dependency_b)):
+  dep_c = generate_dep_c()
+  try:
+    yield dep_c
+  finally:
+    dep_c.close(dep_b)
+
+```
+
+The same way, you could have some dependencies with `yield` and some other dependencies with `return`, and have some of those depend on some of the others.
+And you could have a single dependency that requires several other dependencies with `yield`, etc.
+You can have any combinations of dependencies that you want.
+**FastAPI** will make sure everything is run in the correct order.
+Technical Details
+This works thanks to Python's [Context Managers](https://docs.python.org/3/library/contextlib.html).
+**FastAPI** uses them internally to achieve this.
+## Dependencies with `yield` and `HTTPException`[¶](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#dependencies-with-yield-and-httpexception "Permanent link")
+You saw that you can use dependencies with `yield` and have `try` blocks that catch exceptions.
+The same way, you could raise an `HTTPException` or similar in the exit code, after the `yield`.
+Tip
+This is a somewhat advanced technique, and in most of the cases you won't really need it, as you can raise exceptions (including `HTTPException`) from inside of the rest of your application code, for example, in the _path operation function_.
+But it's there for you if you need it. 🤓
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_9_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI, HTTPException
+app = FastAPI()
+data = {
+  "plumbus": {"description": "Freshly pickled plumbus", "owner": "Morty"},
+  "portal-gun": {"description": "Gun to create portals", "owner": "Rick"},
+}
+classOwnerError(Exception):
+  pass
+defget_username():
+  try:
+    yield "Rick"
+  except OwnerError as e:
+    raise HTTPException(status_code=400, detail=f"Owner error: {e}")
+@app.get("/items/{item_id}")
+defget_item(item_id: str, username: Annotated[str, Depends(get_username)]):
+  if item_id not in data:
+    raise HTTPException(status_code=404, detail="Item not found")
+  item = data[item_id]
+  if item["owner"] != username:
+    raise OwnerError(username)
+  return item
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_10_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/#__tabbed_10_2)

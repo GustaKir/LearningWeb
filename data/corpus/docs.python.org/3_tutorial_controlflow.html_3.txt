@@ -1,0 +1,105 @@
+Title: Control Flow: Using Else with Loops
+URL: https://docs.python.org/3/tutorial/controlflow.html
+Summary: This section explains the use of the `else` clause with loops in Python, clarifying that it is associated with the loop rather than an `if` statement. The `else` clause executes if the loop completes without hitting a `break`. It also draws a parallel between the loop's `else` and the `else` clause in `try` statements, which runs when no exceptions occur.
+---
+
+```
+
+(Yes, this is the correct code. Look closely: the `else` clause belongs to the `for` loop, **not** the `if` statement.)
+One way to think of the else clause is to imagine it paired with the `if` inside the loop. As the loop executes, it will run a sequence like if/if/if/else. The `if` is inside the loop, encountered a number of times. If the condition is ever true, a `break` will happen. If the condition is never true, the `else` clause outside the loop will execute.
+When used with a loop, the `else` clause has more in common with the `else` clause of a [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) statement than it does with that of `if` statements: a `try` statement’s `else` clause runs when no exception occurs, and a loop’s `else` clause runs when no `break` occurs. For more on the `try` statement and exceptions, see [Handling Exceptions](https://docs.python.org/3/tutorial/errors.html#tut-handling).
+## 4.6. `pass` Statements[¶](https://docs.python.org/3/tutorial/controlflow.html#pass-statements "Link to this heading")
+The [`pass`](https://docs.python.org/3/reference/simple_stmts.html#pass) statement does nothing. It can be used when a statement is required syntactically but the program requires no action. For example:
+>>>```
+>>> while True:
+...   pass # Busy-wait for keyboard interrupt (Ctrl+C)
+...
+
+```
+
+This is commonly used for creating minimal classes:
+>>>```
+>>> classMyEmptyClass:
+...   pass
+...
+
+```
+
+Another place [`pass`](https://docs.python.org/3/reference/simple_stmts.html#pass) can be used is as a place-holder for a function or conditional body when you are working on new code, allowing you to keep thinking at a more abstract level. The `pass` is silently ignored:
+>>>```
+>>> definitlog(*args):
+...   pass  # Remember to implement this!
+...
+
+```
+
+## 4.7. `match` Statements[¶](https://docs.python.org/3/tutorial/controlflow.html#match-statements "Link to this heading")
+A [`match`](https://docs.python.org/3/reference/compound_stmts.html#match) statement takes an expression and compares its value to successive patterns given as one or more case blocks. This is superficially similar to a switch statement in C, Java or JavaScript (and many other languages), but it’s more similar to pattern matching in languages like Rust or Haskell. Only the first pattern that matches gets executed and it can also extract components (sequence elements or object attributes) from the value into variables.
+The simplest form compares a subject value against one or more literals:
+```
+defhttp_error(status):
+  match status:
+    case 400:
+      return "Bad request"
+    case 404:
+      return "Not found"
+    case 418:
+      return "I'm a teapot"
+    case_:
+      return "Something's wrong with the internet"
+
+```
+
+Note the last block: the “variable name” `_` acts as a _wildcard_ and never fails to match. If no case matches, none of the branches is executed.
+You can combine several literals in a single pattern using `|` (“or”):
+```
+case 401 | 403 | 404:
+  return "Not allowed"
+
+```
+
+Patterns can look like unpacking assignments, and can be used to bind variables:
+```
+# point is an (x, y) tuple
+match point:
+  case (0, 0):
+    print("Origin")
+  case (0, y):
+    print(f"Y={y}")
+  case (x, 0):
+    print(f"X={x}")
+  case (x, y):
+    print(f"X={x}, Y={y}")
+  case_:
+    raise ValueError("Not a point")
+
+```
+
+Study that one carefully! The first pattern has two literals, and can be thought of as an extension of the literal pattern shown above. But the next two patterns combine a literal and a variable, and the variable _binds_ a value from the subject (`point`). The fourth pattern captures two values, which makes it conceptually similar to the unpacking assignment `(x, y) = point`.
+If you are using classes to structure your data you can use the class name followed by an argument list resembling a constructor, but with the ability to capture attributes into variables:
+```
+classPoint:
+  def__init__(self, x, y):
+    self.x = x
+    self.y = y
+defwhere_is(point):
+  match point:
+    case Point(x=0, y=0):
+      print("Origin")
+    case Point(x=0, y=y):
+      print(f"Y={y}")
+    case Point(x=x, y=0):
+      print(f"X={x}")
+    case Point():
+      print("Somewhere else")
+    case_:
+      print("Not a point")
+
+```
+
+You can use positional parameters with some builtin classes that provide an ordering for their attributes (e.g. dataclasses). You can also define a specific position for attributes in patterns by setting the `__match_args__` special attribute in your classes. If it’s set to (“x”, “y”), the following patterns are all equivalent (and all bind the `y` attribute to the `var` variable):
+```
+Point(1, var)
+Point(1, y=var)
+Point(x=1, y=var)
+Point(y=var, x=1)

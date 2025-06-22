@@ -1,0 +1,75 @@
+Title: Regular Expressions: Zero-width Assertions and Grouping
+URL: https://docs.python.org/3/howto/regex.html
+Summary: This section discusses the zero-width assertions in regular expressions, specifically `` (word boundary) and ``'s opposite `` (non-word boundary). It also introduces the concept of grouping in regex, allowing for the extraction of multiple components from matched strings, exemplified by parsing RFC-822 header lines.
+---
+
+```
+
+Second, inside a character class, where there’s no use for this assertion, `\b` represents the backspace character, for compatibility with Python’s string literals. 
+
+`\B`
+    
+Another zero-width assertion, this is the opposite of `\b`, only matching when the current position is not at a word boundary.
+### Grouping[¶](https://docs.python.org/3/howto/regex.html#grouping "Link to this heading")
+Frequently you need to obtain more information than just whether the RE matched or not. Regular expressions are often used to dissect strings by writing a RE divided into several subgroups which match different components of interest. For example, an RFC-822 header line is divided into a header name and a value, separated by a `':'`, like this:
+```
+From: author@example.com
+User-Agent: Thunderbird 1.5.0.9 (X11/20061227)
+MIME-Version: 1.0
+To: editor@example.com
+
+```
+
+This can be handled by writing a regular expression which matches an entire header line, and has one group which matches the header name, and another group which matches the header’s value.
+Groups are marked by the `'('`, `')'` metacharacters. `'('` and `')'` have much the same meaning as they do in mathematical expressions; they group together the expressions contained inside them, and you can repeat the contents of a group with a quantifier, such as `*`, `+`, `?`, or `{m,n}`. For example, `(ab)*` will match zero or more repetitions of `ab`.
+>>>```
+>>> p = re.compile('(ab)*')
+>>> print(p.match('ababababab').span())
+(0, 10)
+
+```
+
+Groups indicated with `'('`, `')'` also capture the starting and ending index of the text that they match; this can be retrieved by passing an argument to [`group()`](https://docs.python.org/3/library/re.html#re.Match.group "re.Match.group"), [`start()`](https://docs.python.org/3/library/re.html#re.Match.start "re.Match.start"), [`end()`](https://docs.python.org/3/library/re.html#re.Match.end "re.Match.end"), and [`span()`](https://docs.python.org/3/library/re.html#re.Match.span "re.Match.span"). Groups are numbered starting with 0. Group 0 is always present; it’s the whole RE, so [match object](https://docs.python.org/3/library/re.html#match-objects) methods all have group 0 as their default argument. Later we’ll see how to express groups that don’t capture the span of text that they match.
+>>>```
+>>> p = re.compile('(a)b')
+>>> m = p.match('ab')
+>>> m.group()
+'ab'
+>>> m.group(0)
+'ab'
+
+```
+
+Subgroups are numbered from left to right, from 1 upward. Groups can be nested; to determine the number, just count the opening parenthesis characters, going from left to right.
+>>>```
+>>> p = re.compile('(a(b)c)d')
+>>> m = p.match('abcd')
+>>> m.group(0)
+'abcd'
+>>> m.group(1)
+'abc'
+>>> m.group(2)
+'b'
+
+```
+
+[`group()`](https://docs.python.org/3/library/re.html#re.Match.group "re.Match.group") can be passed multiple group numbers at a time, in which case it will return a tuple containing the corresponding values for those groups.
+>>>```
+>>> m.group(2,1,2)
+('b', 'abc', 'b')
+
+```
+
+The [`groups()`](https://docs.python.org/3/library/re.html#re.Match.groups "re.Match.groups") method returns a tuple containing the strings for all the subgroups, from 1 up to however many there are.
+>>>```
+>>> m.groups()
+('abc', 'b')
+
+```
+
+Backreferences in a pattern allow you to specify that the contents of an earlier capturing group must also be found at the current location in the string. For example, `\1` will succeed if the exact contents of group 1 can be found at the current position, and fails otherwise. Remember that Python’s string literals also use a backslash followed by numbers to allow including arbitrary characters in a string, so be sure to use a raw string when incorporating backreferences in a RE.
+For example, the following RE detects doubled words in a string.
+>>>```
+>>> p = re.compile(r'\b(\w+)\s+\1\b')
+>>> p.search('Paris in the the spring').group()
+'the the'

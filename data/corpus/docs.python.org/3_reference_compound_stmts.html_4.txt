@@ -1,0 +1,41 @@
+Title: Python Exception Handling Syntax
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section details the syntax for try statements in Python, including variations like try1_stmt, try2_stmt, and try3_stmt. It explains the structure involving 'try', 'except', 'else', and 'finally' clauses, each followed by a suite of statements.
+---
+
+```
+**try_stmt** ::= [try1_stmt](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-try1_stmt) | [try2_stmt](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-try2_stmt) | [try3_stmt](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-try3_stmt)
+**try1_stmt** ::= "try" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)
+       ("except" [[expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression) ["as" [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier)]] ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite))+
+       ["else" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)]
+       ["finally" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)]
+**try2_stmt** ::= "try" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)
+       ("except" "*" [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression) ["as" [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier)] ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite))+
+       ["else" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)]
+       ["finally" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)]
+**try3_stmt** ::= "try" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)
+       "finally" ":" [suite](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-suite)
+
+```
+
+Additional information on exceptions can be found in section [Exceptions](https://docs.python.org/3/reference/executionmodel.html#exceptions), and information on using the [`raise`](https://docs.python.org/3/reference/simple_stmts.html#raise) statement to generate exceptions may be found in section [The raise statement](https://docs.python.org/3/reference/simple_stmts.html#raise).
+### 8.4.1. `except` clause[¶](https://docs.python.org/3/reference/compound_stmts.html#except-clause "Link to this heading")
+The `except` clause(s) specify one or more exception handlers. When no exception occurs in the [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) clause, no exception handler is executed. When an exception occurs in the `try` suite, a search for an exception handler is started. This search inspects the `except` clauses in turn until one is found that matches the exception. An expression-less `except` clause, if present, must be last; it matches any exception.
+For an `except` clause with an expression, the expression must evaluate to an exception type or a tuple of exception types. The raised exception matches an `except` clause whose expression evaluates to the class or a [non-virtual base class](https://docs.python.org/3/glossary.html#term-abstract-base-class) of the exception object, or to a tuple that contains such a class.
+If no `except` clause matches the exception, the search for an exception handler continues in the surrounding code and on the invocation stack. [[1]](https://docs.python.org/3/reference/compound_stmts.html#id20)
+If the evaluation of an expression in the header of an `except` clause raises an exception, the original search for a handler is canceled and a search starts for the new exception in the surrounding code and on the call stack (it is treated as if the entire [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) statement raised the exception).
+When a matching `except` clause is found, the exception is assigned to the target specified after the `as` keyword in that `except` clause, if present, and the `except` clause’s suite is executed. All `except` clauses must have an executable block. When the end of this block is reached, execution continues normally after the entire [`try`](https://docs.python.org/3/reference/compound_stmts.html#try) statement. (This means that if two nested handlers exist for the same exception, and the exception occurs in the `try` clause of the inner handler, the outer handler will not handle the exception.)
+When an exception has been assigned using `as target`, it is cleared at the end of the `except` clause. This is as if
+```
+except E as N:
+  foo
+
+```
+
+was translated to
+```
+except E as N:
+  try:
+    foo
+  finally:
+    del N

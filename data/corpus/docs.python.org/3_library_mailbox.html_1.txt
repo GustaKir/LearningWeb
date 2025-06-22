@@ -1,0 +1,27 @@
+Title: Mailbox Class Overview
+URL: https://docs.python.org/3/library/mailbox.html
+Summary: The `Mailbox` class provides a dictionary-like interface for inspecting and modifying mailboxes. It is designed to be subclassed for specific formats rather than instantiated directly. Keys identify messages uniquely within a `Mailbox`, even if messages are modified. Messages can be added with the `add()` method and removed using `del` or the `remove()` method.
+---
+
+_class_ mailbox.Mailbox[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "Link to this definition")
+    
+A mailbox, which may be inspected and modified.
+The `Mailbox` class defines an interface and is not intended to be instantiated. Instead, format-specific subclasses should inherit from `Mailbox` and your code should instantiate a particular subclass.
+The `Mailbox` interface is dictionary-like, with small keys corresponding to messages. Keys are issued by the `Mailbox` instance with which they will be used and are only meaningful to that `Mailbox` instance. A key continues to identify a message even if the corresponding message is modified, such as by replacing it with another message.
+Messages may be added to a `Mailbox` instance using the set-like method [`add()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.add "mailbox.Mailbox.add") and removed using a `del` statement or the set-like methods [`remove()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.remove "mailbox.Mailbox.remove") and [`discard()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.discard "mailbox.Mailbox.discard").
+`Mailbox` interface semantics differ from dictionary semantics in some noteworthy ways. Each time a message is requested, a new representation (typically a [`Message`](https://docs.python.org/3/library/mailbox.html#mailbox.Message "mailbox.Message") instance) is generated based upon the current state of the mailbox. Similarly, when a message is added to a `Mailbox` instance, the provided message representation’s contents are copied. In neither case is a reference to the message representation kept by the `Mailbox` instance.
+The default `Mailbox` [iterator](https://docs.python.org/3/glossary.html#term-iterator) iterates over message representations, not keys as the default [`dictionary`](https://docs.python.org/3/library/stdtypes.html#dict "dict") iterator does. Moreover, modification of a mailbox during iteration is safe and well-defined. Messages added to the mailbox after an iterator is created will not be seen by the iterator. Messages removed from the mailbox before the iterator yields them will be silently skipped, though using a key from an iterator may result in a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") exception if the corresponding message is subsequently removed.
+Warning
+Be very cautious when modifying mailboxes that might be simultaneously changed by some other process. The safest mailbox format to use for such tasks is [`Maildir`](https://docs.python.org/3/library/mailbox.html#mailbox.Maildir "mailbox.Maildir"); try to avoid using single-file formats such as [`mbox`](https://docs.python.org/3/library/mailbox.html#mailbox.mbox "mailbox.mbox") for concurrent writing. If you’re modifying a mailbox, you _must_ lock it by calling the [`lock()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.lock "mailbox.Mailbox.lock") and [`unlock()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.unlock "mailbox.Mailbox.unlock") methods _before_ reading any messages in the file or making any changes by adding or deleting a message. Failing to lock the mailbox runs the risk of losing messages or corrupting the entire mailbox.
+`Mailbox` instances have the following methods: 
+
+add(_message_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.add "Link to this definition")
+    
+Add _message_ to the mailbox and return the key that has been assigned to it.
+Parameter _message_ may be a [`Message`](https://docs.python.org/3/library/mailbox.html#mailbox.Message "mailbox.Message") instance, an [`email.message.Message`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message "email.message.Message") instance, a string, a byte string, or a file-like object (which should be open in binary mode). If _message_ is an instance of the appropriate format-specific [`Message`](https://docs.python.org/3/library/mailbox.html#mailbox.Message "mailbox.Message") subclass (e.g., if it’s an [`mboxMessage`](https://docs.python.org/3/library/mailbox.html#mailbox.mboxMessage "mailbox.mboxMessage") instance and this is an [`mbox`](https://docs.python.org/3/library/mailbox.html#mailbox.mbox "mailbox.mbox") instance), its format-specific information is used. Otherwise, reasonable defaults for format-specific information are used.
+Changed in version 3.2: Support for binary input was added. 
+
+remove(_key_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.remove "Link to this definition")
+
+
+__delitem__(_key_)[¶](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.__delitem__ "Link to this definition")

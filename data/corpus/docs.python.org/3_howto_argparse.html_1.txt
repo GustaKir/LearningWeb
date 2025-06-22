@@ -1,0 +1,95 @@
+Title: Introduction to argparse
+URL: https://docs.python.org/3/howto/argparse.html
+Summary: This tutorial serves as a gentle introduction to the argparse module, which is the recommended library for command-line parsing in Python. It also mentions two other related libraries: optparse and getopt, highlighting their differences and use cases.
+---
+
+author:
+    
+Tshepang Mbambo
+This tutorial is intended to be a gentle introduction to [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library."), the recommended command-line parsing module in the Python standard library.
+Note
+The standard library includes two other libraries directly related to command-line parameter processing: the lower level [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") module (which may require more code to configure for a given application, but also allows an application to request behaviors that `argparse` doesn’t support), and the very low level [`getopt`](https://docs.python.org/3/library/getopt.html#module-getopt "getopt: Portable parser for command line options; support both short and long option names.") (which specifically serves as an equivalent to the `getopt()` family of functions available to C programmers). While neither of those modules is covered directly in this guide, many of the core concepts in `argparse` first originated in `optparse`, so some aspects of this tutorial will also be relevant to `optparse` users.
+## Concepts[¶](https://docs.python.org/3/howto/argparse.html#concepts "Link to this heading")
+Let’s show the sort of functionality that we are going to explore in this introductory tutorial by making use of the **ls** command:
+```
+$ ls
+cpython devguide prog.py pypy rm-unused-function.patch
+$ lspypy
+ctypes_configure demo dotviewer include lib_pypy lib-python ...
+$ ls-l
+total 20
+drwxr-xr-x 19 wena wena 4096 Feb 18 18:51 cpython
+drwxr-xr-x 4 wena wena 4096 Feb 8 12:04 devguide
+-rwxr-xr-x 1 wena wena 535 Feb 19 00:05 prog.py
+drwxr-xr-x 14 wena wena 4096 Feb 7 00:59 pypy
+-rw-r--r-- 1 wena wena 741 Feb 18 01:01 rm-unused-function.patch
+$ ls--help
+Usage: ls [OPTION]... [FILE]...
+List information about the FILEs (the current directory by default).
+Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.
+...
+
+```
+
+A few concepts we can learn from the four commands:
+  * The **ls** command is useful when run without any options at all. It defaults to displaying the contents of the current directory.
+  * If we want beyond what it provides by default, we tell it a bit more. In this case, we want it to display a different directory, `pypy`. What we did is specify what is known as a positional argument. It’s named so because the program should know what to do with the value, solely based on where it appears on the command line. This concept is more relevant to a command like **cp** , whose most basic usage is `cp SRC DEST`. The first position is _what you want copied,_ and the second position is _where you want it copied to_.
+  * Now, say we want to change behaviour of the program. In our example, we display more info for each file instead of just showing the file names. The `-l` in that case is known as an optional argument.
+  * That’s a snippet of the help text. It’s very useful in that you can come across a program you have never used before, and can figure out how it works simply by reading its help text.
+
+
+## The basics[¶](https://docs.python.org/3/howto/argparse.html#the-basics "Link to this heading")
+Let us start with a very simple example which does (almost) nothing:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.parse_args()
+
+```
+
+Following is a result of running the code:
+```
+$ pythonprog.py
+$ pythonprog.py--help
+usage: prog.py [-h]
+options:
+ -h, --help show this help message and exit
+$ pythonprog.py--verbose
+usage: prog.py [-h]
+prog.py: error: unrecognized arguments: --verbose
+$ pythonprog.pyfoo
+usage: prog.py [-h]
+prog.py: error: unrecognized arguments: foo
+
+```
+
+Here is what is happening:
+  * Running the script without any options results in nothing displayed to stdout. Not so useful.
+  * The second one starts to display the usefulness of the [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") module. We have done almost nothing, but already we get a nice help message.
+  * The `--help` option, which can also be shortened to `-h`, is the only option we get for free (i.e. no need to specify it). Specifying anything else results in an error. But even then, we do get a useful usage message, also for free.
+
+
+## Introducing Positional arguments[¶](https://docs.python.org/3/howto/argparse.html#introducing-positional-arguments "Link to this heading")
+An example:
+```
+importargparse
+parser = argparse.ArgumentParser()
+parser.add_argument("echo")
+args = parser.parse_args()
+print(args.echo)
+
+```
+
+And running the code:
+```
+$ pythonprog.py
+usage: prog.py [-h] echo
+prog.py: error: the following arguments are required: echo
+$ pythonprog.py--help
+usage: prog.py [-h] echo
+positional arguments:
+ echo
+options:
+ -h, --help show this help message and exit
+$ pythonprog.pyfoo
+foo

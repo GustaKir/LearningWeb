@@ -1,0 +1,49 @@
+Title: Python 3.11 Release Notes - Configuration Changes
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: The document highlights important configuration updates in Python 3.11, including the requirement for `PyConfig.module_search_paths_set` to be set to 1 for proper initialization of `sys.path`, the encouragement for distributors to use the optimized Blake2 library, and the update that `PyConfig_Read()` will no longer calculate the initial search path.
+---
+
+```
+
+Or use [the pythoncapi-compat project](https://github.com/python/pythoncapi-compat) to get these functions on old Python functions.
+  * Distributors are encouraged to build Python with the optimized Blake2 library [libb2](https://www.blake2.net/).
+  * The [`PyConfig.module_search_paths_set`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths_set "PyConfig.module_search_paths_set") field must now be set to 1 for initialization to use [`PyConfig.module_search_paths`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths "PyConfig.module_search_paths") to initialize [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"). Otherwise, initialization will recalculate the path and replace any values added to `module_search_paths`.
+  * [`PyConfig_Read()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_Read "PyConfig_Read") no longer calculates the initial search path, and will not fill any values into [`PyConfig.module_search_paths`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths "PyConfig.module_search_paths"). To calculate default paths and then modify them, finish initialization and use [`PySys_GetObject()`](https://docs.python.org/3/c-api/sys.html#c.PySys_GetObject "PySys_GetObject") to retrieve [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") as a Python list object and modify it directly.
+
+
+### Deprecated[¶](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-c-api-deprecated "Link to this heading")
+  * Deprecate the following functions to configure the Python initialization:
+    * `PySys_AddWarnOptionUnicode()`
+    * `PySys_AddWarnOption()`
+    * `PySys_AddXOption()`
+    * `PySys_HasWarnOptions()`
+    * `PySys_SetArgvEx()`
+    * `PySys_SetArgv()`
+    * `PySys_SetPath()`
+    * `Py_SetPath()`
+    * `Py_SetProgramName()`
+    * `Py_SetPythonHome()`
+    * `Py_SetStandardStreamEncoding()`
+    * `_Py_SetProgramFullPath()`
+Use the new [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig") API of the [Python Initialization Configuration](https://docs.python.org/3/c-api/init_config.html#init-config) instead ([**PEP 587**](https://peps.python.org/pep-0587/)). (Contributed by Victor Stinner in [gh-88279](https://github.com/python/cpython/issues/88279).)
+  * Deprecate the `ob_shash` member of the [`PyBytesObject`](https://docs.python.org/3/c-api/bytes.html#c.PyBytesObject "PyBytesObject"). Use [`PyObject_Hash()`](https://docs.python.org/3/c-api/object.html#c.PyObject_Hash "PyObject_Hash") instead. (Contributed by Inada Naoki in [bpo-46864](https://bugs.python.org/issue?@action=redirect&bpo=46864).)
+
+
+### Pending Removal in Python 3.12[¶](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-c-api-pending-removal "Link to this heading")
+The following C APIs have been deprecated in earlier Python releases, and will be removed in Python 3.12.
+  * `PyUnicode_AS_DATA()`
+  * `PyUnicode_AS_UNICODE()`
+  * `PyUnicode_AsUnicodeAndSize()`
+  * `PyUnicode_AsUnicode()`
+  * `PyUnicode_FromUnicode()`
+  * `PyUnicode_GET_DATA_SIZE()`
+  * `PyUnicode_GET_SIZE()`
+  * `PyUnicode_GetSize()`
+  * `PyUnicode_IS_COMPACT()`
+  * `PyUnicode_IS_READY()`
+  * [`PyUnicode_READY()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_READY "PyUnicode_READY")
+  * `PyUnicode_WSTR_LENGTH()`
+  * `_PyUnicode_AsUnicode()`
+  * `PyUnicode_WCHAR_KIND`
+  * [`PyUnicodeObject`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicodeObject "PyUnicodeObject")
+  * `PyUnicode_InternImmortal()`

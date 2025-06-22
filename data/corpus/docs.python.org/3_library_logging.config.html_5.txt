@@ -1,0 +1,38 @@
+Title: Optional Keys in Logging Configuration Dictionary
+URL: https://docs.python.org/3/library/logging.config.html
+Summary: This section explains optional keys in a logging configuration dictionary, with a focus on the '_formatters_' key that describes formatter configurations and how to instantiate custom objects if necessary.
+---
+
+All other keys are optional, but if present they will be interpreted as described below. In all cases below where a ‘configuring dict’ is mentioned, it will be checked for the special `'()'` key to see if a custom instantiation is required. If so, the mechanism described in [User-defined objects](https://docs.python.org/3/library/logging.config.html#logging-config-dict-userdef) below is used to create an instance; otherwise, the context is used to determine what to instantiate.
+  * _formatters_ - the corresponding value will be a dict in which each key is a formatter id and each value is a dict describing how to configure the corresponding [`Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter") instance.
+The configuring dict is searched for the following optional keys which correspond to the arguments passed to create a [`Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter") object:
+    * `format`
+    * `datefmt`
+    * `style`
+    * `validate` (since version >=3.8)
+    * `defaults` (since version >=3.12)
+An optional `class` key indicates the name of the formatter’s class (as a dotted module and class name). The instantiation arguments are as for [`Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter"), thus this key is most useful for instantiating a customised subclass of [`Formatter`](https://docs.python.org/3/library/logging.html#logging.Formatter "logging.Formatter"). For example, the alternative class might present exception tracebacks in an expanded or condensed format. If your formatter requires different or extra configuration keys, you should use [User-defined objects](https://docs.python.org/3/library/logging.config.html#logging-config-dict-userdef).
+  * _filters_ - the corresponding value will be a dict in which each key is a filter id and each value is a dict describing how to configure the corresponding Filter instance.
+The configuring dict is searched for the key `name` (defaulting to the empty string) and this is used to construct a [`logging.Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") instance.
+  * _handlers_ - the corresponding value will be a dict in which each key is a handler id and each value is a dict describing how to configure the corresponding Handler instance.
+The configuring dict is searched for the following keys:
+    * `class` (mandatory). This is the fully qualified name of the handler class.
+    * `level` (optional). The level of the handler.
+    * `formatter` (optional). The id of the formatter for this handler.
+    * `filters` (optional). A list of ids of the filters for this handler.
+Changed in version 3.11: `filters` can take filter instances in addition to ids.
+All _other_ keys are passed through as keyword arguments to the handler’s constructor. For example, given the snippet:
+```
+handlers:
+console:
+class :logging.StreamHandler
+formatter:brief
+level  :INFO
+filters:[allow_foo]
+stream :ext://sys.stdout
+file:
+class :logging.handlers.RotatingFileHandler
+formatter:precise
+filename:logconfig.log
+maxBytes:1024
+backupCount:3

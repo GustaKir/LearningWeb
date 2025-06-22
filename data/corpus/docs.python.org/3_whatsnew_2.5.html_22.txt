@@ -1,0 +1,41 @@
+Title: Enhancements in weakref and webbrowser Modules
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: The weakref module adds new methods `iterkeyrefs()` and `keyrefs()` for `WeakKeyDictionary`, and `itervaluerefs()` and `valuerefs()` for `WeakValueDictionary`, improving iteration over weak references. The webbrowser module gains usability as a script with options for opening URLs in new windows or tabs, along with new functions `open_new()` and `open_new_tab()`.
+---
+
+```
+
+(Contributed by Ka-Ping Yee.)
+  * The [`weakref`](https://docs.python.org/3/library/weakref.html#module-weakref "weakref: Support for weak references and weak dictionaries.") module’s `WeakKeyDictionary` and `WeakValueDictionary` types gained new methods for iterating over the weak references contained in the dictionary. `iterkeyrefs()` and `keyrefs()` methods were added to `WeakKeyDictionary`, and `itervaluerefs()` and `valuerefs()` were added to `WeakValueDictionary`. (Contributed by Fred L. Drake, Jr.)
+  * The [`webbrowser`](https://docs.python.org/3/library/webbrowser.html#module-webbrowser "webbrowser: Easy-to-use controller for web browsers.") module received a number of enhancements. It’s now usable as a script with `python -m webbrowser`, taking a URL as the argument; there are a number of switches to control the behaviour (`-n` for a new browser window, `-t` for a new tab). New module-level functions, `open_new()` and `open_new_tab()`, were added to support this. The module’s [`open()`](https://docs.python.org/3/library/functions.html#open "open") function supports an additional feature, an _autoraise_ parameter that signals whether to raise the open window when possible. A number of additional browsers were added to the supported list such as Firefox, Opera, Konqueror, and elinks. (Contributed by Oleg Broytmann and Georg Brandl.)
+  * The [`xmlrpclib`](https://docs.python.org/3/library/xmlrpc.client.html#module-xmlrpc.client "xmlrpc.client: XML-RPC client access.") module now supports returning [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") objects for the XML-RPC date type. Supply `use_datetime=True` to the [`loads()`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.loads "xmlrpc.client.loads") function or the `Unmarshaller` class to enable this feature. (Contributed by Skip Montanaro.)
+  * The [`zipfile`](https://docs.python.org/3/library/zipfile.html#module-zipfile "zipfile: Read and write ZIP-format archive files.") module now supports the ZIP64 version of the format, meaning that a .zip archive can now be larger than 4 GiB and can contain individual files larger than 4 GiB. (Contributed by Ronald Oussoren.)
+  * The [`zlib`](https://docs.python.org/3/library/zlib.html#module-zlib "zlib: Low-level interface to compression and decompression routines compatible with gzip.") module’s `Compress` and `Decompress` objects now support a [`copy()`](https://docs.python.org/3/library/copy.html#module-copy "copy: Shallow and deep copy operations.") method that makes a copy of the object’s internal state and returns a new `Compress` or `Decompress` object. (Contributed by Chris AtLee.)
+
+
+### The ctypes package[¶](https://docs.python.org/3/whatsnew/2.5.html#the-ctypes-package "Link to this heading")
+The [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") package, written by Thomas Heller, has been added to the standard library. [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") lets you call arbitrary functions in shared libraries or DLLs. Long-time users may remember the `dl` module, which provides functions for loading shared libraries and calling functions in them. The [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") package is much fancier.
+To load a shared library or DLL, you must create an instance of the `CDLL` class and provide the name or path of the shared library or DLL. Once that’s done, you can call arbitrary functions by accessing them as attributes of the `CDLL` object.
+```
+importctypes
+libc = ctypes.CDLL('libc.so.6')
+result = libc.printf("Line of output\n")
+
+```
+
+Type constructors for the various C types are provided: `c_int()`, `c_float()`, `c_double()`, `c_char_p()` (equivalent to char*), and so forth. Unlike Python’s types, the C versions are all mutable; you can assign to their `value` attribute to change the wrapped value. Python integers and strings will be automatically converted to the corresponding C types, but for other types you must call the correct type constructor. (And I mean _must_ ; getting it wrong will often result in the interpreter crashing with a segmentation fault.)
+You shouldn’t use `c_char_p()` with a Python string when the C function will be modifying the memory area, because Python strings are supposed to be immutable; breaking this rule will cause puzzling bugs. When you need a modifiable memory area, use `create_string_buffer()`:
+```
+s = "this is a string"
+buf = ctypes.create_string_buffer(s)
+libc.strfry(buf)
+
+```
+
+C functions are assumed to return integers, but you can set the `restype` attribute of the function object to change this:
+>>>```
+>>> libc.atof('2.71828')
+-1783957616
+>>> libc.atof.restype = ctypes.c_double
+>>> libc.atof('2.71828')
+2.71828

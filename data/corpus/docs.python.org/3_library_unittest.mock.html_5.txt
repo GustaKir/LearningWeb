@@ -1,0 +1,128 @@
+Title: Mock Methods in Python's unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section demonstrates the usage of the Mock object in Python's unittest.mock library. It includes examples of asserting that a method was called a specific number of times and with specific arguments using assert_called_once() and assert_called_with(). These methods provide a way to validate interactions with mocks, essential for testing.
+---
+
+```
+>>> mock = Mock()
+>>> mock.method()
+<Mock name='mock.method()' id='...'>
+>>> mock.method.assert_called_once()
+>>> mock.method()
+<Mock name='mock.method()' id='...'>
+>>> mock.method.assert_called_once()
+Traceback (most recent call last):
+...
+AssertionError: Expected 'method' to have been called once. Called 2 times.
+Calls: [call(), call()].
+
+```
+
+Added in version 3.6. 
+
+assert_called_with(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called_with "Link to this definition")
+    
+This method is a convenient way of asserting that the last call has been made in a particular way:
+>>>```
+>>> mock = Mock()
+>>> mock.method(1, 2, 3, test='wow')
+<Mock name='mock.method()' id='...'>
+>>> mock.method.assert_called_with(1, 2, 3, test='wow')
+
+```
+
+
+assert_called_once_with(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called_once_with "Link to this definition")
+    
+Assert that the mock was called exactly once and that call was with the specified arguments.
+>>>```
+>>> mock = Mock(return_value=None)
+>>> mock('foo', bar='baz')
+>>> mock.assert_called_once_with('foo', bar='baz')
+>>> mock('other', bar='values')
+>>> mock.assert_called_once_with('other', bar='values')
+Traceback (most recent call last):
+...
+AssertionError: Expected 'mock' to be called once. Called 2 times.
+Calls: [call('foo', bar='baz'), call('other', bar='values')].
+
+```
+
+
+assert_any_call(_* args_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_any_call "Link to this definition")
+    
+assert the mock has been called with the specified arguments.
+The assert passes if the mock has _ever_ been called, unlike [`assert_called_with()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called_with "unittest.mock.Mock.assert_called_with") and [`assert_called_once_with()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called_once_with "unittest.mock.Mock.assert_called_once_with") that only pass if the call is the most recent one, and in the case of [`assert_called_once_with()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_called_once_with "unittest.mock.Mock.assert_called_once_with") it must also be the only call.
+>>>```
+>>> mock = Mock(return_value=None)
+>>> mock(1, 2, arg='thing')
+>>> mock('some', 'thing', 'else')
+>>> mock.assert_any_call(1, 2, arg='thing')
+
+```
+
+
+assert_has_calls(_calls_ , _any_order =False_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_has_calls "Link to this definition")
+    
+assert the mock has been called with the specified calls. The [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls") list is checked for the calls.
+If _any_order_ is false then the calls must be sequential. There can be extra calls before or after the specified calls.
+If _any_order_ is true then the calls can be in any order, but they must all appear in [`mock_calls`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.mock_calls "unittest.mock.Mock.mock_calls").
+>>>```
+>>> mock = Mock(return_value=None)
+>>> mock(1)
+>>> mock(2)
+>>> mock(3)
+>>> mock(4)
+>>> calls = [call(2), call(3)]
+>>> mock.assert_has_calls(calls)
+>>> calls = [call(4), call(2), call(3)]
+>>> mock.assert_has_calls(calls, any_order=True)
+
+```
+
+
+assert_not_called()[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_not_called "Link to this definition")
+    
+Assert the mock was never called.
+>>>```
+>>> m = Mock()
+>>> m.hello.assert_not_called()
+>>> obj = m.hello()
+>>> m.hello.assert_not_called()
+Traceback (most recent call last):
+...
+AssertionError: Expected 'hello' to not have been called. Called 1 times.
+Calls: [call()].
+
+```
+
+Added in version 3.5. 
+
+reset_mock(_*_ , _return_value =False_, _side_effect =False_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.reset_mock "Link to this definition")
+    
+The reset_mock method resets all the call attributes on a mock object:
+>>>```
+>>> mock = Mock(return_value=None)
+>>> mock('hello')
+>>> mock.called
+True
+>>> mock.reset_mock()
+>>> mock.called
+False
+
+```
+
+This can be useful where you want to make a series of assertions that reuse the same object.
+_return_value_ parameter when set to `True` resets [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value"):
+>>>```
+>>> mock = Mock(return_value=5)
+>>> mock('hello')
+5
+>>> mock.reset_mock(return_value=True)
+>>> mock('hello')
+<Mock name='mock()' id='...'>
+
+```
+
+_side_effect_ parameter when set to `True` resets [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect"):
+>>>

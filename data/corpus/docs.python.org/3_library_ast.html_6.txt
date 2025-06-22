@@ -1,0 +1,130 @@
+Title: AST Dictionary Node
+URL: https://docs.python.org/3/library/ast.html
+Summary: The `ast.Dict` class represents a dictionary in the Abstract Syntax Tree (AST), with `keys` and `values` storing corresponding lists of node representations. It supports dictionary unpacking, where the expression for unpacking goes into the `values` list with a `None` placeholder in `keys`.
+---
+
+```
+
+
+_class_ ast.Dict(_keys_ , _values_)[¶](https://docs.python.org/3/library/ast.html#ast.Dict "Link to this definition")
+    
+A dictionary. `keys` and `values` hold lists of nodes representing the keys and the values respectively, in matching order (what would be returned when calling `dictionary.keys()` and `dictionary.values()`).
+When doing dictionary unpacking using dictionary literals the expression to be expanded goes in the `values` list, with a `None` at the corresponding position in `keys`.
+>>>```
+>>> print(ast.dump(ast.parse('{"a":1, **d}', mode='eval'), indent=4))
+Expression(
+  body=Dict(
+    keys=[
+      Constant(value='a'),
+      None],
+    values=[
+      Constant(value=1),
+      Name(id='d', ctx=Load())]))
+
+```
+
+### Variables[¶](https://docs.python.org/3/library/ast.html#variables "Link to this heading") 
+
+_class_ ast.Name(_id_ , _ctx_)[¶](https://docs.python.org/3/library/ast.html#ast.Name "Link to this definition")
+    
+A variable name. `id` holds the name as a string, and `ctx` is one of the following types. 
+
+_class_ ast.Load[¶](https://docs.python.org/3/library/ast.html#ast.Load "Link to this definition")
+
+
+_class_ ast.Store[¶](https://docs.python.org/3/library/ast.html#ast.Store "Link to this definition")
+
+
+_class_ ast.Del[¶](https://docs.python.org/3/library/ast.html#ast.Del "Link to this definition")
+    
+Variable references can be used to load the value of a variable, to assign a new value to it, or to delete it. Variable references are given a context to distinguish these cases.
+>>>```
+>>> print(ast.dump(ast.parse('a'), indent=4))
+Module(
+  body=[
+    Expr(
+      value=Name(id='a', ctx=Load()))])
+>>> print(ast.dump(ast.parse('a = 1'), indent=4))
+Module(
+  body=[
+    Assign(
+      targets=[
+        Name(id='a', ctx=Store())],
+      value=Constant(value=1))])
+>>> print(ast.dump(ast.parse('del a'), indent=4))
+Module(
+  body=[
+    Delete(
+      targets=[
+        Name(id='a', ctx=Del())])])
+
+```
+
+
+_class_ ast.Starred(_value_ , _ctx_)[¶](https://docs.python.org/3/library/ast.html#ast.Starred "Link to this definition")
+    
+A `*var` variable reference. `value` holds the variable, typically a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name") node. This type must be used when building a [`Call`](https://docs.python.org/3/library/ast.html#ast.Call "ast.Call") node with `*args`.
+>>>```
+>>> print(ast.dump(ast.parse('a, *b = it'), indent=4))
+Module(
+  body=[
+    Assign(
+      targets=[
+        Tuple(
+          elts=[
+            Name(id='a', ctx=Store()),
+            Starred(
+              value=Name(id='b', ctx=Store()),
+              ctx=Store())],
+          ctx=Store())],
+      value=Name(id='it', ctx=Load()))])
+
+```
+
+### Expressions[¶](https://docs.python.org/3/library/ast.html#expressions "Link to this heading") 
+
+_class_ ast.Expr(_value_)[¶](https://docs.python.org/3/library/ast.html#ast.Expr "Link to this definition")
+    
+When an expression, such as a function call, appears as a statement by itself with its return value not used or stored, it is wrapped in this container. `value` holds one of the other nodes in this section, a [`Constant`](https://docs.python.org/3/library/ast.html#ast.Constant "ast.Constant"), a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name"), a [`Lambda`](https://docs.python.org/3/library/ast.html#ast.Lambda "ast.Lambda"), a [`Yield`](https://docs.python.org/3/library/ast.html#ast.Yield "ast.Yield") or [`YieldFrom`](https://docs.python.org/3/library/ast.html#ast.YieldFrom "ast.YieldFrom") node.
+>>>```
+>>> print(ast.dump(ast.parse('-a'), indent=4))
+Module(
+  body=[
+    Expr(
+      value=UnaryOp(
+        op=USub(),
+        operand=Name(id='a', ctx=Load())))])
+
+```
+
+
+_class_ ast.UnaryOp(_op_ , _operand_)[¶](https://docs.python.org/3/library/ast.html#ast.UnaryOp "Link to this definition")
+    
+A unary operation. `op` is the operator, and `operand` any expression node. 
+
+_class_ ast.UAdd[¶](https://docs.python.org/3/library/ast.html#ast.UAdd "Link to this definition")
+
+
+_class_ ast.USub[¶](https://docs.python.org/3/library/ast.html#ast.USub "Link to this definition")
+
+
+_class_ ast.Not[¶](https://docs.python.org/3/library/ast.html#ast.Not "Link to this definition")
+
+
+_class_ ast.Invert[¶](https://docs.python.org/3/library/ast.html#ast.Invert "Link to this definition")
+    
+Unary operator tokens. [`Not`](https://docs.python.org/3/library/ast.html#ast.Not "ast.Not") is the `not` keyword, [`Invert`](https://docs.python.org/3/library/ast.html#ast.Invert "ast.Invert") is the `~` operator.
+>>>```
+>>> print(ast.dump(ast.parse('not x', mode='eval'), indent=4))
+Expression(
+  body=UnaryOp(
+    op=Not(),
+    operand=Name(id='x', ctx=Load())))
+
+```
+
+
+_class_ ast.BinOp(_left_ , _op_ , _right_)[¶](https://docs.python.org/3/library/ast.html#ast.BinOp "Link to this definition")
+    
+A binary operation (like addition or division). `op` is the operator, and `left` and `right` are any expression nodes.
+>>>

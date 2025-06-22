@@ -1,0 +1,32 @@
+Title: Changes in Tcl/Tk Configuration and Integer Handling in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: The configure options `--with-tcltk-includes` and `--with-tcltk-libs` have been removed, and users on RHEL 7 and CentOS 7 are advised to use specific library flags. Additionally, Python's `int` implementation now uses 30-bit digits by default, with the old 15-bit digits option still available but potentially subject to removal in the future.
+---
+
+ries. The **configure** options `--with-tcltk-includes` and `--with-tcltk-libs` have been removed.
+On RHEL 7 and CentOS 7 the development packages do not provide `tcl.pc` and `tk.pc`; use `TCLTK_LIBS="-ltk8.5 -ltkstub8.5 -ltcl8.5"`. The directory `Misc/rhel7` contains `.pc` files and instructions on how to build Python with RHEL 7’s and CentOS 7’s Tcl/Tk and OpenSSL.
+  * CPython will now use 30-bit digits by default for the Python [`int`](https://docs.python.org/3/library/functions.html#int "int") implementation. Previously, the default was to use 30-bit digits on platforms with `SIZEOF_VOID_P >= 8`, and 15-bit digits otherwise. It’s still possible to explicitly request use of 15-bit digits via either the [`--enable-big-digits`](https://docs.python.org/3/using/configure.html#cmdoption-enable-big-digits) option to the configure script or (for Windows) the `PYLONG_BITS_IN_DIGIT` variable in `PC/pyconfig.h`, but this option may be removed at some point in the future. (Contributed by Mark Dickinson in [bpo-45569](https://bugs.python.org/issue?@action=redirect&bpo=45569).)
+
+
+## C API Changes[¶](https://docs.python.org/3/whatsnew/3.11.html#c-api-changes "Link to this heading")
+### New Features[¶](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-c-api-new-features "Link to this heading")
+  * Add a new [`PyType_GetName()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetName "PyType_GetName") function to get type’s short name. (Contributed by Hai Shi in [bpo-42035](https://bugs.python.org/issue?@action=redirect&bpo=42035).)
+  * Add a new [`PyType_GetQualName()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetQualName "PyType_GetQualName") function to get type’s qualified name. (Contributed by Hai Shi in [bpo-42035](https://bugs.python.org/issue?@action=redirect&bpo=42035).)
+  * Add new [`PyThreadState_EnterTracing()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_EnterTracing "PyThreadState_EnterTracing") and [`PyThreadState_LeaveTracing()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_LeaveTracing "PyThreadState_LeaveTracing") functions to the limited C API to suspend and resume tracing and profiling. (Contributed by Victor Stinner in [bpo-43760](https://bugs.python.org/issue?@action=redirect&bpo=43760).)
+  * Added the [`Py_Version`](https://docs.python.org/3/c-api/apiabiversion.html#c.Py_Version "Py_Version") constant which bears the same value as [`PY_VERSION_HEX`](https://docs.python.org/3/c-api/apiabiversion.html#c.PY_VERSION_HEX "PY_VERSION_HEX"). (Contributed by Gabriele N. Tornetta in [bpo-43931](https://bugs.python.org/issue?@action=redirect&bpo=43931).)
+  * [`Py_buffer`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer") and APIs are now part of the limited API and the stable ABI:
+    * [`PyObject_CheckBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_CheckBuffer "PyObject_CheckBuffer")
+    * [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer")
+    * [`PyBuffer_GetPointer()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_GetPointer "PyBuffer_GetPointer")
+    * [`PyBuffer_SizeFromFormat()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_SizeFromFormat "PyBuffer_SizeFromFormat")
+    * [`PyBuffer_ToContiguous()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_ToContiguous "PyBuffer_ToContiguous")
+    * [`PyBuffer_FromContiguous()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_FromContiguous "PyBuffer_FromContiguous")
+    * [`PyObject_CopyData()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_CopyData "PyObject_CopyData")
+    * [`PyBuffer_IsContiguous()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_IsContiguous "PyBuffer_IsContiguous")
+    * [`PyBuffer_FillContiguousStrides()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_FillContiguousStrides "PyBuffer_FillContiguousStrides")
+    * [`PyBuffer_FillInfo()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_FillInfo "PyBuffer_FillInfo")
+    * [`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release")
+    * [`PyMemoryView_FromBuffer()`](https://docs.python.org/3/c-api/memoryview.html#c.PyMemoryView_FromBuffer "PyMemoryView_FromBuffer")
+    * [`bf_getbuffer`](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs.bf_getbuffer "PyBufferProcs.bf_getbuffer") and [`bf_releasebuffer`](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs.bf_releasebuffer "PyBufferProcs.bf_releasebuffer") type slots
+(Contributed by Christian Heimes in [bpo-45459](https://bugs.python.org/issue?@action=redirect&bpo=45459).)
+  * Added the [`PyType_GetModuleByDef()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetModuleByDef "PyType_GetModuleByDef") function, used to get the module in which a method was defined, in cases where this information is not available directly (via [`PyCMethod`](https://docs.python.org/3/c-api

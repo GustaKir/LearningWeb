@@ -1,0 +1,29 @@
+Title: PyUnicode_AsWideCharString Function
+URL: https://docs.python.org/3/c-api/unicode.html
+Summary: The PyUnicode_AsWideCharString function converts a Unicode object to a wide character string, ensuring the output ends with a null character. It can return the number of wide characters if the size pointer is provided. Be aware that null characters in the output may lead to truncation when using standard C functions, and a ValueError is raised if null characters are present when size is NULL.
+---
+
+wchar_t*PyUnicode_AsWideCharString([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*unicode, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*size)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsWideCharString "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Convert the Unicode object to a wide character string. The output string always ends with a null character. If _size_ is not `NULL`, write the number of wide characters (excluding the trailing null termination character) into _*size_. Note that the resulting `wchar_t` string might contain null characters, which would cause the string to be truncated when used with most C functions. If _size_ is `NULL` and the wchar_t* string contains null characters a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised.
+Returns a buffer allocated by [`PyMem_New`](https://docs.python.org/3/c-api/memory.html#c.PyMem_New "PyMem_New") (use [`PyMem_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Free "PyMem_Free") to free it) on success. On error, returns `NULL` and _*size_ is undefined. Raises a [`MemoryError`](https://docs.python.org/3/library/exceptions.html#MemoryError "MemoryError") if memory allocation is failed.
+Added in version 3.2.
+Changed in version 3.7: Raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if _size_ is `NULL` and the wchar_t* string contains null characters.
+## Built-in Codecs[¶](https://docs.python.org/3/c-api/unicode.html#built-in-codecs "Link to this heading")
+Python provides a set of built-in codecs which are written in C for speed. All of these codecs are directly usable via the following functions.
+Many of the following APIs take two arguments encoding and errors, and they have the same semantics as the ones of the built-in [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") string object constructor.
+Setting encoding to `NULL` causes the default encoding to be used which is UTF-8. The file system calls should use [`PyUnicode_FSConverter()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FSConverter "PyUnicode_FSConverter") for encoding file names. This uses the [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler) internally.
+Error handling is set by errors which may also be set to `NULL` meaning to use the default handling defined for the codec. Default error handling for all built-in codecs is “strict” ([`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised).
+The codecs all use a similar interface. Only deviations from the following generic ones are documented for simplicity.
+### Generic Codecs[¶](https://docs.python.org/3/c-api/unicode.html#generic-codecs "Link to this heading")
+These are the generic codec APIs: 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_Decode(constchar*str, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")size, constchar*encoding, constchar*errors)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_Decode "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a Unicode object by decoding _size_ bytes of the encoded string _str_. _encoding_ and _errors_ have the same meaning as the parameters of the same name in the [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") built-in function. The codec to be used is looked up using the Python codec registry. Return `NULL` if an exception was raised by the codec. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_AsEncodedString([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*unicode, constchar*encoding, constchar*errors)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_AsEncodedString "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Encode a Unicode object and return the result as Python bytes object. _encoding_ and _errors_ have the same meaning as the parameters of the same name in the Unicode [`encode()`](https://docs.python.org/3/library/stdtypes.html#str.encode "str.encode") method. The codec to be used is looked up using the Python codec registry. Return `NULL` if an exception was raised by the codec.
+### UTF-8 Codecs[¶](https://docs.python.org/3/c-api/unicode.html#utf-8-codecs "Link to this heading")
+These are the UTF-8 codec APIs:

@@ -1,0 +1,76 @@
+Title: C3 Algorithm in Python Class Hierarchies
+URL: https://docs.python.org/3/howto/mro.html
+Summary: This document provides an overview of the C3 algorithm for method resolution order (MRO) in Python classes, including examples illustrating class definitions and the implications of different MRO scenarios. It addresses order disagreements and the differences between Python 2.2 and later versions, demonstrating how classes are constructed and the resulting MRO determined by the C3 algorithm.
+---
+
+```
+#<mro.py>
+"""C3 algorithm by Samuele Pedroni (with readability enhanced by me)."""
+class__metaclass__(type):
+  "All classes are metamagically modified to be nicely printed"
+  __repr__ = lambda cls: cls.__name__
+classex_2:
+  "Serious order disagreement" #From Guido
+  classO: pass
+  classX(O): pass
+  classY(O): pass
+  classA(X,Y): pass
+  classB(Y,X): pass
+  try:
+    classZ(A,B): pass #creates Z(A,B) in Python 2.2
+  except TypeError:
+    pass # Z(A,B) cannot be created in Python 2.3
+classex_5:
+  "My first example"
+  classO: pass
+  classF(O): pass
+  classE(O): pass
+  classD(O): pass
+  classC(D,F): pass
+  classB(D,E): pass
+  classA(B,C): pass
+classex_6:
+  "My second example"
+  classO: pass
+  classF(O): pass
+  classE(O): pass
+  classD(O): pass
+  classC(D,F): pass
+  classB(E,D): pass
+  classA(B,C): pass
+classex_9:
+  "Difference between Python 2.2 MRO and C3" #From Samuele
+  classO: pass
+  classA(O): pass
+  classB(O): pass
+  classC(O): pass
+  classD(O): pass
+  classE(O): pass
+  classK1(A,B,C): pass
+  classK2(D,B,E): pass
+  classK3(D,A): pass
+  classZ(K1,K2,K3): pass
+defmerge(seqs):
+  print '\n\nCPL[%s]=%s' % (seqs[0][0],seqs),
+  res = []; i=0
+  while 1:
+   nonemptyseqs=[seq for seq in seqs if seq]
+   if not nonemptyseqs: return res
+   i+=1; print '\n',i,'round: candidates...',
+   for seq in nonemptyseqs: # find merge candidates among seq heads
+     cand = seq[0]; print ' ',cand,
+     nothead=[s for s in nonemptyseqs if cand in s[1:]]
+     if nothead: cand=None #reject candidate
+     else: break
+   if not cand: raise "Inconsistent hierarchy"
+   res.append(cand)
+   for seq in nonemptyseqs: # remove cand
+     if seq[0] == cand: del seq[0]
+defmro(C):
+  "Compute the class precedence list (mro) according to C3"
+  return merge([[C]]+map(mro,C.__bases__)+[list(C.__bases__)])
+defprint_mro(C):
+  print '\nMRO[%s]=%s' % (C,mro(C))
+  print '\nP22 MRO[%s]=%s' % (C,C.mro())
+print_mro(ex_9.Z)
+#</mro.py>

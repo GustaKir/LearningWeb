@@ -1,0 +1,45 @@
+Title: Disassembly and Instruction Extraction in Python
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section describes the parameter interpretation for disassembly, including local and global variable names, constants, and comparison operators. It notes changes in versions 3.4, 3.11, and 3.13 regarding the addition of the _file_, _show_caches_, _adaptive_, and _show_offsets_ parameters. The function dis.get_instructions() returns an iterator of named tuples representing each instruction in the provided code.
+---
+
+The parameter interpretation recognizes local and global variable names, constant values, branch targets, and compare operators.
+The disassembly is written as text to the supplied _file_ argument if provided and to `sys.stdout` otherwise.
+Changed in version 3.4: Added _file_ parameter.
+Changed in version 3.11: Added the _show_caches_ and _adaptive_ parameters.
+Changed in version 3.13: Added the _show_offsets_ parameter. 
+
+dis.get_instructions(_x_ , _*_ , _first_line =None_, _show_caches =False_, _adaptive =False_)[¶](https://docs.python.org/3/library/dis.html#dis.get_instructions "Link to this definition")
+    
+Return an iterator over the instructions in the supplied function, method, source code string or code object.
+The iterator generates a series of [`Instruction`](https://docs.python.org/3/library/dis.html#dis.Instruction "dis.Instruction") named tuples giving the details of each operation in the supplied code.
+If _first_line_ is not `None`, it indicates the line number that should be reported for the first source line in the disassembled code. Otherwise, the source line information (if any) is taken directly from the disassembled code object.
+The _adaptive_ parameter works as it does in [`dis()`](https://docs.python.org/3/library/dis.html#module-dis "dis: Disassembler for Python bytecode.").
+Added in version 3.4.
+Changed in version 3.11: Added the _show_caches_ and _adaptive_ parameters.
+Changed in version 3.13: The _show_caches_ parameter is deprecated and has no effect. The iterator generates the [`Instruction`](https://docs.python.org/3/library/dis.html#dis.Instruction "dis.Instruction") instances with the _cache_info_ field populated (regardless of the value of _show_caches_) and it no longer generates separate items for the cache entries. 
+
+dis.findlinestarts(_code_)[¶](https://docs.python.org/3/library/dis.html#dis.findlinestarts "Link to this definition")
+    
+This generator function uses the [`co_lines()`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_lines "codeobject.co_lines") method of the [code object](https://docs.python.org/3/reference/datamodel.html#code-objects) _code_ to find the offsets which are starts of lines in the source code. They are generated as `(offset, lineno)` pairs.
+Changed in version 3.6: Line numbers can be decreasing. Before, they were always increasing.
+Changed in version 3.10: The [**PEP 626**](https://peps.python.org/pep-0626/) [`co_lines()`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_lines "codeobject.co_lines") method is used instead of the [`co_firstlineno`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_firstlineno "codeobject.co_firstlineno") and [`co_lnotab`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_lnotab "codeobject.co_lnotab") attributes of the [code object](https://docs.python.org/3/reference/datamodel.html#code-objects).
+Changed in version 3.13: Line numbers can be `None` for bytecode that does not map to source lines. 
+
+dis.findlabels(_code_)[¶](https://docs.python.org/3/library/dis.html#dis.findlabels "Link to this definition")
+    
+Detect all offsets in the raw compiled bytecode string _code_ which are jump targets, and return a list of these offsets. 
+
+dis.stack_effect(_opcode_ , _oparg =None_, _*_ , _jump =None_)[¶](https://docs.python.org/3/library/dis.html#dis.stack_effect "Link to this definition")
+    
+Compute the stack effect of _opcode_ with argument _oparg_.
+If the code has a jump target and _jump_ is `True`, [`stack_effect()`](https://docs.python.org/3/library/dis.html#dis.stack_effect "dis.stack_effect") will return the stack effect of jumping. If _jump_ is `False`, it will return the stack effect of not jumping. And if _jump_ is `None` (default), it will return the maximal stack effect of both cases.
+Added in version 3.4.
+Changed in version 3.8: Added _jump_ parameter.
+Changed in version 3.13: If `oparg` is omitted (or `None`), the stack effect is now returned for `oparg=0`. Previously this was an error for opcodes that use their arg. It is also no longer an error to pass an integer `oparg` when the `opcode` does not use it; the `oparg` in this case is ignored.
+## Python Bytecode Instructions[¶](https://docs.python.org/3/library/dis.html#python-bytecode-instructions "Link to this heading")
+The [`get_instructions()`](https://docs.python.org/3/library/dis.html#dis.get_instructions "dis.get_instructions") function and [`Bytecode`](https://docs.python.org/3/library/dis.html#dis.Bytecode "dis.Bytecode") class provide details of bytecode instructions as [`Instruction`](https://docs.python.org/3/library/dis.html#dis.Instruction "dis.Instruction") instances: 
+
+_class_ dis.Instruction[¶](https://docs.python.org/3/library/dis.html#dis.Instruction "Link to this definition")
+    
+Details for a bytecode operation

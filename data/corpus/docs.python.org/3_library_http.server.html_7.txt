@@ -1,0 +1,62 @@
+Title: Enhancing SimpleHTTPRequestHandler and CGIHTTPRequestHandler
+URL: https://docs.python.org/3/library/http.server.html
+Summary: The SimpleHTTPRequestHandler can be subclassed to modify behavior, such as changing the index file names by overriding `index_pages`. The CGIHTTPRequestHandler serves files and CGI script outputs, maintaining the same directory mapping as SimpleHTTPRequestHandler.
+---
+
+```
+
+[`SimpleHTTPRequestHandler`](https://docs.python.org/3/library/http.server.html#http.server.SimpleHTTPRequestHandler "http.server.SimpleHTTPRequestHandler") can also be subclassed to enhance behavior, such as using different index file names by overriding the class attribute `index_pages`. 
+
+_class_ http.server.CGIHTTPRequestHandler(_request_ , _client_address_ , _server_)[¶](https://docs.python.org/3/library/http.server.html#http.server.CGIHTTPRequestHandler "Link to this definition")
+    
+This class is used to serve either files or output of CGI scripts from the current directory and below. Note that mapping HTTP hierarchic structure to local directory structure is exactly as in [`SimpleHTTPRequestHandler`](https://docs.python.org/3/library/http.server.html#http.server.SimpleHTTPRequestHandler "http.server.SimpleHTTPRequestHandler").
+Note
+CGI scripts run by the [`CGIHTTPRequestHandler`](https://docs.python.org/3/library/http.server.html#http.server.CGIHTTPRequestHandler "http.server.CGIHTTPRequestHandler") class cannot execute redirects (HTTP code 302), because code 200 (script output follows) is sent prior to execution of the CGI script. This pre-empts the status code.
+The class will however, run the CGI script, instead of serving it as a file, if it guesses it to be a CGI script. Only directory-based CGI are used — the other common server configuration is to treat special extensions as denoting CGI scripts.
+The `do_GET()` and `do_HEAD()` functions are modified to run CGI scripts and serve the output, instead of serving files, if the request leads to somewhere below the `cgi_directories` path.
+The [`CGIHTTPRequestHandler`](https://docs.python.org/3/library/http.server.html#http.server.CGIHTTPRequestHandler "http.server.CGIHTTPRequestHandler") defines the following data member: 
+
+cgi_directories[¶](https://docs.python.org/3/library/http.server.html#http.server.CGIHTTPRequestHandler.cgi_directories "Link to this definition")
+    
+This defaults to `['/cgi-bin', '/htbin']` and describes directories to treat as containing CGI scripts.
+The [`CGIHTTPRequestHandler`](https://docs.python.org/3/library/http.server.html#http.server.CGIHTTPRequestHandler "http.server.CGIHTTPRequestHandler") defines the following method: 
+
+do_POST()[¶](https://docs.python.org/3/library/http.server.html#http.server.CGIHTTPRequestHandler.do_POST "Link to this definition")
+    
+This method serves the `'POST'` request type, only allowed for CGI scripts. Error 501, “Can only POST to CGI scripts”, is output when trying to POST to a non-CGI url.
+Note that CGI scripts will be run with UID of user nobody, for security reasons. Problems with the CGI script will be translated to error 403.
+Deprecated since version 3.13, will be removed in version 3.15: [`CGIHTTPRequestHandler`](https://docs.python.org/3/library/http.server.html#http.server.CGIHTTPRequestHandler "http.server.CGIHTTPRequestHandler") is being removed in 3.15. CGI has not been considered a good way to do things for well over a decade. This code has been unmaintained for a while now and sees very little practical use. Retaining it could lead to further [security considerations](https://docs.python.org/3/library/http.server.html#http-server-security).
+## Command-line interface[¶](https://docs.python.org/3/library/http.server.html#command-line-interface "Link to this heading")
+[`http.server`](https://docs.python.org/3/library/http.server.html#module-http.server "http.server: HTTP server and request handlers.") can also be invoked directly using the [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m) switch of the interpreter. The following example illustrates how to serve files relative to the current directory:
+```
+python -m http.server [OPTIONS] [port]
+
+```
+
+The following options are accepted: 
+
+port[¶](https://docs.python.org/3/library/http.server.html#cmdoption-http.server-arg-port "Link to this definition")
+    
+The server listens to port 8000 by default. The default can be overridden by passing the desired port number as an argument:
+```
+python -m http.server 9000
+
+```
+
+
+-b, --bind <address>[¶](https://docs.python.org/3/library/http.server.html#cmdoption-http.server-b "Link to this definition")
+    
+Specifies a specific address to which it should bind. Both IPv4 and IPv6 addresses are supported. By default, the server binds itself to all interfaces. For example, the following command causes the server to bind to localhost only:
+```
+python -m http.server --bind 127.0.0.1
+
+```
+
+Added in version 3.4.
+Changed in version 3.8: Support IPv6 in the `--bind` option. 
+
+-d, --directory <dir>[¶](https://docs.python.org/3/library/http.server.html#cmdoption-http.server-d "Link to this definition")
+    
+Specifies a directory to which it should serve the files. By default, the server uses the current directory. For example, the following command uses a specific directory:
+```
+python -m http.server --directory /tmp/

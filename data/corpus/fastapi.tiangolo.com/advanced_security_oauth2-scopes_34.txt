@@ -1,0 +1,42 @@
+Title: OAuth2 Security Implementation in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/
+Summary: This section of the FastAPI documentation outlines the implementation of OAuth2 security, focusing on user authentication and access token generation. It details the use of scopes to manage user permissions, handling of active user checks, and the process to log in and retrieve user information through API endpoints.
+---
+
+efget_current_active_user(
+  current_user: Annotated[User, Security(get_current_user, scopes=["me"])],
+):
+  if current_user.disabled:
+    raise HTTPException(status_code=400, detail="Inactive user")
+  return current_user
+@app.post("/token")
+async deflogin_for_access_token(
+  form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> Token:
+  user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+  if not user:
+    raise HTTPException(status_code=400, detail="Incorrect username or password")
+  access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+  access_token = create_access_token(
+    data={"sub": user.username, "scopes": form_data.scopes},
+    expires_delta=access_token_expires,
+  )
+  return Token(access_token=access_token, token_type="bearer")
+@app.get("/users/me/", response_model=User)
+async defread_users_me(
+  current_user: Annotated[User, Depends(get_current_active_user)],
+):
+  return current_user
+@app.get("/users/me/items/")
+async defread_own_items(
+  current_user: Annotated[User, Security(get_current_active_user, scopes=["items"])],
+):
+  return [{"item_id": "Foo", "owner": current_user.username}]
+@app.get("/status/")
+async defread_system_status(current_user: Annotated[User, Depends(get_current_user)]):
+  return {"status": "ok"}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_10_1)[Python 3.8+](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_10_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_10_3)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_10_4)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#__tabbed_10_5)

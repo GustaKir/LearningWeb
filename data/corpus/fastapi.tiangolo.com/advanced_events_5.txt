@@ -1,0 +1,99 @@
+Title: Managing Application Startup and Shutdown with Lifespan
+URL: https://fastapi.tiangolo.com/advanced/events/
+Summary: This section discusses how to manage resource loading and unloading during application startup and shutdown in FastAPI. It explains the use of a lifespan function defined with `yield` to simulate model loading before handling requests and model unloading after requests, highlighting the importance of resource management.
+---
+
+```
+
+Here we are simulating the expensive _startup_ operation of loading the model by putting the (fake) model function in the dictionary with machine learning models before the `yield`. This code will be executed **before** the application **starts taking requests** , during the _startup_.
+And then, right after the `yield`, we unload the model. This code will be executed **after** the application **finishes handling requests** , right before the _shutdown_. This could, for example, release resources like memory or a GPU.
+Tip
+The `shutdown` would happen when you are **stopping** the application.
+Maybe you need to start a new version, or you just got tired of running it. 🤷
+### Lifespan function[¶](https://fastapi.tiangolo.com/advanced/events/#lifespan-function "Permanent link")
+The first thing to notice, is that we are defining an async function with `yield`. This is very similar to Dependencies with `yield`.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/events/#__tabbed_2_1)
+```
+fromcontextlibimport asynccontextmanager
+fromfastapiimport FastAPI
+deffake_answer_to_everything_ml_model(x: float):
+  return x * 42
+ml_models = {}
+@asynccontextmanager
+async deflifespan(app: FastAPI):
+  # Load the ML model
+  ml_models["answer_to_everything"] = fake_answer_to_everything_ml_model
+  yield
+  # Clean up the ML models and release the resources
+  ml_models.clear()
+app = FastAPI(lifespan=lifespan)
+@app.get("/predict")
+async defpredict(x: float):
+  result = ml_models["answer_to_everything"](x)
+  return {"result": result}
+
+```
+
+The first part of the function, before the `yield`, will be executed **before** the application starts.
+And the part after the `yield` will be executed **after** the application has finished.
+### Async Context Manager[¶](https://fastapi.tiangolo.com/advanced/events/#async-context-manager "Permanent link")
+If you check, the function is decorated with an `@asynccontextmanager`.
+That converts the function into something called an "**async context manager** ".
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/events/#__tabbed_3_1)
+```
+fromcontextlibimport asynccontextmanager
+fromfastapiimport FastAPI
+deffake_answer_to_everything_ml_model(x: float):
+  return x * 42
+ml_models = {}
+@asynccontextmanager
+async deflifespan(app: FastAPI):
+  # Load the ML model
+  ml_models["answer_to_everything"] = fake_answer_to_everything_ml_model
+  yield
+  # Clean up the ML models and release the resources
+  ml_models.clear()
+app = FastAPI(lifespan=lifespan)
+@app.get("/predict")
+async defpredict(x: float):
+  result = ml_models["answer_to_everything"](x)
+  return {"result": result}
+
+```
+
+A **context manager** in Python is something that you can use in a `with` statement, for example, `open()` can be used as a context manager:
+```
+with open("file.txt") as file:
+  file.read()
+
+```
+
+In recent versions of Python, there's also an **async context manager**. You would use it with `async with`:
+```
+async with lifespan(app):
+  await do_stuff()
+
+```
+
+When you create a context manager or an async context manager like above, what it does is that, before entering the `with` block, it will execute the code before the `yield`, and after exiting the `with` block, it will execute the code after the `yield`.
+In our code example above, we don't use it directly, but we pass it to FastAPI for it to use it.
+The `lifespan` parameter of the `FastAPI` app takes an **async context manager** , so we can pass our new `lifespan` async context manager to it.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/events/#__tabbed_4_1)
+```
+fromcontextlibimport asynccontextmanager
+fromfastapiimport FastAPI
+deffake_answer_to_everything_ml_model(x: float):
+  return x * 42
+ml_models = {}
+@asynccontextmanager
+async deflifespan(app: FastAPI):
+  # Load the ML model
+  ml_models["answer_to_everything"] = fake_answer_to_everything_ml_model
+  yield
+  # Clean up the ML models and release the resources
+  ml_models.clear()
+app = FastAPI(lifespan=lifespan)
+@app.get("/predict")
+async defpredict(x: float):
+  result = ml_models["answer_to_everything"](x)
+  return {"result": result}

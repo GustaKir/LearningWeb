@@ -1,0 +1,85 @@
+Title: Documenting Callbacks in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/openapi-callbacks/
+Summary: This section discusses the use of the `callback_url` query parameter with Pydantic's `Url` type and introduces the `callbacks` argument in path operation decorators. It highlights the variability of callback code in different API applications and emphasizes the importance of ensuring external developers implement the external API correctly based on the callback's request body requirements.
+---
+
+```
+
+Tip
+The `callback_url` query parameter uses a Pydantic [Url](https://docs.pydantic.dev/latest/api/networks/) type.
+The only new thing is the `callbacks=invoices_callback_router.routes` as an argument to the _path operation decorator_. We'll see what that is next.
+## Documenting the callback[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#documenting-the-callback "Permanent link")
+The actual callback code will depend heavily on your own API app.
+And it will probably vary a lot from one app to the next.
+It could be just one or two lines of code, like:
+```
+callback_url = "https://example.com/api/v1/invoices/events/"
+httpx.post(callback_url, json={"description": "Invoice paid", "paid": True})
+
+```
+
+But possibly the most important part of the callback is making sure that your API user (the external developer) implements the _external API_ correctly, according to the data that _your API_ is going to send in the request body of the callback, etc.
+So, what we will do next is add the code to document how that _external API_ should look like to receive the callback from _your API_.
+That documentation will show up in the Swagger UI at `/docs` in your API, and it will let external developers know how to build the _external API_.
+This example doesn't implement the callback itself (that could be just a line of code), only the documentation part.
+Tip
+The actual callback is just an HTTP request.
+When implementing the callback yourself, you could use something like [HTTPX](https://www.python-httpx.org) or [Requests](https://requests.readthedocs.io/).
+## Write the callback documentation code[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#write-the-callback-documentation-code "Permanent link")
+This code won't be executed in your app, we only need it to _document_ how that _external API_ should look like.
+But, you already know how to easily create automatic documentation for an API with **FastAPI**.
+So we are going to use that same knowledge to document how the _external API_ should look like... by creating the _path operation(s)_ that the external API should implement (the ones your API will call).
+Tip
+When writing the code to document a callback, it might be useful to imagine that you are that _external developer_. And that you are currently implementing the _external API_ , not _your API_.
+Temporarily adopting this point of view (of the _external developer_) can help you feel like it's more obvious where to put the parameters, the Pydantic model for the body, for the response, etc. for that _external API_.
+### Create a callback `APIRouter`[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#create-a-callback-apirouter "Permanent link")
+First create a new `APIRouter` that will contain one or more callbacks.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#__tabbed_2_1)
+```
+fromtypingimport Union
+fromfastapiimport APIRouter, FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classInvoice(BaseModel):
+  id: str
+  title: Union[str, None] = None
+  customer: str
+  total: float
+classInvoiceEvent(BaseModel):
+  description: str
+  paid: bool
+classInvoiceEventReceived(BaseModel):
+  ok: bool
+invoices_callback_router = APIRouter()
+@invoices_callback_router.post(
+  "{$callback_url}/invoices/{$request.body.id}", response_model=InvoiceEventReceived
+)
+definvoice_notification(body: InvoiceEvent):
+  pass
+@app.post("/invoices/", callbacks=invoices_callback_router.routes)
+defcreate_invoice(invoice: Invoice, callback_url: Union[HttpUrl, None] = None):
+"""
+  Create an invoice.
+  This will (let's imagine) let the API user (some external developer) create an
+  invoice.
+  And this path operation will:
+  * Send the invoice to the client.
+  * Collect the money from the client.
+  * Send a notification back to the API user (the external developer), as a callback.
+    * At this point is that the API will somehow send a POST request to the
+      external API with the notification of the invoice event
+      (e.g. "payment successful").
+  """
+  # Send the invoice, collect the money, send the notification (the callback)
+  return {"msg": "Invoice received"}
+
+```
+
+### Create the callback _path operation_[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#create-the-callback-path-operation "Permanent link")
+To create the callback _path operation_ use the same `APIRouter` you created above.
+It should look just like a normal FastAPI _path operation_ :
+  * It should probably have a declaration of the body it should receive, e.g. `body: InvoiceEvent`.
+  * And it could also have a declaration of the response it should return, e.g. `response_model=InvoiceEventReceived`.
+
+
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#__tabbed_3_1)

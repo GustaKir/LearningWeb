@@ -1,0 +1,44 @@
+Title: Python Executable and Home Path Configuration in Windows
+URL: https://docs.python.org/3/using/windows.html
+Summary: This section discusses how the `pyvenv.cfg` file affects the determination of Python's home directory when executing Python on Windows. It explains the conditions under which the `home` path is used, emphasizing that the core path is deduced differently depending on whether Python is executed directly or hosted within another application, highlighting the role of the registry in these scenarios.
+---
+
+If a `pyvenv.cfg` file is found alongside the main executable or in the directory one level above the executable, the following variations apply:
+  * If `home` is an absolute path and [`PYTHONHOME`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHOME) is not set, this path is used instead of the path to the main executable when deducing the home location.
+
+
+The end result of all this is:
+  * When running `python.exe`, or any other .exe in the main Python directory (either an installed version, or directly from the PCbuild directory), the core path is deduced, and the core paths in the registry are ignored. Other “application paths” in the registry are always read.
+  * When Python is hosted in another .exe (different directory, embedded via COM, etc), the “Python Home” will not be deduced, so the core path from the registry is used. Other “application paths” in the registry are always read.
+  * If Python can’t find its home and there are no registry value (frozen .exe, some very strange installation setup) you get a path with some default, but relative, paths.
+
+
+For those who want to bundle Python into their application or distribution, the following advice will prevent conflicts with other installations:
+  * Include a `._pth` file alongside your executable containing the directories to include. This will ignore paths listed in the registry and environment variables, and also ignore [`site`](https://docs.python.org/3/library/site.html#module-site "site: Module responsible for site-specific configuration.") unless `import site` is listed.
+  * If you are loading `python3.dll` or `python37.dll` in your own executable, explicitly set [`PyConfig.module_search_paths`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths "PyConfig.module_search_paths") before [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig").
+  * Clear and/or overwrite [`PYTHONPATH`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH) and set [`PYTHONHOME`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHOME) before launching `python.exe` from your application.
+  * If you cannot use the previous suggestions (for example, you are a distribution that allows people to run `python.exe` directly), ensure that the landmark file (`Lib\os.py`) exists in your install directory. (Note that it will not be detected inside a ZIP file, but a correctly named ZIP file will be detected instead.)
+
+
+These will ensure that the files in a system-wide installation will not take precedence over the copy of the standard library bundled with your application. Otherwise, your users may experience problems using your application. Note that the first suggestion is the best, as the others may still be susceptible to non-standard paths in the registry and user site-packages.
+Changed in version 3.6: Add `._pth` file support and removes `applocal` option from `pyvenv.cfg`.
+Changed in version 3.6: Add `python_XX_.zip`as a potential landmark when directly adjacent to the executable.
+Deprecated since version 3.6: Modules specified in the registry under `Modules` (not `PythonPath`) may be imported by [`importlib.machinery.WindowsRegistryFinder`](https://docs.python.org/3/library/importlib.html#importlib.machinery.WindowsRegistryFinder "importlib.machinery.WindowsRegistryFinder"). This finder is enabled on Windows in 3.6.0 and earlier, but may need to be explicitly added to [`sys.meta_path`](https://docs.python.org/3/library/sys.html#sys.meta_path "sys.meta_path") in the future.
+## 4.10. Additional modules[¶](https://docs.python.org/3/using/windows.html#additional-modules "Link to this heading")
+Even though Python aims to be portable among all platforms, there are features that are unique to Windows. A couple of modules, both in the standard library and external, and snippets exist to use these features.
+The Windows-specific standard modules are documented in [MS Windows Specific Services](https://docs.python.org/3/library/windows.html#mswin-specific-services).
+### 4.10.1. PyWin32[¶](https://docs.python.org/3/using/windows.html#pywin32 "Link to this heading")
+The [PyWin32](https://pypi.org/project/PyWin32/) module by Mark Hammond is a collection of modules for advanced Windows-specific support. This includes utilities for:
+  * [Component Object Model](https://learn.microsoft.com/windows/win32/com/component-object-model--com--portal) (COM)
+  * Win32 API calls
+  * Registry
+  * Event log
+  * [Microsoft Foundation Classes](https://learn.microsoft.com/cpp/mfc/mfc-desktop-applications) (MFC) user interfaces
+
+
+[PythonWin](https://web.archive.org/web/20060524042422/https://www.python.org/windows/pythonwin/) is a sample MFC application shipped with PyWin32. It is an embeddable IDE with a built-in debugger.
+See also 
+
+[Win32 How Do I…?](https://timgolden.me.uk/python/win32_how_do_i.html)
+    
+by Tim Golden

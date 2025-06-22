@@ -1,0 +1,59 @@
+Title: Callback Examples for Option Parsing
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section provides examples of implementing callbacks in option parsing with Optparse in Python, focusing on ensuring option order and checking arbitrary conditions. It describes how to create a callback that prevents the use of certain options after others, generalizing the error message and flag setting.
+---
+
+```
+
+### Callback example 3: check option order (generalized)[¶](https://docs.python.org/3/library/optparse.html#callback-example-3-check-option-order-generalized "Link to this heading")
+If you want to reuse this callback for several similar options (set a flag, but blow up if `-b` has already been seen), it needs a bit of work: the error message and the flag that it sets must be generalized.
+```
+defcheck_order(option, opt_str, value, parser):
+  if parser.values.b:
+    raise OptionValueError("can't use %s after -b" % opt_str)
+  setattr(parser.values, option.dest, 1)
+...
+parser.add_option("-a", action="callback", callback=check_order, dest='a')
+parser.add_option("-b", action="store_true", dest="b")
+parser.add_option("-c", action="callback", callback=check_order, dest='c')
+
+```
+
+### Callback example 4: check arbitrary condition[¶](https://docs.python.org/3/library/optparse.html#callback-example-4-check-arbitrary-condition "Link to this heading")
+Of course, you could put any condition in there—you’re not limited to checking the values of already-defined options. For example, if you have options that should not be called when the moon is full, all you have to do is this:
+```
+defcheck_moon(option, opt_str, value, parser):
+  if is_moon_full():
+    raise OptionValueError("%s option invalid when moon is full"
+                % opt_str)
+  setattr(parser.values, option.dest, 1)
+...
+parser.add_option("--foo",
+         action="callback", callback=check_moon, dest="foo")
+
+```
+
+(The definition of `is_moon_full()` is left as an exercise for the reader.)
+### Callback example 5: fixed arguments[¶](https://docs.python.org/3/library/optparse.html#callback-example-5-fixed-arguments "Link to this heading")
+Things get slightly more interesting when you define callback options that take a fixed number of arguments. Specifying that a callback option takes arguments is similar to defining a `"store"` or `"append"` option: if you define [`type`](https://docs.python.org/3/library/optparse.html#optparse.Option.type "optparse.Option.type"), then the option takes one argument that must be convertible to that type; if you further define [`nargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.nargs "optparse.Option.nargs"), then the option takes [`nargs`](https://docs.python.org/3/library/optparse.html#optparse.Option.nargs "optparse.Option.nargs") arguments.
+Here’s an example that just emulates the standard `"store"` action:
+```
+defstore_value(option, opt_str, value, parser):
+  setattr(parser.values, option.dest, value)
+...
+parser.add_option("--foo",
+         action="callback", callback=store_value,
+         type="int", nargs=3, dest="foo")
+
+```
+
+Note that [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") takes care of consuming 3 arguments and converting them to integers for you; all you have to do is store them. (Or whatever; obviously you don’t need a callback for this example.)
+### Callback example 6: variable arguments[¶](https://docs.python.org/3/library/optparse.html#callback-example-6-variable-arguments "Link to this heading")
+Things get hairy when you want an option to take a variable number of arguments. For this case, you must write a callback, as [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") doesn’t provide any built-in capabilities for it. And you have to deal with certain intricacies of conventional Unix command-line parsing that [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") normally handles for you. In particular, callbacks should implement the conventional rules for bare `--` and `-` arguments:
+  * either `--` or `-` can be option arguments
+  * bare `--` (if not the argument to some option): halt command-line processing and discard the `--`
+  * bare `-` (if not the argument to some option): halt command-line processing but keep the `-` (append it to `parser.largs`)
+
+
+If you want an option that takes a variable number of arguments, there are several subtle, tricky issues to worry about. The exact implementation you choose will be based on which trade-offs you’re willing to make for your application (which is why [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") doesn’t support this sort of thing directly).
+Nevertheless, here’s a stab at a callback for an option with variable arguments:

@@ -1,0 +1,45 @@
+Title: Using Variable-Sized Data Types in ctypes
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: This section discusses how to utilize variable-sized data types in ctypes by dynamically defining the data type based on the known size. It also introduces the `find_library()` function, which helps locate shared libraries similarly to compiler/linker behavior in compiled languages.
+---
+
+```
+
+Another way to use variable-sized data types with [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") is to use the dynamic nature of Python, and (re-)define the data type after the required size is already known, on a case by case basis.
+## ctypes reference[¶](https://docs.python.org/3/library/ctypes.html#ctypes-reference "Link to this heading")
+### Finding shared libraries[¶](https://docs.python.org/3/library/ctypes.html#finding-shared-libraries "Link to this heading")
+When programming in a compiled language, shared libraries are accessed when compiling/linking a program, and when the program is run.
+The purpose of the [`find_library()`](https://docs.python.org/3/library/ctypes.html#ctypes.util.find_library "ctypes.util.find_library") function is to locate a library in a way similar to what the compiler or runtime loader does (on platforms with several versions of a shared library the most recent should be loaded), while the ctypes library loaders act like when a program is run, and call the runtime loader directly.
+The `ctypes.util` module provides a function which can help to determine the library to load. 
+
+ctypes.util.find_library(_name_)
+    
+Try to find a library and return a pathname. _name_ is the library name without any prefix like _lib_ , suffix like `.so`, `.dylib` or version number (this is the form used for the posix linker option `-l`). If no library can be found, returns `None`.
+The exact functionality is system dependent.
+On Linux, [`find_library()`](https://docs.python.org/3/library/ctypes.html#ctypes.util.find_library "ctypes.util.find_library") tries to run external programs (`/sbin/ldconfig`, `gcc`, `objdump` and `ld`) to find the library file. It returns the filename of the library file.
+Changed in version 3.6: On Linux, the value of the environment variable `LD_LIBRARY_PATH` is used when searching for libraries, if a library cannot be found by any other means.
+Here are some examples:
+>>>```
+>>> fromctypes.utilimport find_library
+>>> find_library("m")
+'libm.so.6'
+>>> find_library("c")
+'libc.so.6'
+>>> find_library("bz2")
+'libbz2.so.1.0'
+>>>
+
+```
+
+On macOS and Android, [`find_library()`](https://docs.python.org/3/library/ctypes.html#ctypes.util.find_library "ctypes.util.find_library") uses the system’s standard naming schemes and paths to locate the library, and returns a full pathname if successful:
+>>>```
+>>> fromctypes.utilimport find_library
+>>> find_library("c")
+'/usr/lib/libc.dylib'
+>>> find_library("m")
+'/usr/lib/libm.dylib'
+>>> find_library("bz2")
+'/usr/lib/libbz2.dylib'
+>>> find_library("AGL")
+'/System/Library/Frameworks/AGL.framework/AGL'
+>>>

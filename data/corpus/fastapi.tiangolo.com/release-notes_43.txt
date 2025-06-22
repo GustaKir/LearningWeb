@@ -1,0 +1,79 @@
+Title: FastAPI Release Notes - Internal Changes
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: This section outlines various internal updates in FastAPI, including pre-commit autoupdates, script additions for file variants, updates to sponsorship badges, and new documentation dependencies. Several pull requests by @tiangolo address these changes.
+---
+
+### Internal[¶](https://fastapi.tiangolo.com/release-notes/#internal_10 "Permanent link")
+  * ⬆ [pre-commit.ci] pre-commit autoupdate. PR [#12396](https://github.com/fastapi/fastapi/pull/12396) by [@pre-commit-ci[bot]](https://github.com/apps/pre-commit-ci).
+  * 🔨 Add script to generate variants of files. PR [#12405](https://github.com/fastapi/fastapi/pull/12405) by [@tiangolo](https://github.com/tiangolo).
+  * 🔧 Add speakeasy-api to `sponsors_badge.yml`. PR [#12404](https://github.com/fastapi/fastapi/pull/12404) by [@tiangolo](https://github.com/tiangolo).
+  * ➕ Add docs dependency: markdown-include-variants. PR [#12399](https://github.com/fastapi/fastapi/pull/12399) by [@tiangolo](https://github.com/tiangolo).
+  * 📝 Fix extra mdx-base-path paths. PR [#12397](https://github.com/fastapi/fastapi/pull/12397) by [@tiangolo](https://github.com/tiangolo).
+  * 👷 Tweak labeler to not override custom labels. PR [#12398](https://github.com/fastapi/fastapi/pull/12398) by [@tiangolo](https://github.com/tiangolo).
+  * 👷 Update worfkow deploy-docs-notify URL. PR [#12392](https://github.com/fastapi/fastapi/pull/12392) by [@tiangolo](https://github.com/tiangolo).
+  * 👷 Update Cloudflare GitHub Action. PR [#12387](https://github.com/fastapi/fastapi/pull/12387) by [@tiangolo](https://github.com/tiangolo).
+  * ⬆ Bump pypa/gh-action-pypi-publish from 1.10.1 to 1.10.3. PR [#12386](https://github.com/fastapi/fastapi/pull/12386) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ Bump mkdocstrings[python] from 0.25.1 to 0.26.1. PR [#12371](https://github.com/fastapi/fastapi/pull/12371) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ Bump griffe-typingdoc from 0.2.6 to 0.2.7. PR [#12370](https://github.com/fastapi/fastapi/pull/12370) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ [pre-commit.ci] pre-commit autoupdate. PR [#12331](https://github.com/fastapi/fastapi/pull/12331) by [@pre-commit-ci[bot]](https://github.com/apps/pre-commit-ci).
+  * 🔧 Update sponsors, remove Fine.dev. PR [#12271](https://github.com/fastapi/fastapi/pull/12271) by [@tiangolo](https://github.com/tiangolo).
+  * ⬆ [pre-commit.ci] pre-commit autoupdate. PR [#12253](https://github.com/fastapi/fastapi/pull/12253) by [@pre-commit-ci[bot]](https://github.com/apps/pre-commit-ci).
+  * ✏️ Fix docstring typos in http security. PR [#12223](https://github.com/fastapi/fastapi/pull/12223) by [@albertvillanova](https://github.com/albertvillanova).
+
+
+## 0.115.0[¶](https://fastapi.tiangolo.com/release-notes/#01150 "Permanent link")
+### Highlights[¶](https://fastapi.tiangolo.com/release-notes/#highlights "Permanent link")
+Now you can declare `Query`, `Header`, and `Cookie` parameters with Pydantic models. 🎉
+#### `Query` Parameter Models[¶](https://fastapi.tiangolo.com/release-notes/#query-parameter-models "Permanent link")
+Use Pydantic models for `Query` parameters:
+```
+fromtypingimport Annotated, Literal
+fromfastapiimport FastAPI, Query
+frompydanticimport BaseModel, Field
+app = FastAPI()
+classFilterParams(BaseModel):
+  limit: int = Field(100, gt=0, le=100)
+  offset: int = Field(0, ge=0)
+  order_by: Literal["created_at", "updated_at"] = "created_at"
+  tags: list[str] = []
+@app.get("/items/")
+async defread_items(filter_query: Annotated[FilterParams, Query()]):
+  return filter_query
+
+```
+
+Read the new docs: [Query Parameter Models](https://fastapi.tiangolo.com/tutorial/query-param-models/).
+#### `Header` Parameter Models[¶](https://fastapi.tiangolo.com/release-notes/#header-parameter-models "Permanent link")
+Use Pydantic models for `Header` parameters:
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Header
+frompydanticimport BaseModel
+app = FastAPI()
+classCommonHeaders(BaseModel):
+  host: str
+  save_data: bool
+  if_modified_since: str | None = None
+  traceparent: str | None = None
+  x_tag: list[str] = []
+@app.get("/items/")
+async defread_items(headers: Annotated[CommonHeaders, Header()]):
+  return headers
+
+```
+
+Read the new docs: [Header Parameter Models](https://fastapi.tiangolo.com/tutorial/header-param-models/).
+#### `Cookie` Parameter Models[¶](https://fastapi.tiangolo.com/release-notes/#cookie-parameter-models "Permanent link")
+Use Pydantic models for `Cookie` parameters:
+```
+fromtypingimport Annotated
+fromfastapiimport Cookie, FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classCookies(BaseModel):
+  session_id: str
+  fatebook_tracker: str | None = None
+  googall_tracker: str | None = None
+@app.get("/items/")
+async defread_items(cookies: Annotated[Cookies, Cookie()]):
+  return cookies

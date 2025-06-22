@@ -1,0 +1,24 @@
+Title: Getting Started with Streamlit in Docker
+URL: https://docs.streamlit.io/deploy/tutorials/docker
+Summary: This section describes the structure of a Dockerized Streamlit application after cloning a sample repository. It highlights the main components, including the 'requirements.txt' file for Python dependencies and the 'streamlit_app.py' main script. Additionally, it encourages customization of the app and provides a brief code example for creating a spiral visualization using Streamlit.
+---
+
+/github.com/streamlit/streamlit-example.git . `
+Once cloned, the directory of `WORKDIR` will look like the following:
+`app/ - requirements.txt - streamlit_app.py `
+where `requirements.txt` file contains all your [Python dependencies](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies#add-python-dependencies). E.g
+`altair pandas streamlit `
+and `streamlit_app.py` is your main script. E.g.
+`from collections import namedtuple import altair as alt import math import pandas as pd import streamlit as st """ # Welcome to Streamlit! Edit `/streamlit_app.py` to customize this app to your heart's desire :heart: If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community forums](https://discuss.streamlit.io). In the meantime, below is an example of what you can do with just a few lines of code: """ with st.echo(code_location='below'):   total_points = st.slider("Number of points in spiral", 1, 5000, 2000)   num_turns = st.slider("Number of turns in spiral", 1, 100, 9)   Point = namedtuple('Point', 'x y')   data = []   points_per_turn = total_points / num_turns   for curr_point_num in range(total_points):    curr_turn, i = divmod(curr_point_num, points_per_turn)    angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn    radius = curr_point_num / total_points    x = radius * math.cos(angle)    y = radius * math.sin(angle)    data.append(Point(x, y))   st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500) .mark_circle(color='#0068c9', opacity=0.5) .encode(x='x:Q', y='y:Q')) `
+b. If your code is in a private repo, please read [Using SSH to access private data in builds](https://docs.docker.com/develop/develop-images/build_enhancements/#using-ssh-to-access-private-data-in-builds) and modify the Dockerfile accordingly -- to install an SSH client, download the public key for [github.com](https://github.com), and clone your private repo. If you use an alternative VCS such as GitLab or Bitbucket, please consult the documentation for that VCS on how to copy your code to the `WORKDIR` of the Dockerfile.
+c. If your code lives in the same directory as the Dockerfile, copy all your app files from your server into the container, including `streamlit_app.py`, `requirements.txt`, etc, by replacing the `git clone` line with:
+`COPY . . `
+More generally, the idea is copy your app code from wherever it may live on your server into the container. If the code is not in the same directory as the Dockerfile, modify the above command to include the path to the code.
+  5. Install your app’s [Python dependencies](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies#add-python-dependencies) from the cloned `requirements.txt` in the container:
+`RUN pip3 install -r requirements.txt `
+  6. The [`EXPOSE`](https://docs.docker.com/engine/reference/builder/#expose) instruction informs Docker that the container listens on the specified network ports at runtime. Your container needs to listen to Streamlit’s (default) port 8501:
+`EXPOSE 8501 `
+  7. The [`HEALTHCHECK`](https://docs.docker.com/engine/reference/builder/#expose) instruction tells Docker how to test a container to check that it is still working. Your container needs to listen to Streamlit’s (default) port 8501:
+`HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health `
+  8. An [`ENTRYPOINT`](https://docs.docker.com/engine/reference/builder/#entrypoint) allows you to configure a container that will run as an executable. Here, it also contains the entire `streamlit run` command for your app, so you don’t have to call it from the command line:
+`ENTRYPOINT ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"] `

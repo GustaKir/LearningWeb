@@ -1,0 +1,124 @@
+Title: Query Parameters and Validations in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This section discusses the query parameter `q`, which is of type `str | None`, making it optional. FastAPI recognizes it as not required due to its default value of `None`. It also covers additional validation to ensure that when `q` is provided, its length does not exceed 50 characters, and how to import necessary components like `Query` and `Annotated` for this validation.
+---
+
+```
+
+The query parameter `q` is of type `str | None`, that means that it's of type `str` but could also be `None`, and indeed, the default value is `None`, so FastAPI will know it's not required.
+Note
+FastAPI will know that the value of `q` is not required because of the default value `= None`.
+Having `str | None` will allow your editor to give you better support and detect errors.
+## Additional validation[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#additional-validation "Permanent link")
+We are going to enforce that even though `q` is optional, whenever it is provided, **its length doesn't exceed 50 characters**.
+### Import `Query` and `Annotated`[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#import-query-and-annotated "Permanent link")
+To achieve that, first import:
+  * `Query` from `fastapi`
+  * `Annotated` from `typing`
+
+
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_3_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[str | None, Query(max_length=50)] = None):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_4_1)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_4_2)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_4_3)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[Union[str, None], Query(max_length=50)] = None):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: str | None = Query(default=None, max_length=50)):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Union[str, None] = Query(default=None, max_length=50)):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Info
+FastAPI added support for `Annotated` (and started recommending it) in version 0.95.0.
+If you have an older version, you would get errors when trying to use `Annotated`.
+Make sure you [Upgrade the FastAPI version](https://fastapi.tiangolo.com/deployment/versions/#upgrading-the-fastapi-versions) to at least 0.95.1 before using `Annotated`.
+## Use `Annotated` in the type for the `q` parameter[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#use-annotated-in-the-type-for-the-q-parameter "Permanent link")
+Remember I told you before that `Annotated` can be used to add metadata to your parameters in the [Python Types Intro](https://fastapi.tiangolo.com/python-types/#type-hints-with-metadata-annotations)?
+Now it's the time to use it with FastAPI. 🚀
+We had this type annotation:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_5_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_5_2)
+```
+q: str | None = None
+
+```
+
+```
+q: Union[str, None] = None
+
+```
+
+What we will do is wrap that with `Annotated`, so it becomes:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_6_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_6_2)
+```
+q: Annotated[str | None] = None
+
+```
+
+```
+q: Annotated[Union[str, None]] = None
+
+```
+
+Both of those versions mean the same thing, `q` is a parameter that can be a `str` or `None`, and by default, it is `None`.
+Now let's jump to the fun stuff. 🎉
+## Add `Query` to `Annotated` in the `q` parameter[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#add-query-to-annotated-in-the-q-parameter "Permanent link")
+Now that we have this `Annotated` where we can put more information (in this case some additional validation), add `Query` inside of `Annotated`, and set the parameter `max_length` to `50`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_7_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[str | None, Query(max_length=50)] = None):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results

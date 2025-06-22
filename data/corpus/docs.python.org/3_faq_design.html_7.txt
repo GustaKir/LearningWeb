@@ -1,0 +1,37 @@
+Title: Best Practices for File Handling in Python
+URL: https://docs.python.org/3/faq/design.html
+Summary: This section discusses the importance of explicitly closing file objects in Python code to ensure compatibility across different implementations. It highlights the potential issue with reference counting in CPython and suggests using the 'with' statement for reliable file management.
+---
+
+your Python code depends on the behavior of the reference counting implementation.
+In some Python implementations, the following code (which is fine in CPython) will probably run out of file descriptors:
+```
+for file in very_long_list_of_files:
+  f = open(file)
+  c = f.read(1)
+
+```
+
+Indeed, using CPython’s reference counting and destructor scheme, each new assignment to `f` closes the previous file. With a traditional GC, however, those file objects will only get collected (and closed) at varying and possibly long intervals.
+If you want to write code that will work with any Python implementation, you should explicitly close the file or use the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement; this will work regardless of memory management scheme:
+```
+for file in very_long_list_of_files:
+  with open(file) as f:
+    c = f.read(1)
+
+```
+
+## [Why doesn’t CPython use a more traditional garbage collection scheme?](https://docs.python.org/3/faq/design.html#id17)[¶](https://docs.python.org/3/faq/design.html#why-doesn-t-cpython-use-a-more-traditional-garbage-collection-scheme "Link to this heading")
+For one thing, this is not a C standard feature and hence it’s not portable. (Yes, we know about the Boehm GC library. It has bits of assembler code for _most_ common platforms, not for all of them, and although it is mostly transparent, it isn’t completely transparent; patches are required to get Python to work with it.)
+Traditional GC also becomes a problem when Python is embedded into other applications. While in a standalone Python it’s fine to replace the standard `malloc()` and `free()` with versions provided by the GC library, an application embedding Python may want to have its _own_ substitute for `malloc()` and `free()`, and may not want Python’s. Right now, CPython works with anything that implements `malloc()` and `free()` properly.
+## [Why isn’t all memory freed when CPython exits?](https://docs.python.org/3/faq/design.html#id18)[¶](https://docs.python.org/3/faq/design.html#why-isn-t-all-memory-freed-when-cpython-exits "Link to this heading")
+Objects referenced from the global namespaces of Python modules are not always deallocated when Python exits. This may happen if there are circular references. There are also certain bits of memory that are allocated by the C library that are impossible to free (e.g. a tool like Purify will complain about these). Python is, however, aggressive about cleaning up memory on exit and does try to destroy every single object.
+If you want to force Python to delete certain things on deallocation use the [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions.") module to run a function that will force those deletions.
+## [Why are there separate tuple and list data types?](https://docs.python.org/3/faq/design.html#id19)[¶](https://docs.python.org/3/faq/design.html#why-are-there-separate-tuple-and-list-data-types "Link to this heading")
+Lists and tuples, while similar in many respects, are generally used in fundamentally different ways. Tuples can be thought of as being similar to Pascal `records` or C `structs`; they’re small collections of related data which may be of different types which are operated on as a group. For example, a Cartesian coordinate is appropriately represented as a tuple of two or three numbers.
+Lists, on the other hand, are more like arrays in other languages. They tend to hold a varying number of objects all of which have the same type and which are operated on one-by-one. For example, [`os.listdir('.')`](https://docs.python.org/3/library/os.html#os.listdir "os.listdir") returns a list of strings representing the files in the current directory. Functions which operate on this output would generally not break if you added another file or two to the directory.
+Tuples are immutable, meaning that once a tuple has been created, you can’t replace any of its elements with a new value. Lists are mutable, meaning that you can always change a list’s elements. Only immutable elements can be used as dictionary keys, and hence only tuples and not lists can be used as keys.
+## [How are lists implemented in CPython?](https://docs.python.org/3/faq/design.html#id20)[¶](https://docs.python.org/3/faq/design.html#how-are-lists-implemented-in-cpython "Link to this heading")
+CPython’s lists are really variable-length arrays, not Lisp-style linked lists. The implementation uses a contiguous array of references to other objects, and keeps a pointer to this array and the array’s length in a list head structure.
+This makes indexing a list `a[i]` an operation whose cost is independent of the size of the list or the value of the index.
+When items are appended or inserted, the array of references is resized. Some cleverness is applied to improve the performance of appending items repeatedly; when the array must be grown, some extra space is allocated so the next few times don’t require an ac

@@ -1,0 +1,42 @@
+Title: Limited C API Changes in Python 3.13
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: Python 3.13 introduces several functions to the Limited C API, including memory allocation functions (`PyMem_RawMalloc`, `PyMem_RawCalloc`, `PyMem_RawRealloc`, `PyMem_RawFree`) and system audit functions (`PySys_Audit`, `PySys_AuditTuple`). Additionally, `PyType_GetModuleByDef` is now included.
+---
+
+### Limited C API Changes[¶](https://docs.python.org/3/whatsnew/3.13.html#limited-c-api-changes "Link to this heading")
+  * The following functions are now included in the Limited C API:
+    * [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc")
+    * [`PyMem_RawCalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawCalloc "PyMem_RawCalloc")
+    * [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc")
+    * [`PyMem_RawFree()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawFree "PyMem_RawFree")
+    * [`PySys_Audit()`](https://docs.python.org/3/c-api/sys.html#c.PySys_Audit "PySys_Audit")
+    * [`PySys_AuditTuple()`](https://docs.python.org/3/c-api/sys.html#c.PySys_AuditTuple "PySys_AuditTuple")
+    * [`PyType_GetModuleByDef()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetModuleByDef "PyType_GetModuleByDef")
+(Contributed by Victor Stinner in [gh-85283](https://github.com/python/cpython/issues/85283), [gh-85283](https://github.com/python/cpython/issues/85283), and [gh-116936](https://github.com/python/cpython/issues/116936).)
+  * Python built with [`--with-trace-refs`](https://docs.python.org/3/using/configure.html#cmdoption-with-trace-refs) (tracing references) now supports the [Limited API](https://docs.python.org/3/c-api/stable.html#limited-c-api). (Contributed by Victor Stinner in [gh-108634](https://github.com/python/cpython/issues/108634).)
+
+
+### Removed C APIs[¶](https://docs.python.org/3/whatsnew/3.13.html#removed-c-apis "Link to this heading")
+  * Remove several functions, macros, variables, etc with names prefixed by `_Py` or `_PY` (which are considered private). If your project is affected by one of these removals and you believe that the removed API should remain available, please [open a new issue](https://docs.python.org/3/bugs.html#using-the-tracker) to request a public C API and add `cc: @vstinner` to the issue to notify Victor Stinner. (Contributed by Victor Stinner in [gh-106320](https://github.com/python/cpython/issues/106320).)
+  * Remove old buffer protocols deprecated in Python 3.0. Use [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html#bufferobjects) instead.
+    * `PyObject_CheckReadBuffer()`: Use [`PyObject_CheckBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_CheckBuffer "PyObject_CheckBuffer") to test whether the object supports the buffer protocol. Note that [`PyObject_CheckBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_CheckBuffer "PyObject_CheckBuffer") doesn’t guarantee that [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer") will succeed. To test if the object is actually readable, see the next example of [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer").
+    * `PyObject_AsCharBuffer()`, `PyObject_AsReadBuffer()`: Use [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer") and [`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release") instead:
+```
+Py_bufferview;
+if(PyObject_GetBuffer(obj,&view,PyBUF_SIMPLE)<0){
+returnNULL;
+}
+// Use `view.buf` and `view.len` to read from the buffer.
+// You may need to cast buf as `(const char*)view.buf`.
+PyBuffer_Release(&view);
+
+```
+
+    * `PyObject_AsWriteBuffer()`: Use [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer") and [`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release") instead:
+```
+Py_bufferview;
+if(PyObject_GetBuffer(obj,&view,PyBUF_WRITABLE)<0){
+returnNULL;
+}
+// Use `view.buf` and `view.len` to write to the buffer.
+PyBuffer_Release(&view);

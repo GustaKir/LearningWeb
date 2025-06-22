@@ -1,0 +1,37 @@
+Title: Enhancements in Barrier Synchronization and datetime Module
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The document discusses the implementation of a barrier synchronization mechanism in parallel computing, ensuring that if certain election sites do not complete work by a deadline, their ballots are handled later. It references resources for further understanding of barriers. Additionally, it introduces enhancements to the `datetime` module, including a new type called `tim...`.
+---
+
+```
+
+In this example, the barrier enforces a more robust rule. If some election sites do not finish before midnight, the barrier times-out and the ballots are sealed and deposited in a queue for later handling.
+See [Barrier Synchronization Patterns](https://osl.cs.illinois.edu/media/papers/karmani-2009-barrier_synchronization_pattern.pdf) for more examples of how barriers can be used in parallel computing. Also, there is a simple but thorough explanation of barriers in [The Little Book of Semaphores](https://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf), _section 3.6_.
+(Contributed by Kristján Valur Jónsson with an API review by Jeffrey Yasskin in [bpo-8777](https://bugs.python.org/issue?@action=redirect&bpo=8777).)
+### datetime and time[¶](https://docs.python.org/3/whatsnew/3.2.html#datetime-and-time "Link to this heading")
+  * The [`datetime`](https://docs.python.org/3/library/datetime.html#module-datetime "datetime: Basic date and time types.") module has a new type [`timezone`](https://docs.python.org/3/library/datetime.html#datetime.timezone "datetime.timezone") that implements the [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") interface by returning a fixed UTC offset and timezone name. This makes it easier to create timezone-aware datetime objects:
+>>>```
+>>> fromdatetimeimport datetime, timezone
+>>> datetime.now(timezone.utc)
+datetime.datetime(2010, 12, 8, 21, 4, 2, 923754, tzinfo=datetime.timezone.utc)
+>>> datetime.strptime("01/01/2000 12:00 +0000", "%m/%d/%Y %H:%M %z")
+datetime.datetime(2000, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
+
+```
+
+  * Also, [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") objects can now be multiplied by [`float`](https://docs.python.org/3/library/functions.html#float "float") and divided by [`float`](https://docs.python.org/3/library/functions.html#float "float") and [`int`](https://docs.python.org/3/library/functions.html#int "int") objects. And [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") objects can now divide one another.
+  * The [`datetime.date.strftime()`](https://docs.python.org/3/library/datetime.html#datetime.date.strftime "datetime.date.strftime") method is no longer restricted to years after 1900. The new supported year range is from 1000 to 9999 inclusive.
+  * Whenever a two-digit year is used in a time tuple, the interpretation has been governed by `time.accept2dyear`. The default is `True` which means that for a two-digit year, the century is guessed according to the POSIX rules governing the `%y` strptime format.
+Starting with Py3.2, use of the century guessing heuristic will emit a [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning"). Instead, it is recommended that `time.accept2dyear` be set to `False` so that large date ranges can be used without guesswork:
+>>>```
+>>> importtime,warnings
+>>> warnings.resetwarnings()   # remove the default warning filters
+>>> time.accept2dyear = True   # guess whether 11 means 11 or 2011
+>>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
+Warning (from warnings module):
+ ...
+DeprecationWarning: Century info guessed for a 2-digit year.
+'Fri Jan 1 12:34:56 2011'
+>>> time.accept2dyear = False   # use the full range of allowable dates
+>>> time.asctime((11, 1, 1, 12, 34, 56, 4, 1, 0))
+'Fri Jan 1 12:34:56 11'

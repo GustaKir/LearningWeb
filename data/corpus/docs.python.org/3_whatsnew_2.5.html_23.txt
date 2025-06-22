@@ -1,0 +1,70 @@
+Title: ctypes Module Update
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: The `ctypes` module now includes a wrapper for Python's C API through the `ctypes.pythonapi` object, which maintains the global interpreter lock during function calls. It features a `py_object` type constructor for creating PyObject pointers, exemplified by setting an item in a Python dictionary. Misusage of `py_object()` may lead to segmentation faults.
+---
+
+```
+
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") also provides a wrapper for Python’s C API as the `ctypes.pythonapi` object. This object does _not_ release the global interpreter lock before calling a function, because the lock must be held when calling into the interpreter’s code. There’s a [`py_object`](https://docs.python.org/3/library/ctypes.html#ctypes.py_object "ctypes.py_object") type constructor that will create a [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* pointer. A simple usage:
+```
+importctypes
+d = {}
+ctypes.pythonapi.PyObject_SetItem(ctypes.py_object(d),
+     ctypes.py_object("abc"), ctypes.py_object(1))
+# d is now {'abc', 1}.
+
+```
+
+Don’t forget to use [`py_object()`](https://docs.python.org/3/library/ctypes.html#ctypes.py_object "ctypes.py_object"); if it’s omitted you end up with a segmentation fault.
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") has been around for a while, but people still write and distribution hand-coded extension modules because you can’t rely on [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") being present. Perhaps developers will begin to write Python wrappers atop a library accessed through [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") instead of extension modules, now that [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") is included with core Python.
+See also 
+
+<https://web.archive.org/web/20180410025338/http://starship.python.net/crew/theller/ctypes/>
+    
+The pre-stdlib ctypes web page, with a tutorial, reference, and FAQ.
+The documentation for the [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") module.
+### The ElementTree package[¶](https://docs.python.org/3/whatsnew/2.5.html#the-elementtree-package "Link to this heading")
+A subset of Fredrik Lundh’s ElementTree library for processing XML has been added to the standard library as `xml.etree`. The available modules are `ElementTree`, `ElementPath`, and `ElementInclude` from ElementTree 1.2.6. The `cElementTree` accelerator module is also included.
+The rest of this section will provide a brief overview of using ElementTree. Full documentation for ElementTree is available at <https://web.archive.org/web/20201124024954/http://effbot.org/zone/element-index.htm>.
+ElementTree represents an XML document as a tree of element nodes. The text content of the document is stored as the `text` and `tail` attributes of (This is one of the major differences between ElementTree and the Document Object Model; in the DOM there are many different types of node, including `TextNode`.)
+The most commonly used parsing function is `parse()`, that takes either a string (assumed to contain a filename) or a file-like object and returns an `ElementTree` instance:
+```
+fromxml.etreeimport ElementTree as ET
+tree = ET.parse('ex-1.xml')
+feed = urllib.urlopen(
+     'http://planet.python.org/rss10.xml')
+tree = ET.parse(feed)
+
+```
+
+Once you have an `ElementTree` instance, you can call its `getroot()` method to get the root `Element` node.
+There’s also an `XML()` function that takes a string literal and returns an `Element` node (not an `ElementTree`). This function provides a tidy way to incorporate XML fragments, approaching the convenience of an XML literal:
+```
+svg = ET.XML("""<svg width="10px" version="1.0">
+       </svg>""")
+svg.set('height', '320px')
+svg.append(elem1)
+
+```
+
+Each XML element supports some dictionary-like and some list-like access methods. Dictionary-like operations are used to access attribute values, and list-like operations are used to access child nodes.
+Operation | Result  
+---|---  
+`elem[n]` | Returns n’th child element.  
+`elem[m:n]` | Returns list of m’th through n’th child elements.  
+`len(elem)` | Returns number of child elements.  
+`list(elem)` | Returns list of child elements.  
+`elem.append(elem2)` | Adds _elem2_ as a child.  
+`elem.insert(index, elem2)` | Inserts _elem2_ at the specified location.  
+`del elem[n]` | Deletes n’th child element.  
+`elem.keys()` | Returns list of attribute names.  
+`elem.get(name)` | Returns value of attribute _name_.  
+`elem.set(name, value)` | Sets new value for attribute _name_.  
+`elem.attrib` | Retrieves the dictionary containing attributes.  
+`del elem.attrib[name]` | Deletes attribute _name_.  
+Comments and processing instructions are also represented as `Element` nodes. To check if a node is a comment or processing instructions:
+```
+if elem.tag is ET.Comment:
+  ...
+elif elem.tag is ET.ProcessingInstruction:
+  ...

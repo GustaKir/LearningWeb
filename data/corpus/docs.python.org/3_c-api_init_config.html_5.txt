@@ -1,0 +1,28 @@
+Title: Python Pre-initialization from Command Line Arguments
+URL: https://docs.python.org/3/c-api/init_config.html
+Summary: The `Py_PreInitializeFromArgs` function preinitializes Python using a provided `PyPreConfig` structure and parses command line arguments if specified. It requires a non-null `preconfig`, and the caller must manage exceptions using the appropriate status handling functions.
+---
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")Py_PreInitializeFromArgs(const[PyPreConfig](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig "PyPreConfig")*preconfig, intargc, wchar_t*const*argv)[¶](https://docs.python.org/3/c-api/init_config.html#c.Py_PreInitializeFromArgs "Link to this definition")
+    
+Preinitialize Python from _preconfig_ preconfiguration.
+Parse _argv_ command line arguments (wide strings) if [`parse_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.parse_argv "PyPreConfig.parse_argv") of _preconfig_ is non-zero.
+_preconfig_ must not be `NULL`.
+The caller is responsible to handle exceptions (error or exit) using [`PyStatus_Exception()`](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_Exception "PyStatus_Exception") and [`Py_ExitStatusException()`](https://docs.python.org/3/c-api/init_config.html#c.Py_ExitStatusException "Py_ExitStatusException").
+For [Python Configuration](https://docs.python.org/3/c-api/init_config.html#init-python-config) ([`PyPreConfig_InitPythonConfig()`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig_InitPythonConfig "PyPreConfig_InitPythonConfig")), if Python is initialized with command line arguments, the command line arguments must also be passed to preinitialize Python, since they have an effect on the pre-configuration like encodings. For example, the [`-X utf8`](https://docs.python.org/3/using/cmdline.html#cmdoption-X) command line option enables the [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode).
+`PyMem_SetAllocator()` can be called after [`Py_PreInitialize()`](https://docs.python.org/3/c-api/init_config.html#c.Py_PreInitialize "Py_PreInitialize") and before [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig") to install a custom memory allocator. It can be called before [`Py_PreInitialize()`](https://docs.python.org/3/c-api/init_config.html#c.Py_PreInitialize "Py_PreInitialize") if [`PyPreConfig.allocator`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.allocator "PyPreConfig.allocator") is set to `PYMEM_ALLOCATOR_NOT_SET`.
+Python memory allocation functions like [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc") must not be used before the Python preinitialization, whereas calling directly `malloc()` and `free()` is always safe. [`Py_DecodeLocale()`](https://docs.python.org/3/c-api/sys.html#c.Py_DecodeLocale "Py_DecodeLocale") must not be called before the Python preinitialization.
+Example using the preinitialization to enable the [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode):
+```
+PyStatusstatus;
+PyPreConfigpreconfig;
+PyPreConfig_InitPythonConfig(&preconfig);
+preconfig.utf8_mode=1;
+status=Py_PreInitialize(&preconfig);
+if(PyStatus_Exception(status)){
+Py_ExitStatusException(status);
+}
+/* at this point, Python speaks UTF-8 */
+Py_Initialize();
+/* ... use Python API here ... */
+Py_Finalize();

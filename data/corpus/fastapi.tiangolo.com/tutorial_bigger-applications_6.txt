@@ -1,0 +1,112 @@
+Title: Using APIRouter in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/bigger-applications/
+Summary: This section introduces `APIRouter`, highlighting it as a 'mini FastAPI' that supports parameters, responses, dependencies, and tags. It emphasizes the organization of dependencies in a dedicated module and demonstrates how to use a custom header for a simple dependency.
+---
+
+```
+
+You can think of `APIRouter` as a "mini `FastAPI`" class.
+All the same options are supported.
+All the same `parameters`, `responses`, `dependencies`, `tags`, etc.
+Tip
+In this example, the variable is called `router`, but you can name it however you want.
+We are going to include this `APIRouter` in the main `FastAPI` app, but first, let's check the dependencies and another `APIRouter`.
+## Dependencies[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#dependencies "Permanent link")
+We see that we are going to need some dependencies used in several places of the application.
+So we put them in their own `dependencies` module (`app/dependencies.py`).
+We will now use a simple dependency to read a custom `X-Token` header:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/bigger-applications/#__tabbed_1_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/bigger-applications/#__tabbed_1_2)[Python 3.8+ non-Annotated](https://fastapi.tiangolo.com/tutorial/bigger-applications/#__tabbed_1_3)
+app/dependencies.py```
+fromtypingimport Annotated
+fromfastapiimport Header, HTTPException
+async defget_token_header(x_token: Annotated[str, Header()]):
+  if x_token != "fake-super-secret-token":
+    raise HTTPException(status_code=400, detail="X-Token header invalid")
+async defget_query_token(token: str):
+  if token != "jessica":
+    raise HTTPException(status_code=400, detail="No Jessica token provided")
+
+```
+
+app/dependencies.py```
+fromfastapiimport Header, HTTPException
+fromtyping_extensionsimport Annotated
+async defget_token_header(x_token: Annotated[str, Header()]):
+  if x_token != "fake-super-secret-token":
+    raise HTTPException(status_code=400, detail="X-Token header invalid")
+async defget_query_token(token: str):
+  if token != "jessica":
+    raise HTTPException(status_code=400, detail="No Jessica token provided")
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+app/dependencies.py```
+fromfastapiimport Header, HTTPException
+async defget_token_header(x_token: str = Header()):
+  if x_token != "fake-super-secret-token":
+    raise HTTPException(status_code=400, detail="X-Token header invalid")
+async defget_query_token(token: str):
+  if token != "jessica":
+    raise HTTPException(status_code=400, detail="No Jessica token provided")
+
+```
+
+Tip
+We are using an invented header to simplify this example.
+But in real cases you will get better results using the integrated [Security utilities](https://fastapi.tiangolo.com/tutorial/security/).
+## Another module with `APIRouter`[¶](https://fastapi.tiangolo.com/tutorial/bigger-applications/#another-module-with-apirouter "Permanent link")
+Let's say you also have the endpoints dedicated to handling "items" from your application in the module at `app/routers/items.py`.
+You have _path operations_ for:
+  * `/items/`
+  * `/items/{item_id}`
+
+
+It's all the same structure as with `app/routers/users.py`.
+But we want to be smarter and simplify the code a bit.
+We know all the _path operations_ in this module have the same:
+  * Path `prefix`: `/items`.
+  * `tags`: (just one tag: `items`).
+  * Extra `responses`.
+  * `dependencies`: they all need that `X-Token` dependency we created.
+
+
+So, instead of adding all that to each _path operation_ , we can add it to the `APIRouter`.
+app/routers/items.py```
+fromfastapiimport APIRouter, Depends, HTTPException
+from..dependenciesimport get_token_header
+router = APIRouter(
+  prefix="/items",
+  tags=["items"],
+  dependencies=[Depends(get_token_header)],
+  responses={404: {"description": "Not found"}},
+)
+fake_items_db = {"plumbus": {"name": "Plumbus"}, "gun": {"name": "Portal Gun"}}
+@router.get("/")
+async defread_items():
+  return fake_items_db
+@router.get("/{item_id}")
+async defread_item(item_id: str):
+  if item_id not in fake_items_db:
+    raise HTTPException(status_code=404, detail="Item not found")
+  return {"name": fake_items_db[item_id]["name"], "item_id": item_id}
+@router.put(
+  "/{item_id}",
+  tags=["custom"],
+  responses={403: {"description": "Operation forbidden"}},
+)
+async defupdate_item(item_id: str):
+  if item_id != "plumbus":
+    raise HTTPException(
+      status_code=403, detail="You can only update the item: plumbus"
+    )
+  return {"item_id": item_id, "name": "The great Plumbus"}
+
+```
+
+As the path of each _path operation_ has to start with `/`, like in:
+```
+@router.get("/{item_id}")
+async defread_item(item_id: str):
+  ...

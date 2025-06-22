@@ -1,0 +1,68 @@
+Title: Sort Stability and Complex Sorts in Python
+URL: https://docs.python.org/3/howto/sorting.html
+Summary: This section explains the concept of sort stability in Python, which ensures that records with the same key retain their original order. It provides examples of sorting data, illustrating how stable sorting can be utilized to perform complex sorts using multiple sorting steps.
+---
+
+```
+
+## Sort Stability and Complex Sorts[¶](https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts "Link to this heading")
+Sorts are guaranteed to be [stable](https://en.wikipedia.org/wiki/Sorting_algorithm#Stability). That means that when multiple records have the same key, their original order is preserved.
+>>>```
+>>> data = [('red', 1), ('blue', 1), ('red', 2), ('blue', 2)]
+>>> sorted(data, key=itemgetter(0))
+[('blue', 1), ('blue', 2), ('red', 1), ('red', 2)]
+
+```
+
+Notice how the two records for _blue_ retain their original order so that `('blue', 1)` is guaranteed to precede `('blue', 2)`.
+This wonderful property lets you build complex sorts in a series of sorting steps. For example, to sort the student data by descending _grade_ and then ascending _age_ , do the _age_ sort first and then sort again using _grade_ :
+>>>```
+>>> s = sorted(student_objects, key=attrgetter('age'))   # sort on secondary key
+>>> sorted(s, key=attrgetter('grade'), reverse=True)    # now sort on primary key, descending
+[('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
+```
+
+This can be abstracted out into a wrapper function that can take a list and tuples of field and order to sort them on multiple passes.
+>>>```
+>>> defmultisort(xs, specs):
+...   for key, reverse in reversed(specs):
+...     xs.sort(key=attrgetter(key), reverse=reverse)
+...   return xs
+>>> multisort(list(student_objects), (('grade', True), ('age', False)))
+[('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
+
+```
+
+The [Timsort](https://en.wikipedia.org/wiki/Timsort) algorithm used in Python does multiple sorts efficiently because it can take advantage of any ordering already present in a dataset.
+## Decorate-Sort-Undecorate[¶](https://docs.python.org/3/howto/sorting.html#decorate-sort-undecorate "Link to this heading")
+This idiom is called Decorate-Sort-Undecorate after its three steps:
+  * First, the initial list is decorated with new values that control the sort order.
+  * Second, the decorated list is sorted.
+  * Finally, the decorations are removed, creating a list that contains only the initial values in the new order.
+
+
+For example, to sort the student data by _grade_ using the DSU approach:
+>>>```
+>>> decorated = [(student.grade, i, student) for i, student in enumerate(student_objects)]
+>>> decorated.sort()
+>>> [student for grade, i, student in decorated]        # undecorate
+[('john', 'A', 15), ('jane', 'B', 12), ('dave', 'B', 10)]
+
+```
+
+This idiom works because tuples are compared lexicographically; the first items are compared; if they are the same then the second items are compared, and so on.
+It is not strictly necessary in all cases to include the index _i_ in the decorated list, but including it gives two benefits:
+  * The sort is stable – if two items have the same key, their order will be preserved in the sorted list.
+  * The original items do not have to be comparable because the ordering of the decorated tuples will be determined by at most the first two items. So for example the original list could contain complex numbers which cannot be sorted directly.
+
+
+Another name for this idiom is [Schwartzian transform](https://en.wikipedia.org/wiki/Schwartzian_transform), after Randal L. Schwartz, who popularized it among Perl programmers.
+Now that Python sorting provides key-functions, this technique is not often needed.
+## Comparison Functions[¶](https://docs.python.org/3/howto/sorting.html#comparison-functions "Link to this heading")
+Unlike key functions that return an absolute value for sorting, a comparison function computes the relative ordering for two inputs.
+For example, a [balance scale](https://upload.wikimedia.org/wikipedia/commons/1/17/Balance_à_tabac_1850.JPG) compares two samples giving a relative ordering: lighter, equal, or heavier. Likewise, a comparison function such as `cmp(a, b)` will return a negative value for less-than, zero if the inputs are equal, or a positive value for greater-than.
+It is common to encounter comparison functions when translating algorithms from other languages. Also, some libraries provide comparison functions as part of their API. For example, [`locale.strcoll()`](https://docs.python.org/3/library/locale.html#locale.strcoll "locale.strcoll") is a comparison function.
+To accommodate those situations, Python provides [`functools.cmp_to_key`](https://docs.python.org/3/library/functools.html#functools.cmp_to_key "functools.cmp_to_key") to wrap the comparison function to make it usable as a key function:
+```
+sorted(words, key=cmp_to_key(strcoll)) # locale-aware sort order

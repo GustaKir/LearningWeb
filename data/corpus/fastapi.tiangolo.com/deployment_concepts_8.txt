@@ -1,0 +1,39 @@
+Title: Replication - Processes and Memory
+URL: https://fastapi.tiangolo.com/deployment/concepts/
+Summary: This section discusses the capabilities of a FastAPI application to handle multiple clients concurrently using a single process with Uvicorn. It highlights the benefits of running multiple worker processes to optimize performance, particularly when there are more clients than a single process can support and when utilizing multiple CPU cores.
+---
+
+## Replication - Processes and Memory[¶](https://fastapi.tiangolo.com/deployment/concepts/#replication-processes-and-memory "Permanent link")
+With a FastAPI application, using a server program like the `fastapi` command that runs Uvicorn, running it once in **one process** can serve multiple clients concurrently.
+But in many cases, you will want to run several worker processes at the same time.
+### Multiple Processes - Workers[¶](https://fastapi.tiangolo.com/deployment/concepts/#multiple-processes-workers "Permanent link")
+If you have more clients than what a single process can handle (for example if the virtual machine is not too big) and you have **multiple cores** in the server's CPU, then you could have **multiple processes** running with the same application at the same time, and distribute all the requests among them.
+When you run **multiple processes** of the same API program, they are commonly called **workers**.
+### Worker Processes and Ports[¶](https://fastapi.tiangolo.com/deployment/concepts/#worker-processes-and-ports "Permanent link")
+Remember from the docs [About HTTPS](https://fastapi.tiangolo.com/deployment/https/) that only one process can be listening on one combination of port and IP address in a server?
+This is still true.
+So, to be able to have **multiple processes** at the same time, there has to be a **single process listening on a port** that then transmits the communication to each worker process in some way.
+### Memory per Process[¶](https://fastapi.tiangolo.com/deployment/concepts/#memory-per-process "Permanent link")
+Now, when the program loads things in memory, for example, a machine learning model in a variable, or the contents of a large file in a variable, all that **consumes a bit of the memory (RAM)** of the server.
+And multiple processes normally **don't share any memory**. This means that each running process has its own things, variables, and memory. And if you are consuming a large amount of memory in your code, **each process** will consume an equivalent amount of memory.
+### Server Memory[¶](https://fastapi.tiangolo.com/deployment/concepts/#server-memory "Permanent link")
+For example, if your code loads a Machine Learning model with **1 GB in size** , when you run one process with your API, it will consume at least 1 GB of RAM. And if you start **4 processes** (4 workers), each will consume 1 GB of RAM. So in total, your API will consume **4 GB of RAM**.
+And if your remote server or virtual machine only has 3 GB of RAM, trying to load more than 4 GB of RAM will cause problems. 🚨
+### Multiple Processes - An Example[¶](https://fastapi.tiangolo.com/deployment/concepts/#multiple-processes-an-example "Permanent link")
+In this example, there's a **Manager Process** that starts and controls two **Worker Processes**.
+This Manager Process would probably be the one listening on the **port** in the IP. And it would transmit all the communication to the worker processes.
+Those worker processes would be the ones running your application, they would perform the main computations to receive a **request** and return a **response** , and they would load anything you put in variables in RAM.
+![](https://fastapi.tiangolo.com/img/deployment/concepts/process-ram.svg)
+And of course, the same machine would probably have **other processes** running as well, apart from your application.
+An interesting detail is that the percentage of the **CPU used** by each process can **vary** a lot over time, but the **memory (RAM)** normally stays more or less **stable**.
+If you have an API that does a comparable amount of computations every time and you have a lot of clients, then the **CPU utilization** will probably _also be stable_ (instead of constantly going up and down quickly).
+### Examples of Replication Tools and Strategies[¶](https://fastapi.tiangolo.com/deployment/concepts/#examples-of-replication-tools-and-strategies "Permanent link")
+There can be several approaches to achieve this, and I'll tell you more about specific strategies in the next chapters, for example when talking about Docker and containers.
+The main constraint to consider is that there has to be a **single** component handling the **port** in the **public IP**. And then it has to have a way to **transmit** the communication to the replicated **processes/workers**.
+Here are some possible combinations and strategies:
+  * **Uvicorn** with `--workers`
+    * One Uvicorn **process manager** would listen on the **IP** and **port** , and it would start **multiple Uvicorn worker processes**.
+  * **Kubernetes** and other distributed **container systems**
+    * Something in the **Kubernetes** layer would listen on the **IP** and **port**. The replication would be by having **multiple containers** , each with **one Uvicorn process** running.
+  * **Cloud services** that handle this for you
+    * The cloud service will probably **handle replication for you**. It would possibly let you define **a process to run** , or a **container image**

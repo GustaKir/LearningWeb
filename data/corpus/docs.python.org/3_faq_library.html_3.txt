@@ -1,0 +1,44 @@
+Title: Curses/Termcap Package Availability in Python
+URL: https://docs.python.org/3/faq/library.html
+Summary: The Python standard source distribution includes a curses module for Unix variants, though it is not compiled by default. This module provides various terminal handling features, but it is not available on Windows and may not be compatible with all operating systems.
+---
+
+```
+
+### [Is there a curses/termcap package for Python?](https://docs.python.org/3/faq/library.html#id6)[¶](https://docs.python.org/3/faq/library.html#is-there-a-curses-termcap-package-for-python "Link to this heading")
+For Unix variants: The standard Python source distribution comes with a curses module in the [Modules](https://github.com/python/cpython/tree/3.13/Modules) subdirectory, though it’s not compiled by default. (Note that this is not available in the Windows distribution – there is no curses module for Windows.)
+The [`curses`](https://docs.python.org/3/library/curses.html#module-curses "curses: An interface to the curses library, providing portable terminal handling. \(Unix\)") module supports basic curses features as well as many additional functions from ncurses and SYSV curses such as colour, alternative character set support, pads, and mouse support. This means the module isn’t compatible with operating systems that only have BSD curses, but there don’t seem to be any currently maintained OSes that fall into this category.
+### [Is there an equivalent to C’s onexit() in Python?](https://docs.python.org/3/faq/library.html#id7)[¶](https://docs.python.org/3/faq/library.html#is-there-an-equivalent-to-c-s-onexit-in-python "Link to this heading")
+The [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions.") module provides a register function that is similar to C’s `onexit()`.
+### [Why don’t my signal handlers work?](https://docs.python.org/3/faq/library.html#id8)[¶](https://docs.python.org/3/faq/library.html#why-don-t-my-signal-handlers-work "Link to this heading")
+The most common problem is that the signal handler is declared with the wrong argument list. It is called as
+```
+handler(signum, frame)
+
+```
+
+so it should be declared with two parameters:
+```
+defhandler(signum, frame):
+  ...
+
+```
+
+## [Common tasks](https://docs.python.org/3/faq/library.html#id9)[¶](https://docs.python.org/3/faq/library.html#common-tasks "Link to this heading")
+### [How do I test a Python program or component?](https://docs.python.org/3/faq/library.html#id10)[¶](https://docs.python.org/3/faq/library.html#how-do-i-test-a-python-program-or-component "Link to this heading")
+Python comes with two testing frameworks. The [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") module finds examples in the docstrings for a module and runs them, comparing the output with the expected output given in the docstring.
+The [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") module is a fancier testing framework modelled on Java and Smalltalk testing frameworks.
+To make testing easier, you should use good modular design in your program. Your program should have almost all functionality encapsulated in either functions or class methods – and this sometimes has the surprising and delightful effect of making the program run faster (because local variable accesses are faster than global accesses). Furthermore the program should avoid depending on mutating global variables, since this makes testing much more difficult to do.
+The “global main logic” of your program may be as simple as
+```
+if __name__ == "__main__":
+  main_logic()
+
+```
+
+at the bottom of the main module of your program.
+Once your program is organized as a tractable collection of function and class behaviours, you should write test functions that exercise the behaviours. A test suite that automates a sequence of tests can be associated with each module. This sounds like a lot of work, but since Python is so terse and flexible it’s surprisingly easy. You can make coding much more pleasant and fun by writing your test functions in parallel with the “production code”, since this makes it easy to find bugs and even design flaws earlier.
+“Support modules” that are not intended to be the main module of a program may include a self-test of the module.
+```
+if __name__ == "__main__":
+  self_test()

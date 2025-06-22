@@ -1,0 +1,110 @@
+Title: Python Grammar Reference: Class and Function Definitions
+URL: https://docs.python.org/3/reference/grammar.html
+Summary: This section outlines the grammar rules for class and function definitions in Python, including the structure of class definitions with decorators, as well as the formats for function definitions, parameters, and the use of async functions.
+---
+
+rs: ('@' named_expression NEWLINE )+ 
+# Class definitions
+# -----------------
+class_def:
+  | decorators class_def_raw 
+  | class_def_raw
+class_def_raw:
+  | 'class' NAME [type_params] ['(' [arguments] ')' ] ':' block 
+# Function definitions
+# --------------------
+function_def:
+  | decorators function_def_raw 
+  | function_def_raw
+function_def_raw:
+  | 'def' NAME [type_params] '(' [params] ')' ['->' expression ] ':' [func_type_comment] block 
+  | 'async' 'def' NAME [type_params] '(' [params] ')' ['->' expression ] ':' [func_type_comment] block 
+# Function parameters
+# -------------------
+params:
+  | parameters
+parameters:
+  | slash_no_default param_no_default* param_with_default* [star_etc] 
+  | slash_with_default param_with_default* [star_etc] 
+  | param_no_default+ param_with_default* [star_etc] 
+  | param_with_default+ [star_etc] 
+  | star_etc 
+# Some duplication here because we can't write (',' | &')'),
+# which is because we don't support empty alternatives (yet).
+slash_no_default:
+  | param_no_default+ '/' ',' 
+  | param_no_default+ '/' &')' 
+slash_with_default:
+  | param_no_default* param_with_default+ '/' ',' 
+  | param_no_default* param_with_default+ '/' &')' 
+star_etc:
+  | '*' param_no_default param_maybe_default* [kwds] 
+  | '*' param_no_default_star_annotation param_maybe_default* [kwds] 
+  | '*' ',' param_maybe_default+ [kwds] 
+  | kwds 
+kwds:
+  | '**' param_no_default 
+# One parameter. This *includes* a following comma and type comment.
+#
+# There are three styles:
+# - No default
+# - With default
+# - Maybe with default
+#
+# There are two alternative forms of each, to deal with type comments:
+# - Ends in a comma followed by an optional type comment
+# - No comma, optional type comment, must be followed by close paren
+# The latter form is for a final parameter without trailing comma.
+#
+param_no_default:
+  | param ',' TYPE_COMMENT? 
+  | param TYPE_COMMENT? &')' 
+param_no_default_star_annotation:
+  | param_star_annotation ',' TYPE_COMMENT? 
+  | param_star_annotation TYPE_COMMENT? &')' 
+param_with_default:
+  | param default ',' TYPE_COMMENT? 
+  | param default TYPE_COMMENT? &')' 
+param_maybe_default:
+  | param default? ',' TYPE_COMMENT? 
+  | param default? TYPE_COMMENT? &')' 
+param: NAME annotation? 
+param_star_annotation: NAME star_annotation 
+annotation: ':' expression 
+star_annotation: ':' star_expression 
+default: '=' expression | invalid_default
+# If statement
+# ------------
+if_stmt:
+  | 'if' named_expression ':' block elif_stmt 
+  | 'if' named_expression ':' block [else_block] 
+elif_stmt:
+  | 'elif' named_expression ':' block elif_stmt 
+  | 'elif' named_expression ':' block [else_block] 
+else_block:
+  | 'else' ':' block 
+# While statement
+# ---------------
+while_stmt:
+  | 'while' named_expression ':' block [else_block] 
+# For statement
+# -------------
+for_stmt:
+  | 'for' star_targets 'in' ~ star_expressions ':' [TYPE_COMMENT] block [else_block] 
+  | 'async' 'for' star_targets 'in' ~ star_expressions ':' [TYPE_COMMENT] block [else_block] 
+# With statement
+# --------------
+with_stmt:
+  | 'with' '(' ','.with_item+ ','? ')' ':' [TYPE_COMMENT] block 
+  | 'with' ','.with_item+ ':' [TYPE_COMMENT] block 
+  | 'async' 'with' '(' ','.with_item+ ','? ')' ':' block 
+  | 'async' 'with' ','.with_item+ ':' [TYPE_COMMENT] block 
+with_item:
+  | expression 'as' star_target &(',' | ')' | ':') 
+  | expression 
+# Try statement
+# -------------
+try_stmt:
+  | 'try' ':' block finally_block 
+  | 'try' ':' block except_block+ [else_block] [finally_block] 
+  | 'try' ':' block except_star_block+ [else_block] [finally_block]

@@ -1,0 +1,134 @@
+Title: Customizing FastAPI Documentation UI Assets
+URL: https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/
+Summary: This document explains how to customize the Swagger UI and ReDoc documentation for a FastAPI application. It demonstrates how to set up the app without default documentation URLs and configure custom paths and assets for the Swagger UI and ReDoc using external resources.
+---
+
+```
+fromfastapiimport FastAPI
+fromfastapi.openapi.docsimport (
+  get_redoc_html,
+  get_swagger_ui_html,
+  get_swagger_ui_oauth2_redirect_html,
+)
+app = FastAPI(docs_url=None, redoc_url=None)
+@app.get("/docs", include_in_schema=False)
+async defcustom_swagger_ui_html():
+  return get_swagger_ui_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - Swagger UI",
+    oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+    swagger_js_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js",
+    swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
+  )
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async defswagger_ui_redirect():
+  return get_swagger_ui_oauth2_redirect_html()
+@app.get("/redoc", include_in_schema=False)
+async defredoc_html():
+  return get_redoc_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - ReDoc",
+    redoc_js_url="https://unpkg.com/redoc@next/bundles/redoc.standalone.js",
+  )
+@app.get("/users/{username}")
+async defread_user(username: str):
+  return {"message": f"Hello {username}"}
+
+```
+
+### Test it[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#test-it "Permanent link")
+Now, you should be able to go to your docs at <http://127.0.0.1:8000/docs>, and reload the page, it will load those assets from the new CDN.
+## Self-hosting JavaScript and CSS for docs[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#self-hosting-javascript-and-css-for-docs "Permanent link")
+Self-hosting the JavaScript and CSS could be useful if, for example, you need your app to keep working even while offline, without open Internet access, or in a local network.
+Here you'll see how to serve those files yourself, in the same FastAPI app, and configure the docs to use them.
+### Project file structure[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#project-file-structure "Permanent link")
+Let's say your project file structure looks like this:
+```
+.
+├── app
+│  ├── __init__.py
+│  ├── main.py
+
+```
+
+Now create a directory to store those static files.
+Your new file structure could look like this:
+```
+.
+├── app
+│   ├── __init__.py
+│   ├── main.py
+└── static/
+
+```
+
+### Download the files[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#download-the-files "Permanent link")
+Download the static files needed for the docs and put them on that `static/` directory.
+You can probably right-click each link and select an option similar to `Save link as...`.
+**Swagger UI** uses the files:
+  * [`swagger-ui-bundle.js`](https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js)
+  * [`swagger-ui.css`](https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css)
+
+
+And **ReDoc** uses the file:
+  * [`redoc.standalone.js`](https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js)
+
+
+After that, your file structure could look like:
+```
+.
+├── app
+│   ├── __init__.py
+│   ├── main.py
+└── static
+  ├── redoc.standalone.js
+  ├── swagger-ui-bundle.js
+  └── swagger-ui.css
+
+```
+
+### Serve the static files[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#serve-the-static-files "Permanent link")
+  * Import `StaticFiles`.
+  * "Mount" a `StaticFiles()` instance in a specific path.
+
+
+[Python 3.8+](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#__tabbed_4_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.openapi.docsimport (
+  get_redoc_html,
+  get_swagger_ui_html,
+  get_swagger_ui_oauth2_redirect_html,
+)
+fromfastapi.staticfilesimport StaticFiles
+app = FastAPI(docs_url=None, redoc_url=None)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/docs", include_in_schema=False)
+async defcustom_swagger_ui_html():
+  return get_swagger_ui_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - Swagger UI",
+    oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+    swagger_js_url="/static/swagger-ui-bundle.js",
+    swagger_css_url="/static/swagger-ui.css",
+  )
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async defswagger_ui_redirect():
+  return get_swagger_ui_oauth2_redirect_html()
+@app.get("/redoc", include_in_schema=False)
+async defredoc_html():
+  return get_redoc_html(
+    openapi_url=app.openapi_url,
+    title=app.title + " - ReDoc",
+    redoc_js_url="/static/redoc.standalone.js",
+  )
+@app.get("/users/{username}")
+async defread_user(username: str):
+  return {"message": f"Hello {username}"}
+
+```
+
+### Test the static files[¶](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/#test-the-static-files "Permanent link")
+Start your application and go to <http://127.0.0.1:8000/static/redoc.standalone.js>.
+You should see a very long JavaScript file for **ReDoc**.
+It could start with something like:

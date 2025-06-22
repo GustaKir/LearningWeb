@@ -1,0 +1,28 @@
+Title: Python 3.12 New API Functions and Custom Allocator Requirements
+URL: https://docs.python.org/3/whatsnew/3.12.html
+Summary: Python 3.12 introduces two new unstable API functions, `PyUnstable_Long_IsCompact()` and `PyUnstable_Long_CompactValue()`, for accessing `PyLongObject` values efficiently. Additionally, custom memory allocators set via `PyMem_SetAllocator()` must now be thread-safe, impacting those with state, while stateless hooks remain unaffected.
+---
+
+Two new _unstable_ API functions are provided for efficient access to the value of [`PyLongObject`](https://docs.python.org/3/c-api/long.html#c.PyLongObject "PyLongObject")s which fit into a single machine word:
+    * [`PyUnstable_Long_IsCompact()`](https://docs.python.org/3/c-api/long.html#c.PyUnstable_Long_IsCompact "PyUnstable_Long_IsCompact")
+    * [`PyUnstable_Long_CompactValue()`](https://docs.python.org/3/c-api/long.html#c.PyUnstable_Long_CompactValue "PyUnstable_Long_CompactValue")
+  * Custom allocators, set via [`PyMem_SetAllocator()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetAllocator "PyMem_SetAllocator"), are now required to be thread-safe, regardless of memory domain. Allocators that don’t have their own state, including “hooks”, are not affected. If your custom allocator is not already thread-safe and you need guidance then please create a new GitHub issue and CC `@ericsnowcurrently`.
+
+
+### Deprecated[¶](https://docs.python.org/3/whatsnew/3.12.html#id6 "Link to this heading")
+  * In accordance with [**PEP 699**](https://peps.python.org/pep-0699/), the `ma_version_tag` field in [`PyDictObject`](https://docs.python.org/3/c-api/dict.html#c.PyDictObject "PyDictObject") is deprecated for extension modules. Accessing this field will generate a compiler warning at compile time. This field will be removed in Python 3.14. (Contributed by Ramvikrams and Kumar Aditya in [gh-101193](https://github.com/python/cpython/issues/101193). PEP by Ken Jin.)
+  * Deprecate global configuration variable:
+    * [`Py_DebugFlag`](https://docs.python.org/3/c-api/init.html#c.Py_DebugFlag "Py_DebugFlag"): use [`PyConfig.parser_debug`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.parser_debug "PyConfig.parser_debug")
+    * [`Py_VerboseFlag`](https://docs.python.org/3/c-api/init.html#c.Py_VerboseFlag "Py_VerboseFlag"): use [`PyConfig.verbose`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.verbose "PyConfig.verbose")
+    * [`Py_QuietFlag`](https://docs.python.org/3/c-api/init.html#c.Py_QuietFlag "Py_QuietFlag"): use [`PyConfig.quiet`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.quiet "PyConfig.quiet")
+    * [`Py_InteractiveFlag`](https://docs.python.org/3/c-api/init.html#c.Py_InteractiveFlag "Py_InteractiveFlag"): use [`PyConfig.interactive`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.interactive "PyConfig.interactive")
+    * [`Py_InspectFlag`](https://docs.python.org/3/c-api/init.html#c.Py_InspectFlag "Py_InspectFlag"): use [`PyConfig.inspect`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.inspect "PyConfig.inspect")
+    * [`Py_OptimizeFlag`](https://docs.python.org/3/c-api/init.html#c.Py_OptimizeFlag "Py_OptimizeFlag"): use [`PyConfig.optimization_level`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.optimization_level "PyConfig.optimization_level")
+    * [`Py_NoSiteFlag`](https://docs.python.org/3/c-api/init.html#c.Py_NoSiteFlag "Py_NoSiteFlag"): use [`PyConfig.site_import`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.site_import "PyConfig.site_import")
+    * [`Py_BytesWarningFlag`](https://docs.python.org/3/c-api/init.html#c.Py_BytesWarningFlag "Py_BytesWarningFlag"): use [`PyConfig.bytes_warning`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.bytes_warning "PyConfig.bytes_warning")
+    * [`Py_FrozenFlag`](https://docs.python.org/3/c-api/init.html#c.Py_FrozenFlag "Py_FrozenFlag"): use [`PyConfig.pathconfig_warnings`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.pathconfig_warnings "PyConfig.pathconfig_warnings")
+    * [`Py_IgnoreEnvironmentFlag`](https://docs.python.org/3/c-api/init.html#c.Py_IgnoreEnvironmentFlag "Py_IgnoreEnvironmentFlag"): use [`PyConfig.use_environment`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.use_environment "PyConfig.use_environment")
+    * [`Py_DontWriteBytecodeFlag`](https://docs.python.org/3/c-api/init.html#c.Py_DontWriteBytecodeFlag "Py_DontWriteBytecodeFlag"): use [`PyConfig.write_bytecode`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.write_bytecode "PyConfig.write_bytecode")
+    * [`Py_NoUserSiteDirectory`](https://docs.python.org/3/c-api/init.html#c.Py_NoUserSiteDirectory "Py_NoUserSiteDirectory"): use [`PyConfig.user_site_directory`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.user_site_directory "PyConfig.user_site_directory")
+    * [`Py_UnbufferedStdioFlag`](https://docs.python.org/3/c-api/init.html#c.Py_UnbufferedStdioFlag "Py_UnbufferedStdioFlag"): use [`PyConfig.buffered_stdio`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.buffered_stdio "PyConfig.buffered_stdio")
+    * [`Py_HashRandomizationFlag`](https://docs.python.org/3/c-api/init.html#c.Py_HashRandomizationFlag "Py_HashRandomizationFlag"): use [`PyConfig.use_hash_seed`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.use_hash_seed "PyConfig.use_hash_seed") and [`PyConfig.hash_seed`](https://docs.python.org/

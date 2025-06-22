@@ -1,0 +1,81 @@
+Title: Using PyCapsule for C API Export in Python Extensions
+URL: https://docs.python.org/3/extending/extending.html
+Summary: This section discusses the use of Capsules in Python extension modules to manage C API pointers. Capsules can be assigned in a module's namespace, allowing retrieval by other modules. Different methods exist for exporting pointers, including individual Capsules or arrays, and the importance of naming Capsules properly is emphasized.
+---
+
+y can be passed around like any other Python object. In particular, they can be assigned to a name in an extension module’s namespace. Other extension modules can then import this module, retrieve the value of this name, and then retrieve the pointer from the Capsule.
+There are many ways in which Capsules can be used to export the C API of an extension module. Each function could get its own Capsule, or all C API pointers could be stored in an array whose address is published in a Capsule. And the various tasks of storing and retrieving the pointers can be distributed in different ways between the module providing the code and the client modules.
+Whichever method you choose, it’s important to name your Capsules properly. The function [`PyCapsule_New()`](https://docs.python.org/3/c-api/capsule.html#c.PyCapsule_New "PyCapsule_New") takes a name parameter (constchar*); you’re permitted to pass in a `NULL` name, but we strongly encourage you to specify a name. Properly named Capsules provide a degree of runtime type-safety; there is no feasible way to tell one unnamed Capsule from another.
+In particular, Capsules used to expose C APIs should be given a name following this convention:
+```
+modulename.attributename
+
+```
+
+The convenience function [`PyCapsule_Import()`](https://docs.python.org/3/c-api/capsule.html#c.PyCapsule_Import "PyCapsule_Import") makes it easy to load a C API provided via a Capsule, but only if the Capsule’s name matches this convention. This behavior gives C API users a high degree of certainty that the Capsule they load contains the correct C API.
+The following example demonstrates an approach that puts most of the burden on the writer of the exporting module, which is appropriate for commonly used library modules. It stores all C API pointers (just one in the example!) in an array of void pointers which becomes the value of a Capsule. The header file corresponding to the module provides a macro that takes care of importing the module and retrieving its C API pointers; client modules only have to call this macro before accessing the C API.
+The exporting module is a modification of the `spam` module from section [A Simple Example](https://docs.python.org/3/extending/extending.html#extending-simpleexample). The function `spam.system()` does not call the C library function `system()` directly, but a function `PySpam_System()`, which would of course do something more complicated in reality (such as adding “spam” to every command). This function `PySpam_System()` is also exported to other extension modules.
+The function `PySpam_System()` is a plain C function, declared `static` like everything else:
+```
+staticint
+PySpam_System(constchar*command)
+{
+returnsystem(command);
+}
+
+```
+
+The function `spam_system()` is modified in a trivial way:
+```
+staticPyObject*
+spam_system(PyObject*self,PyObject*args)
+{
+constchar*command;
+intsts;
+if(!PyArg_ParseTuple(args,"s",&command))
+returnNULL;
+sts=PySpam_System(command);
+returnPyLong_FromLong(sts);
+}
+
+```
+
+In the beginning of the module, right after the line
+```
+#include<Python.h>
+
+```
+
+two more lines must be added:
+```
+#define SPAM_MODULE
+#include"spammodule.h"
+
+```
+
+The `#define` is used to tell the header file that it is being included in the exporting module, not a client module. Finally, the module’s initialization function must take care of initializing the C API pointer array:
+```
+PyMODINIT_FUNC
+PyInit_spam(void)
+{
+PyObject*m;
+staticvoid*PySpam_API[PySpam_API_pointers];
+PyObject*c_api_object;
+m=PyModule_Create(&spammodule);
+if(m==NULL)
+returnNULL;
+/* Initialize the C API pointer array */
+PySpam_API[PySpam_System_NUM]=(void*)PySpam_System;
+/* Create a Capsule containing the API pointer array's address */
+c_api_object=PyCapsule_New((void*)PySpam_API,"spam._C_API",NULL);
+if(PyModule_Add(m,"_C_API",c_api_object)<0){
+Py_DECREF(m);
+returnNULL;
+}
+returnm;
+}
+
+```
+
+Note that `PySpam_API` is declared `static`; otherwise the pointer array would disappear when `PyInit_spam()` terminates!
+The bulk of the work is in the header file `spammodule.h`, which looks like this:

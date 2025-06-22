@@ -1,0 +1,45 @@
+Title: Opcode Operations in Python Dis Module
+URL: https://docs.python.org/3/library/dis.html
+Summary: This chunk describes the opcodes 'BEFORE_WITH' and 'GET_LEN'. 'BEFORE_WITH' prepares for 'with' block execution by loading the context manager's '__exit__()' and '__enter__()' methods, while 'GET_LEN' calculates the length of the top stack element, primarily used in 'match' statements. Both functions enhance Python's functionality and were introduced in versions 3.11 and 3.10, respectively.
+---
+
+BEFORE_WITH[¶](https://docs.python.org/3/library/dis.html#opcode-BEFORE_WITH "Link to this definition")
+    
+This opcode performs several operations before a with block starts. First, it loads [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") from the context manager and pushes it onto the stack for later use by [`WITH_EXCEPT_START`](https://docs.python.org/3/library/dis.html#opcode-WITH_EXCEPT_START). Then, [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") is called. Finally, the result of calling the `__enter__()` method is pushed onto the stack.
+Added in version 3.11. 
+
+GET_LEN[¶](https://docs.python.org/3/library/dis.html#opcode-GET_LEN "Link to this definition")
+    
+Perform `STACK.append(len(STACK[-1]))`. Used in [`match`](https://docs.python.org/3/reference/compound_stmts.html#match) statements where comparison with structure of pattern is needed.
+Added in version 3.10. 
+
+MATCH_MAPPING[¶](https://docs.python.org/3/library/dis.html#opcode-MATCH_MAPPING "Link to this definition")
+    
+If `STACK[-1]` is an instance of [`collections.abc.Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping "collections.abc.Mapping") (or, more technically: if it has the [`Py_TPFLAGS_MAPPING`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_MAPPING "Py_TPFLAGS_MAPPING") flag set in its [`tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags")), push `True` onto the stack. Otherwise, push `False`.
+Added in version 3.10. 
+
+MATCH_SEQUENCE[¶](https://docs.python.org/3/library/dis.html#opcode-MATCH_SEQUENCE "Link to this definition")
+    
+If `STACK[-1]` is an instance of [`collections.abc.Sequence`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence "collections.abc.Sequence") and is _not_ an instance of [`str`](https://docs.python.org/3/library/stdtypes.html#str "str")/[`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes")/[`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") (or, more technically: if it has the [`Py_TPFLAGS_SEQUENCE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_SEQUENCE "Py_TPFLAGS_SEQUENCE") flag set in its [`tp_flags`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_flags "PyTypeObject.tp_flags")), push `True` onto the stack. Otherwise, push `False`.
+Added in version 3.10. 
+
+MATCH_KEYS[¶](https://docs.python.org/3/library/dis.html#opcode-MATCH_KEYS "Link to this definition")
+    
+`STACK[-1]` is a tuple of mapping keys, and `STACK[-2]` is the match subject. If `STACK[-2]` contains all of the keys in `STACK[-1]`, push a [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") containing the corresponding values. Otherwise, push `None`.
+Added in version 3.10.
+Changed in version 3.11: Previously, this instruction also pushed a boolean value indicating success (`True`) or failure (`False`). 
+
+STORE_NAME(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-STORE_NAME "Link to this definition")
+    
+Implements `name = STACK.pop()`. _namei_ is the index of _name_ in the attribute [`co_names`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_names "codeobject.co_names") of the [code object](https://docs.python.org/3/reference/datamodel.html#code-objects). The compiler tries to use [`STORE_FAST`](https://docs.python.org/3/library/dis.html#opcode-STORE_FAST) or [`STORE_GLOBAL`](https://docs.python.org/3/library/dis.html#opcode-STORE_GLOBAL) if possible. 
+
+DELETE_NAME(_namei_)[¶](https://docs.python.org/3/library/dis.html#opcode-DELETE_NAME "Link to this definition")
+    
+Implements `del name`, where _namei_ is the index into [`co_names`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_names "codeobject.co_names") attribute of the [code object](https://docs.python.org/3/reference/datamodel.html#code-objects). 
+
+UNPACK_SEQUENCE(_count_)[¶](https://docs.python.org/3/library/dis.html#opcode-UNPACK_SEQUENCE "Link to this definition")
+    
+Unpacks `STACK[-1]` into _count_ individual values, which are put onto the stack right-to-left. Require there to be exactly _count_ values.:
+```
+assert(len(STACK[-1]) == count)
+STACK.extend(STACK.pop()[:-count-1:-1])

@@ -1,0 +1,77 @@
+Title: Context Variables in Python
+URL: https://docs.python.org/3/library/contextvars.html
+Summary: This section provides an overview of methods for managing context variables in Python, including shallow copying of context objects, checking if a variable is set, accessing variable values, retrieving variable values with a default option, and iterating over stored variables within the context.
+---
+
+```
+
+
+copy()[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Context.copy "Link to this definition")
+    
+Return a shallow copy of the context object. 
+
+var in context
+    
+Return `True` if the _context_ has a value for _var_ set; return `False` otherwise. 
+
+context[var]
+    
+Return the value of the _var_ [`ContextVar`](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar "contextvars.ContextVar") variable. If the variable is not set in the context object, a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError") is raised. 
+
+get(_var_[, _default_])[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Context.get "Link to this definition")
+    
+Return the value for _var_ if _var_ has the value in the context object. Return _default_ otherwise. If _default_ is not given, return `None`. 
+
+iter(context)
+    
+Return an iterator over the variables stored in the context object. 
+
+len(proxy)
+    
+Return the number of variables set in the context object. 
+
+keys()[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Context.keys "Link to this definition")
+    
+Return a list of all variables in the context object. 
+
+values()[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Context.values "Link to this definition")
+    
+Return a list of all variables’ values in the context object. 
+
+items()[¶](https://docs.python.org/3/library/contextvars.html#contextvars.Context.items "Link to this definition")
+    
+Return a list of 2-tuples containing all variables and their values in the context object.
+## asyncio support[¶](https://docs.python.org/3/library/contextvars.html#asyncio-support "Link to this heading")
+Context variables are natively supported in [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.") and are ready to be used without any extra configuration. For example, here is a simple echo server, that uses a context variable to make the address of a remote client available in the Task that handles that client:
+```
+importasyncio
+importcontextvars
+client_addr_var = contextvars.ContextVar('client_addr')
+defrender_goodbye():
+  # The address of the currently handled client can be accessed
+  # without passing it explicitly to this function.
+  client_addr = client_addr_var.get()
+  return f'Good bye, client @ {client_addr}\r\n'.encode()
+async defhandle_request(reader, writer):
+  addr = writer.transport.get_extra_info('socket').getpeername()
+  client_addr_var.set(addr)
+  # In any code that we call is now possible to get
+  # client's address by calling 'client_addr_var.get()'.
+  while True:
+    line = await reader.readline()
+    print(line)
+    if not line.strip():
+      break
+  writer.write(b'HTTP/1.1 200 OK\r\n') # status line
+  writer.write(b'\r\n') # headers
+  writer.write(render_goodbye()) # body
+  writer.close()
+async defmain():
+  srv = await asyncio.start_server(
+    handle_request, '127.0.0.1', 8081)
+  async with srv:
+    await srv.serve_forever()
+asyncio.run(main())
+# To test it you can use telnet or curl:
+#   telnet 127.0.0.1 8081
+#   curl 127.0.0.1:8081

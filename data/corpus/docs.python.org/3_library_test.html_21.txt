@@ -1,0 +1,52 @@
+Title: Testing Warnings in Python
+URL: https://docs.python.org/3/library/test.html
+Summary: This document chunk describes two context managers introduced in Python 3.8 for testing warnings: `check_no_resource_warning`, which ensures no `ResourceWarning` is raised during its use, and `check_syntax_warning`, which checks for a `SyntaxWarning` during the compilation of a given statement.
+---
+
+```
+
+Added in version 3.8. 
+
+test.support.warnings_helper.check_no_resource_warning(_testcase_)[¶](https://docs.python.org/3/library/test.html#test.support.warnings_helper.check_no_resource_warning "Link to this definition")
+    
+Context manager to check that no [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning") was raised. You must remove the object which may emit [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning") before the end of the context manager. 
+
+test.support.warnings_helper.check_syntax_warning(_testcase_ , _statement_ , _errtext =''_, _*_ , _lineno =1_, _offset =None_)[¶](https://docs.python.org/3/library/test.html#test.support.warnings_helper.check_syntax_warning "Link to this definition")
+    
+Test for syntax warning in _statement_ by attempting to compile _statement_. Test also that the [`SyntaxWarning`](https://docs.python.org/3/library/exceptions.html#SyntaxWarning "SyntaxWarning") is emitted only once, and that it will be converted to a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") when turned into error. _testcase_ is the [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") instance for the test. _errtext_ is the regular expression which should match the string representation of the emitted [`SyntaxWarning`](https://docs.python.org/3/library/exceptions.html#SyntaxWarning "SyntaxWarning") and raised [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError"). If _lineno_ is not `None`, compares to the line of the warning and exception. If _offset_ is not `None`, compares to the offset of the exception.
+Added in version 3.8. 
+
+test.support.warnings_helper.check_warnings(_* filters_, _quiet =True_)[¶](https://docs.python.org/3/library/test.html#test.support.warnings_helper.check_warnings "Link to this definition")
+    
+A convenience wrapper for [`warnings.catch_warnings()`](https://docs.python.org/3/library/warnings.html#warnings.catch_warnings "warnings.catch_warnings") that makes it easier to test that a warning was correctly raised. It is approximately equivalent to calling `warnings.catch_warnings(record=True)` with [`warnings.simplefilter()`](https://docs.python.org/3/library/warnings.html#warnings.simplefilter "warnings.simplefilter") set to `always` and with the option to automatically validate the results that are recorded.
+`check_warnings` accepts 2-tuples of the form `("message regexp", WarningCategory)` as positional arguments. If one or more _filters_ are provided, or if the optional keyword argument _quiet_ is `False`, it checks to make sure the warnings are as expected: each specified filter must match at least one of the warnings raised by the enclosed code or the test fails, and if any warnings are raised that do not match any of the specified filters the test fails. To disable the first of these checks, set _quiet_ to `True`.
+If no arguments are specified, it defaults to:
+```
+check_warnings(("", Warning), quiet=True)
+
+```
+
+In this case all warnings are caught and no errors are raised.
+On entry to the context manager, a `WarningRecorder` instance is returned. The underlying warnings list from [`catch_warnings()`](https://docs.python.org/3/library/warnings.html#warnings.catch_warnings "warnings.catch_warnings") is available via the recorder object’s [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") attribute. As a convenience, the attributes of the object representing the most recent warning can also be accessed directly through the recorder object (see example below). If no warning has been raised, then any of the attributes that would otherwise be expected on an object representing a warning will return `None`.
+The recorder object also has a `reset()` method, which clears the warnings list.
+The context manager is designed to be used like this:
+```
+with check_warnings(("assertion is always true", SyntaxWarning),
+          ("", UserWarning)):
+  exec('assert(False, "Hey!")')
+  warnings.warn(UserWarning("Hide me!"))
+
+```
+
+In this case if either warning was not raised, or some other warning was raised, [`check_warnings()`](https://docs.python.org/3/library/test.html#test.support.warnings_helper.check_warnings "test.support.warnings_helper.check_warnings") would raise an error.
+When a test needs to look more deeply into the warnings, rather than just checking whether or not they occurred, code like this can be used:
+```
+with check_warnings(quiet=True) as w:
+  warnings.warn("foo")
+  assert str(w.args[0]) == "foo"
+  warnings.warn("bar")
+  assert str(w.args[0]) == "bar"
+  assert str(w.warnings[0].args[0]) == "foo"
+  assert str(w.warnings[1].args[0]) == "bar"
+  w.reset()
+  assert len(w.warnings) == 0

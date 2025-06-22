@@ -1,0 +1,31 @@
+Title: Creating Tasks in asyncio
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: This section discusses the `asyncio.create_task()` function, which wraps a coroutine into a Task and schedules its execution, returning the Task object. It also references the `loop.run_in_executor()` function as a low-level alternative for returning a Future object.
+---
+
+```
+
+A good example of a low-level function that returns a Future object is [`loop.run_in_executor()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.run_in_executor "asyncio.loop.run_in_executor").
+## [Creating Tasks](https://docs.python.org/3/library/asyncio-task.html#id4)[¶](https://docs.python.org/3/library/asyncio-task.html#creating-tasks "Link to this heading")
+**Source code:** [Lib/asyncio/tasks.py](https://github.com/python/cpython/tree/3.13/Lib/asyncio/tasks.py) 
+
+asyncio.create_task(_coro_ , _*_ , _name =None_, _context =None_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task "Link to this definition")
+    
+Wrap the _coro_ [coroutine](https://docs.python.org/3/library/asyncio-task.html#coroutine) into a [`Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") and schedule its execution. Return the Task object.
+If _name_ is not `None`, it is set as the name of the task using [`Task.set_name()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task.set_name "asyncio.Task.set_name").
+An optional keyword-only _context_ argument allows specifying a custom [`contextvars.Context`](https://docs.python.org/3/library/contextvars.html#contextvars.Context "contextvars.Context") for the _coro_ to run in. The current context copy is created when no _context_ is provided.
+The task is executed in the loop returned by [`get_running_loop()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.get_running_loop "asyncio.get_running_loop"), [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised if there is no running loop in current thread.
+Note
+[`asyncio.TaskGroup.create_task()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.TaskGroup.create_task "asyncio.TaskGroup.create_task") is a new alternative leveraging structural concurrency; it allows for waiting for a group of related tasks with strong safety guarantees.
+Important
+Save a reference to the result of this function, to avoid a task disappearing mid-execution. The event loop only keeps weak references to tasks. A task that isn’t referenced elsewhere may get garbage collected at any time, even before it’s done. For reliable “fire-and-forget” background tasks, gather them in a collection:
+```
+background_tasks = set()
+for i in range(10):
+  task = asyncio.create_task(some_coro(param=i))
+  # Add task to the set. This creates a strong reference.
+  background_tasks.add(task)
+  # To prevent keeping references to finished tasks forever,
+  # make each task remove its own reference from the set after
+  # completion:
+  task.add_done_callback(background_tasks.discard)

@@ -1,0 +1,46 @@
+Title: Abstract Syntax Tree (AST) Grammar
+URL: https://docs.python.org/3/library/ast.html
+Summary: This section outlines the grammar components for defining various patterns in the Abstract Syntax Tree (AST), including match cases, patterns like MatchValue and MatchSingleton, and constructs such as MatchClass and MatchMapping. It details the structure and attributes of these components, illustrating how to represent type information and parameters in the AST.
+---
+
+offset, int? end_lineno, int? end_col_offset)
+  withitem = (exprcontext_expr, expr? optional_vars)
+  match_case = (patternpattern, expr? guard, stmt* body)
+  pattern = MatchValue(exprvalue)
+      | MatchSingleton(constantvalue)
+      | MatchSequence(pattern* patterns)
+      | MatchMapping(expr* keys, pattern* patterns, identifier? rest)
+      | MatchClass(exprcls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)
+      | MatchStar(identifier? name)
+      -- The optional "rest" MatchMapping parameter handles capturing extra mapping keys
+      | MatchAs(pattern? pattern, identifier? name)
+      | MatchOr(pattern* patterns)
+       attributes (intlineno, intcol_offset, intend_lineno, intend_col_offset)
+  type_ignore = TypeIgnore(intlineno, stringtag)
+  type_param = TypeVar(identifiername, expr? bound, expr? default_value)
+        | ParamSpec(identifiername, expr? default_value)
+        | TypeVarTuple(identifiername, expr? default_value)
+        attributes (intlineno, intcol_offset, intend_lineno, intend_col_offset)
+}
+
+```
+
+## Node classes[¶](https://docs.python.org/3/library/ast.html#node-classes "Link to this heading") 
+
+_class_ ast.AST[¶](https://docs.python.org/3/library/ast.html#ast.AST "Link to this definition")
+    
+This is the base of all AST node classes. The actual node classes are derived from the `Parser/Python.asdl` file, which is reproduced [above](https://docs.python.org/3/library/ast.html#abstract-grammar). They are defined in the `_ast` C module and re-exported in [`ast`](https://docs.python.org/3/library/ast.html#module-ast "ast: Abstract Syntax Tree classes and manipulation.").
+There is one class defined for each left-hand side symbol in the abstract grammar (for example, `ast.stmt` or `ast.expr`). In addition, there is one class defined for each constructor on the right-hand side; these classes inherit from the classes for the left-hand side trees. For example, [`ast.BinOp`](https://docs.python.org/3/library/ast.html#ast.BinOp "ast.BinOp") inherits from `ast.expr`. For production rules with alternatives (aka “sums”), the left-hand side class is abstract: only instances of specific constructor nodes are ever created. 
+
+_fields[¶](https://docs.python.org/3/library/ast.html#ast.AST._fields "Link to this definition")
+    
+Each concrete class has an attribute `_fields` which gives the names of all child nodes.
+Each instance of a concrete class has one attribute for each child node, of the type as defined in the grammar. For example, [`ast.BinOp`](https://docs.python.org/3/library/ast.html#ast.BinOp "ast.BinOp") instances have an attribute `left` of type `ast.expr`.
+If these attributes are marked as optional in the grammar (using a question mark), the value might be `None`. If the attributes can have zero-or-more values (marked with an asterisk), the values are represented as Python lists. All possible attributes must be present and have valid values when compiling an AST with [`compile()`](https://docs.python.org/3/library/functions.html#compile "compile"). 
+
+_field_types[¶](https://docs.python.org/3/library/ast.html#ast.AST._field_types "Link to this definition")
+    
+The `_field_types` attribute on each concrete class is a dictionary mapping field names (as also listed in [`_fields`](https://docs.python.org/3/library/ast.html#ast.AST._fields "ast.AST._fields")) to their types.
+>>>```
+>>> ast.TypeVar._field_types
+{'name': <class 'str'>, 'bound': ast.expr | None, 'default_value': ast.expr | None}

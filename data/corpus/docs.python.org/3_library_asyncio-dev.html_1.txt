@@ -1,0 +1,39 @@
+Title: Debugging and Warnings in asyncio
+URL: https://docs.python.org/3/library/asyncio-dev.html
+Summary: This section discusses configuring the warnings module to display ResourceWarning warnings and the functionalities of asyncio's debug mode. In debug mode, asyncio logs coroutines that were not awaited to prevent forgotten awaits and raises exceptions for many non-threadsafe asyncio APIs.
+---
+
+```
+
+  * configuring the [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module to display [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning") warnings. One way of doing that is by using the [`-W`](https://docs.python.org/3/using/cmdline.html#cmdoption-W) `default` command line option.
+
+
+When the debug mode is enabled:
+  * asyncio checks for [coroutines that were not awaited](https://docs.python.org/3/library/asyncio-dev.html#asyncio-coroutine-not-scheduled) and logs them; this mitigates the “forgotten await” pitfall.
+  * Many non-threadsafe asyncio APIs (such as [`loop.call_soon()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon "asyncio.loop.call_soon") and [`loop.call_at()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_at "asyncio.loop.call_at") methods) raise an exception if they are called from a wrong thread.
+  * The execution time of the I/O selector is logged if it takes too long to perform an I/O operation.
+  * Callbacks taking longer than 100 milliseconds are logged. The [`loop.slow_callback_duration`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.slow_callback_duration "asyncio.loop.slow_callback_duration") attribute can be used to set the minimum execution duration in seconds that is considered “slow”.
+
+
+## Concurrency and Multithreading[¶](https://docs.python.org/3/library/asyncio-dev.html#concurrency-and-multithreading "Link to this heading")
+An event loop runs in a thread (typically the main thread) and executes all callbacks and Tasks in its thread. While a Task is running in the event loop, no other Tasks can run in the same thread. When a Task executes an `await` expression, the running Task gets suspended, and the event loop executes the next Task.
+To schedule a [callback](https://docs.python.org/3/glossary.html#term-callback) from another OS thread, the [`loop.call_soon_threadsafe()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon_threadsafe "asyncio.loop.call_soon_threadsafe") method should be used. Example:
+```
+loop.call_soon_threadsafe(callback, *args)
+
+```
+
+Almost all asyncio objects are not thread safe, which is typically not a problem unless there is code that works with them from outside of a Task or a callback. If there’s a need for such code to call a low-level asyncio API, the [`loop.call_soon_threadsafe()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.call_soon_threadsafe "asyncio.loop.call_soon_threadsafe") method should be used, e.g.:
+```
+loop.call_soon_threadsafe(fut.cancel)
+
+```
+
+To schedule a coroutine object from a different OS thread, the [`run_coroutine_threadsafe()`](https://docs.python.org/3/library/asyncio-task.html#asyncio.run_coroutine_threadsafe "asyncio.run_coroutine_threadsafe") function should be used. It returns a [`concurrent.futures.Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") to access the result:
+```
+async defcoro_func():
+   return await asyncio.sleep(1, 42)
+# Later in another OS thread:
+future = asyncio.run_coroutine_threadsafe(coro_func(), loop)
+# Wait for the result:
+result = future.result()

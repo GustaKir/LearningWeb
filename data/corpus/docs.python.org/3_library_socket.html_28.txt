@@ -1,0 +1,23 @@
+Title: Socket Protocol and Timeout Modes
+URL: https://docs.python.org/3/library/socket.html
+Summary: This section discusses the socket protocol and the three modes of socket operation: blocking, non-blocking, and timeout. By default, sockets are created in blocking mode, where operations wait to complete or until an error occurs. Non-blocking mode allows operations to fail immediately if they cannot be completed, and the `setdefaulttimeout()` function can be used to change the socket's behavior.
+---
+
+socket.proto[¶](https://docs.python.org/3/library/socket.html#socket.socket.proto "Link to this definition")
+    
+The socket protocol.
+## Notes on socket timeouts[¶](https://docs.python.org/3/library/socket.html#notes-on-socket-timeouts "Link to this heading")
+A socket object can be in one of three modes: blocking, non-blocking, or timeout. Sockets are by default always created in blocking mode, but this can be changed by calling [`setdefaulttimeout()`](https://docs.python.org/3/library/socket.html#socket.setdefaulttimeout "socket.setdefaulttimeout").
+  * In _blocking mode_ , operations block until complete or the system returns an error (such as connection timed out).
+  * In _non-blocking mode_ , operations fail (with an error that is unfortunately system-dependent) if they cannot be completed immediately: functions from the [`select`](https://docs.python.org/3/library/select.html#module-select "select: Wait for I/O completion on multiple streams.") module can be used to know when and whether a socket is available for reading or writing.
+  * In _timeout mode_ , operations fail if they cannot be completed within the timeout specified for the socket (they raise a [`timeout`](https://docs.python.org/3/library/socket.html#socket.timeout "socket.timeout") exception) or if the system returns an error.
+
+
+Note
+At the operating system level, sockets in _timeout mode_ are internally set in non-blocking mode. Also, the blocking and timeout modes are shared between file descriptors and socket objects that refer to the same network endpoint. This implementation detail can have visible consequences if e.g. you decide to use the [`fileno()`](https://docs.python.org/3/library/socket.html#socket.socket.fileno "socket.socket.fileno") of a socket.
+### Timeouts and the `connect` method[¶](https://docs.python.org/3/library/socket.html#timeouts-and-the-connect-method "Link to this heading")
+The [`connect()`](https://docs.python.org/3/library/socket.html#socket.socket.connect "socket.socket.connect") operation is also subject to the timeout setting, and in general it is recommended to call [`settimeout()`](https://docs.python.org/3/library/socket.html#socket.socket.settimeout "socket.socket.settimeout") before calling [`connect()`](https://docs.python.org/3/library/socket.html#socket.socket.connect "socket.socket.connect") or pass a timeout parameter to [`create_connection()`](https://docs.python.org/3/library/socket.html#socket.create_connection "socket.create_connection"). However, the system network stack may also return a connection timeout error of its own regardless of any Python socket timeout setting.
+### Timeouts and the `accept` method[¶](https://docs.python.org/3/library/socket.html#timeouts-and-the-accept-method "Link to this heading")
+If [`getdefaulttimeout()`](https://docs.python.org/3/library/socket.html#socket.getdefaulttimeout "socket.getdefaulttimeout") is not [`None`](https://docs.python.org/3/library/constants.html#None "None"), sockets returned by the [`accept()`](https://docs.python.org/3/library/socket.html#socket.socket.accept "socket.socket.accept") method inherit that timeout. Otherwise, the behaviour depends on settings of the listening socket:
+  * if the listening socket is in _blocking mode_ or in _timeout mode_ , the socket returned by [`accept()`](https://docs.python.org/3/library/socket.html#socket.socket.accept "socket.socket.accept") is in _blocking mode_ ;
+  * if the listening socket is in _non-blocking mode_ , whether the socket returned by [`accept()`](https://docs.python.org/3/library/socket.html#socket.socket.accept "socket.socket.accept") is in blocking or non-blocking mode is operating system-dependent. If you want to ensure cross-platform behaviour, it is recommended you manually override this setting.

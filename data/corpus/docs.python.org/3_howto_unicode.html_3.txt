@@ -1,0 +1,68 @@
+Title: Using Escape Sequences for Unicode Characters
+URL: https://docs.python.org/3/howto/unicode.html
+Summary: This section explains how to use escape sequences to include Unicode characters in Python string literals, allowing for ASCII-only code when necessary. It provides examples of using character names and hexadecimal values to represent characters. Additionally, it discusses the `decode()` method of `bytes` for converting byte strings to Unicode, including error handling options.
+---
+
+```
+
+If you can’t enter a particular character in your editor or want to keep the source code ASCII-only for some reason, you can also use escape sequences in string literals. (Depending on your system, you may see the actual capital-delta glyph instead of a u escape.)
+>>>```
+>>> "\N{GREEK CAPITAL LETTER DELTA}" # Using the character name
+'\u0394'
+>>> "\u0394"             # Using a 16-bit hex value
+'\u0394'
+>>> "\U00000394"           # Using a 32-bit hex value
+'\u0394'
+
+```
+
+In addition, one can create a string using the [`decode()`](https://docs.python.org/3/library/stdtypes.html#bytes.decode "bytes.decode") method of [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"). This method takes an _encoding_ argument, such as `UTF-8`, and optionally an _errors_ argument.
+The _errors_ argument specifies the response when the input string can’t be converted according to the encoding’s rules. Legal values for this argument are `'strict'` (raise a [`UnicodeDecodeError`](https://docs.python.org/3/library/exceptions.html#UnicodeDecodeError "UnicodeDecodeError") exception), `'replace'` (use `U+FFFD`, `REPLACEMENT CHARACTER`), `'ignore'` (just leave the character out of the Unicode result), or `'backslashreplace'` (inserts a `\xNN` escape sequence). The following examples show the differences:
+>>>```
+>>> b'\x80abc'.decode("utf-8", "strict")
+Traceback (most recent call last):
+...
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0x80 in position 0:
+ invalid start byte
+>>> b'\x80abc'.decode("utf-8", "replace")
+'\ufffdabc'
+>>> b'\x80abc'.decode("utf-8", "backslashreplace")
+'\\x80abc'
+>>> b'\x80abc'.decode("utf-8", "ignore")
+'abc'
+
+```
+
+Encodings are specified as strings containing the encoding’s name. Python comes with roughly 100 different encodings; see the Python Library Reference at [Standard Encodings](https://docs.python.org/3/library/codecs.html#standard-encodings) for a list. Some encodings have multiple names; for example, `'latin-1'`, `'iso_8859_1'` and `'8859`’ are all synonyms for the same encoding.
+One-character Unicode strings can also be created with the [`chr()`](https://docs.python.org/3/library/functions.html#chr "chr") built-in function, which takes integers and returns a Unicode string of length 1 that contains the corresponding code point. The reverse operation is the built-in [`ord()`](https://docs.python.org/3/library/functions.html#ord "ord") function that takes a one-character Unicode string and returns the code point value:
+>>>```
+>>> chr(57344)
+'\ue000'
+>>> ord('\ue000')
+57344
+
+```
+
+### Converting to Bytes[¶](https://docs.python.org/3/howto/unicode.html#converting-to-bytes "Link to this heading")
+The opposite method of [`bytes.decode()`](https://docs.python.org/3/library/stdtypes.html#bytes.decode "bytes.decode") is [`str.encode()`](https://docs.python.org/3/library/stdtypes.html#str.encode "str.encode"), which returns a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") representation of the Unicode string, encoded in the requested _encoding_.
+The _errors_ parameter is the same as the parameter of the [`decode()`](https://docs.python.org/3/library/stdtypes.html#bytes.decode "bytes.decode") method but supports a few more possible handlers. As well as `'strict'`, `'ignore'`, and `'replace'` (which in this case inserts a question mark instead of the unencodable character), there is also `'xmlcharrefreplace'` (inserts an XML character reference), `backslashreplace` (inserts a `\uNNNN` escape sequence) and `namereplace` (inserts a `\N{...}` escape sequence).
+The following example shows the different results:
+>>>```
+>>> u = chr(40960) + 'abcd' + chr(1972)
+>>> u.encode('utf-8')
+b'\xea\x80\x80abcd\xde\xb4'
+>>> u.encode('ascii')
+Traceback (most recent call last):
+...
+UnicodeEncodeError: 'ascii' codec can't encode character '\ua000' in
+ position 0: ordinal not in range(128)
+>>> u.encode('ascii', 'ignore')
+b'abcd'
+>>> u.encode('ascii', 'replace')
+b'?abcd?'
+>>> u.encode('ascii', 'xmlcharrefreplace')
+b'&#40960;abcd&#1972;'
+>>> u.encode('ascii', 'backslashreplace')
+b'\\ua000abcd\\u07b4'
+>>> u.encode('ascii', 'namereplace')
+b'\\N{YI SYLLABLE IT}abcd\\u07b4'

@@ -1,0 +1,41 @@
+Title: Deprecation Warning Filter in Python 2.1
+URL: https://docs.python.org/3/whatsnew/2.1.html
+Summary: Python 2.1 introduces a filter for `DeprecationWarning` in the `__main__` module, allowing for the selective suppression of warnings based on regular expressions. This feature enables warnings to be displayed once, every time, or converted into exceptions. Additionally, new functions for issuing warnings were added to the C API.
+---
+
+```
+
+This adds a filter that will apply only to warnings of the class [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") triggered in the [`__main__`](https://docs.python.org/3/library/__main__.html#module-__main__ "__main__: The environment where top-level code is run. Covers command-line interfaces, import-time behavior, and ``__name__ == '__main__'``.") module, and applies a regular expression to only match the message about the `regex` module being deprecated, and will cause such warnings to be ignored. Warnings can also be printed only once, printed every time the offending code is executed, or turned into exceptions that will cause the program to stop (unless the exceptions are caught in the usual way, of course).
+Functions were also added to Python’s C API for issuing warnings; refer to PEP 230 or to Python’s API documentation for the details.
+See also 
+
+[**PEP 5**](https://peps.python.org/pep-0005/) - Guidelines for Language Evolution
+    
+Written by Paul Prescod, to specify procedures to be followed when removing old features from Python. The policy described in this PEP hasn’t been officially adopted, but the eventual policy probably won’t be too different from Prescod’s proposal. 
+
+[**PEP 230**](https://peps.python.org/pep-0230/) - Warning Framework
+    
+Written and implemented by Guido van Rossum.
+## PEP 229: New Build System[¶](https://docs.python.org/3/whatsnew/2.1.html#pep-229-new-build-system "Link to this heading")
+When compiling Python, the user had to go in and edit the `Modules/Setup` file in order to enable various additional modules; the default set is relatively small and limited to modules that compile on most Unix platforms. This means that on Unix platforms with many more features, most notably Linux, Python installations often don’t contain all useful modules they could.
+Python 2.0 added the Distutils, a set of modules for distributing and installing extensions. In Python 2.1, the Distutils are used to compile much of the standard library of extension modules, autodetecting which ones are supported on the current machine. It’s hoped that this will make Python installations easier and more featureful.
+Instead of having to edit the `Modules/Setup` file in order to enable modules, a `setup.py` script in the top directory of the Python source distribution is run at build time, and attempts to discover which modules can be enabled by examining the modules and header files on the system. If a module is configured in `Modules/Setup`, the `setup.py` script won’t attempt to compile that module and will defer to the `Modules/Setup` file’s contents. This provides a way to specific any strange command-line flags or libraries that are required for a specific platform.
+In another far-reaching change to the build mechanism, Neil Schemenauer restructured things so Python now uses a single makefile that isn’t recursive, instead of makefiles in the top directory and in each of the `Python/`, `Parser/`, `Objects/`, and `Modules/` subdirectories. This makes building Python faster and also makes hacking the Makefiles clearer and simpler.
+See also 
+
+[**PEP 229**](https://peps.python.org/pep-0229/) - Using Distutils to Build Python
+    
+Written and implemented by A.M. Kuchling.
+## PEP 205: Weak References[¶](https://docs.python.org/3/whatsnew/2.1.html#pep-205-weak-references "Link to this heading")
+Weak references, available through the [`weakref`](https://docs.python.org/3/library/weakref.html#module-weakref "weakref: Support for weak references and weak dictionaries.") module, are a minor but useful new data type in the Python programmer’s toolbox.
+Storing a reference to an object (say, in a dictionary or a list) has the side effect of keeping that object alive forever. There are a few specific cases where this behaviour is undesirable, object caches being the most common one, and another being circular references in data structures such as trees.
+For example, consider a memoizing function that caches the results of another function `f(x)` by storing the function’s argument and its result in a dictionary:
+```
+_cache = {}
+defmemoize(x):
+  if _cache.has_key(x):
+    return _cache[x]
+  retval = f(x)
+  # Cache the returned object
+  _cache[x] = retval
+  return retval

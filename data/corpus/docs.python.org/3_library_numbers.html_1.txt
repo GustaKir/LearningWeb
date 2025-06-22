@@ -1,0 +1,49 @@
+Title: Real Numbers in Python
+URL: https://docs.python.org/3/library/numbers.html
+Summary: The `numbers.Real` class in Python extends the `Complex` class to include operations specific to real numbers, such as conversion to `float`, truncation, rounding, flooring, ceiling, division, and comparison operations.
+---
+
+_class_ numbers.Real[¶](https://docs.python.org/3/library/numbers.html#numbers.Real "Link to this definition")
+    
+To [`Complex`](https://docs.python.org/3/library/numbers.html#numbers.Complex "numbers.Complex"), `Real` adds the operations that work on real numbers.
+In short, those are: a conversion to [`float`](https://docs.python.org/3/library/functions.html#float "float"), [`math.trunc()`](https://docs.python.org/3/library/math.html#math.trunc "math.trunc"), [`round()`](https://docs.python.org/3/library/functions.html#round "round"), [`math.floor()`](https://docs.python.org/3/library/math.html#math.floor "math.floor"), [`math.ceil()`](https://docs.python.org/3/library/math.html#math.ceil "math.ceil"), [`divmod()`](https://docs.python.org/3/library/functions.html#divmod "divmod"), `//`, `%`, `<`, `<=`, `>`, and `>=`.
+Real also provides defaults for [`complex()`](https://docs.python.org/3/library/functions.html#complex "complex"), [`real`](https://docs.python.org/3/library/numbers.html#numbers.Complex.real "numbers.Complex.real"), [`imag`](https://docs.python.org/3/library/numbers.html#numbers.Complex.imag "numbers.Complex.imag"), and [`conjugate()`](https://docs.python.org/3/library/numbers.html#numbers.Complex.conjugate "numbers.Complex.conjugate"). 
+
+_class_ numbers.Rational[¶](https://docs.python.org/3/library/numbers.html#numbers.Rational "Link to this definition")
+    
+Subtypes [`Real`](https://docs.python.org/3/library/numbers.html#numbers.Real "numbers.Real") and adds [`numerator`](https://docs.python.org/3/library/numbers.html#numbers.Rational.numerator "numbers.Rational.numerator") and [`denominator`](https://docs.python.org/3/library/numbers.html#numbers.Rational.denominator "numbers.Rational.denominator") properties. It also provides a default for [`float()`](https://docs.python.org/3/library/functions.html#float "float").
+The [`numerator`](https://docs.python.org/3/library/numbers.html#numbers.Rational.numerator "numbers.Rational.numerator") and [`denominator`](https://docs.python.org/3/library/numbers.html#numbers.Rational.denominator "numbers.Rational.denominator") values should be instances of [`Integral`](https://docs.python.org/3/library/numbers.html#numbers.Integral "numbers.Integral") and should be in lowest terms with [`denominator`](https://docs.python.org/3/library/numbers.html#numbers.Rational.denominator "numbers.Rational.denominator") positive. 
+
+numerator[¶](https://docs.python.org/3/library/numbers.html#numbers.Rational.numerator "Link to this definition")
+    
+Abstract. 
+
+denominator[¶](https://docs.python.org/3/library/numbers.html#numbers.Rational.denominator "Link to this definition")
+    
+Abstract. 
+
+_class_ numbers.Integral[¶](https://docs.python.org/3/library/numbers.html#numbers.Integral "Link to this definition")
+    
+Subtypes [`Rational`](https://docs.python.org/3/library/numbers.html#numbers.Rational "numbers.Rational") and adds a conversion to [`int`](https://docs.python.org/3/library/functions.html#int "int"). Provides defaults for [`float()`](https://docs.python.org/3/library/functions.html#float "float"), [`numerator`](https://docs.python.org/3/library/numbers.html#numbers.Rational.numerator "numbers.Rational.numerator"), and [`denominator`](https://docs.python.org/3/library/numbers.html#numbers.Rational.denominator "numbers.Rational.denominator"). Adds abstract methods for [`pow()`](https://docs.python.org/3/library/functions.html#pow "pow") with modulus and bit-string operations: `<<`, `>>`, `&`, `^`, `|`, `~`.
+## Notes for type implementers[¶](https://docs.python.org/3/library/numbers.html#notes-for-type-implementers "Link to this heading")
+Implementers should be careful to make equal numbers equal and hash them to the same values. This may be subtle if there are two different extensions of the real numbers. For example, [`fractions.Fraction`](https://docs.python.org/3/library/fractions.html#fractions.Fraction "fractions.Fraction") implements [`hash()`](https://docs.python.org/3/library/functions.html#hash "hash") as follows:
+```
+def__hash__(self):
+  if self.denominator == 1:
+    # Get integers right.
+    return hash(self.numerator)
+  # Expensive check, but definitely correct.
+  if self == float(self):
+    return hash(float(self))
+  else:
+    # Use tuple's hash to avoid a high collision rate on
+    # simple fractions.
+    return hash((self.numerator, self.denominator))
+
+```
+
+### Adding More Numeric ABCs[¶](https://docs.python.org/3/library/numbers.html#adding-more-numeric-abcs "Link to this heading")
+There are, of course, more possible ABCs for numbers, and this would be a poor hierarchy if it precluded the possibility of adding those. You can add `MyFoo` between [`Complex`](https://docs.python.org/3/library/numbers.html#numbers.Complex "numbers.Complex") and [`Real`](https://docs.python.org/3/library/numbers.html#numbers.Real "numbers.Real") with:
+```
+classMyFoo(Complex): ...
+MyFoo.register(Real)

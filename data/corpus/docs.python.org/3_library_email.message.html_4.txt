@@ -1,0 +1,59 @@
+Title: Email Message Header Modification
+URL: https://docs.python.org/3/library/email.message.html
+Summary: This section describes how to modify email message headers in Python, specifically detailing how to delete and assign new values to the 'subject' header. It notes that certain headers may be defined as unique by the policy, which could raise a ValueError if a value is assigned to an existing header. The __delitem__ method is introduced for deleting header fields without raising exceptions if they don’t exist.
+---
+
+```
+del msg['subject']
+msg['subject'] = 'Python roolz!'
+
+```
+
+If the [`policy`](https://docs.python.org/3/library/email.policy.html#module-email.policy "email.policy: Controlling the parsing and generating of messages") defines certain headers to be unique (as the standard policies do), this method may raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") when an attempt is made to assign a value to such a header when one already exists. This behavior is intentional for consistency’s sake, but do not depend on it as we may choose to make such assignments do an automatic deletion of the existing header in the future. 
+
+__delitem__(_name_)[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.__delitem__ "Link to this definition")
+    
+Delete all occurrences of the field with name _name_ from the message’s headers. No exception is raised if the named field isn’t present in the headers. 
+
+keys()[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.keys "Link to this definition")
+    
+Return a list of all the message’s header field names. 
+
+values()[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.values "Link to this definition")
+    
+Return a list of all the message’s field values. 
+
+items()[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.items "Link to this definition")
+    
+Return a list of 2-tuples containing all the message’s field headers and values. 
+
+get(_name_ , _failobj =None_)[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.get "Link to this definition")
+    
+Return the value of the named header field. This is identical to [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") except that optional _failobj_ is returned if the named header is missing (_failobj_ defaults to `None`).
+Here are some additional useful header related methods: 
+
+get_all(_name_ , _failobj =None_)[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.get_all "Link to this definition")
+    
+Return a list of all the values for the field named _name_. If there are no such named headers in the message, _failobj_ is returned (defaults to `None`). 
+
+add_header(__name_ , __value_ , _** _params_)[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.add_header "Link to this definition")
+    
+Extended header setting. This method is similar to [`__setitem__()`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.__setitem__ "email.message.EmailMessage.__setitem__") except that additional header parameters can be provided as keyword arguments. __name_ is the header field to add and __value_ is the _primary_ value for the header.
+For each item in the keyword argument dictionary __params_ , the key is taken as the parameter name, with underscores converted to dashes (since dashes are illegal in Python identifiers). Normally, the parameter will be added as `key="value"` unless the value is `None`, in which case only the key will be added.
+If the value contains non-ASCII characters, the charset and language may be explicitly controlled by specifying the value as a three tuple in the format `(CHARSET, LANGUAGE, VALUE)`, where `CHARSET` is a string naming the charset to be used to encode the value, `LANGUAGE` can usually be set to `None` or the empty string (see [**RFC 2231**](https://datatracker.ietf.org/doc/html/rfc2231.html) for other possibilities), and `VALUE` is the string value containing non-ASCII code points. If a three tuple is not passed and the value contains non-ASCII characters, it is automatically encoded in [**RFC 2231**](https://datatracker.ietf.org/doc/html/rfc2231.html) format using a `CHARSET` of `utf-8` and a `LANGUAGE` of `None`.
+Here is an example:
+```
+msg.add_header('Content-Disposition', 'attachment', filename='bud.gif')
+
+```
+
+This will add a header that looks like
+```
+Content-Disposition: attachment; filename="bud.gif"
+
+```
+
+An example of the extended interface with non-ASCII characters:
+```
+msg.add_header('Content-Disposition', 'attachment',
+        filename=('iso-8859-1', '', 'Fußballer.ppt'))

@@ -1,0 +1,73 @@
+Title: Using Context Managers in Python
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: This section illustrates how to use the `track_entry_and_exit` context manager both with the 'with' statement and as a function decorator. It notes a limitation of function decorators concerning the accessibility of the return value from the `__enter__()` method and refers to PEP 343 for additional context on the 'with' statement.
+---
+
+```
+with track_entry_and_exit('widget loader'):
+  print('Some time consuming activity goes here')
+  load_widget()
+
+```
+
+And also as a function decorator:
+```
+@track_entry_and_exit('widget loader')
+defactivity():
+  print('Some time consuming activity goes here')
+  load_widget()
+
+```
+
+Note that there is one additional limitation when using context managers as function decorators: there’s no way to access the return value of [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__"). If that value is needed, then it is still necessary to use an explicit `with` statement.
+See also 
+
+[**PEP 343**](https://peps.python.org/pep-0343/) - The “with” statement
+    
+The specification, background, and examples for the Python [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement.
+## Single use, reusable and reentrant context managers[¶](https://docs.python.org/3/library/contextlib.html#single-use-reusable-and-reentrant-context-managers "Link to this heading")
+Most context managers are written in a way that means they can only be used effectively in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement once. These single use context managers must be created afresh each time they’re used - attempting to use them a second time will trigger an exception or otherwise not work correctly.
+This common limitation means that it is generally advisable to create context managers directly in the header of the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement where they are used (as shown in all of the usage examples above).
+Files are an example of effectively single use context managers, since the first [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement will close the file, preventing any further IO operations using that file object.
+Context managers created using [`contextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager "contextlib.contextmanager") are also single use context managers, and will complain about the underlying generator failing to yield if an attempt is made to use them a second time:
+>>>```
+>>> fromcontextlibimport contextmanager
+>>> @contextmanager
+... defsingleuse():
+...   print("Before")
+...   yield
+...   print("After")
+...
+>>> cm = singleuse()
+>>> with cm:
+...   pass
+...
+Before
+After
+>>> with cm:
+...   pass
+...
+Traceback (most recent call last):
+...
+RuntimeError: generator didn't yield
+
+```
+
+### Reentrant context managers[¶](https://docs.python.org/3/library/contextlib.html#reentrant-context-managers "Link to this heading")
+More sophisticated context managers may be “reentrant”. These context managers can not only be used in multiple [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statements, but may also be used _inside_ a `with` statement that is already using the same context manager.
+[`threading.RLock`](https://docs.python.org/3/library/threading.html#threading.RLock "threading.RLock") is an example of a reentrant context manager, as are [`suppress()`](https://docs.python.org/3/library/contextlib.html#contextlib.suppress "contextlib.suppress"), [`redirect_stdout()`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout "contextlib.redirect_stdout"), and [`chdir()`](https://docs.python.org/3/library/contextlib.html#contextlib.chdir "contextlib.chdir"). Here’s a very simple example of reentrant use:
+>>>```
+>>> fromcontextlibimport redirect_stdout
+>>> fromioimport StringIO
+>>> stream = StringIO()
+>>> write_to_stream = redirect_stdout(stream)
+>>> with write_to_stream:
+...   print("This is written to the stream rather than stdout")
+...   with write_to_stream:
+...     print("This is also written to the stream")
+...
+>>> print("This is written directly to stdout")
+This is written directly to stdout
+>>> print(stream.getvalue())
+This is written to the stream rather than stdout
+This is also written to the stream

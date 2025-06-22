@@ -1,0 +1,40 @@
+Title: Using the WSGI Validator and Simple Server
+URL: https://docs.python.org/3/library/wsgiref.html
+Summary: This code snippet demonstrates the use of a non-compliant WSGI application and the WSGI validator from the wsgiref library. It defines a simple application that returns a plain text response but incorrectly returns a byte string instead of a list. The application is wrapped with the validator to check compliance before being served on port 8000.
+---
+
+```
+fromwsgiref.validateimport validator
+fromwsgiref.simple_serverimport make_server
+# Our callable object which is intentionally not compliant to the
+# standard, so the validator is going to break
+defsimple_app(environ, start_response):
+  status = '200 OK' # HTTP Status
+  headers = [('Content-type', 'text/plain')] # HTTP Headers
+  start_response(status, headers)
+  # This is going to break because we need to return a list, and
+  # the validator is going to inform us
+  return b"Hello World"
+# This is the application wrapped in a validator
+validator_app = validator(simple_app)
+with make_server('', 8000, validator_app) as httpd:
+  print("Listening on port 8000....")
+  httpd.serve_forever()
+
+```
+
+## [`wsgiref.handlers`](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.handlers "wsgiref.handlers: WSGI server/gateway base classes.") – server/gateway base classes[¶](https://docs.python.org/3/library/wsgiref.html#module-wsgiref.handlers "Link to this heading")
+This module provides base handler classes for implementing WSGI servers and gateways. These base classes handle most of the work of communicating with a WSGI application, as long as they are given a CGI-like environment, along with input, output, and error streams. 
+
+_class_ wsgiref.handlers.CGIHandler[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.CGIHandler "Link to this definition")
+    
+CGI-based invocation via `sys.stdin`, `sys.stdout`, `sys.stderr` and `os.environ`. This is useful when you have a WSGI application and want to run it as a CGI script. Simply invoke `CGIHandler().run(app)`, where `app` is the WSGI application object you wish to invoke.
+This class is a subclass of [`BaseCGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseCGIHandler "wsgiref.handlers.BaseCGIHandler") that sets `wsgi.run_once` to true, `wsgi.multithread` to false, and `wsgi.multiprocess` to true, and always uses [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") and [`os`](https://docs.python.org/3/library/os.html#module-os "os: Miscellaneous operating system interfaces.") to obtain the necessary CGI streams and environment. 
+
+_class_ wsgiref.handlers.IISCGIHandler[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.IISCGIHandler "Link to this definition")
+    
+A specialized alternative to [`CGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.CGIHandler "wsgiref.handlers.CGIHandler"), for use when deploying on Microsoft’s IIS web server, without having set the config allowPathInfo option (IIS>=7) or metabase allowPathInfoForScriptMappings (IIS<7).
+By default, IIS gives a `PATH_INFO` that duplicates the `SCRIPT_NAME` at the front, causing problems for WSGI applications that wish to implement routing. This handler strips any such duplicated path.
+IIS can be configured to pass the correct `PATH_INFO`, but this causes another bug where `PATH_TRANSLATED` is wrong. Luckily this variable is rarely used and is not guaranteed by WSGI. On IIS<7, though, the setting can only be made on a vhost level, affecting all other script mappings, many of which break when exposed to the `PATH_TRANSLATED` bug. For this reason IIS<7 is almost never deployed with the fix (Even IIS7 rarely uses it because there is still no UI for it.).
+There is no way for CGI code to tell whether the option was set, so a separate handler class is provided. It is used in the same way as [`CGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.CGIHandler "wsgiref.handlers.CGIHandler"), i.e., by calling `IISCGIHandler().run(app)`, where `app` is the WSGI application object you wish to invoke.
+Added in version 3.2.

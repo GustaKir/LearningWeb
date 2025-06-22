@@ -1,0 +1,43 @@
+Title: Defining and Parsing Options with optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This section explains how to define multiple short and long option strings using `OptionParser.add_option()` in the `optparse` library. It highlights the importance of option strings as labels for options and describes the process for parsing command-line arguments once all options are defined.
+---
+
+```
+
+You’re free to define as many short option strings and as many long option strings as you like (including zero), as long as there is at least one option string overall.
+The option strings passed to [`OptionParser.add_option()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.add_option "optparse.OptionParser.add_option") are effectively labels for the option defined by that call. For brevity, we will frequently refer to _encountering an option_ on the command line; in reality, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") encounters _option strings_ and looks up options from them.
+Once all of your options are defined, instruct [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") to parse your program’s command line:
+```
+(options, args) = parser.parse_args()
+
+```
+
+(If you like, you can pass a custom argument list to [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args"), but that’s rarely necessary: by default it uses `sys.argv[1:]`.)
+[`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args") returns two values:
+  * `options`, an object containing values for all of your options—e.g. if `--file` takes a single string argument, then `options.file` will be the filename supplied by the user, or `None` if the user did not supply that option
+  * `args`, the list of positional arguments leftover after parsing options
+
+
+This tutorial section only covers the four most important option attributes: [`action`](https://docs.python.org/3/library/optparse.html#optparse.Option.action "optparse.Option.action"), [`type`](https://docs.python.org/3/library/optparse.html#optparse.Option.type "optparse.Option.type"), [`dest`](https://docs.python.org/3/library/optparse.html#optparse.Option.dest "optparse.Option.dest") (destination), and [`help`](https://docs.python.org/3/library/optparse.html#optparse.Option.help "optparse.Option.help"). Of these, [`action`](https://docs.python.org/3/library/optparse.html#optparse.Option.action "optparse.Option.action") is the most fundamental.
+### Understanding option actions[¶](https://docs.python.org/3/library/optparse.html#understanding-option-actions "Link to this heading")
+Actions tell [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") what to do when it encounters an option on the command line. There is a fixed set of actions hard-coded into [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library."); adding new actions is an advanced topic covered in section [Extending optparse](https://docs.python.org/3/library/optparse.html#optparse-extending-optparse). Most actions tell [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") to store a value in some variable—for example, take a string from the command line and store it in an attribute of `options`.
+If you don’t specify an option action, [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") defaults to `store`.
+### The store action[¶](https://docs.python.org/3/library/optparse.html#the-store-action "Link to this heading")
+The most common option action is `store`, which tells [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") to take the next argument (or the remainder of the current argument), ensure that it is of the correct type, and store it to your chosen destination.
+For example:
+```
+parser.add_option("-f", "--file",
+         action="store", type="string", dest="filename")
+
+```
+
+Now let’s make up a fake command line and ask [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") to parse it:
+```
+args = ["-f", "foo.txt"]
+(options, args) = parser.parse_args(args)
+
+```
+
+When [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") sees the option string `-f`, it consumes the next argument, `foo.txt`, and stores it in `options.filename`. So, after this call to [`parse_args()`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser.parse_args "optparse.OptionParser.parse_args"), `options.filename` is `"foo.txt"`.
+Some other option types supported by [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") are `int` and `float`. Here’s an option that expects an integer argument:

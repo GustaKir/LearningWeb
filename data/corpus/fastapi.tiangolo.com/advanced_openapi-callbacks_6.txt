@@ -1,0 +1,103 @@
+Title: Using Callbacks in FastAPI for Invoice Notifications
+URL: https://fastapi.tiangolo.com/advanced/openapi-callbacks/
+Summary: This document illustrates how to set up a FastAPI application to create invoices and handle callbacks for notifications. It includes code examples for defining invoice models, setting up a callback router, and handling invoice creation requests which trigger notifications back to an external developer.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport APIRouter, FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classInvoice(BaseModel):
+  id: str
+  title: Union[str, None] = None
+  customer: str
+  total: float
+classInvoiceEvent(BaseModel):
+  description: str
+  paid: bool
+classInvoiceEventReceived(BaseModel):
+  ok: bool
+invoices_callback_router = APIRouter()
+@invoices_callback_router.post(
+  "{$callback_url}/invoices/{$request.body.id}", response_model=InvoiceEventReceived
+)
+definvoice_notification(body: InvoiceEvent):
+  pass
+@app.post("/invoices/", callbacks=invoices_callback_router.routes)
+defcreate_invoice(invoice: Invoice, callback_url: Union[HttpUrl, None] = None):
+"""
+  Create an invoice.
+  This will (let's imagine) let the API user (some external developer) create an
+  invoice.
+  And this path operation will:
+  * Send the invoice to the client.
+  * Collect the money from the client.
+  * Send a notification back to the API user (the external developer), as a callback.
+    * At this point is that the API will somehow send a POST request to the
+      external API with the notification of the invoice event
+      (e.g. "payment successful").
+  """
+  # Send the invoice, collect the money, send the notification (the callback)
+  return {"msg": "Invoice received"}
+
+```
+
+There are 2 main differences from a normal _path operation_ :
+  * It doesn't need to have any actual code, because your app will never call this code. It's only used to document the _external API_. So, the function could just have `pass`.
+  * The _path_ can contain an [OpenAPI 3 expression](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.1.0.md#key-expression) (see more below) where it can use variables with parameters and parts of the original request sent to _your API_.
+
+
+### The callback path expression[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#the-callback-path-expression "Permanent link")
+The callback _path_ can have an [OpenAPI 3 expression](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.1.0.md#key-expression) that can contain parts of the original request sent to _your API_.
+In this case, it's the `str`:
+```
+"{$callback_url}/invoices/{$request.body.id}"
+
+```
+
+So, if your API user (the external developer) sends a request to _your API_ to:
+```
+https://yourapi.com/invoices/?callback_url=https://www.external.org/events
+
+```
+
+with a JSON body of:
+```
+{
+"id":"2expen51ve",
+"customer":"Mr. Richie Rich",
+"total":"9999"
+}
+
+```
+
+then _your API_ will process the invoice, and at some point later, send a callback request to the `callback_url` (the _external API_):
+```
+https://www.external.org/events/invoices/2expen51ve
+
+```
+
+with a JSON body containing something like:
+```
+{
+"description":"Payment celebration",
+"paid":true
+}
+
+```
+
+and it would expect a response from that _external API_ with a JSON body like:
+```
+{
+"ok":true
+}
+
+```
+
+Tip
+Notice how the callback URL used contains the URL received as a query parameter in `callback_url` (`https://www.external.org/events`) and also the invoice `id` from inside of the JSON body (`2expen51ve`).
+### Add the callback router[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#add-the-callback-router "Permanent link")
+At this point you have the _callback path operation(s)_ needed (the one(s) that the _external developer_ should implement in the _external API_) in the callback router you created above.
+Now use the parameter `callbacks` in _your API's path operation decorator_ to pass the attribute `.routes` (that's actually just a `list` of routes/_path operations_) from that callback router:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#__tabbed_4_1)

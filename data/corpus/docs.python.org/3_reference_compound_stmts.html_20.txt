@@ -1,0 +1,88 @@
+Title: Asynchronous Iteration and Context Management in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section details the usage of `async for` and `async with` statements in Python. It explains how to utilize asynchronous iterators and context managers, emphasizing that using `async for` outside a coroutine function results in a SyntaxError. Code examples illustrate the asynchronous iteration process, and references are provided for further understanding of `__aiter__()` and `__anext__()`.
+---
+
+```
+iter = (ITER)
+iter = type(iter).__aiter__(iter)
+running = True
+while running:
+  try:
+    TARGET = await type(iter).__anext__(iter)
+  except StopAsyncIteration:
+    running = False
+  else:
+    SUITE
+else:
+  SUITE2
+
+```
+
+See also [`__aiter__()`](https://docs.python.org/3/reference/datamodel.html#object.__aiter__ "object.__aiter__") and [`__anext__()`](https://docs.python.org/3/reference/datamodel.html#object.__anext__ "object.__anext__") for details.
+It is a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") to use an `async for` statement outside the body of a coroutine function.
+### 8.9.3. The `async with` statement[¶](https://docs.python.org/3/reference/compound_stmts.html#the-async-with-statement "Link to this heading")
+```
+**async_with_stmt** ::= "async" [with_stmt](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-with_stmt)
+
+```
+
+An [asynchronous context manager](https://docs.python.org/3/glossary.html#term-asynchronous-context-manager) is a [context manager](https://docs.python.org/3/glossary.html#term-context-manager) that is able to suspend execution in its _enter_ and _exit_ methods.
+The following code:
+```
+async with EXPRESSION as TARGET:
+  SUITE
+
+```
+
+is semantically equivalent to:
+```
+manager = (EXPRESSION)
+aenter = type(manager).__aenter__
+aexit = type(manager).__aexit__
+value = await aenter(manager)
+hit_except = False
+try:
+  TARGET = value
+  SUITE
+except:
+  hit_except = True
+  if not await aexit(manager, *sys.exc_info()):
+    raise
+finally:
+  if not hit_except:
+    await aexit(manager, None, None, None)
+
+```
+
+See also [`__aenter__()`](https://docs.python.org/3/reference/datamodel.html#object.__aenter__ "object.__aenter__") and [`__aexit__()`](https://docs.python.org/3/reference/datamodel.html#object.__aexit__ "object.__aexit__") for details.
+It is a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") to use an `async with` statement outside the body of a coroutine function.
+See also 
+
+[**PEP 492**](https://peps.python.org/pep-0492/) - Coroutines with async and await syntax
+    
+The proposal that made coroutines a proper standalone concept in Python, and added supporting syntax.
+## 8.10. Type parameter lists[¶](https://docs.python.org/3/reference/compound_stmts.html#type-parameter-lists "Link to this heading")
+Added in version 3.12.
+Changed in version 3.13: Support for default values was added (see [**PEP 696**](https://peps.python.org/pep-0696/)).
+```
+**type_params** ::= "[" [type_param](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-type_param) ("," [type_param](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-type_param))* "]"
+**type_param**  ::= [typevar](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-typevar) | [typevartuple](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-typevartuple) | [paramspec](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-paramspec)
+**typevar**   ::= [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier) (":" [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression))? ("=" [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression))?
+**typevartuple** ::= "*" [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier) ("=" [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression))?
+**paramspec**  ::= "**" [identifier](https://docs.python.org/3/reference/lexical_analysis.html#grammar-token-python-grammar-identifier) ("=" [expression](https://docs.python.org/3/reference/expressions.html#grammar-token-python-grammar-expression))?
+
+```
+
+[ Functions](https://docs.python.org/3/reference/compound_stmts.html#def) (including [coroutines](https://docs.python.org/3/reference/compound_stmts.html#async-def)), [classes](https://docs.python.org/3/reference/compound_stmts.html#class) and [type aliases](https://docs.python.org/3/reference/simple_stmts.html#type) may contain a type parameter list:
+```
+defmax[T](args: list[T]) -> T:
+  ...
+async defamax[T](args: list[T]) -> T:
+  ...
+classBag[T]:
+  def__iter__(self) -> Iterator[T]:
+    ...
+  defadd(self, arg: T) -> None:
+    ...
+type ListOrSet[T] = list[T] | set[T]

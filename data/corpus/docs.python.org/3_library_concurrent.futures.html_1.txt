@@ -1,0 +1,42 @@
+Title: Concurrent Futures: Executor Methods
+URL: https://docs.python.org/3/library/concurrent.futures.html
+Summary: This section describes two key methods of the `Executor` class in the `concurrent.futures` module: `submit` and `map`. The `submit` method schedules a callable for execution and returns a `Future` object, while the `map` method applies a function to multiple iterables asynchronously, collecting results immediately.
+---
+
+submit(_fn_ , _/_ , _* args_, _** kwargs_)[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.submit "Link to this definition")
+    
+Schedules the callable, _fn_ , to be executed as `fn(*args, **kwargs)` and returns a [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") object representing the execution of the callable.
+```
+with ThreadPoolExecutor(max_workers=1) as executor:
+  future = executor.submit(pow, 323, 1235)
+  print(future.result())
+
+```
+
+
+map(_fn_ , _* iterables_, _timeout =None_, _chunksize =1_)[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.map "Link to this definition")
+    
+Similar to [`map(fn, *iterables)`](https://docs.python.org/3/library/functions.html#map "map") except:
+  * the _iterables_ are collected immediately rather than lazily;
+  * _fn_ is executed asynchronously and several calls to _fn_ may be made concurrently.
+
+
+The returned iterator raises a [`TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError "TimeoutError") if [`__next__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__next__ "iterator.__next__") is called and the result isn’t available after _timeout_ seconds from the original call to [`Executor.map()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.map "concurrent.futures.Executor.map"). _timeout_ can be an int or a float. If _timeout_ is not specified or `None`, there is no limit to the wait time.
+If a _fn_ call raises an exception, then that exception will be raised when its value is retrieved from the iterator.
+When using [`ProcessPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ProcessPoolExecutor "concurrent.futures.ProcessPoolExecutor"), this method chops _iterables_ into a number of chunks which it submits to the pool as separate tasks. The (approximate) size of these chunks can be specified by setting _chunksize_ to a positive integer. For very long iterables, using a large value for _chunksize_ can significantly improve performance compared to the default size of 1. With [`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor"), _chunksize_ has no effect.
+Changed in version 3.5: Added the _chunksize_ argument. 
+
+shutdown(_wait =True_, _*_ , _cancel_futures =False_)[¶](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown "Link to this definition")
+    
+Signal the executor that it should free any resources that it is using when the currently pending futures are done executing. Calls to [`Executor.submit()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.submit "concurrent.futures.Executor.submit") and [`Executor.map()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.map "concurrent.futures.Executor.map") made after shutdown will raise [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError").
+If _wait_ is `True` then this method will not return until all the pending futures are done executing and the resources associated with the executor have been freed. If _wait_ is `False` then this method will return immediately and the resources associated with the executor will be freed when all pending futures are done executing. Regardless of the value of _wait_ , the entire Python program will not exit until all pending futures are done executing.
+If _cancel_futures_ is `True`, this method will cancel all pending futures that the executor has not started running. Any futures that are completed or running won’t be cancelled, regardless of the value of _cancel_futures_.
+If both _cancel_futures_ and _wait_ are `True`, all futures that the executor has started running will be completed prior to this method returning. The remaining futures are cancelled.
+You can avoid having to call this method explicitly if you use the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, which will shutdown the [`Executor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor "concurrent.futures.Executor") (waiting as if [`Executor.shutdown()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown "concurrent.futures.Executor.shutdown") were called with _wait_ set to `True`):
+```
+importshutil
+with ThreadPoolExecutor(max_workers=4) as e:
+  e.submit(shutil.copy, 'src1.txt', 'dest1.txt')
+  e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
+  e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
+  e.submit(shutil.copy, 'src4.txt', 'dest4.txt')

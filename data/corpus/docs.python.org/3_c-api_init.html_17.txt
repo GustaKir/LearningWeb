@@ -1,0 +1,27 @@
+Title: C API Initialization and Threading Considerations
+URL: https://docs.python.org/3/c-api/init.html
+Summary: The `PyGILState_*` functions are designed for a single global interpreter created by `Py_Initialize()`. While Python allows multiple interpreters via `Py_NewInterpreter()`, using them with the `PyGILState_*` API is unsupported. Additionally, when using the C `fork()` call, only the calling thread exists post-fork, affecting lock management and runtime state in CPython.
+---
+
+```
+
+Note that the `PyGILState_*` functions assume there is only one global interpreter (created automatically by [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize")). Python supports the creation of additional interpreters (using [`Py_NewInterpreter()`](https://docs.python.org/3/c-api/init.html#c.Py_NewInterpreter "Py_NewInterpreter")), but mixing multiple interpreters and the `PyGILState_*` API is unsupported.
+### Cautions about fork()[¶](https://docs.python.org/3/c-api/init.html#cautions-about-fork "Link to this heading")
+Another important thing to note about threads is their behaviour in the face of the C `fork()` call. On most systems with `fork()`, after a process forks only the thread that issued the fork will exist. This has a concrete impact both on how locks must be handled and on all stored state in CPython’s runtime.
+The fact that only the “current” thread remains means any locks held by other threads will never be released. Python solves this for [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") by acquiring the locks it uses internally before the fork, and releasing them afterwards. In addition, it resets any [Lock Objects](https://docs.python.org/3/library/threading.html#lock-objects) in the child. When extending or embedding Python, there is no way to inform Python of additional (non-Python) locks that need to be acquired before or reset after a fork. OS facilities such as `pthread_atfork()` would need to be used to accomplish the same thing. Additionally, when extending or embedding Python, calling `fork()` directly rather than through [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") (and returning to or calling into Python) may result in a deadlock by one of Python’s internal locks being held by a thread that is defunct after the fork. [`PyOS_AfterFork_Child()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork_Child "PyOS_AfterFork_Child") tries to reset the necessary locks, but is not always able to.
+The fact that all other threads go away also means that CPython’s runtime state there must be cleaned up properly, which [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") does. This means finalizing all other [`PyThreadState`](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState") objects belonging to the current interpreter and all other [`PyInterpreterState`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState") objects. Due to this and the special nature of the [“main” interpreter](https://docs.python.org/3/c-api/init.html#sub-interpreter-support), `fork()` should only be called in that interpreter’s “main” thread, where the CPython global runtime was originally initialized. The only exception is if `exec()` will be called immediately after.
+### High-level API[¶](https://docs.python.org/3/c-api/init.html#high-level-api "Link to this heading")
+These are the most commonly used types and functions when writing C extension code, or when embedding the Python interpreter: 
+
+typePyInterpreterState[¶](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "Link to this definition")
+    _Part of the[ Limited API](https://docs.python.org/3/c-api/stable.html#stable) (as an opaque struct)._
+This data structure represents the state shared by a number of cooperating threads. Threads belonging to the same interpreter share their module administration and a few other internal items. There are no public members in this structure.
+Threads belonging to different interpreters initially share nothing, except process state like available memory, open file descriptors and such. The global interpreter lock is also shared by all threads, regardless of to which interpreter they belong. 
+
+typePyThreadState[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState "Link to this definition")
+    _Part of the[ Limited API](https://docs.python.org/3/c-api/stable.html#stable) (as an opaque struct)._
+This data structure represents the state of a single thread. The only public data member is: 
+
+[PyInterpreterState](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState")*interp[¶](https://docs.python.org/3/c-api/init.html#c.PyThreadState.interp "Link to this definition")
+    
+This thread’s interpreter state.

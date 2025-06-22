@@ -1,0 +1,105 @@
+Title: AST Module: Statements and Assignment
+URL: https://docs.python.org/3/library/ast.html
+Summary: This section details the 'Assign' class in Python's Abstract Syntax Tree (AST) module, which represents assignment operations. It explains how 'targets' can contain multiple nodes for simultaneous assignments and how unpacking is achieved using tuples or lists. Additionally, it mentions 'type_comment' as an optional string for type annotations.
+---
+
+```
+
+### Statements[¶](https://docs.python.org/3/library/ast.html#statements "Link to this heading") 
+
+_class_ ast.Assign(_targets_ , _value_ , _type_comment_)[¶](https://docs.python.org/3/library/ast.html#ast.Assign "Link to this definition")
+    
+An assignment. `targets` is a list of nodes, and `value` is a single node.
+Multiple nodes in `targets` represents assigning the same value to each. Unpacking is represented by putting a [`Tuple`](https://docs.python.org/3/library/ast.html#ast.Tuple "ast.Tuple") or [`List`](https://docs.python.org/3/library/ast.html#ast.List "ast.List") within `targets`. 
+
+type_comment[¶](https://docs.python.org/3/library/ast.html#ast.Assign.type_comment "Link to this definition")
+    
+`type_comment` is an optional string with the type annotation as a comment.
+>>>```
+>>> print(ast.dump(ast.parse('a = b = 1'), indent=4)) # Multiple assignment
+Module(
+  body=[
+    Assign(
+      targets=[
+        Name(id='a', ctx=Store()),
+        Name(id='b', ctx=Store())],
+      value=Constant(value=1))])
+>>> print(ast.dump(ast.parse('a,b = c'), indent=4)) # Unpacking
+Module(
+  body=[
+    Assign(
+      targets=[
+        Tuple(
+          elts=[
+            Name(id='a', ctx=Store()),
+            Name(id='b', ctx=Store())],
+          ctx=Store())],
+      value=Name(id='c', ctx=Load()))])
+
+```
+
+
+_class_ ast.AnnAssign(_target_ , _annotation_ , _value_ , _simple_)[¶](https://docs.python.org/3/library/ast.html#ast.AnnAssign "Link to this definition")
+    
+An assignment with a type annotation. `target` is a single node and can be a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name"), an [`Attribute`](https://docs.python.org/3/library/ast.html#ast.Attribute "ast.Attribute") or a [`Subscript`](https://docs.python.org/3/library/ast.html#ast.Subscript "ast.Subscript"). `annotation` is the annotation, such as a [`Constant`](https://docs.python.org/3/library/ast.html#ast.Constant "ast.Constant") or [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name") node. `value` is a single optional node.
+`simple` is always either 0 (indicating a “complex” target) or 1 (indicating a “simple” target). A “simple” target consists solely of a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name") node that does not appear between parentheses; all other targets are considered complex. Only simple targets appear in the `__annotations__` dictionary of modules and classes.
+>>>```
+>>> print(ast.dump(ast.parse('c: int'), indent=4))
+Module(
+  body=[
+    AnnAssign(
+      target=Name(id='c', ctx=Store()),
+      annotation=Name(id='int', ctx=Load()),
+      simple=1)])
+>>> print(ast.dump(ast.parse('(a): int = 1'), indent=4)) # Annotation with parenthesis
+Module(
+  body=[
+    AnnAssign(
+      target=Name(id='a', ctx=Store()),
+      annotation=Name(id='int', ctx=Load()),
+      value=Constant(value=1),
+      simple=0)])
+>>> print(ast.dump(ast.parse('a.b: int'), indent=4)) # Attribute annotation
+Module(
+  body=[
+    AnnAssign(
+      target=Attribute(
+        value=Name(id='a', ctx=Load()),
+        attr='b',
+        ctx=Store()),
+      annotation=Name(id='int', ctx=Load()),
+      simple=0)])
+>>> print(ast.dump(ast.parse('a[1]: int'), indent=4)) # Subscript annotation
+Module(
+  body=[
+    AnnAssign(
+      target=Subscript(
+        value=Name(id='a', ctx=Load()),
+        slice=Constant(value=1),
+        ctx=Store()),
+      annotation=Name(id='int', ctx=Load()),
+      simple=0)])
+
+```
+
+
+_class_ ast.AugAssign(_target_ , _op_ , _value_)[¶](https://docs.python.org/3/library/ast.html#ast.AugAssign "Link to this definition")
+    
+Augmented assignment, such as `a += 1`. In the following example, `target` is a [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name") node for `x` (with the [`Store`](https://docs.python.org/3/library/ast.html#ast.Store "ast.Store") context), `op` is [`Add`](https://docs.python.org/3/library/ast.html#ast.Add "ast.Add"), and `value` is a [`Constant`](https://docs.python.org/3/library/ast.html#ast.Constant "ast.Constant") with value for 1.
+The `target` attribute cannot be of class [`Tuple`](https://docs.python.org/3/library/ast.html#ast.Tuple "ast.Tuple") or [`List`](https://docs.python.org/3/library/ast.html#ast.List "ast.List"), unlike the targets of [`Assign`](https://docs.python.org/3/library/ast.html#ast.Assign "ast.Assign").
+>>>```
+>>> print(ast.dump(ast.parse('x += 2'), indent=4))
+Module(
+  body=[
+    AugAssign(
+      target=Name(id='x', ctx=Store()),
+      op=Add(),
+      value=Constant(value=2))])
+
+```
+
+
+_class_ ast.Raise(_exc_ , _cause_)[¶](https://docs.python.org/3/library/ast.html#ast.Raise "Link to this definition")
+    
+A `raise` statement. `exc` is the exception object to be raised, normally a [`Call`](https://docs.python.org/3/library/ast.html#ast.Call "ast.Call") or [`Name`](https://docs.python.org/3/library/ast.html#ast.Name "ast.Name"), or `None` for a standalone `raise`. `cause` is the optional part for `y` in `raise x from y`.
+>>>

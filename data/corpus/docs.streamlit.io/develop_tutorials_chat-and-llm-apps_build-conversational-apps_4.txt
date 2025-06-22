@@ -1,0 +1,28 @@
+Title: Building a Conversational App with Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/build-conversational-apps
+Summary: This section explains how to enhance a chatbot app by changing its title and adding necessary imports for functionality. It demonstrates how to use the `random` module to select a response from a predefined list and the `time` module to simulate a thinking delay in the chatbot’s responses. A helper function, `response_generator`, is provided to yield responses word by word, creating a typing effect in the chat interface.
+---
+
+prompt}) `
+The only difference so far is we've changed the title of our app and added imports for `random` and `time`. We'll use `random` to randomly select a response from a list of responses and `time` to add a delay to simulate the chatbot "thinking" before responding.
+All that's left to do is add the chatbot's responses within the `if` block. We'll use a list of responses and randomly select one to display. We'll also add a delay to simulate the chatbot "thinking" before responding (or stream its response). Let's make a helper function for this and insert it at the top of our app.
+`# Streamed response emulator def response_generator():   response = random.choice( [ "Hello there! How can I assist you today?", "Hi, human! Is there anything I can help you with?", "Do you need help?", ] ) for word in response.split(): yield word + " "     time.sleep(0.05) `
+Back to writing the response in our chat interface, we'll use `st.write_stream` to write out the streamed response with a typewriter effect.
+`# Display assistant response in chat message container with st.chat_message("assistant"):   response = st.write_stream(response_generator()) # Add assistant response to chat history st.session_state.messages.append({"role": "assistant", "content": response}) `
+Above, we've added a placeholder to display the chatbot's response. We've also added a for loop to iterate through the response and display it one word at a time. We've added a delay of 0.05 seconds between each word to simulate the chatbot "thinking" before responding. Finally, we append the chatbot's response to the chat history. As you've probably guessed, this is a naive implementation of streaming. We'll see how to implement streaming with OpenAI in the [next section](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/build-conversational-apps#build-a-chatgpt-like-app).
+Putting it all together, here's the full code for our simple chatbot GUI and the result:
+View full code _expand_more_
+`import streamlit as st import random import time  # Streamed response emulator def response_generator():   response = random.choice( [ "Hello there! How can I assist you today?", "Hi, human! Is there anything I can help you with?", "Do you need help?", ] ) for word in response.split(): yield word + " "     time.sleep(0.05)  st.title("Simple chat") # Initialize chat history if "messages" not in st.session_state:   st.session_state.messages = [] # Display chat messages from history on app rerun for message in st.session_state.messages: with st.chat_message(message["role"]):     st.markdown(message["content"]) # Accept user input if prompt := st.chat_input("What is up?"): # Add user message to chat history   st.session_state.messages.append({"role": "user", "content": prompt}) # Display user message in chat message container with st.chat_message("user"):     st.markdown(prompt) # Display assistant response in chat message container with st.chat_message("assistant"):     response = st.write_stream(response_generator()) # Add assistant response to chat history   st.session_state.messages.append({"role": "assistant", "content": response}) `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-chat-simple.streamlit.app/?utm_medium=oembed)
+Play around with the above demo to get a feel for what we've built. It's a very simple chatbot GUI, but it has all the components of a more sophisticated chatbot. In the next section, we'll see how to build a ChatGPT-like app using OpenAI.
+## [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/build-conversational-apps#build-a-chatgpt-like-app)Build a ChatGPT-like app
+Now that you've understood the basics of Streamlit's chat elements, let's make a few tweaks to it to build our own ChatGPT-like app. You'll need to install the [OpenAI Python library](https://pypi.org/project/openai/) and get an [API key](https://platform.openai.com/account/api-keys) to follow along.
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/build-conversational-apps#install-dependencies)Install dependencies
+First let's install the dependencies we'll need for this section:
+`pip install openai streamlit `
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/build-conversational-apps#add-openai-api-key-to-streamlit-secrets)Add OpenAI API key to Streamlit secrets
+Next, let's add our OpenAI API key to [Streamlit secrets](https://docs.streamlit.io/develop/concepts/connections/secrets-management). We do this by creating `.streamlit/secrets.toml` file in our project directory and adding the following lines to it:
+`# .streamlit/secrets.toml OPENAI_API_KEY = "YOUR_API_KEY" `
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/build-conversational-apps#write-the-app)Write the app
+Now let's write the app. We'll use the same code as before, but we'll replace the list of responses with a call to the OpenAI API.

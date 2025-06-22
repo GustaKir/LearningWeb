@@ -1,0 +1,47 @@
+Title: Best Practices for Using Imports in Python Modules
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section outlines best practices for importing modules in Python, advising against using 'from modulename import *' to maintain a clean namespace and improve code clarity. It recommends placing import statements at the top of files and suggests an order for imports: standard library modules, third-party modules, and local application imports.
+---
+
+```
+
+Note that using a module is also the basis for implementing the singleton design pattern, for the same reason.
+### [What are the “best practices” for using import in a module?](https://docs.python.org/3/faq/programming.html#id13)[¶](https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module "Link to this heading")
+In general, don’t use `from modulename import *`. Doing so clutters the importer’s namespace, and makes it much harder for linters to detect undefined names.
+Import modules at the top of a file. Doing so makes it clear what other modules your code requires and avoids questions of whether the module name is in scope. Using one import per line makes it easy to add and delete module imports, but using multiple imports per line uses less screen space.
+It’s good practice if you import modules in the following order:
+  1. standard library modules – e.g. [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions."), [`os`](https://docs.python.org/3/library/os.html#module-os "os: Miscellaneous operating system interfaces."), [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library."), [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.")
+  2. third-party library modules (anything installed in Python’s site-packages directory) – e.g. `dateutil`, `requests`, `PIL.Image`
+  3. locally developed modules
+
+
+It is sometimes necessary to move imports to a function or class to avoid problems with circular imports. Gordon McMillan says:
+> Circular imports are fine where both modules use the “import <module>” form of import. They fail when the 2nd module wants to grab a name out of the first (“from module import name”) and the import is at the top level. That’s because names in the 1st are not yet available, because the first module is busy importing the 2nd.
+In this case, if the second module is only used in one function, then the import can easily be moved into that function. By the time the import is called, the first module will have finished initializing, and the second module can do its import.
+It may also be necessary to move imports out of the top level of code if some of the modules are platform-specific. In that case, it may not even be possible to import all of the modules at the top of the file. In this case, importing the correct modules in the corresponding platform-specific code is a good option.
+Only move imports into a local scope, such as inside a function definition, if it’s necessary to solve a problem such as avoiding a circular import or are trying to reduce the initialization time of a module. This technique is especially helpful if many of the imports are unnecessary depending on how the program executes. You may also want to move imports into a function if the modules are only ever used in that function. Note that loading a module the first time may be expensive because of the one time initialization of the module, but loading a module multiple times is virtually free, costing only a couple of dictionary lookups. Even if the module name has gone out of scope, the module is probably available in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules").
+### [Why are default values shared between objects?](https://docs.python.org/3/faq/programming.html#id14)[¶](https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects "Link to this heading")
+This type of bug commonly bites neophyte programmers. Consider this function:
+```
+deffoo(mydict={}): # Danger: shared reference to one dict for all calls
+  ... compute something ...
+  mydict[key] = value
+  return mydict
+
+```
+
+The first time you call this function, `mydict` contains a single item. The second time, `mydict` contains two items because when `foo()` begins executing, `mydict` starts out with an item already in it.
+It is often expected that a function call creates new objects for default values. This is not what happens. Default values are created exactly once, when the function is defined. If that object is changed, like the dictionary in this example, subsequent calls to the function will refer to this changed object.
+By definition, immutable objects such as numbers, strings, tuples, and `None`, are safe from change. Changes to mutable objects such as dictionaries, lists, and class instances can lead to confusion.
+Because of this feature, it is good programming practice to not use mutable objects as default values. Instead, use `None` as the default value and inside the function, check if the parameter is `None` and create a new list/dictionary/whatever if it is. For example, don’t write:
+```
+deffoo(mydict={}):
+  ...
+
+```
+
+but:
+```
+deffoo(mydict=None):
+  if mydict is None:
+    mydict = {} # create a new dict for local namespace

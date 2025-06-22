@@ -1,0 +1,33 @@
+Title: Python 3.11 Changelog: API Changes and Deprecations
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: The changelog details significant changes in Python 3.11, including the removal of deprecated functions for Python initialization and function calls. Specifically, several old functions like `PySys_AddWarnOptionUnicode()` and `PyEval_CallObject()` have been removed, emphasizing updates towards enhanced functionality.
+---
+
+Since Python 3.3, `Py_UNICODE` and `PY_UNICODE_TYPE` are just aliases to `wchar_t`. Patch by Victor Stinner.
+  * [gh-105145](https://github.com/python/cpython/issues/105145): Remove the following old functions to configure the Python initialization, deprecated in Python 3.11:
+    * `PySys_AddWarnOptionUnicode()`
+    * `PySys_AddWarnOption()`
+    * `PySys_AddXOption()`
+    * `PySys_HasWarnOptions()`
+    * `PySys_SetArgvEx()`
+    * `PySys_SetArgv()`
+    * `PySys_SetPath()`
+    * `Py_SetPath()`
+    * `Py_SetProgramName()`
+    * `Py_SetPythonHome()`
+    * `Py_SetStandardStreamEncoding()`
+    * `_Py_SetProgramFullPath()`
+Patch by Victor Stinner.
+  * [gh-105107](https://github.com/python/cpython/issues/105107): Remove functions deprecated in Python 3.9.
+    * `PyEval_CallObject()`, `PyEval_CallObjectWithKeywords()`: use [`PyObject_CallNoArgs()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallNoArgs "PyObject_CallNoArgs") and [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call") (positional arguments must not be _NULL_) instead.
+    * `PyEval_CallFunction()`: use [`PyObject_CallFunction()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallFunction "PyObject_CallFunction") instead.
+    * `PyEval_CallMethod()`: use [`PyObject_CallMethod()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethod "PyObject_CallMethod") instead.
+    * `PyCFunction_Call()`: use [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call") instead.
+Patch by Victor Stinner.
+  * [gh-105115](https://github.com/python/cpython/issues/105115): `PyTypeObject.tp_bases` (and `tp_mro`) for builtin static types are now shared by all interpreters, whereas in 3.12-beta1 they were stored on `PyInterpreterState`. Also note that now the tuples are immortal objects.
+  * [gh-105071](https://github.com/python/cpython/issues/105071): Add `PyUnstable_Exc_PrepReraiseStar` to the unstable C api to expose the implementation of [`except*`](https://docs.python.org/3/reference/compound_stmts.html#except-star).
+  * [gh-104922](https://github.com/python/cpython/issues/104922): `PY_SSIZE_T_CLEAN` is no longer required to use `'#'` formats in APIs like [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple") and [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue"). They uses `Py_ssize_t` for `'#'` regardless `PY_SSIZE_T_CLEAN`.
+  * [gh-104584](https://github.com/python/cpython/issues/104584): Add an unstable C API for hooking in an optimizer. This is mainly internal, but marked “unstable” to allow third-party experimentation.
+  * [gh-104668](https://github.com/python/cpython/issues/104668): Don’t call [`PyOS_InputHook`](https://docs.python.org/3/c-api/veryhigh.html#c.PyOS_InputHook "PyOS_InputHook") or [`PyOS_ReadlineFunctionPointer`](https://docs.python.org/3/c-api/veryhigh.html#c.PyOS_ReadlineFunctionPointer "PyOS_ReadlineFunctionPointer") in subinterpreters, since it’s generally difficult to avoid using global state in their registered callbacks. This also avoids situations where extensions may find themselves running in a subinterpreter they don’t support (or haven’t yet been loaded in).
+  * [bpo-42327](https://bugs.python.org/issue?@action=redirect&bpo=42327): Add [`PyModule_Add()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Add "PyModule_Add") function: similar to [`PyModule_AddObjectRef()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "PyModule_AddObjectRef") and [`PyModule_AddObject()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObject "PyModule_AddObject"), but always steals a reference to the value.
+  * [bpo-40309](https://bugs.python.org/issue?@action=redirect&bpo=40309): Properly handle trailing spaces before closing parenthesis in [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") format strings.

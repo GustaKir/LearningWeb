@@ -1,0 +1,106 @@
+Title: Using Strings to Call Functions and Methods in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section discusses techniques for calling functions and methods using strings in Python. The recommended approach is to use a dictionary that maps strings to functions, which allows for flexible naming. Additionally, it mentions the `getattr()` function, which can be used to dynamically access attributes and methods of various objects.
+---
+
+```
+
+### [How do I use strings to call functions/methods?](https://docs.python.org/3/faq/programming.html#id34)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-use-strings-to-call-functions-methods "Link to this heading")
+There are various techniques.
+  * The best is to use a dictionary that maps strings to functions. The primary advantage of this technique is that the strings do not need to match the names of the functions. This is also the primary technique used to emulate a case construct:
+```
+defa():
+  pass
+defb():
+  pass
+dispatch = {'go': a, 'stop': b} # Note lack of parens for funcs
+dispatch[get_input()]() # Note trailing parens to call function
+
+```
+
+  * Use the built-in function [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr"):
+```
+importfoo
+getattr(foo, 'bar')()
+
+```
+
+Note that [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") works on any object, including classes, class instances, modules, and so on.
+This is used in several places in the standard library, like this:
+```
+classFoo:
+  defdo_foo(self):
+    ...
+  defdo_bar(self):
+    ...
+f = getattr(foo_instance, 'do_' + opname)
+f()
+
+```
+
+  * Use [`locals()`](https://docs.python.org/3/library/functions.html#locals "locals") to resolve the function name:
+```
+defmyFunc():
+  print("hello")
+fname = "myFunc"
+f = locals()[fname]
+f()
+
+```
+
+
+
+### [Is there an equivalent to Perl’s `chomp()` for removing trailing newlines from strings?](https://docs.python.org/3/faq/programming.html#id35)[¶](https://docs.python.org/3/faq/programming.html#is-there-an-equivalent-to-perl-s-chomp-for-removing-trailing-newlines-from-strings "Link to this heading")
+You can use `S.rstrip("\r\n")` to remove all occurrences of any line terminator from the end of the string `S` without removing other trailing whitespace. If the string `S` represents more than one line, with several empty lines at the end, the line terminators for all the blank lines will be removed:
+>>>```
+>>> lines = ("line 1 \r\n"
+...      "\r\n"
+...      "\r\n")
+>>> lines.rstrip("\n\r")
+'line 1 '
+
+```
+
+Since this is typically only desired when reading text one line at a time, using `S.rstrip()` this way works well.
+### [Is there a `scanf()` or `sscanf()` equivalent?](https://docs.python.org/3/faq/programming.html#id36)[¶](https://docs.python.org/3/faq/programming.html#is-there-a-scanf-or-sscanf-equivalent "Link to this heading")
+Not as such.
+For simple input parsing, the easiest approach is usually to split the line into whitespace-delimited words using the [`split()`](https://docs.python.org/3/library/stdtypes.html#str.split "str.split") method of string objects and then convert decimal strings to numeric values using [`int()`](https://docs.python.org/3/library/functions.html#int "int") or [`float()`](https://docs.python.org/3/library/functions.html#float "float"). `split()` supports an optional “sep” parameter which is useful if the line uses something other than whitespace as a separator.
+For more complicated input parsing, regular expressions are more powerful than C’s `sscanf` and better suited for the task.
+### [What does `UnicodeDecodeError` or `UnicodeEncodeError` error mean?](https://docs.python.org/3/faq/programming.html#id37)[¶](https://docs.python.org/3/faq/programming.html#what-does-unicodedecodeerror-or-unicodeencodeerror-error-mean "Link to this heading")
+See the [Unicode HOWTO](https://docs.python.org/3/howto/unicode.html#unicode-howto).
+### [Can I end a raw string with an odd number of backslashes?](https://docs.python.org/3/faq/programming.html#id38)[¶](https://docs.python.org/3/faq/programming.html#can-i-end-a-raw-string-with-an-odd-number-of-backslashes "Link to this heading")
+A raw string ending with an odd number of backslashes will escape the string’s quote:
+>>>```
+>>> r'C:\this\will\not\work\'
+ File "<stdin>", line 1
+r'C:\this\will\not\work\'
+^
+SyntaxError: unterminated string literal (detected at line 1)
+
+```
+
+There are several workarounds for this. One is to use regular strings and double the backslashes:
+>>>```
+>>> 'C:\\this\\will\\work\\'
+'C:\\this\\will\\work\\'
+
+```
+
+Another is to concatenate a regular string containing an escaped backslash to the raw string:
+>>>```
+>>> r'C:\this\will\work' '\\'
+'C:\\this\\will\\work\\'
+
+```
+
+It is also possible to use [`os.path.join()`](https://docs.python.org/3/library/os.path.html#os.path.join "os.path.join") to append a backslash on Windows:
+>>>```
+>>> os.path.join(r'C:\this\will\work', '')
+'C:\\this\\will\\work\\'
+
+```
+
+Note that while a backslash will “escape” a quote for the purposes of determining where the raw string ends, no escaping occurs when interpreting the value of the raw string. That is, the backslash remains present in the value of the raw string:
+>>>```
+>>> r'backslash\'preserved'
+"backslash\\'preserved"

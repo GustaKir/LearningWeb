@@ -1,0 +1,139 @@
+Title: Understanding Method Resolution Order (MRO) in Python
+URL: https://docs.python.org/3/howto/mro.html
+Summary: This section discusses the complexities of method resolution order (MRO) in Python, demonstrating how changes in class inheritance can affect the linearization of class hierarchy. An example is provided to illustrate these principles, highlighting that even minor modifications can significantly alter the MRO.
+---
+
+```
+
+In this example, the linearization is ordered in a pretty nice way according to the inheritance level, in the sense that lower levels (i.e. more specialized classes) have higher precedence (see the inheritance graph). However, this is not the general case.
+I leave as an exercise for the reader to compute the linearization for my second example:
+>>>```
+>>> O = object
+>>> classF(O): pass
+>>> classE(O): pass
+>>> classD(O): pass
+>>> classC(D,F): pass
+>>> classB(E,D): pass
+>>> classA(B,C): pass
+
+```
+
+The only difference with the previous example is the change B(D,E) –> B(E,D); however even such a little modification completely changes the ordering of the hierarchy:
+> ```
+              6
+             ---
+Level 3         | O |
+            / --- \
+           /  |  \
+           /   |   \
+          /   |   \
+         ---   ---  ---
+Level 2    2 | E | 4 | D | | F | 5
+         ---   ---  ---
+          \   / \   /
+          \  /  \  /
+           \ /   \ /
+           ---   ---
+Level 1      1 | B |  | C | 3
+           ---   ---
+            \    /
+            \   /
+             ---
+Level 0        0 | A |
+             ---
+
+```
+
+Notice that the class E, which is in the second level of the hierarchy, precedes the class C, which is in the first level of the hierarchy, i.e. E is more specialized than C, even if it is in a higher level.
+A lazy programmer can obtain the MRO directly from Python 2.2, since in this case it coincides with the Python 2.3 linearization. It is enough to invoke the [`mro()`](https://docs.python.org/3/reference/datamodel.html#type.mro "type.mro") method of class A:
+>>>```
+>>> A.mro()
+[<class 'A'>, <class 'B'>, <class 'E'>,
+<class 'C'>, <class 'D'>, <class 'F'>,
+<class 'object'>]
+
+```
+
+Finally, let me consider the example discussed in the first section, involving a serious order disagreement. In this case, it is straightforward to compute the linearizations of O, X, Y, A and B:
+> ```
+L[O] = 0
+L[X] = X O
+L[Y] = Y O
+L[A] = A X Y O
+L[B] = B Y X O
+
+```
+
+However, it is impossible to compute the linearization for a class C that inherits from A and B:
+```
+L[C] = C + merge(AXYO, BYXO, AB)
+   = C + A + merge(XYO, BYXO, B)
+   = C + A + B + merge(XYO, YXO)
+
+```
+
+At this point we cannot merge the lists XYO and YXO, since X is in the tail of YXO whereas Y is in the tail of XYO: therefore there are no good heads and the C3 algorithm stops. Python 2.3 raises an error and refuses to create the class C.
+## Bad Method Resolution Orders[¶](https://docs.python.org/3/howto/mro.html#bad-method-resolution-orders "Link to this heading")
+A MRO is _bad_ when it breaks such fundamental properties as local precedence ordering and monotonicity. In this section, I will show that both the MRO for classic classes and the MRO for new style classes in Python 2.2 are bad.
+It is easier to start with the local precedence ordering. Consider the following example:
+>>>```
+>>> F=type('Food',(),{'remember2buy':'spam'})
+>>> E=type('Eggs',(F,),{'remember2buy':'eggs'})
+>>> G=type('GoodFood',(F,E),{}) # under Python 2.3 this is an error!
+
+```
+
+with inheritance diagram
+> ```
+       O
+       |
+(buy spam)  F
+       | \
+       | E  (buy eggs)
+       | /
+       G
+   (buy eggs or spam ?)
+
+```
+
+We see that class G inherits from F and E, with F _before_ E: therefore we would expect the attribute _G.remember2buy_ to be inherited by _F.remember2buy_ and not by _E.remember2buy_ : nevertheless Python 2.2 gives
+>>>```
+>>> G.remember2buy
+'eggs'
+
+```
+
+This is a breaking of local precedence ordering since the order in the local precedence list, i.e. the list of the parents of G, is not preserved in the Python 2.2 linearization of G:
+```
+L[G,P22]= G E F object  # F *follows* E
+
+```
+
+One could argue that the reason why F follows E in the Python 2.2 linearization is that F is less specialized than E, since F is the superclass of E; nevertheless the breaking of local precedence ordering is quite non-intuitive and error prone. This is particularly true since it is a different from old style classes:
+>>>```
+>>> classF: remember2buy='spam'
+>>> classE(F): remember2buy='eggs'
+>>> classG(F,E): pass
+>>> G.remember2buy
+'spam'
+
+```
+
+In this case the MRO is GFEF and the local precedence ordering is preserved.
+As a general rule, hierarchies such as the previous one should be avoided, since it is unclear if F should override E or vice-versa. Python 2.3 solves the ambiguity by raising an exception in the creation of class G, effectively stopping the programmer from generating ambiguous hierarchies. The reason for that is that the C3 algorithm fails when the merge:
+```
+merge(FO,EFO,FE)
+
+```
+
+cannot be computed, because F is in the tail of EFO and E is in the tail of FE.
+The real solution is to design a non-ambiguous hierarchy, i.e. to derive G from E and F (the more specific first) and not from F and E; in this case the MRO is GEF without any doubt.
+> ```
+      O
+      |
+      F (spam)
+     / |
+(eggs)  E |
+     \ |
+      G
+       (eggs, no doubt)

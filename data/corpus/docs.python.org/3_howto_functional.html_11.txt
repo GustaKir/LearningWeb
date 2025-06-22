@@ -1,0 +1,63 @@
+Title: Using itertools.combinations_with_replacement
+URL: https://docs.python.org/3/howto/functional.html
+Summary: This section explains the `itertools.combinations_with_replacement` function, which allows for the repetition of elements in generated tuples. It provides an example of combinations from a list of numbers, illustrating how tuples can contain repeated elements.
+---
+
+```
+
+The identical tuple `('a', 'a', 'b')` occurs twice, but the two ‘a’ strings came from different positions.
+The [`itertools.combinations_with_replacement(iterable, r)`](https://docs.python.org/3/library/itertools.html#itertools.combinations_with_replacement "itertools.combinations_with_replacement") function relaxes a different constraint: elements can be repeated within a single tuple. Conceptually an element is selected for the first position of each tuple and then is replaced before the second element is selected.
+```
+itertools.combinations_with_replacement([1, 2, 3, 4, 5], 2) =>
+ (1, 1), (1, 2), (1, 3), (1, 4), (1, 5),
+ (2, 2), (2, 3), (2, 4), (2, 5),
+ (3, 3), (3, 4), (3, 5),
+ (4, 4), (4, 5),
+ (5, 5)
+
+```
+
+### Grouping elements[¶](https://docs.python.org/3/howto/functional.html#grouping-elements "Link to this heading")
+The last function I’ll discuss, [`itertools.groupby(iter, key_func=None)`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby"), is the most complicated. `key_func(elem)` is a function that can compute a key value for each element returned by the iterable. If you don’t supply a key function, the key is simply each element itself.
+[`groupby()`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby") collects all the consecutive elements from the underlying iterable that have the same key value, and returns a stream of 2-tuples containing a key value and an iterator for the elements with that key.
+```
+city_list = [('Decatur', 'AL'), ('Huntsville', 'AL'), ('Selma', 'AL'),
+       ('Anchorage', 'AK'), ('Nome', 'AK'),
+       ('Flagstaff', 'AZ'), ('Phoenix', 'AZ'), ('Tucson', 'AZ'),
+       ...
+      ]
+defget_state(city_state):
+  return city_state[1]
+itertools.groupby(city_list, get_state) =>
+ ('AL', iterator-1),
+ ('AK', iterator-2),
+ ('AZ', iterator-3), ...
+where
+iterator-1 =>
+ ('Decatur', 'AL'), ('Huntsville', 'AL'), ('Selma', 'AL')
+iterator-2 =>
+ ('Anchorage', 'AK'), ('Nome', 'AK')
+iterator-3 =>
+ ('Flagstaff', 'AZ'), ('Phoenix', 'AZ'), ('Tucson', 'AZ')
+
+```
+
+[`groupby()`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby") assumes that the underlying iterable’s contents will already be sorted based on the key. Note that the returned iterators also use the underlying iterable, so you have to consume the results of iterator-1 before requesting iterator-2 and its corresponding key.
+## The functools module[¶](https://docs.python.org/3/howto/functional.html#the-functools-module "Link to this heading")
+The [`functools`](https://docs.python.org/3/library/functools.html#module-functools "functools: Higher-order functions and operations on callable objects.") module contains some higher-order functions. A **higher-order function** takes one or more functions as input and returns a new function. The most useful tool in this module is the [`functools.partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") function.
+For programs written in a functional style, you’ll sometimes want to construct variants of existing functions that have some of the parameters filled in. Consider a Python function `f(a, b, c)`; you may wish to create a new function `g(b, c)` that’s equivalent to `f(1, b, c)`; you’re filling in a value for one of `f()`’s parameters. This is called “partial function application”.
+The constructor for [`partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial") takes the arguments `(function, arg1, arg2, ..., kwarg1=value1, kwarg2=value2)`. The resulting object is callable, so you can just call it to invoke `function` with the filled-in arguments.
+Here’s a small but realistic example:
+```
+importfunctools
+deflog(message, subsystem):
+"""Write the contents of 'message' to the specified subsystem."""
+  print('%s: %s' % (subsystem, message))
+  ...
+server_log = functools.partial(log, subsystem='server')
+server_log('Unable to open socket')
+
+```
+
+[`functools.reduce(func, iter, [initial_value])`](https://docs.python.org/3/library/functools.html#functools.reduce "functools.reduce") cumulatively performs an operation on all the iterable’s elements and, therefore, can’t be applied to infinite iterables. _func_ must be a function that takes two elements and returns a single value. [`functools.reduce()`](https://docs.python.org/3/library/functools.html#functools.reduce "functools.reduce") takes the first two elements A and B returned by the iterator and calculates `func(A, B)`. It then requests the third element, C, calculates `func(func(A, B), C)`, combines this result with the fourth element returned, and continues until the iterable is exhausted. If the iterable returns no values at all, a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception is raised. If the initial value is supplied, it’s used as a starting point and `func(initial_value, A)` is the first calculation.
+>>>

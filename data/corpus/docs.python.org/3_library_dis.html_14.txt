@@ -1,0 +1,76 @@
+Title: Python Bytecode Operations
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section describes various Python bytecode operations related to variable handling and cell management, including DELETE_FAST for deleting local variables, MAKE_CELL for creating new cells, LOAD_DEREF for loading cell contents, and LOAD_FROM_DICT_OR_DEREF for loading mappings from the stack.
+---
+
+DELETE_FAST(_var_num_)[¶](https://docs.python.org/3/library/dis.html#opcode-DELETE_FAST "Link to this definition")
+    
+Deletes local `co_varnames[var_num]`. 
+
+MAKE_CELL(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-MAKE_CELL "Link to this definition")
+    
+Creates a new cell in slot `i`. If that slot is nonempty then that value is stored into the new cell.
+Added in version 3.11. 
+
+LOAD_DEREF(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_DEREF "Link to this definition")
+    
+Loads the cell contained in slot `i` of the “fast locals” storage. Pushes a reference to the object the cell contains on the stack.
+Changed in version 3.11: `i` is no longer offset by the length of [`co_varnames`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_varnames "codeobject.co_varnames"). 
+
+LOAD_FROM_DICT_OR_DEREF(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_FROM_DICT_OR_DEREF "Link to this definition")
+    
+Pops a mapping off the stack and looks up the name associated with slot `i` of the “fast locals” storage in this mapping. If the name is not found there, loads it from the cell contained in slot `i`, similar to [`LOAD_DEREF`](https://docs.python.org/3/library/dis.html#opcode-LOAD_DEREF). This is used for loading [closure variables](https://docs.python.org/3/glossary.html#term-closure-variable) in class bodies (which previously used `LOAD_CLASSDEREF`) and in [annotation scopes](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes) within class bodies.
+Added in version 3.12. 
+
+STORE_DEREF(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-STORE_DEREF "Link to this definition")
+    
+Stores `STACK.pop()` into the cell contained in slot `i` of the “fast locals” storage.
+Changed in version 3.11: `i` is no longer offset by the length of [`co_varnames`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_varnames "codeobject.co_varnames"). 
+
+DELETE_DEREF(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-DELETE_DEREF "Link to this definition")
+    
+Empties the cell contained in slot `i` of the “fast locals” storage. Used by the [`del`](https://docs.python.org/3/reference/simple_stmts.html#del) statement.
+Added in version 3.2.
+Changed in version 3.11: `i` is no longer offset by the length of [`co_varnames`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_varnames "codeobject.co_varnames"). 
+
+COPY_FREE_VARS(_n_)[¶](https://docs.python.org/3/library/dis.html#opcode-COPY_FREE_VARS "Link to this definition")
+    
+Copies the `n` [free (closure) variables](https://docs.python.org/3/glossary.html#term-closure-variable) from the closure into the frame. Removes the need for special code on the caller’s side when calling closures.
+Added in version 3.11. 
+
+RAISE_VARARGS(_argc_)[¶](https://docs.python.org/3/library/dis.html#opcode-RAISE_VARARGS "Link to this definition")
+    
+Raises an exception using one of the 3 forms of the `raise` statement, depending on the value of _argc_ :
+  * 0: `raise` (re-raise previous exception)
+  * 1: `raise STACK[-1]` (raise exception instance or type at `STACK[-1]`)
+  * 2: `raise STACK[-2] from STACK[-1]` (raise exception instance or type at `STACK[-2]` with `__cause__` set to `STACK[-1]`)
+
+
+
+CALL(_argc_)[¶](https://docs.python.org/3/library/dis.html#opcode-CALL "Link to this definition")
+    
+Calls a callable object with the number of arguments specified by `argc`. On the stack are (in ascending order):
+  * The callable
+  * `self` or `NULL`
+  * The remaining positional arguments
+
+
+`argc` is the total of the positional arguments, excluding `self`.
+`CALL` pops all arguments and the callable object off the stack, calls the callable object with those arguments, and pushes the return value returned by the callable object.
+Added in version 3.11.
+Changed in version 3.13: The callable now always appears at the same position on the stack.
+Changed in version 3.13: Calls with keyword arguments are now handled by [`CALL_KW`](https://docs.python.org/3/library/dis.html#opcode-CALL_KW). 
+
+CALL_KW(_argc_)[¶](https://docs.python.org/3/library/dis.html#opcode-CALL_KW "Link to this definition")
+    
+Calls a callable object with the number of arguments specified by `argc`, including one or more named arguments. On the stack are (in ascending order):
+  * The callable
+  * `self` or `NULL`
+  * The remaining positional arguments
+  * The named arguments
+  * A [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") of keyword argument names
+
+
+`argc` is the total of the positional and named arguments, excluding `self`. The length of the tuple of keyword argument names is the number of named arguments.
+`CALL_KW` pops all arguments, the keyword names, and the callable object off the stack, calls the callable object with those arguments, and pushes the return value returned by the callable object.
+Added in version 3.13.

@@ -1,0 +1,31 @@
+Title: Memory Allocation in Free-Threaded Builds
+URL: https://docs.python.org/3/c-api/memory.html
+Summary: In free-threaded builds of Python, it is mandatory to allocate only Python objects using the 'object' domain, contrasting with previous versions where it was merely a best practice. Non-Python objects should use alternative allocation functions like PyMem_Malloc() instead of PyObject_Malloc().
+---
+
+Note
+The [free-threaded](https://docs.python.org/3/glossary.html#term-free-threading) build requires that only Python objects are allocated using the “object” domain and that all Python objects are allocated using that domain. This differs from the prior Python versions, where this was only a best practice and not a hard requirement.
+For example, buffers (non-Python objects) should be allocated using [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc"), [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc"), or `malloc()`, but not [`PyObject_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Malloc "PyObject_Malloc").
+See [Memory Allocation APIs](https://docs.python.org/3/howto/free-threading-extensions.html#free-threaded-memory-allocation).
+## Raw Memory Interface[¶](https://docs.python.org/3/c-api/memory.html#raw-memory-interface "Link to this heading")
+The following function sets are wrappers to the system allocator. These functions are thread-safe, the [GIL](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) does not need to be held.
+The [default raw memory allocator](https://docs.python.org/3/c-api/memory.html#default-memory-allocators) uses the following functions: `malloc()`, `calloc()`, `realloc()` and `free()`; call `malloc(1)` (or `calloc(1, 1)`) when requesting zero bytes.
+Added in version 3.4. 
+
+void*PyMem_RawMalloc(size_tn)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Allocates _n_ bytes and returns a pointer of type void* to the allocated memory, or `NULL` if the request fails.
+Requesting zero bytes returns a distinct non-`NULL` pointer if possible, as if `PyMem_RawMalloc(1)` had been called instead. The memory will not have been initialized in any way. 
+
+void*PyMem_RawCalloc(size_tnelem, size_telsize)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawCalloc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Allocates _nelem_ elements each whose size in bytes is _elsize_ and returns a pointer of type void* to the allocated memory, or `NULL` if the request fails. The memory is initialized to zeros.
+Requesting zero elements or elements of size zero bytes returns a distinct non-`NULL` pointer if possible, as if `PyMem_RawCalloc(1, 1)` had been called instead.
+Added in version 3.5. 
+
+void*PyMem_RawRealloc(void*p, size_tn)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.13._
+Resizes the memory block pointed to by _p_ to _n_ bytes. The contents will be unchanged to the minimum of the old and the new sizes.
+If _p_ is `NULL`, the call is equivalent to `PyMem_RawMalloc(n)`; else if _n_ is equal to zero, the memory block is resized but is not freed, and the returned pointer is non-`NULL`.
+Unless _p_ is `NULL`, it must have been returned by a previous call to [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc"), [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc") or [`PyMem_RawCalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawCalloc "PyMem_RawCalloc").
+If the request fails, [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc") returns `NULL` and _p_ remains a valid pointer to the previous memory area.

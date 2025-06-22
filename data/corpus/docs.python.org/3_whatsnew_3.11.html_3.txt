@@ -1,0 +1,38 @@
+Title: Enhanced Traceback for Error Reporting in Python 3.11
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: Python 3.11 improves error messages by providing clearer traceback information, especially for ambiguous `None` objects in nested structures and complex arithmetic expressions. This allows developers to identify the source of errors more effectively.
+---
+
+```
+
+Previous versions of the interpreter would point to just the line, making it ambiguous which object was `None`. These enhanced errors can also be helpful when dealing with deeply nested [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") objects and multiple function calls:
+```
+Traceback (most recent call last):
+ File "query.py", line 37, in <module>
+  magic_arithmetic('foo')
+ File "query.py", line 18, in magic_arithmetic
+  return add_counts(x) / 25
+      ^^^^^^^^^^^^^
+ File "query.py", line 24, in add_counts
+  return 25 + query_user(user1) + query_user(user2)
+        ^^^^^^^^^^^^^^^^^
+ File "query.py", line 32, in query_user
+  return 1 + query_count(db, response['a']['b']['c']['user'], retry=True)
+                ~~~~~~~~~~~~~~~~~~^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+```
+
+As well as complex arithmetic expressions:
+```
+Traceback (most recent call last):
+ File "calculation.py", line 54, in <module>
+  result = (x / y / z) * (a / b / c)
+       ~~~~~~^~~
+ZeroDivisionError: division by zero
+
+```
+
+Additionally, the information used by the enhanced traceback feature is made available via a general API, that can be used to correlate [bytecode](https://docs.python.org/3/glossary.html#term-bytecode) [instructions](https://docs.python.org/3/library/dis.html#bytecodes) with source code location. This information can be retrieved using:
+  * The [`codeobject.co_positions()`](https://docs.python.org/3/reference/datamodel.html#codeobject.co_positions "codeobject.co_positions") method in Python.
+  * The [`PyCode_Addr2Location()`](https://docs.python.org/3/c-api/code.html#c.PyCode_Addr2Location "PyCode_Addr2Location") function in the C API.

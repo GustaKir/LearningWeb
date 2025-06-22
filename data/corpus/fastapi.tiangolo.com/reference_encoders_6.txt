@@ -1,0 +1,84 @@
+Title: Using JSONable Encoder in FastAPI
+URL: https://fastapi.tiangolo.com/reference/encoders/
+Summary: The chunk describes how to use the jsonable_encoder to encode keys and values conditionally. It outlines checks for the key's validity, handling of None values, and the implementation for different iterable types like lists and sets.
+---
+
+not sqlalchemy_safe
+          or (not isinstance(key, str))
+          or (not key.startswith("_sa"))
+        )
+        and (value is not None or not exclude_none)
+        and key in allowed_keys
+      ):
+        encoded_key = jsonable_encoder(
+          key,
+          by_alias=by_alias,
+          exclude_unset=exclude_unset,
+          exclude_none=exclude_none,
+          custom_encoder=custom_encoder,
+          sqlalchemy_safe=sqlalchemy_safe,
+        )
+        encoded_value = jsonable_encoder(
+          value,
+          by_alias=by_alias,
+          exclude_unset=exclude_unset,
+          exclude_none=exclude_none,
+          custom_encoder=custom_encoder,
+          sqlalchemy_safe=sqlalchemy_safe,
+        )
+        encoded_dict[encoded_key] = encoded_value
+    return encoded_dict
+  if isinstance(obj, (list, set, frozenset, GeneratorType, tuple, deque)):
+    encoded_list = []
+    for item in obj:
+      encoded_list.append(
+        jsonable_encoder(
+          item,
+          include=include,
+          exclude=exclude,
+          by_alias=by_alias,
+          exclude_unset=exclude_unset,
+          exclude_defaults=exclude_defaults,
+          exclude_none=exclude_none,
+          custom_encoder=custom_encoder,
+          sqlalchemy_safe=sqlalchemy_safe,
+        )
+      )
+    return encoded_list
+  if type(obj) in ENCODERS_BY_TYPE:
+    return ENCODERS_BY_TYPE[type(obj)](obj)
+  for encoder, classes_tuple in encoders_by_class_tuples.items():
+    if isinstance(obj, classes_tuple):
+      return encoder(obj)
+  try:
+    data = dict(obj)
+  except Exception as e:
+    errors: List[Exception] = []
+    errors.append(e)
+    try:
+      data = vars(obj)
+    except Exception as e:
+      errors.append(e)
+      raise ValueError(errors) frome
+  return jsonable_encoder(
+    data,
+    include=include,
+    exclude=exclude,
+    by_alias=by_alias,
+    exclude_unset=exclude_unset,
+    exclude_defaults=exclude_defaults,
+    exclude_none=exclude_none,
+    custom_encoder=custom_encoder,
+    sqlalchemy_safe=sqlalchemy_safe,
+  )
+
+```
+  
+---|---  
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Security Tools  ](https://fastapi.tiangolo.com/reference/security/) [ Next  Static Files - StaticFiles  ](https://fastapi.tiangolo.com/reference/staticfiles/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

@@ -1,0 +1,75 @@
+Title: Python C API: PyStatus Functions
+URL: https://docs.python.org/3/c-api/init_config.html
+Summary: This section describes functions for handling PyStatus in the Python C API, including checks for errors and exits. It details how to use `PyStatus_IsError` and `PyStatus_IsExit`, as well as the `Py_ExitStatusException` function for handling exit and error conditions appropriately.
+---
+
+intPyStatus_IsError([PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")status)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_IsError "Link to this definition")
+    
+Is the result an error? 
+
+intPyStatus_IsExit([PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")status)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyStatus_IsExit "Link to this definition")
+    
+Is the result an exit? 
+
+voidPy_ExitStatusException([PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")status)[¶](https://docs.python.org/3/c-api/init_config.html#c.Py_ExitStatusException "Link to this definition")
+    
+Call `exit(exitcode)` if _status_ is an exit. Print the error message and exit with a non-zero exit code if _status_ is an error. Must only be called if `PyStatus_Exception(status)` is non-zero.
+Note
+Internally, Python uses macros which set `PyStatus.func`, whereas functions to create a status set `func` to `NULL`.
+Example:
+```
+PyStatusalloc(void**ptr,size_tsize)
+{
+*ptr=PyMem_RawMalloc(size);
+if(*ptr==NULL){
+returnPyStatus_NoMemory();
+}
+returnPyStatus_Ok();
+}
+intmain(intargc,char**argv)
+{
+void*ptr;
+PyStatusstatus=alloc(&ptr,16);
+if(PyStatus_Exception(status)){
+Py_ExitStatusException(status);
+}
+PyMem_Free(ptr);
+return0;
+}
+
+```
+
+## PyPreConfig[¶](https://docs.python.org/3/c-api/init_config.html#pypreconfig "Link to this heading") 
+
+typePyPreConfig[¶](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig "Link to this definition")
+    
+Structure used to preinitialize Python.
+Function to initialize a preconfiguration: 
+
+voidPyPreConfig_InitPythonConfig([PyPreConfig](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig "PyPreConfig")*preconfig)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig_InitPythonConfig "Link to this definition")
+    
+Initialize the preconfiguration with [Python Configuration](https://docs.python.org/3/c-api/init_config.html#init-python-config). 
+
+voidPyPreConfig_InitIsolatedConfig([PyPreConfig](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig "PyPreConfig")*preconfig)[¶](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig_InitIsolatedConfig "Link to this definition")
+    
+Initialize the preconfiguration with [Isolated Configuration](https://docs.python.org/3/c-api/init_config.html#init-isolated-conf).
+Structure fields: 
+
+intallocator[¶](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.allocator "Link to this definition")
+    
+Name of the Python memory allocators:
+  * `PYMEM_ALLOCATOR_NOT_SET` (`0`): don’t change memory allocators (use defaults).
+  * `PYMEM_ALLOCATOR_DEFAULT` (`1`): [default memory allocators](https://docs.python.org/3/c-api/memory.html#default-memory-allocators).
+  * `PYMEM_ALLOCATOR_DEBUG` (`2`): [default memory allocators](https://docs.python.org/3/c-api/memory.html#default-memory-allocators) with [debug hooks](https://docs.python.org/3/c-api/memory.html#pymem-debug-hooks).
+  * `PYMEM_ALLOCATOR_MALLOC` (`3`): use `malloc()` of the C library.
+  * `PYMEM_ALLOCATOR_MALLOC_DEBUG` (`4`): force usage of `malloc()` with [debug hooks](https://docs.python.org/3/c-api/memory.html#pymem-debug-hooks).
+  * `PYMEM_ALLOCATOR_PYMALLOC` (`5`): [Python pymalloc memory allocator](https://docs.python.org/3/c-api/memory.html#pymalloc).
+  * `PYMEM_ALLOCATOR_PYMALLOC_DEBUG` (`6`): [Python pymalloc memory allocator](https://docs.python.org/3/c-api/memory.html#pymalloc) with [debug hooks](https://docs.python.org/3/c-api/memory.html#pymem-debug-hooks).
+  * `PYMEM_ALLOCATOR_MIMALLOC` (`6`): use `mimalloc`, a fast malloc replacement.
+  * `PYMEM_ALLOCATOR_MIMALLOC_DEBUG` (`7`): use `mimalloc`, a fast malloc replacement with [debug hooks](https://docs.python.org/3/c-api/memory.html#pymem-debug-hooks).
+
+
+`PYMEM_ALLOCATOR_PYMALLOC` and `PYMEM_ALLOCATOR_PYMALLOC_DEBUG` are not supported if Python is [`configured using --without-pymalloc`](https://docs.python.org/3/using/configure.html#cmdoption-without-pymalloc).
+`PYMEM_ALLOCATOR_MIMALLOC` and `PYMEM_ALLOCATOR_MIMALLOC_DEBUG` are not supported if Python is [`configured using --without-mimalloc`](https://docs.python.org/3/using/configure.html#cmdoption-without-mimalloc) or if the underlying atomic support isn’t available.
+See [Memory Management](https://docs.python.org/3/c-api/memory.html#memory).
+Default: `PYMEM_ALLOCATOR_NOT_SET`.

@@ -1,0 +1,34 @@
+Title: Python C API: Exception Handling Functions
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: This section details the functions for handling exceptions in the Python C API. It includes `PyErr_FormatV`, which formats and raises an exception using a `va_list`, and `PyErr_SetNone`, which sets an exception type to `None`. Both functions have been part of the Stable ABI since Python 3.5.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_FormatV([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exception, constchar*format, va_listvargs)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_FormatV "Link to this definition")
+    _Return value: Always NULL.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.5._
+Same as [`PyErr_Format()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_Format "PyErr_Format"), but taking a `va_list` argument rather than a variable number of arguments.
+Added in version 3.5. 
+
+voidPyErr_SetNone([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetNone "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is a shorthand for `PyErr_SetObject(type, Py_None)`. 
+
+intPyErr_BadArgument()[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_BadArgument "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is a shorthand for `PyErr_SetString(PyExc_TypeError, message)`, where _message_ indicates that a built-in operation was invoked with an illegal argument. It is mostly for internal use. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_NoMemory()[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_NoMemory "Link to this definition")
+    _Return value: Always NULL.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is a shorthand for `PyErr_SetNone(PyExc_MemoryError)`; it returns `NULL` so an object allocation function can write `return PyErr_NoMemory();` when it runs out of memory. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_SetFromErrno([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetFromErrno "Link to this definition")
+    _Return value: Always NULL.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is a convenience function to raise an exception when a C library function has returned an error and set the C variable `errno`. It constructs a tuple object whose first item is the integer `errno` value and whose second item is the corresponding error message (gotten from `strerror()`), and then calls `PyErr_SetObject(type, object)`. On Unix, when the `errno` value is `EINTR`, indicating an interrupted system call, this calls [`PyErr_CheckSignals()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_CheckSignals "PyErr_CheckSignals"), and if that set the error indicator, leaves it set to that. The function always returns `NULL`, so a wrapper function around a system call can write `return PyErr_SetFromErrno(type);` when the system call returns an error. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_SetFromErrnoWithFilenameObject([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*filenameObject)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetFromErrnoWithFilenameObject "Link to this definition")
+    _Return value: Always NULL.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Similar to [`PyErr_SetFromErrno()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetFromErrno "PyErr_SetFromErrno"), with the additional behavior that if _filenameObject_ is not `NULL`, it is passed to the constructor of _type_ as a third parameter. In the case of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") exception, this is used to define the `filename` attribute of the exception instance. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_SetFromErrnoWithFilenameObjects([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*filenameObject, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*filenameObject2)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetFromErrnoWithFilenameObjects "Link to this definition")
+    _Return value: Always NULL.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Similar to [`PyErr_SetFromErrnoWithFilenameObject()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetFromErrnoWithFilenameObject "PyErr_SetFromErrnoWithFilenameObject"), but takes a second filename object, for raising errors when a function that takes two filenames fails.
+Added in version 3.4.

@@ -1,0 +1,34 @@
+Title: Calling Objects in Python C API
+URL: https://docs.python.org/3/c-api/call.html
+Summary: This section discusses the method of calling objects in the Python C API using tuples for positional arguments and dictionaries for keyword arguments. It highlights the requirement for non-NULL positional arguments and describes how this call convention is utilized by functions like `tp_new` and `tp_init`. It also introduces the `PyObject_Call()` function and the vectorcall protocol, which was added in Python 3.9.
+---
+
+```
+
+A call is made using a tuple for the positional arguments and a dict for the keyword arguments, similarly to `callable(*args, **kwargs)` in Python code. _args_ must be non-NULL (use an empty tuple if there are no arguments) but _kwargs_ may be _NULL_ if there are no keyword arguments.
+This convention is not only used by _tp_call_ : [`tp_new`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_new "PyTypeObject.tp_new") and [`tp_init`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_init "PyTypeObject.tp_init") also pass arguments this way.
+To call an object, use [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call") or another [call API](https://docs.python.org/3/c-api/call.html#capi-call).
+## The Vectorcall Protocol[¶](https://docs.python.org/3/c-api/call.html#the-vectorcall-protocol "Link to this heading")
+Added in version 3.9.
+The vectorcall protocol was introduced in [**PEP 590**](https://peps.python.org/pep-0590/) as an additional protocol for making calls more efficient.
+As rule of thumb, CPython will prefer the vectorcall for internal calls if the callable supports it. However, this is not a hard rule. Additionally, some third-party extensions use _tp_call_ directly (rather than using [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call")). Therefore, a class supporting vectorcall must also implement [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call"). Moreover, the callable must behave the same regardless of which protocol is used. The recommended way to achieve this is by setting [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call") to [`PyVectorcall_Call()`](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_Call "PyVectorcall_Call"). This bears repeating:
+Warning
+A class supporting vectorcall **must** also implement [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call") with the same semantics.
+Changed in version 3.12: The [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") flag is now removed from a class when the class’s [`__call__()`](https://docs.python.org/3/reference/datamodel.html#object.__call__ "object.__call__") method is reassigned. (This internally sets [`tp_call`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_call "PyTypeObject.tp_call") only, and thus may make it behave differently than the vectorcall function.) In earlier Python versions, vectorcall should only be used with [`immutable`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_IMMUTABLETYPE "Py_TPFLAGS_IMMUTABLETYPE") or static types.
+A class should not implement vectorcall if that would be slower than _tp_call_. For example, if the callee needs to convert the arguments to an args tuple and kwargs dict anyway, then there is no point in implementing vectorcall.
+Classes can implement the vectorcall protocol by enabling the [`Py_TPFLAGS_HAVE_VECTORCALL`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_VECTORCALL "Py_TPFLAGS_HAVE_VECTORCALL") flag and setting [`tp_vectorcall_offset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_vectorcall_offset "PyTypeObject.tp_vectorcall_offset") to the offset inside the object structure where a _vectorcallfunc_ appears. This is a pointer to a function with the following signature: 
+
+typedef[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*(*vectorcallfunc)([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*callable,[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*const*args,size_tnargsf,[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*kwnames)[¶](https://docs.python.org/3/c-api/call.html#c.vectorcallfunc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.12._
+  * _callable_ is the object being called.
+  * 
+
+_args_ is a C array consisting of the positional arguments followed by the
+    
+values of the keyword arguments. This can be _NULL_ if there are no arguments.
+  * 
+
+_nargsf_ is the number of positional arguments plus possibly the
+    
+[`PY_VECTORCALL_ARGUMENTS_OFFSET`](https://docs.python.org/3/c-api/call.html#c.PY_VECTORCALL_ARGUMENTS_OFFSET "PY_VECTORCALL_ARGUMENTS_OFFSET") flag. To get the actual number of positional arguments from _nargsf_ , use [`PyVectorcall_NARGS()`](https://docs.python.org/3/c-api/call.html#c.PyVectorcall_NARGS "PyVectorcall_NARGS").
+  *

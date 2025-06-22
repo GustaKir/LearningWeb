@@ -1,0 +1,44 @@
+Title: Using Attributes in Curses
+URL: https://docs.python.org/3/howto/curses.html
+Summary: The curses library allows the specification of attributes for each screen cell, enabling features like reverse video and highlighted text. Attributes are represented as integers, with each bit indicating a different attribute. However, availability of combinations depends on the terminal's capabilities. Common attributes include blinking, bold, and dim text.
+---
+
+ayed in different ways. Status lines in a text-based application are commonly shown in reverse video, or a text viewer may need to highlight certain words. curses supports this by allowing you to specify an attribute for each cell on the screen.
+An attribute is an integer, each bit representing a different attribute. You can try to display text with multiple attribute bits set, but curses doesn’t guarantee that all the possible combinations are available, or that they’re all visually distinct. That depends on the ability of the terminal being used, so it’s safest to stick to the most commonly available attributes, listed here.
+Attribute | Description  
+---|---  
+[`A_BLINK`](https://docs.python.org/3/library/curses.html#curses.A_BLINK "curses.A_BLINK") | Blinking text  
+[`A_BOLD`](https://docs.python.org/3/library/curses.html#curses.A_BOLD "curses.A_BOLD") | Extra bright or bold text  
+[`A_DIM`](https://docs.python.org/3/library/curses.html#curses.A_DIM "curses.A_DIM") | Half bright text  
+[`A_REVERSE`](https://docs.python.org/3/library/curses.html#curses.A_REVERSE "curses.A_REVERSE") | Reverse-video text  
+[`A_STANDOUT`](https://docs.python.org/3/library/curses.html#curses.A_STANDOUT "curses.A_STANDOUT") | The best highlighting mode available  
+[`A_UNDERLINE`](https://docs.python.org/3/library/curses.html#curses.A_UNDERLINE "curses.A_UNDERLINE") | Underlined text  
+So, to display a reverse-video status line on the top line of the screen, you could code:
+```
+stdscr.addstr(0, 0, "Current mode: Typing mode",
+       curses.A_REVERSE)
+stdscr.refresh()
+
+```
+
+The curses library also supports color on those terminals that provide it. The most common such terminal is probably the Linux console, followed by color xterms.
+To use color, you must call the [`start_color()`](https://docs.python.org/3/library/curses.html#curses.start_color "curses.start_color") function soon after calling [`initscr()`](https://docs.python.org/3/library/curses.html#curses.initscr "curses.initscr"), to initialize the default color set (the [`curses.wrapper()`](https://docs.python.org/3/library/curses.html#curses.wrapper "curses.wrapper") function does this automatically). Once that’s done, the [`has_colors()`](https://docs.python.org/3/library/curses.html#curses.has_colors "curses.has_colors") function returns TRUE if the terminal in use can actually display color. (Note: curses uses the American spelling ‘color’, instead of the Canadian/British spelling ‘colour’. If you’re used to the British spelling, you’ll have to resign yourself to misspelling it for the sake of these functions.)
+The curses library maintains a finite number of color pairs, containing a foreground (or text) color and a background color. You can get the attribute value corresponding to a color pair with the [`color_pair()`](https://docs.python.org/3/library/curses.html#curses.color_pair "curses.color_pair") function; this can be bitwise-OR’ed with other attributes such as [`A_REVERSE`](https://docs.python.org/3/library/curses.html#curses.A_REVERSE "curses.A_REVERSE"), but again, such combinations are not guaranteed to work on all terminals.
+An example, which displays a line of text using color pair 1:
+```
+stdscr.addstr("Pretty text", curses.color_pair(1))
+stdscr.refresh()
+
+```
+
+As I said before, a color pair consists of a foreground and background color. The `init_pair(n, f, b)` function changes the definition of color pair _n_ , to foreground color f and background color b. Color pair 0 is hard-wired to white on black, and cannot be changed.
+Colors are numbered, and [`start_color()`](https://docs.python.org/3/library/curses.html#curses.start_color "curses.start_color") initializes 8 basic colors when it activates color mode. They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white. The [`curses`](https://docs.python.org/3/library/curses.html#module-curses "curses: An interface to the curses library, providing portable terminal handling. \(Unix\)") module defines named constants for each of these colors: [`curses.COLOR_BLACK`](https://docs.python.org/3/library/curses.html#curses.COLOR_BLACK "curses.COLOR_BLACK"), [`curses.COLOR_RED`](https://docs.python.org/3/library/curses.html#curses.COLOR_RED "curses.COLOR_RED"), and so forth.
+Let’s put all this together. To change color 1 to red text on a white background, you would call:
+```
+curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
+
+```
+
+When you change a color pair, any text already displayed using that color pair will change to the new colors. You can also display new text in this color with:
+```
+stdscr.addstr(0,0, "RED ALERT!", curses.color_pair(1))

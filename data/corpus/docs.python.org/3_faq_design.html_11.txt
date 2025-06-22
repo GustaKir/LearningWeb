@@ -1,0 +1,69 @@
+Title: Limitations of Raw Strings in Python
+URL: https://docs.python.org/3/faq/design.html
+Summary: Raw strings (r-strings) in Python cannot end with an odd number of backslashes because the unpaired backslash escapes the closing quote, leading to an unterminated string. This restriction is designed to prevent errors in processing by engines that require backslash escape handling, while still allowing escaped quote characters.
+---
+
+```
+
+This doesn’t allow you to jump into the middle of a loop, but that’s usually considered an abuse of `goto` anyway. Use sparingly.
+## [Why can’t raw strings (r-strings) end with a backslash?](https://docs.python.org/3/faq/design.html#id26)[¶](https://docs.python.org/3/faq/design.html#why-can-t-raw-strings-r-strings-end-with-a-backslash "Link to this heading")
+More precisely, they can’t end with an odd number of backslashes: the unpaired backslash at the end escapes the closing quote character, leaving an unterminated string.
+Raw strings were designed to ease creating input for processors (chiefly regular expression engines) that want to do their own backslash escape processing. Such processors consider an unmatched trailing backslash to be an error anyway, so raw strings disallow that. In return, they allow you to pass on the string quote character by escaping it with a backslash. These rules work well when r-strings are used for their intended purpose.
+If you’re trying to build Windows pathnames, note that all Windows system calls accept forward slashes too:
+```
+f = open("/mydir/file.txt") # works fine!
+
+```
+
+If you’re trying to build a pathname for a DOS command, try e.g. one of
+```
+dir = r"\this\is\my\dos\dir" "\\"
+dir = r"\this\is\my\dos\dir\ "[:-1]
+dir = "\\this\\is\\my\\dos\\dir\\"
+
+```
+
+## [Why doesn’t Python have a “with” statement for attribute assignments?](https://docs.python.org/3/faq/design.html#id27)[¶](https://docs.python.org/3/faq/design.html#why-doesn-t-python-have-a-with-statement-for-attribute-assignments "Link to this heading")
+Python has a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement that wraps the execution of a block, calling code on the entrance and exit from the block. Some languages have a construct that looks like this:
+```
+with obj:
+  a = 1        # equivalent to obj.a = 1
+  total = total + 1  # obj.total = obj.total + 1
+
+```
+
+In Python, such a construct would be ambiguous.
+Other languages, such as Object Pascal, Delphi, and C++, use static types, so it’s possible to know, in an unambiguous way, what member is being assigned to. This is the main point of static typing – the compiler _always_ knows the scope of every variable at compile time.
+Python uses dynamic types. It is impossible to know in advance which attribute will be referenced at runtime. Member attributes may be added or removed from objects on the fly. This makes it impossible to know, from a simple reading, what attribute is being referenced: a local one, a global one, or a member attribute?
+For instance, take the following incomplete snippet:
+```
+deffoo(a):
+  with a:
+    print(x)
+
+```
+
+The snippet assumes that `a` must have a member attribute called `x`. However, there is nothing in Python that tells the interpreter this. What should happen if `a` is, let us say, an integer? If there is a global variable named `x`, will it be used inside the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) block? As you see, the dynamic nature of Python makes such choices much harder.
+The primary benefit of [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) and similar language features (reduction of code volume) can, however, easily be achieved in Python by assignment. Instead of:
+```
+function(args).mydict[index][index].a = 21
+function(args).mydict[index][index].b = 42
+function(args).mydict[index][index].c = 63
+
+```
+
+write this:
+```
+ref = function(args).mydict[index][index]
+ref.a = 21
+ref.b = 42
+ref.c = 63
+
+```
+
+This also has the side-effect of increasing execution speed because name bindings are resolved at run-time in Python, and the second version only needs to perform the resolution once.
+Similar proposals that would introduce syntax to further reduce code volume, such as using a ‘leading dot’, have been rejected in favour of explicitness (see <https://mail.python.org/pipermail/python-ideas/2016-May/040070.html>).
+## [Why don’t generators support the with statement?](https://docs.python.org/3/faq/design.html#id28)[¶](https://docs.python.org/3/faq/design.html#why-don-t-generators-support-the-with-statement "Link to this heading")
+For technical reasons, a generator used directly as a context manager would not work correctly. When, as is most common, a generator is used as an iterator run to completion, no closing is needed. When it is, wrap it as [`contextlib.closing(generator)`](https://docs.python.org/3/library/contextlib.html#contextlib.closing "contextlib.closing") in the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement.
+## [Why are colons required for the if/while/def/class statements?](https://docs.python.org/3/faq/design.html#id29)[¶](https://docs.python.org/3/faq/design.html#why-are-colons-required-for-the-if-while-def-class-statements "Link to this heading")
+The colon is required primarily to enhance readability (one of the results of the experimental ABC language). Consider this:

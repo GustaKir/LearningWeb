@@ -1,0 +1,123 @@
+Title: Response Model in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/response-model/
+Summary: This section discusses creating response models in FastAPI, highlighting an example where a route returns either a `RedirectResponse` or a dictionary. It explains a failure with type annotations when using a union type of `Response` and `dict`. Additionally, it touches on the option to disable default data validation and other features while still using FastAPI's return types.
+---
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_20_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Response
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/portal")
+async defget_portal(teleport: bool = False) -> Union[Response, dict]:
+  if teleport:
+    return RedirectResponse(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+  return {"message": "Here's your interdimensional portal."}
+
+```
+
+...this fails because the type annotation is not a Pydantic type and is not just a single `Response` class or subclass, it's a union (any of the two) between a `Response` and a `dict`.
+### Disable Response Model[¶](https://fastapi.tiangolo.com/tutorial/response-model/#disable-response-model "Permanent link")
+Continuing from the example above, you might not want to have the default data validation, documentation, filtering, etc. that is performed by FastAPI.
+But you might want to still keep the return type annotation in the function to get the support from tools like editors and type checkers (e.g. mypy).
+In this case, you can disable the response model generation by setting `response_model=None`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_21_1)
+```
+fromfastapiimport FastAPI, Response
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/portal", response_model=None)
+async defget_portal(teleport: bool = False) -> Response | dict:
+  if teleport:
+    return RedirectResponse(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+  return {"message": "Here's your interdimensional portal."}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_22_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Response
+fromfastapi.responsesimport RedirectResponse
+app = FastAPI()
+@app.get("/portal", response_model=None)
+async defget_portal(teleport: bool = False) -> Union[Response, dict]:
+  if teleport:
+    return RedirectResponse(url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+  return {"message": "Here's your interdimensional portal."}
+
+```
+
+This will make FastAPI skip the response model generation and that way you can have any return type annotations you need without it affecting your FastAPI application. 🤓
+## Response Model encoding parameters[¶](https://fastapi.tiangolo.com/tutorial/response-model/#response-model-encoding-parameters "Permanent link")
+Your response model could have default values, like:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_23_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+async defread_item(item_id: str):
+  return items[item_id]
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_24_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_24_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: float = 10.5
+  tags: list[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+async defread_item(item_id: str):
+  return items[item_id]
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: float = 10.5
+  tags: List[str] = []
+items = {
+  "foo": {"name": "Foo", "price": 50.2},
+  "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+  "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+async defread_item(item_id: str):
+  return items[item_id]

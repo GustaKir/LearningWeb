@@ -1,0 +1,25 @@
+Title: os.scandir() Function in Python
+URL: https://docs.python.org/3/library/os.html
+Summary: The `os.scandir(path)` function returns an iterator of `os.DirEntry` objects for entries in the specified directory, excluding `'.'` and `'..'`. The order of entries is arbitrary, and changes to the directory after the iterator is created may affect its contents. Using `scandir()` can enhance performance compared to `listdir()`, as it provides file type and attribute information efficiently.
+---
+
+os.scandir(_path ='.'_)[¶](https://docs.python.org/3/library/os.html#os.scandir "Link to this definition")
+    
+Return an iterator of [`os.DirEntry`](https://docs.python.org/3/library/os.html#os.DirEntry "os.DirEntry") objects corresponding to the entries in the directory given by _path_. The entries are yielded in arbitrary order, and the special entries `'.'` and `'..'` are not included. If a file is removed from or added to the directory after creating the iterator, whether an entry for that file be included is unspecified.
+Using [`scandir()`](https://docs.python.org/3/library/os.html#os.scandir "os.scandir") instead of [`listdir()`](https://docs.python.org/3/library/os.html#os.listdir "os.listdir") can significantly increase the performance of code that also needs file type or file attribute information, because [`os.DirEntry`](https://docs.python.org/3/library/os.html#os.DirEntry "os.DirEntry") objects expose this information if the operating system provides it when scanning a directory. All [`os.DirEntry`](https://docs.python.org/3/library/os.html#os.DirEntry "os.DirEntry") methods may perform a system call, but [`is_dir()`](https://docs.python.org/3/library/os.html#os.DirEntry.is_dir "os.DirEntry.is_dir") and [`is_file()`](https://docs.python.org/3/library/os.html#os.DirEntry.is_file "os.DirEntry.is_file") usually only require a system call for symbolic links; [`os.DirEntry.stat()`](https://docs.python.org/3/library/os.html#os.DirEntry.stat "os.DirEntry.stat") always requires a system call on Unix but only requires one for symbolic links on Windows.
+_path_ may be a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object). If _path_ is of type `bytes` (directly or indirectly through the [`PathLike`](https://docs.python.org/3/library/os.html#os.PathLike "os.PathLike") interface), the type of the [`name`](https://docs.python.org/3/library/os.html#os.DirEntry.name "os.DirEntry.name") and [`path`](https://docs.python.org/3/library/os.html#os.DirEntry.path "os.DirEntry.path") attributes of each [`os.DirEntry`](https://docs.python.org/3/library/os.html#os.DirEntry "os.DirEntry") will be `bytes`; in all other circumstances, they will be of type `str`.
+This function can also support [specifying a file descriptor](https://docs.python.org/3/library/os.html#path-fd); the file descriptor must refer to a directory.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `os.scandir` with argument `path`.
+The [`scandir()`](https://docs.python.org/3/library/os.html#os.scandir "os.scandir") iterator supports the [context manager](https://docs.python.org/3/glossary.html#term-context-manager) protocol and has the following method: 
+
+scandir.close()[¶](https://docs.python.org/3/library/os.html#os.scandir.close "Link to this definition")
+    
+Close the iterator and free acquired resources.
+This is called automatically when the iterator is exhausted or garbage collected, or when an error happens during iterating. However it is advisable to call it explicitly or use the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement.
+Added in version 3.6.
+The following example shows a simple use of [`scandir()`](https://docs.python.org/3/library/os.html#os.scandir "os.scandir") to display all the files (excluding directories) in the given _path_ that don’t start with `'.'`. The `entry.is_file()` call will generally not make an additional system call:
+```
+with os.scandir(path) as it:
+  for entry in it:
+    if not entry.name.startswith('.') and entry.is_file():
+      print(entry.name)

@@ -1,0 +1,31 @@
+Title: Socket Address Families in Python
+URL: https://docs.python.org/3/library/socket.html
+Summary: This section describes the use of host and port pairs for the AF_INET and AF_INET6 address families in Python's socket library. It explains the representation of hostnames and IPv4 addresses, special forms for IPv4, and the structure for IPv6, emphasizing the differences and compatibility issues between the two.
+---
+
+* A pair `(host, port)` is used for the [`AF_INET`](https://docs.python.org/3/library/socket.html#socket.AF_INET "socket.AF_INET") address family, where _host_ is a string representing either a hostname in internet domain notation like `'daring.cwi.nl'` or an IPv4 address like `'100.50.200.5'`, and _port_ is an integer.
+    * For IPv4 addresses, two special forms are accepted instead of a host address: `''` represents `INADDR_ANY`, which is used to bind to all interfaces, and the string `'<broadcast>'` represents `INADDR_BROADCAST`. This behavior is not compatible with IPv6, therefore, you may want to avoid these if you intend to support IPv6 with your Python programs.
+  * For [`AF_INET6`](https://docs.python.org/3/library/socket.html#socket.AF_INET6 "socket.AF_INET6") address family, a four-tuple `(host, port, flowinfo, scope_id)` is used, where _flowinfo_ and _scope_id_ represent the `sin6_flowinfo` and `sin6_scope_id` members in `struct sockaddr_in6` in C. For [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.") module methods, _flowinfo_ and _scope_id_ can be omitted just for backward compatibility. Note, however, omission of _scope_id_ can cause problems in manipulating scoped IPv6 addresses.
+Changed in version 3.7: For multicast addresses (with _scope_id_ meaningful) _address_ may not contain `%scope_id` (or `zone id`) part. This information is superfluous and may be safely omitted (recommended).
+  * `AF_NETLINK` sockets are represented as pairs `(pid, groups)`.
+  * Linux-only support for TIPC is available using the `AF_TIPC` address family. TIPC is an open, non-IP based networked protocol designed for use in clustered computer environments. Addresses are represented by a tuple, and the fields depend on the address type. The general tuple form is `(addr_type, v1, v2, v3 [, scope])`, where:
+    * _addr_type_ is one of `TIPC_ADDR_NAMESEQ`, `TIPC_ADDR_NAME`, or `TIPC_ADDR_ID`.
+    * _scope_ is one of `TIPC_ZONE_SCOPE`, `TIPC_CLUSTER_SCOPE`, and `TIPC_NODE_SCOPE`.
+    * If _addr_type_ is `TIPC_ADDR_NAME`, then _v1_ is the server type, _v2_ is the port identifier, and _v3_ should be 0.
+If _addr_type_ is `TIPC_ADDR_NAMESEQ`, then _v1_ is the server type, _v2_ is the lower port number, and _v3_ is the upper port number.
+If _addr_type_ is `TIPC_ADDR_ID`, then _v1_ is the node, _v2_ is the reference, and _v3_ should be set to 0.
+  * A tuple `(interface, )` is used for the [`AF_CAN`](https://docs.python.org/3/library/socket.html#socket.AF_CAN "socket.AF_CAN") address family, where _interface_ is a string representing a network interface name like `'can0'`. The network interface name `''` can be used to receive packets from all network interfaces of this family.
+    * [`CAN_ISOTP`](https://docs.python.org/3/library/socket.html#socket.CAN_ISOTP "socket.CAN_ISOTP") protocol require a tuple `(interface, rx_addr, tx_addr)` where both additional parameters are unsigned long integer that represent a CAN identifier (standard or extended).
+    * [`CAN_J1939`](https://docs.python.org/3/library/socket.html#socket.CAN_J1939 "socket.CAN_J1939") protocol require a tuple `(interface, name, pgn, addr)` where additional parameters are 64-bit unsigned integer representing the ECU name, a 32-bit unsigned integer representing the Parameter Group Number (PGN), and an 8-bit integer representing the address.
+  * A string or a tuple `(id, unit)` is used for the `SYSPROTO_CONTROL` protocol of the `PF_SYSTEM` family. The string is the name of a kernel control using a dynamically assigned ID. The tuple can be used if ID and unit number of the kernel control are known or if a registered ID is used.
+Added in version 3.3.
+  * `AF_BLUETOOTH` supports the following protocols and address formats:
+    * `BTPROTO_L2CAP` accepts `(bdaddr, psm)` where `bdaddr` is the Bluetooth address as a string and `psm` is an integer.
+    * `BTPROTO_RFCOMM` accepts `(bdaddr, channel)` where `bdaddr` is the Bluetooth address as a string and `channel` is an integer.
+    * `BTPROTO_HCI` accepts a format that depends on your OS.
+      * On Linux it accepts a tuple `(device_id,)` where `device_id` is an integer specifying the number of the Bluetooth device.
+      * On FreeBSD, NetBSD and DragonFly BSD it accepts `bdaddr` where `bdaddr` is the Bluetooth address as a string.
+Changed in version 3.2: NetBSD and DragonFlyBSD support added.
+Changed in version 3.13.3: FreeBSD support added.
+    * `BTPROTO_SCO` accepts `bdaddr` where `bdaddr` is the Bluetooth address as a string or a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object. (ex. `'12:23:34:45:56:67'` or `b'12:23:34:45:56:67'`) This protocol is not supported under FreeBSD.
+  * [`AF_ALG`](https://docs.python.org/3/library/socket.html#socket.AF_ALG "socket.AF_ALG") is a Linux-only socket based interface to Kernel cryptography. An algorithm socket is configured with a tuple of two to four elements `(type, name [, feat [, mas

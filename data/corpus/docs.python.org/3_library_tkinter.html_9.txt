@@ -1,0 +1,84 @@
+Title: Packer Options and Coupling Widget Variables in Tkinter
+URL: https://docs.python.org/3/library/tkinter.html
+Summary: This section details the options available for the packer in Tkinter, including anchor type, expand, fill options, internal and external padding, and side placement. Additionally, it describes how widget variables can be coupled with application variables for real-time updates.
+---
+
+```
+
+### Packer Options[¶](https://docs.python.org/3/library/tkinter.html#packer-options "Link to this heading")
+For more extensive information on the packer and the options that it can take, see the man pages and page 183 of John Ousterhout’s book. 
+
+anchor
+    
+Anchor type. Denotes where the packer is to place each slave in its parcel. 
+
+expand
+    
+Boolean, `0` or `1`. 
+
+fill
+    
+Legal values: `'x'`, `'y'`, `'both'`, `'none'`. 
+
+ipadx and ipady
+    
+A distance - designating internal padding on each side of the slave widget. 
+
+padx and pady
+    
+A distance - designating external padding on each side of the slave widget. 
+
+side
+    
+Legal values are: `'left'`, `'right'`, `'top'`, `'bottom'`.
+### Coupling Widget Variables[¶](https://docs.python.org/3/library/tkinter.html#coupling-widget-variables "Link to this heading")
+The current-value setting of some widgets (like text entry widgets) can be connected directly to application variables by using special options. These options are `variable`, `textvariable`, `onvalue`, `offvalue`, and `value`. This connection works both ways: if the variable changes for any reason, the widget it’s connected to will be updated to reflect the new value.
+Unfortunately, in the current implementation of [`tkinter`](https://docs.python.org/3/library/tkinter.html#module-tkinter "tkinter: Interface to Tcl/Tk for graphical user interfaces") it is not possible to hand over an arbitrary Python variable to a widget through a `variable` or `textvariable` option. The only kinds of variables for which this works are variables that are subclassed from a class called Variable, defined in [`tkinter`](https://docs.python.org/3/library/tkinter.html#module-tkinter "tkinter: Interface to Tcl/Tk for graphical user interfaces").
+There are many useful subclasses of Variable already defined: `StringVar`, `IntVar`, `DoubleVar`, and `BooleanVar`. To read the current value of such a variable, call the `get()` method on it, and to change its value you call the `set()` method. If you follow this protocol, the widget will always track the value of the variable, with no further intervention on your part.
+For example:
+```
+importtkinterastk
+classApp(tk.Frame):
+  def__init__(self, master):
+    super().__init__(master)
+    self.pack()
+    self.entrythingy = tk.Entry()
+    self.entrythingy.pack()
+    # Create the application variable.
+    self.contents = tk.StringVar()
+    # Set it to some value.
+    self.contents.set("this is a variable")
+    # Tell the entry widget to watch this variable.
+    self.entrythingy["textvariable"] = self.contents
+    # Define a callback for when the user hits return.
+    # It prints the current value of the variable.
+    self.entrythingy.bind('<Key-Return>',
+               self.print_contents)
+  defprint_contents(self, event):
+    print("Hi. The current entry content is:",
+       self.contents.get())
+root = tk.Tk()
+myapp = App(root)
+myapp.mainloop()
+
+```
+
+### The Window Manager[¶](https://docs.python.org/3/library/tkinter.html#the-window-manager "Link to this heading")
+In Tk, there is a utility command, `wm`, for interacting with the window manager. Options to the `wm` command allow you to control things like titles, placement, icon bitmaps, and the like. In [`tkinter`](https://docs.python.org/3/library/tkinter.html#module-tkinter "tkinter: Interface to Tcl/Tk for graphical user interfaces"), these commands have been implemented as methods on the `Wm` class. Toplevel widgets are subclassed from the `Wm` class, and so can call the `Wm` methods directly.
+To get at the toplevel window that contains a given widget, you can often just refer to the widget’s master. Of course if the widget has been packed inside of a frame, the master won’t represent a toplevel window. To get at the toplevel window that contains an arbitrary widget, you can call the `_root()` method. This method begins with an underscore to denote the fact that this function is part of the implementation, and not an interface to Tk functionality.
+Here are some examples of typical usage:
+```
+importtkinterastk
+classApp(tk.Frame):
+  def__init__(self, master=None):
+    super().__init__(master)
+    self.pack()
+# create the application
+myapp = App()
+#
+# here are method calls to the window manager class
+#
+myapp.master.title("My Do-Nothing Application")
+myapp.master.maxsize(1000, 400)
+# start the program
+myapp.mainloop()

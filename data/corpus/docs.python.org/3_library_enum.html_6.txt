@@ -1,0 +1,98 @@
+Title: Enum Module: _numeric_repr_ and IntFlag
+URL: https://docs.python.org/3/library/enum.html
+Summary: _numeric_repr_ formats unnamed numeric values in the enum module, with defaults like repr, hex(), or oct(). Using auto with Flag yields powers of two. Updated in version 3.11, zero-valued flags now display differently. IntFlag functions similarly to Flag but also allows its members to be integers.
+---
+
+```
+
+
+_numeric_repr_()[¶](https://docs.python.org/3/library/enum.html#enum.Flag._numeric_repr_ "Link to this definition")
+    
+Function used to format any remaining unnamed numeric values. Default is the value’s repr; common choices are [`hex()`](https://docs.python.org/3/library/functions.html#hex "hex") and [`oct()`](https://docs.python.org/3/library/functions.html#oct "oct").
+Note
+Using [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") with [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") results in integers that are powers of two, starting with `1`.
+Changed in version 3.11: The _repr()_ of zero-valued flags has changed. It is now::
+>>>```
+>>> Color(0)
+<Color: 0>
+
+```
+
+
+_class_ enum.IntFlag[¶](https://docs.python.org/3/library/enum.html#enum.IntFlag "Link to this definition")
+    
+`IntFlag` is the same as [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag"), but its members are also integers and can be used anywhere that an integer can be used.
+>>>```
+>>> fromenumimport IntFlag, auto
+>>> classColor(IntFlag):
+...   RED = auto()
+...   GREEN = auto()
+...   BLUE = auto()
+...
+>>> Color.RED & 2
+<Color: 0>
+>>> Color.RED | 2
+<Color.RED|GREEN: 3>
+
+```
+
+If any integer operation is performed with an _IntFlag_ member, the result is not an _IntFlag_ :
+>>>```
+>>> Color.RED + 2
+3
+
+```
+
+If a [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") operation is performed with an _IntFlag_ member and:
+  * the result is a valid _IntFlag_ : an _IntFlag_ is returned
+  * the result is not a valid _IntFlag_ : the result depends on the [`FlagBoundary`](https://docs.python.org/3/library/enum.html#enum.FlagBoundary "enum.FlagBoundary") setting
+
+
+The [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") of unnamed zero-valued flags has changed. It is now:
+>>>```
+>>> Color(0)
+<Color: 0>
+
+```
+
+Note
+Using [`auto`](https://docs.python.org/3/library/enum.html#enum.auto "enum.auto") with [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag") results in integers that are powers of two, starting with `1`.
+Changed in version 3.11: [`__str__()`](https://docs.python.org/3/reference/datamodel.html#object.__str__ "object.__str__") is now `int.__str__()` to better support the _replacement of existing constants_ use-case. [`__format__()`](https://docs.python.org/3/reference/datamodel.html#object.__format__ "object.__format__") was already `int.__format__()` for that same reason.
+Inversion of an `IntFlag` now returns a positive value that is the union of all flags not in the given flag, rather than a negative value. This matches the existing [`Flag`](https://docs.python.org/3/library/enum.html#enum.Flag "enum.Flag") behavior. 
+
+_class_ enum.ReprEnum[¶](https://docs.python.org/3/library/enum.html#enum.ReprEnum "Link to this definition")
+    
+`ReprEnum` uses the [`repr()`](https://docs.python.org/3/library/enum.html#enum.Enum.__repr__ "enum.Enum.__repr__") of [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum"), but the [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") of the mixed-in data type:
+  * `int.__str__()` for [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") and [`IntFlag`](https://docs.python.org/3/library/enum.html#enum.IntFlag "enum.IntFlag")
+  * `str.__str__()` for [`StrEnum`](https://docs.python.org/3/library/enum.html#enum.StrEnum "enum.StrEnum")
+
+
+Inherit from `ReprEnum` to keep the [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") / [`format()`](https://docs.python.org/3/library/functions.html#format "format") of the mixed-in data type instead of using the [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum")-default [`str()`](https://docs.python.org/3/library/enum.html#enum.Enum.__str__ "enum.Enum.__str__").
+Added in version 3.11. 
+
+_class_ enum.EnumCheck[¶](https://docs.python.org/3/library/enum.html#enum.EnumCheck "Link to this definition")
+    
+_EnumCheck_ contains the options used by the [`verify()`](https://docs.python.org/3/library/enum.html#enum.verify "enum.verify") decorator to ensure various constraints; failed constraints result in a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"). 
+
+UNIQUE[¶](https://docs.python.org/3/library/enum.html#enum.EnumCheck.UNIQUE "Link to this definition")
+    
+Ensure that each value has only one name:
+>>>```
+>>> fromenumimport Enum, verify, UNIQUE
+>>> @verify(UNIQUE)
+... classColor(Enum):
+...   RED = 1
+...   GREEN = 2
+...   BLUE = 3
+...   CRIMSON = 1
+Traceback (most recent call last):
+...
+ValueError: aliases found in <enum 'Color'>: CRIMSON -> RED
+
+```
+
+
+CONTINUOUS[¶](https://docs.python.org/3/library/enum.html#enum.EnumCheck.CONTINUOUS "Link to this definition")
+    
+Ensure that there are no missing values between the lowest-valued member and the highest-valued member:
+>>>

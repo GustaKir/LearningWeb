@@ -1,0 +1,36 @@
+Title: Datetime Module - tzinfo Class Methods
+URL: https://docs.python.org/3/library/datetime.html
+Summary: This section discusses the implementation of the `utcoffset()` and `dst()` methods in the `tzinfo` class, specifying that if `utcoffset()` returns a value, `dst()` should also return a value. It notes the default behavior of `utcoffset()` raises a `NotImplementedError`, and indicates changes in version 3.7 regarding UTC offset handling.
+---
+
+```
+
+If [`utcoffset()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.utcoffset "datetime.tzinfo.utcoffset") does not return `None`, [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.dst "datetime.tzinfo.dst") should not return `None` either.
+The default implementation of [`utcoffset()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.utcoffset "datetime.tzinfo.utcoffset") raises [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError").
+Changed in version 3.7: The UTC offset is not restricted to a whole number of minutes. 
+
+tzinfo.dst(_dt_)[¶](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.dst "Link to this definition")
+    
+Return the daylight saving time (DST) adjustment, as a [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") object or `None` if DST information isn’t known.
+Return `timedelta(0)` if DST is not in effect. If DST is in effect, return the offset as a [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") object (see [`utcoffset()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.utcoffset "datetime.tzinfo.utcoffset") for details). Note that DST offset, if applicable, has already been added to the UTC offset returned by [`utcoffset()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.utcoffset "datetime.tzinfo.utcoffset"), so there’s no need to consult [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.dst "datetime.tzinfo.dst") unless you’re interested in obtaining DST info separately. For example, [`datetime.timetuple()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.timetuple "datetime.datetime.timetuple") calls its [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attribute’s [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.dst "datetime.tzinfo.dst") method to determine how the [`tm_isdst`](https://docs.python.org/3/library/time.html#time.struct_time.tm_isdst "time.struct_time.tm_isdst") flag should be set, and [`tzinfo.fromutc()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.fromutc "datetime.tzinfo.fromutc") calls [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.dst "datetime.tzinfo.dst") to account for DST changes when crossing time zones.
+An instance _tz_ of a [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") subclass that models both standard and daylight times must be consistent in this sense:
+`tz.utcoffset(dt) - tz.dst(dt)`
+must return the same result for every [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") _dt_ with `dt.tzinfo == tz`. For sane [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") subclasses, this expression yields the time zone’s “standard offset”, which should not depend on the date or the time, but only on geographic location. The implementation of [`datetime.astimezone()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone "datetime.datetime.astimezone") relies on this, but cannot detect violations; it’s the programmer’s responsibility to ensure it. If a [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") subclass cannot guarantee this, it may be able to override the default implementation of [`tzinfo.fromutc()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.fromutc "datetime.tzinfo.fromutc") to work correctly with [`astimezone()`](https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone "datetime.datetime.astimezone") regardless.
+Most implementations of [`dst()`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo.dst "datetime.tzinfo.dst") will probably look like one of these two:
+```
+defdst(self, dt):
+  # a fixed-offset class: doesn't account for DST
+  return timedelta(0)
+
+```
+
+or:
+```
+defdst(self, dt):
+  # Code to set dston and dstoff to the time zone's DST
+  # transition times based on the input dt.year, and expressed
+  # in standard local time.
+  if dston <= dt.replace(tzinfo=None) < dstoff:
+    return timedelta(hours=1)
+  else:
+    return timedelta(0)

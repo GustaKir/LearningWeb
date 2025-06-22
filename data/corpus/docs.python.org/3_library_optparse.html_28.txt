@@ -1,0 +1,28 @@
+Title: Customizing Option Behavior in optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: This documentation chunk describes a custom class `MyOption` that extends the `Option` class in Python's `optparse` library. It introduces an `extend` action, allowing command-line options to accept and store multiple values. The `take_action` method is modified to handle this new action, ensuring proper storage of values in both `STORE_ACTIONS` and `TYPED_ACTIONS` categories.
+---
+
+```
+classMyOption(Option):
+  ACTIONS = Option.ACTIONS + ("extend",)
+  STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+  TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+  ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + ("extend",)
+  deftake_action(self, action, dest, opt, value, values, parser):
+    if action == "extend":
+      lvalue = value.split(",")
+      values.ensure_value(dest, []).extend(lvalue)
+    else:
+      Option.take_action(
+        self, action, dest, opt, value, values, parser)
+
+```
+
+Features of note:
+  * `"extend"` both expects a value on the command-line and stores that value somewhere, so it goes in both [`STORE_ACTIONS`](https://docs.python.org/3/library/optparse.html#optparse.Option.STORE_ACTIONS "optparse.Option.STORE_ACTIONS") and [`TYPED_ACTIONS`](https://docs.python.org/3/library/optparse.html#optparse.Option.TYPED_ACTIONS "optparse.Option.TYPED_ACTIONS").
+  * to ensure that [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") assigns the default type of `"string"` to `"extend"` actions, we put the `"extend"` action in [`ALWAYS_TYPED_ACTIONS`](https://docs.python.org/3/library/optparse.html#optparse.Option.ALWAYS_TYPED_ACTIONS "optparse.Option.ALWAYS_TYPED_ACTIONS") as well.
+  * `MyOption.take_action()` implements just this one new action, and passes control back to `Option.take_action()` for the standard [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") actions.
+  * `values` is an instance of the optparse_parser.Values class, which provides the very useful `ensure_value()` method. `ensure_value()` is essentially [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") with a safety valve; it is called as
+```
+values.ensure_value(attr, value)

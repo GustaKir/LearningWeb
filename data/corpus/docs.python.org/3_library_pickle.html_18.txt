@@ -1,0 +1,104 @@
+Title: ZeroCopyByteArray Class in Python's Pickle Module
+URL: https://docs.python.org/3/library/pickle.html
+Summary: This documentation chunk outlines the `ZeroCopyByteArray` class, which extends `bytearray`. It implements a custom `_reduce_ex__` method for pickling with protocol support, and a `_reconstruct` class method that allows zero-copy behavior by returning the original buffer when deserialized, facilitating efficient memory usage during serialization.
+---
+
+```
+classZeroCopyByteArray(bytearray):
+  def__reduce_ex__(self, protocol):
+    if protocol >= 5:
+      return type(self)._reconstruct, (PickleBuffer(self),), None
+    else:
+      # PickleBuffer is forbidden with pickle protocols <= 4.
+      return type(self)._reconstruct, (bytearray(self),)
+  @classmethod
+  def_reconstruct(cls, obj):
+    with memoryview(obj) as m:
+      # Get a handle over the original buffer object
+      obj = m.obj
+      if type(obj) is cls:
+        # Original buffer object is a ZeroCopyByteArray, return it
+        # as-is.
+        return obj
+      else:
+        return cls(obj)
+
+```
+
+The reconstructor (the `_reconstruct` class method) returns the buffer’s providing object if it has the right type. This is an easy way to simulate zero-copy behaviour on this toy example.
+On the consumer side, we can pickle those objects the usual way, which when unserialized will give us a copy of the original object:
+```
+b = ZeroCopyByteArray(b"abc")
+data = pickle.dumps(b, protocol=5)
+new_b = pickle.loads(data)
+print(b == new_b) # True
+print(b is new_b) # False: a copy was made
+
+```
+
+But if we pass a _buffer_callback_ and then give back the accumulated buffers when unserializing, we are able to get back the original object:
+```
+b = ZeroCopyByteArray(b"abc")
+buffers = []
+data = pickle.dumps(b, protocol=5, buffer_callback=buffers.append)
+new_b = pickle.loads(data, buffers=buffers)
+print(b == new_b) # True
+print(b is new_b) # True: no copy was made
+
+```
+
+This example is limited by the fact that [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") allocates its own memory: you cannot create a [`bytearray`](https://docs.python.org/3/library/stdtypes.html#bytearray "bytearray") instance that is backed by another object’s memory. However, third-party datatypes such as NumPy arrays do not have this limitation, and allow use of zero-copy pickling (or making as few copies as possible) when transferring between distinct processes or systems.
+See also
+[**PEP 574**](https://peps.python.org/pep-0574/) – Pickle protocol 5 with out-of-band data
+## Restricting Globals[¶](https://docs.python.org/3/library/pickle.html#restricting-globals "Link to this heading")
+By default, unpickling will import any class or function that it finds in the pickle data. For many applications, this behaviour is unacceptable as it permits the unpickler to import and invoke arbitrary code. Just consider what this hand-crafted pickle data stream does when loaded:
+>>>```
+>>> importpickle
+>>> pickle.loads(b"cos\nsystem\n(S'echo hello world'\ntR.")
+hello world
+0
+
+```
+
+In this example, the unpickler imports the [`os.system()`](https://docs.python.org/3/library/os.html#os.system "os.system") function and then apply the string argument “echo hello world”. Although this example is inoffensive, it is not difficult to imagine one that could damage your system.
+For this reason, you may want to control what gets unpickled by customizing [`Unpickler.find_class()`](https://docs.python.org/3/library/pickle.html#pickle.Unpickler.find_class "pickle.Unpickler.find_class"). Unlike its name suggests, [`Unpickler.find_class()`](https://docs.python.org/3/library/pickle.html#pickle.Unpickler.find_class "pickle.Unpickler.find_class") is called whenever a global (i.e., a class or a function) is requested. Thus it is possible to either completely forbid globals or restrict them to a safe subset.
+Here is an example of an unpickler allowing only few safe classes from the [`builtins`](https://docs.python.org/3/library/builtins.html#module-builtins "builtins: The module that provides the built-in namespace.") module to be loaded:
+```
+importbuiltins
+importio
+importpickle
+safe_builtins = {
+  'range',
+  'complex',
+  'set',
+  'frozenset',
+  'slice',
+}
+classRestrictedUnpickler(pickle.Unpickler):
+  deffind_class(self, module, name):
+    # Only allow safe classes from builtins.
+    if module == "builtins" and name in safe_builtins:
+      return getattr(builtins, name)
+    # Forbid everything else.
+    raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
+                   (module, name))
+defrestricted_loads(s):
+"""Helper function analogous to pickle.loads()."""
+  return RestrictedUnpickler(io.BytesIO(s)).load()
+
+```
+
+A sample usage of our unpickler working as intended:
+>>>```
+>>> restricted_loads(pickle.dumps([1, 2, range(15)]))
+[1, 2, range(0, 15)]
+>>> restricted_loads(b"cos\nsystem\n(S'echo hello world'\ntR.")
+Traceback (most recent call last):
+...
+pickle.UnpicklingError: global 'os.system' is forbidden
+>>> restricted_loads(b'cbuiltins\neval\n'
+...          b'(S\'getattr(__import__("os"), "system")'
+...          b'("echo hello world")\'\ntR.')
+Traceback (most recent call last):
+...
+pickle.UnpicklingError: global 'builtins.eval' is forbidden

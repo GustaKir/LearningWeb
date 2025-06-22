@@ -1,0 +1,132 @@
+Title: Logging in a Multi-threaded Environment with Qt
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section introduces a worker class for logging in a threaded context using Qt. It describes the setup of logging levels and the use of an 'extra' dictionary to enhance log records with thread information. The worker class processes tasks with random delays and can be interrupted cleanly.
+---
+
+#
+# Used to generate random levels for logging.
+#
+LEVELS = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+     logging.CRITICAL)
+#
+# This worker class represents work that is done in a thread separate to the
+# main thread. The way the thread is kicked off to do work is via a button press
+# that connects to a slot in the worker.
+#
+# Because the default threadName value in the LogRecord isn't much use, we add
+# a qThreadName which contains the QThread name as computed above, and pass that
+# value in an "extra" dictionary which is used to update the LogRecord with the
+# QThread name.
+#
+# This example worker just outputs messages sequentially, interspersed with
+# random delays of the order of a few seconds.
+#
+classWorker(QtCore.QObject):
+  @Slot()
+  defstart(self):
+    extra = {'qThreadName': ctname() }
+    logger.debug('Started work', extra=extra)
+    i = 1
+    # Let the thread run until interrupted. This allows reasonably clean
+    # thread termination.
+    while not QtCore.QThread.currentThread().isInterruptionRequested():
+      delay = 0.5 + random.random() * 2
+      time.sleep(delay)
+      try:
+        if random.random() < 0.1:
+          raise ValueError('Exception raised: %d' % i)
+        else:
+          level = random.choice(LEVELS)
+          logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+      except ValueError as e:
+        logger.exception('Failed: %s', e, extra=extra)
+      i += 1
+#
+# Implement a simple UI for this cookbook example. This contains:
+#
+# * A read-only text edit window which holds formatted log messages
+# * A button to start work and log stuff in a separate thread
+# * A button to log something from the main thread
+# * A button to clear the log window
+#
+classWindow(QtWidgets.QWidget):
+  COLORS = {
+    logging.DEBUG: 'black',
+    logging.INFO: 'blue',
+    logging.WARNING: 'orange',
+    logging.ERROR: 'red',
+    logging.CRITICAL: 'purple',
+  }
+  def__init__(self, app):
+    super().__init__()
+    self.app = app
+    self.textedit = te = QtWidgets.QPlainTextEdit(self)
+    # Set whatever the default monospace font is for the platform
+    f = QtGui.QFont('nosuchfont')
+    if hasattr(f, 'Monospace'):
+      f.setStyleHint(f.Monospace)
+    else:
+      f.setStyleHint(f.StyleHint.Monospace) # for Qt6
+    te.setFont(f)
+    te.setReadOnly(True)
+    PB = QtWidgets.QPushButton
+    self.work_button = PB('Start background work', self)
+    self.log_button = PB('Log a message at a random level', self)
+    self.clear_button = PB('Clear log window', self)
+    self.handler = h = QtHandler(self.update_status)
+    # Remember to use qThreadName rather than threadName in the format string.
+    fs = '%(asctime)s%(qThreadName)-12s%(levelname)-8s%(message)s'
+    formatter = logging.Formatter(fs)
+    h.setFormatter(formatter)
+    logger.addHandler(h)
+    # Set up to terminate the QThread when we exit
+    app.aboutToQuit.connect(self.force_quit)
+    # Lay out all the widgets
+    layout = QtWidgets.QVBoxLayout(self)
+    layout.addWidget(te)
+    layout.addWidget(self.work_button)
+    layout.addWidget(self.log_button)
+    layout.addWidget(self.clear_button)
+    self.setFixedSize(900, 400)
+    # Connect the non-worker slots and signals
+    self.log_button.clicked.connect(self.manual_update)
+    self.clear_button.clicked.connect(self.clear_display)
+    # Start a new worker thread and connect the slots for the worker
+    self.start_thread()
+    self.work_button.clicked.connect(self.worker.start)
+    # Once started, the button should be disabled
+    self.work_button.clicked.connect(lambda : self.work_button.setEnabled(False))
+  defstart_thread(self):
+    self.worker = Worker()
+    self.worker_thread = QtCore.QThread()
+    self.worker.setObjectName('Worker')
+    self.worker_thread.setObjectName('WorkerThread') # for qThreadName
+    self.worker.moveToThread(self.worker_thread)
+    # This will start an event loop in the worker thread
+    self.worker_thread.start()
+  defkill_thread(self):
+    # Just tell the worker to stop, then tell it to quit and wait for that
+    # to happen
+    self.worker_thread.requestInterruption()
+    if self.worker_thread.isRunning():
+      self.worker_thread.quit()
+      self.worker_thread.wait()
+    else:
+      print('worker has already exited.')
+  defforce_quit(self):
+    # For use when the window is closed
+    if self.worker_thread.isRunning():
+      self.kill_thread()
+  # The functions below update the UI and run in the main thread because
+  # that's where the slots are set up
+  @Slot(str, logging.LogRecord)
+  defupdate_status(self, status, record):
+    color = self.COLORS.get(record.levelno, 'black')
+    s = '<pre><font color="%s">%s</font></pre>' % (color, status)
+    self.textedit.appendHtml(s)
+  @Slot()
+  defmanual_update(self):
+    # This function uses the formatted message passed in, but also uses
+    # information from the record to format the message in an appropriate
+    # color according to its severity (level).
+    level = random.choice(LEVELS

@@ -1,0 +1,91 @@
+Title: TypeAlias in Python's Typing Module
+URL: https://docs.python.org/3/library/typing.html
+Summary: The `TypeAlias` is a special annotation introduced in Python 3.11 for declaring type aliases explicitly. It aids type checkers in distinguishing type aliases from regular variable assignments, especially when using forward references. An example demonstrates its use with generic types and forward references.
+---
+
+```
+
+See [**PEP 673**](https://peps.python.org/pep-0673/) for more details.
+Added in version 3.11. 
+
+typing.TypeAlias[¶](https://docs.python.org/3/library/typing.html#typing.TypeAlias "Link to this definition")
+    
+Special annotation for explicitly declaring a [type alias](https://docs.python.org/3/library/typing.html#type-aliases).
+For example:
+```
+fromtypingimport TypeAlias
+Factors: TypeAlias = list[int]
+
+```
+
+`TypeAlias` is particularly useful on older Python versions for annotating aliases that make use of forward references, as it can be hard for type checkers to distinguish these from normal variable assignments:
+```
+fromtypingimport Generic, TypeAlias, TypeVar
+T = TypeVar("T")
+# "Box" does not exist yet,
+# so we have to use quotes for the forward reference on Python <3.12.
+# Using ``TypeAlias`` tells the type checker that this is a type alias declaration,
+# not a variable assignment to a string.
+BoxOfStrings: TypeAlias = "Box[str]"
+classBox(Generic[T]):
+  @classmethod
+  defmake_box_of_strings(cls) -> BoxOfStrings: ...
+
+```
+
+See [**PEP 613**](https://peps.python.org/pep-0613/) for more details.
+Added in version 3.10.
+Deprecated since version 3.12: [`TypeAlias`](https://docs.python.org/3/library/typing.html#typing.TypeAlias "typing.TypeAlias") is deprecated in favor of the [`type`](https://docs.python.org/3/reference/simple_stmts.html#type) statement, which creates instances of [`TypeAliasType`](https://docs.python.org/3/library/typing.html#typing.TypeAliasType "typing.TypeAliasType") and which natively supports forward references. Note that while [`TypeAlias`](https://docs.python.org/3/library/typing.html#typing.TypeAlias "typing.TypeAlias") and [`TypeAliasType`](https://docs.python.org/3/library/typing.html#typing.TypeAliasType "typing.TypeAliasType") serve similar purposes and have similar names, they are distinct and the latter is not the type of the former. Removal of [`TypeAlias`](https://docs.python.org/3/library/typing.html#typing.TypeAlias "typing.TypeAlias") is not currently planned, but users are encouraged to migrate to [`type`](https://docs.python.org/3/reference/simple_stmts.html#type) statements.
+#### Special forms[¶](https://docs.python.org/3/library/typing.html#special-forms "Link to this heading")
+These can be used as types in annotations. They all support subscription using `[]`, but each has a unique syntax. 
+
+typing.Union[¶](https://docs.python.org/3/library/typing.html#typing.Union "Link to this definition")
+    
+Union type; `Union[X, Y]` is equivalent to `X | Y` and means either X or Y.
+To define a union, use e.g. `Union[int, str]` or the shorthand `int | str`. Using that shorthand is recommended. Details:
+  * The arguments must be types and there must be at least one.
+  * Unions of unions are flattened, e.g.:
+```
+Union[Union[int, str], float] == Union[int, str, float]
+
+```
+
+  * Unions of a single argument vanish, e.g.:
+```
+Union[int] == int # The constructor actually returns int
+
+```
+
+  * Redundant arguments are skipped, e.g.:
+```
+Union[int, str, int] == Union[int, str] == int | str
+
+```
+
+  * When comparing unions, the argument order is ignored, e.g.:
+```
+Union[int, str] == Union[str, int]
+
+```
+
+  * You cannot subclass or instantiate a `Union`.
+  * You cannot write `Union[X][Y]`.
+
+
+Changed in version 3.7: Don’t remove explicit subclasses from unions at runtime.
+Changed in version 3.10: Unions can now be written as `X | Y`. See [union type expressions](https://docs.python.org/3/library/stdtypes.html#types-union). 
+
+typing.Optional[¶](https://docs.python.org/3/library/typing.html#typing.Optional "Link to this definition")
+    
+`Optional[X]` is equivalent to `X | None` (or `Union[X, None]`).
+Note that this is not the same concept as an optional argument, which is one that has a default. An optional argument with a default does not require the `Optional` qualifier on its type annotation just because it is optional. For example:
+```
+deffoo(arg: int = 0) -> None:
+  ...
+
+```
+
+On the other hand, if an explicit value of `None` is allowed, the use of `Optional` is appropriate, whether the argument is optional or not. For example:
+```
+deffoo(arg: Optional[int] = None) -> None:
+  ...

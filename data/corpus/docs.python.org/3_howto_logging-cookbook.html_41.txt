@@ -1,0 +1,111 @@
+Title: Logging Cookbook: Custom Logger Class Example
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This Python script demonstrates how to create a custom logger class, `LoggerWriter`, that writes log messages to a specified logger with a defined logging level. It includes methods for writing messages, flushing, and closing, although the latter two methods do not perform actions. The script sets up basic logging, creates instances of `LoggerWriter` for different logging levels, and prints messages to the logger.
+---
+
+```
+importlogging
+classLoggerWriter:
+  def__init__(self, logger, level):
+    self.logger = logger
+    self.level = level
+  defwrite(self, message):
+    if message != '\n': # avoid printing bare newlines, if you like
+      self.logger.log(self.level, message)
+  defflush(self):
+    # doesn't actually do anything, but might be expected of a file-like
+    # object - so optional depending on your situation
+    pass
+  defclose(self):
+    # doesn't actually do anything, but might be expected of a file-like
+    # object - so optional depending on your situation. You might want
+    # to set a flag so that later calls to write raise an exception
+    pass
+defmain():
+  logging.basicConfig(level=logging.DEBUG)
+  logger = logging.getLogger('demo')
+  info_fp = LoggerWriter(logger, logging.INFO)
+  debug_fp = LoggerWriter(logger, logging.DEBUG)
+  print('An INFO message', file=info_fp)
+  print('A DEBUG message', file=debug_fp)
+if __name__ == "__main__":
+  main()
+
+```
+
+When this script is run, it prints
+```
+INFO:demo:An INFO message
+DEBUG:demo:A DEBUG message
+
+```
+
+You could also use `LoggerWriter` to redirect `sys.stdout` and `sys.stderr` by doing something like this:
+```
+importsys
+sys.stdout = LoggerWriter(logger, logging.INFO)
+sys.stderr = LoggerWriter(logger, logging.WARNING)
+
+```
+
+You should do this _after_ configuring logging for your needs. In the above example, the [`basicConfig()`](https://docs.python.org/3/library/logging.html#logging.basicConfig "logging.basicConfig") call does this (using the `sys.stderr` value _before_ it is overwritten by a `LoggerWriter` instance). Then, you’d get this kind of result:
+>>>```
+>>> print('Foo')
+INFO:demo:Foo
+>>> print('Bar', file=sys.stderr)
+WARNING:demo:Bar
+>>>
+
+```
+
+Of course, the examples above show output according to the format used by [`basicConfig()`](https://docs.python.org/3/library/logging.html#logging.basicConfig "logging.basicConfig"), but you can use a different formatter when you configure logging.
+Note that with the above scheme, you are somewhat at the mercy of buffering and the sequence of write calls which you are intercepting. For example, with the definition of `LoggerWriter` above, if you have the snippet
+```
+sys.stderr = LoggerWriter(logger, logging.WARNING)
+1 / 0
+
+```
+
+then running the script results in
+```
+WARNING:demo:Traceback (most recent call last):
+WARNING:demo: File "/home/runner/cookbook-loggerwriter/test.py", line 53, in <module>
+WARNING:demo:
+WARNING:demo:main()
+WARNING:demo: File "/home/runner/cookbook-loggerwriter/test.py", line 49, in main
+WARNING:demo:
+WARNING:demo:1 / 0
+WARNING:demo:ZeroDivisionError
+WARNING:demo::
+WARNING:demo:division by zero
+
+```
+
+As you can see, this output isn’t ideal. That’s because the underlying code which writes to `sys.stderr` makes multiple writes, each of which results in a separate logged line (for example, the last three lines above). To get around this problem, you need to buffer things and only output log lines when newlines are seen. Let’s use a slightly better implementation of `LoggerWriter`:
+```
+classBufferingLoggerWriter(LoggerWriter):
+  def__init__(self, logger, level):
+    super().__init__(logger, level)
+    self.buffer = ''
+  defwrite(self, message):
+    if '\n' not in message:
+      self.buffer += message
+    else:
+      parts = message.split('\n')
+      if self.buffer:
+        s = self.buffer + parts.pop(0)
+        self.logger.log(self.level, s)
+      self.buffer = parts.pop()
+      for part in parts:
+        self.logger.log(self.level, part)
+
+```
+
+This just buffers up stuff until a newline is seen, and then logs complete lines. With this approach, you get better output:
+```
+WARNING:demo:Traceback (most recent call last):
+WARNING:demo: File "/home/runner/cookbook-loggerwriter/main.py", line 55, in <module>
+WARNING:demo:  main()
+WARNING:demo: File "/home/runner/cookbook-loggerwriter/main.py", line 52, in main
+WARNING:demo:  1/0
+WARNING:demo:ZeroDivisionError: division by zero

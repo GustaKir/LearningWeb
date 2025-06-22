@@ -1,0 +1,41 @@
+Title: Setting Forkserver Preload in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The `multiprocessing.set_forkserver_preload` function allows setting a list of module names to be imported by the forkserver process, improving performance by inheriting preloaded states in child processes. This feature requires invocation before the forkserver is launched and now supports path-like objects as of version 3.11.
+---
+
+```
+
+before they can create child processes.
+Changed in version 3.4: Now supported on POSIX when the `'spawn'` start method is used.
+Changed in version 3.11: Accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object). 
+
+multiprocessing.set_forkserver_preload(_module_names_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.set_forkserver_preload "Link to this definition")
+    
+Set a list of module names for the forkserver main process to attempt to import so that their already imported state is inherited by forked processes. Any [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") when doing so is silently ignored. This can be used as a performance enhancement to avoid repeated work in every process.
+For this to work, it must be called before the forkserver process has been launched (before creating a `Pool` or starting a [`Process`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process "multiprocessing.Process")).
+Only meaningful when using the `'forkserver'` start method. See [Contexts and start methods](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-start-methods).
+Added in version 3.4. 
+
+multiprocessing.set_start_method(_method_ , _force =False_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.set_start_method "Link to this definition")
+    
+Set the method which should be used to start child processes. The _method_ argument can be `'fork'`, `'spawn'` or `'forkserver'`. Raises [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") if the start method has already been set and _force_ is not `True`. If _method_ is `None` and _force_ is `True` then the start method is set to `None`. If _method_ is `None` and _force_ is `False` then the context is set to the default context.
+Note that this should be called at most once, and it should be protected inside the `if __name__ == '__main__'` clause of the main module.
+See [Contexts and start methods](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-start-methods).
+Added in version 3.4.
+Note
+[`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.") contains no analogues of [`threading.active_count()`](https://docs.python.org/3/library/threading.html#threading.active_count "threading.active_count"), [`threading.enumerate()`](https://docs.python.org/3/library/threading.html#threading.enumerate "threading.enumerate"), [`threading.settrace()`](https://docs.python.org/3/library/threading.html#threading.settrace "threading.settrace"), [`threading.setprofile()`](https://docs.python.org/3/library/threading.html#threading.setprofile "threading.setprofile"), [`threading.Timer`](https://docs.python.org/3/library/threading.html#threading.Timer "threading.Timer"), or [`threading.local`](https://docs.python.org/3/library/threading.html#threading.local "threading.local").
+### Connection Objects[¶](https://docs.python.org/3/library/multiprocessing.html#connection-objects "Link to this heading")
+Connection objects allow the sending and receiving of picklable objects or strings. They can be thought of as message oriented connected sockets.
+Connection objects are usually created using [`Pipe`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Pipe "multiprocessing.Pipe") – see also [Listeners and Clients](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-listeners-clients). 
+
+_class_ multiprocessing.connection.Connection[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection "Link to this definition")
+     
+
+send(_obj_)[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.send "Link to this definition")
+    
+Send an object to the other end of the connection which should be read using [`recv()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.recv "multiprocessing.connection.Connection.recv").
+The object must be picklable. Very large pickles (approximately 32 MiB+, though it depends on the OS) may raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") exception. 
+
+recv()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.recv "Link to this definition")
+    
+Return an object sent from the other end of the connection using [`send()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.send "multiprocessing.connection.Connection.send"). Blocks until there is something to receive. Raises [`EOFError`](https://docs.python.org/3/library/exceptions.html#EOFError "EOFError") if there is nothing left to receive and the other end was closed.

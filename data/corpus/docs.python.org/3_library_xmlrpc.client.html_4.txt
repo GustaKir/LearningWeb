@@ -1,0 +1,87 @@
+Title: Binary Objects in xmlrpc.client
+URL: https://docs.python.org/3/library/xmlrpc.client.html
+Summary: The `xmlrpc.client.Binary` class allows initialization from bytes data and provides access to this content through the `data` attribute, which returns the encapsulated binary data as a bytes object.
+---
+
+```
+
+## Binary Objects[¶](https://docs.python.org/3/library/xmlrpc.client.html#binary-objects "Link to this heading") 
+
+_class_ xmlrpc.client.Binary[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary "Link to this definition")
+    
+This class may be initialized from bytes data (which may include NULs). The primary access to the content of a [`Binary`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary "xmlrpc.client.Binary") object is provided by an attribute: 
+
+data[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary.data "Link to this definition")
+    
+The binary data encapsulated by the [`Binary`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary "xmlrpc.client.Binary") instance. The data is provided as a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object.
+[`Binary`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary "xmlrpc.client.Binary") objects have the following methods, supported mainly for internal use by the marshalling/unmarshalling code: 
+
+decode(_bytes_)[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary.decode "Link to this definition")
+    
+Accept a base64 [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object and decode it as the instance’s new data. 
+
+encode(_out_)[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Binary.encode "Link to this definition")
+    
+Write the XML-RPC base 64 encoding of this binary item to the _out_ stream object.
+The encoded data will have newlines every 76 characters as per [**RFC 2045 section 6.8**](https://datatracker.ietf.org/doc/html/rfc2045.html#section-6.8), which was the de facto standard base64 specification when the XML-RPC spec was written.
+It also supports certain of Python’s built-in operators through [`__eq__()`](https://docs.python.org/3/reference/datamodel.html#object.__eq__ "object.__eq__") and [`__ne__()`](https://docs.python.org/3/reference/datamodel.html#object.__ne__ "object.__ne__") methods.
+Example usage of the binary objects. We’re going to transfer an image over XMLRPC:
+```
+fromxmlrpc.serverimport SimpleXMLRPCServer
+importxmlrpc.client
+defpython_logo():
+  with open("python_logo.jpg", "rb") as handle:
+    return xmlrpc.client.Binary(handle.read())
+server = SimpleXMLRPCServer(("localhost", 8000))
+print("Listening on port 8000...")
+server.register_function(python_logo, 'python_logo')
+server.serve_forever()
+
+```
+
+The client gets the image and saves it to a file:
+```
+importxmlrpc.client
+proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
+with open("fetched_python_logo.jpg", "wb") as handle:
+  handle.write(proxy.python_logo().data)
+
+```
+
+## Fault Objects[¶](https://docs.python.org/3/library/xmlrpc.client.html#fault-objects "Link to this heading") 
+
+_class_ xmlrpc.client.Fault[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "Link to this definition")
+    
+A [`Fault`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "xmlrpc.client.Fault") object encapsulates the content of an XML-RPC fault tag. Fault objects have the following attributes: 
+
+faultCode[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault.faultCode "Link to this definition")
+    
+An int indicating the fault type. 
+
+faultString[¶](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault.faultString "Link to this definition")
+    
+A string containing a diagnostic message associated with the fault.
+In the following example we’re going to intentionally cause a [`Fault`](https://docs.python.org/3/library/xmlrpc.client.html#xmlrpc.client.Fault "xmlrpc.client.Fault") by returning a complex type object. The server code:
+```
+fromxmlrpc.serverimport SimpleXMLRPCServer
+# A marshalling error is going to occur because we're returning a
+# complex number
+defadd(x, y):
+  return x+y+0j
+server = SimpleXMLRPCServer(("localhost", 8000))
+print("Listening on port 8000...")
+server.register_function(add, 'add')
+server.serve_forever()
+
+```
+
+The client code for the preceding server:
+```
+importxmlrpc.client
+proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
+try:
+  proxy.add(2, 5)
+except xmlrpc.client.Fault as err:
+  print("A fault occurred")
+  print("Fault code: %d" % err.faultCode)
+  print("Fault string: %s" % err.faultString)

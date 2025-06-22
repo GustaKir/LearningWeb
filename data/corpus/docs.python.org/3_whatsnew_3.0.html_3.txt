@@ -1,0 +1,18 @@
+Title: Changes to Ordering Comparisons in Python 3.0
+URL: https://docs.python.org/3/whatsnew/3.0.html
+Summary: Python 3.0 imposes stricter rules for ordering comparisons, raising a TypeError for operands without a natural ordering, such as comparing different types. This change invalidates comparisons like `1 < ''` or `0 > None`, and implies that sorting a heterogeneous list is no longer applicable. However, `==` and `!=` operators remain unaffected, treating incomparable types as unequal.
+---
+
+### Ordering Comparisons[¶](https://docs.python.org/3/whatsnew/3.0.html#ordering-comparisons "Link to this heading")
+Python 3.0 has simplified the rules for ordering comparisons:
+  * The ordering comparison operators (`<`, `<=`, `>=`, `>`) raise a TypeError exception when the operands don’t have a meaningful natural ordering. Thus, expressions like `1 < ''`, `0 > None` or `len <= len` are no longer valid, and e.g. `None < None` raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") instead of returning `False`. A corollary is that sorting a heterogeneous list no longer makes sense – all the elements must be comparable to each other. Note that this does not apply to the `==` and `!=` operators: objects of different incomparable types always compare unequal to each other.
+  * [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") and [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") no longer accept the _cmp_ argument providing a comparison function. Use the _key_ argument instead. N.B. the _key_ and _reverse_ arguments are now “keyword-only”.
+  * The `cmp()` function should be treated as gone, and the `__cmp__()` special method is no longer supported. Use [`__lt__()`](https://docs.python.org/3/reference/datamodel.html#object.__lt__ "object.__lt__") for sorting, [`__eq__()`](https://docs.python.org/3/reference/datamodel.html#object.__eq__ "object.__eq__") with [`__hash__()`](https://docs.python.org/3/reference/datamodel.html#object.__hash__ "object.__hash__"), and other rich comparisons as needed. (If you really need the `cmp()` functionality, you could use the expression `(a > b) - (a < b)` as the equivalent for `cmp(a, b)`.)
+
+
+### Integers[¶](https://docs.python.org/3/whatsnew/3.0.html#integers "Link to this heading")
+  * [**PEP 237**](https://peps.python.org/pep-0237/): Essentially, `long` renamed to [`int`](https://docs.python.org/3/library/functions.html#int "int"). That is, there is only one built-in integral type, named [`int`](https://docs.python.org/3/library/functions.html#int "int"); but it behaves mostly like the old `long` type.
+  * [**PEP 238**](https://peps.python.org/pep-0238/): An expression like `1/2` returns a float. Use `1//2` to get the truncating behavior. (The latter syntax has existed for years, at least since Python 2.2.)
+  * The `sys.maxint` constant was removed, since there is no longer a limit to the value of integers. However, [`sys.maxsize`](https://docs.python.org/3/library/sys.html#sys.maxsize "sys.maxsize") can be used as an integer larger than any practical list or string index. It conforms to the implementation’s “natural” integer size and is typically the same as `sys.maxint` in previous releases on the same platform (assuming the same build options).
+  * The [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr") of a long integer doesn’t include the trailing `L` anymore, so code that unconditionally strips that character will chop off the last digit instead. (Use [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") instead.)
+  * Octal literals are no longer of the form `0720`; use `0o720` instead.

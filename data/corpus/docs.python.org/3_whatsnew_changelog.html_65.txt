@@ -1,0 +1,30 @@
+Title: Build Changes in Python 3.14
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section outlines important build changes in Python 3.14, including updates to pkg-config filenames to include ABI flags, a fallback to the bundled libmpdec if the system version is unavailable, modifications to `sys.version` to indicate build types, and a fix for an `AssertionError` related to experimental JIT compilation.
+---
+
+### Build[¶](https://docs.python.org/3/whatsnew/changelog.html#id70 "Link to this heading")
+  * [gh-119729](https://github.com/python/cpython/issues/119729): On POSIX systems, the pkg-config (`.pc`) filenames now include the ABI flags, which may include debug (“d”) and free-threaded (“t”). For example: * `python-3.14.pc` (default, non-debug build) * `python-3.14d.pc` (default, debug build) * `python-3.14t.pc` (free-threaded build)
+  * [gh-115119](https://github.com/python/cpython/issues/115119): Fall back to the bundled libmpdec if a system version cannot be found.
+  * [gh-119132](https://github.com/python/cpython/issues/119132): Update [`sys.version`](https://docs.python.org/3/library/sys.html#sys.version "sys.version") to identify whether the build is default build or free-threading build. Patch By Donghee Na.
+  * [gh-118836](https://github.com/python/cpython/issues/118836): Fix an `AssertionError` when building with `--enable-experimental-jit` and the compiler emits a `SHT_NOTE` section.
+  * [gh-118943](https://github.com/python/cpython/issues/118943): Fix a possible race condition affecting parallel builds configured with `--enable-experimental-jit`, in which compilation errors could be caused by an incompletely-generated header file.
+
+
+### Windows[¶](https://docs.python.org/3/whatsnew/changelog.html#id71 "Link to this heading")
+  * [gh-119679](https://github.com/python/cpython/issues/119679): Ensures correct import libraries are included in Windows installs.
+  * [gh-119690](https://github.com/python/cpython/issues/119690): Adds Unicode support and fixes audit events for `_winapi.CreateNamedPipe`.
+  * [gh-111201](https://github.com/python/cpython/issues/111201): Add support for new pyrepl on Windows
+  * [gh-119070](https://github.com/python/cpython/issues/119070): Fixes `py.exe` handling of shebangs like `/usr/bin/env python3.12`, which were previously interpreted as `python3.exe` instead of `python3.12.exe`.
+  * [gh-117505](https://github.com/python/cpython/issues/117505): Fixes an issue with the Windows installer not running ensurepip in a fully isolated environment. This could cause unexpected interactions with the user site-packages.
+  * [gh-118209](https://github.com/python/cpython/issues/118209): Avoid crashing in [`mmap`](https://docs.python.org/3/library/mmap.html#module-mmap "mmap: Interface to memory-mapped files for Unix and Windows.") on Windows when the mapped memory is inaccessible due to file system errors or access violations.
+  * [gh-116145](https://github.com/python/cpython/issues/116145): Updated bundled Tcl/Tk to 8.6.14.
+
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id72 "Link to this heading")
+  * [gh-119585](https://github.com/python/cpython/issues/119585): Fix crash when a thread state that was created by [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") calls a destructor that during [`PyThreadState_Clear()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_Clear "PyThreadState_Clear") that calls back into [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") and [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release"). This might occur when in the free-threaded build or when using thread-local variables whose destructors call [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure").
+  * [gh-119336](https://github.com/python/cpython/issues/119336): Restore the removed `_PyLong_NumBits()` function. It is used by the pywin32 project. Patch by Ethan Smith
+  * [gh-119247](https://github.com/python/cpython/issues/119247): Added `Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST` and `Py_END_CRITICAL_SECTION_SEQUENCE_FAST` macros to make it possible to use PySequence_Fast APIs safely when free-threaded, and update str.join to work without the GIL using them.
+  * [gh-111389](https://github.com/python/cpython/issues/111389): Add [`PyHASH_MULTIPLIER`](https://docs.python.org/3/c-api/hash.html#c.PyHASH_MULTIPLIER "PyHASH_MULTIPLIER") constant: prime multiplier used in string and various other hashes. Patch by Victor Stinner.
+  * [gh-116984](https://github.com/python/cpython/issues/116984): Make mimalloc includes relative to the current file to avoid embedders or extensions needing to include `Internal/mimalloc` if they are already including internal CPython headers.
+  * [gh-118789](https://github.com/python/cpython/issues/118789): Restore `_PyWeakref_ClearRef` that was previously removed in Python 3.13 alpha 1.

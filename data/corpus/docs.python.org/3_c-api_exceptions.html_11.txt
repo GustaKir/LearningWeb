@@ -1,0 +1,29 @@
+Title: PyErr_SetExcInfo Function Overview
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: The PyErr_SetExcInfo function sets the exception information similar to sys.exc_info() for a previously caught exception. It takes three parameters (type, value, and traceback), which it steals references from. To clear the exception state, NULL can be passed for all parameters. This function is maintained for backward compatibility, but using PyErr_SetHandledException is preferred.
+---
+
+voidPyErr_SetExcInfo([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*type, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*value, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*traceback)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetExcInfo "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Set the exception info, as known from `sys.exc_info()`. This refers to an exception that was _already caught_ , not to an exception that was freshly raised. This function steals the references of the arguments. To clear the exception state, pass `NULL` for all three arguments. This function is kept for backwards compatibility. Prefer using [`PyErr_SetHandledException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetHandledException "PyErr_SetHandledException").
+Note
+This function is not normally used by code that wants to handle exceptions. Rather, it can be used when code needs to save and restore the exception state temporarily. Use [`PyErr_GetExcInfo()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_GetExcInfo "PyErr_GetExcInfo") to read the exception state.
+Added in version 3.3.
+Changed in version 3.11: The `type` and `traceback` arguments are no longer used and can be NULL. The interpreter now derives them from the exception instance (the `value` argument). The function still steals references of all three arguments.
+## Signal Handling[¶](https://docs.python.org/3/c-api/exceptions.html#signal-handling "Link to this heading") 
+
+intPyErr_CheckSignals()[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_CheckSignals "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This function interacts with Python’s signal handling.
+If the function is called from the main thread and under the main Python interpreter, it checks whether a signal has been sent to the processes and if so, invokes the corresponding signal handler. If the [`signal`](https://docs.python.org/3/library/signal.html#module-signal "signal: Set handlers for asynchronous events.") module is supported, this can invoke a signal handler written in Python.
+The function attempts to handle all pending signals, and then returns `0`. However, if a Python signal handler raises an exception, the error indicator is set and the function returns `-1` immediately (such that other pending signals may not have been handled yet: they will be on the next [`PyErr_CheckSignals()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_CheckSignals "PyErr_CheckSignals") invocation).
+If the function is called from a non-main thread, or under a non-main Python interpreter, it does nothing and returns `0`.
+This function can be called by long-running C code that wants to be interruptible by user requests (such as by pressing Ctrl-C).
+Note
+The default Python signal handler for `SIGINT` raises the [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt") exception. 
+
+voidPyErr_SetInterrupt()[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetInterrupt "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Simulate the effect of a `SIGINT` signal arriving. This is equivalent to `PyErr_SetInterruptEx(SIGINT)`.
+Note
+This function is async-signal-safe. It can be called without the [GIL](https://docs.python.org/3/glossary.html#term-GIL) and from a C signal handler.

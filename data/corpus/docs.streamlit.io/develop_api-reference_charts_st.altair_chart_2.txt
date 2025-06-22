@@ -1,0 +1,99 @@
+Title: Using Selection Events in Altair Chart
+URL: https://docs.streamlit.io/develop/api-reference/charts/st.altair_chart
+Summary: To utilize selection events with `altair_chart`, the chart must include selection parameters. The `selection_mode` can specify which parameters to use, affecting rerun triggers and inclusion in selection state. By default, all parameters are used unless specified otherwise. The function returns an internal placeholder for the chart element if `on_select` is set to 'ignore'.
+---
+
+To use selection events, the object passed to `altair_chart` must include selection paramters. To learn about defining interactions in Altair and how to declare selection-type parameters, see [Interactive Charts](https://altair-viz.github.io/user_guide/interactions.html) in Altair's documentation.  
+selection_mode (str or Iterable of str) |  The selection parameters Streamlit should use. If `selection_mode` is `None` (default), Streamlit will use all selection parameters defined in the chart's Altair spec. When Streamlit uses a selection parameter, selections from that parameter will trigger a rerun and be included in the selection state. When Streamlit does not use a selection parameter, selections from that parameter will not trigger a rerun and not be included in the selection state. Selection parameters are identified by their `name` property.  
+Returns  
+(element or dict) | If `on_select` is `"ignore"` (default), this command returns an internal placeholder for the chart element that can be used with the `.add_rows()` method. Otherwise, this command returns a dictionary-like object that supports both key and attribute notation. The attributes are described by the `VegaLiteState` dictionary schema.  
+#### Example
+```
+import streamlit as st
+import pandas as pd
+import numpy as np
+import altair as alt
+chart_data = pd.DataFrame(np.random.randn(20, 3), columns=["a", "b", "c"])
+c = (
+  alt.Chart(chart_data)
+  .mark_circle()
+  .encode(x="a", y="b", size="c", color="c", tooltip=["a", "b", "c"])
+)
+st.altair_chart(c)
+```
+
+Copy
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-vega-lite-chart.streamlit.app//?utm_medium=oembed&)
+## [](https://docs.streamlit.io/develop/api-reference/charts/st.altair_chart#chart-selections)Chart selections
+### [](https://docs.streamlit.io/develop/api-reference/charts/st.altair_chart#vegalitestate)VegaLiteState
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+The schema for the Vega-Lite event state.
+The event state is stored in a dictionary-like object that supports both key and attribute notation. Event states cannot be programmatically changed or set through Session State.
+Only selection events are supported at this time.
+Attributes  
+---  
+selection (dict) |  The state of the `on_select` event. This attribute returns a dictionary-like object that supports both key and attribute notation. The name of each Vega-Lite selection parameter becomes an attribute in the `selection` dictionary. The format of the data within each attribute is determined by the selection parameter definition within Vega-Lite.  
+#### Examples
+The following two examples have equivalent definitions. Each one has a point and interval selection parameter include in the chart definition. The point selection parameter is named `"point_selection"`. The interval or box selection parameter is named `"interval_selection"`.
+The follow example uses `st.altair_chart`:
+```
+import streamlit as st
+import pandas as pd
+import numpy as np
+import altair as alt
+if "data" not in st.session_state:
+  st.session_state.data = pd.DataFrame(
+    np.random.randn(20, 3), columns=["a", "b", "c"]
+  )
+df = st.session_state.data
+point_selector = alt.selection_point("point_selection")
+interval_selector = alt.selection_interval("interval_selection")
+chart = (
+  alt.Chart(df)
+  .mark_circle()
+  .encode(
+    x="a",
+    y="b",
+    size="c",
+    color="c",
+    tooltip=["a", "b", "c"],
+    fillOpacity=alt.condition(point_selector, alt.value(1), alt.value(0.3)),
+  )
+  .add_params(point_selector, interval_selector)
+)
+event = st.altair_chart(chart, key="alt_chart", on_select="rerun")
+event
+```
+
+Copy
+The following example uses `st.vega_lite_chart`:
+```
+import streamlit as st
+import pandas as pd
+import numpy as np
+if "data" not in st.session_state:
+  st.session_state.data = pd.DataFrame(
+    np.random.randn(20, 3), columns=["a", "b", "c"]
+  )
+spec = {
+  "mark": {"type": "circle", "tooltip": True},
+  "params": [
+    {"name": "interval_selection", "select": "interval"},
+    {"name": "point_selection", "select": "point"},
+  ],
+  "encoding": {
+    "x": {"field": "a", "type": "quantitative"},
+    "y": {"field": "b", "type": "quantitative"},
+    "size": {"field": "c", "type": "quantitative"},
+    "color": {"field": "c", "type": "quantitative"},
+    "fillOpacity": {
+      "condition": {"param": "point_selection", "value": 1},
+      "value": 0.3,
+    },
+  },
+}
+event = st.vega_lite_chart(
+  st.session_state.data, spec, key="vega_chart", on_select="rerun"
+)
+event

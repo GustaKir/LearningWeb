@@ -1,0 +1,66 @@
+Title: Understanding the Raise Statement in Python
+URL: https://docs.python.org/3/reference/simple_stmts.html
+Summary: The `raise` statement in Python can re-raise the current active exception if none are provided. If there is no active exception, it raises a `RuntimeError`. When an expression is present, it evaluates it as the exception object, which must be a subclass or instance of `BaseException`. A traceback object is typically created automatically when an exception is raised.
+---
+
+```
+
+If no expressions are present, [`raise`](https://docs.python.org/3/reference/simple_stmts.html#raise) re-raises the exception that is currently being handled, which is also known as the _active exception_. If there isn’t currently an active exception, a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") exception is raised indicating that this is an error.
+Otherwise, [`raise`](https://docs.python.org/3/reference/simple_stmts.html#raise) evaluates the first expression as the exception object. It must be either a subclass or an instance of [`BaseException`](https://docs.python.org/3/library/exceptions.html#BaseException "BaseException"). If it is a class, the exception instance will be obtained when needed by instantiating the class with no arguments.
+The _type_ of the exception is the exception instance’s class, the _value_ is the instance itself.
+A traceback object is normally created automatically when an exception is raised and attached to it as the [`__traceback__`](https://docs.python.org/3/library/exceptions.html#BaseException.__traceback__ "BaseException.__traceback__") attribute. You can create an exception and set your own traceback in one step using the [`with_traceback()`](https://docs.python.org/3/library/exceptions.html#BaseException.with_traceback "BaseException.with_traceback") exception method (which returns the same exception instance, with its traceback set to its argument), like so:
+```
+raise Exception("foo occurred").with_traceback(tracebackobj)
+
+```
+
+The `from` clause is used for exception chaining: if given, the second _expression_ must be another exception class or instance. If the second expression is an exception instance, it will be attached to the raised exception as the [`__cause__`](https://docs.python.org/3/library/exceptions.html#BaseException.__cause__ "BaseException.__cause__") attribute (which is writable). If the expression is an exception class, the class will be instantiated and the resulting exception instance will be attached to the raised exception as the `__cause__` attribute. If the raised exception is not handled, both exceptions will be printed:
+>>>```
+>>> try:
+...   print(1 / 0)
+... except Exception as exc:
+...   raise RuntimeError("Something bad happened") fromexc
+...
+Traceback (most recent call last):
+ File "<stdin>", line 2, in <module>
+print(1 / 0)
+~~^~~
+ZeroDivisionError: division by zero
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+ File "<stdin>", line 4, in <module>
+raise RuntimeError("Something bad happened") fromexc
+RuntimeError: Something bad happened
+
+```
+
+A similar mechanism works implicitly if a new exception is raised when an exception is already being handled. An exception may be handled when an [`except`](https://docs.python.org/3/reference/compound_stmts.html#except) or [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) clause, or a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, is used. The previous exception is then attached as the new exception’s [`__context__`](https://docs.python.org/3/library/exceptions.html#BaseException.__context__ "BaseException.__context__") attribute:
+>>>```
+>>> try:
+...   print(1 / 0)
+... except:
+...   raise RuntimeError("Something bad happened")
+...
+Traceback (most recent call last):
+ File "<stdin>", line 2, in <module>
+print(1 / 0)
+~~^~~
+ZeroDivisionError: division by zero
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+ File "<stdin>", line 4, in <module>
+raise RuntimeError("Something bad happened")
+RuntimeError: Something bad happened
+
+```
+
+Exception chaining can be explicitly suppressed by specifying [`None`](https://docs.python.org/3/library/constants.html#None "None") in the `from` clause:
+>>>```
+>>> try:
+...   print(1 / 0)
+... except:
+...   raise RuntimeError("Something bad happened") fromNone
+...
+Traceback (most recent call last):
+ File "<stdin>", line 4, in <module>
+RuntimeError: Something bad happened

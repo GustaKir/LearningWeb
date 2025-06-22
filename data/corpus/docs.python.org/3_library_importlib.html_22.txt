@@ -1,0 +1,58 @@
+Title: Setting Up an Importer in Python
+URL: https://docs.python.org/3/library/importlib.html
+Summary: This section discusses the implementation of an importer for customizing Python's import system. It covers the roles of finders and loaders, and explains the two types of finders—meta path finders and path entry finders—along with where to place them in the system.
+---
+
+```
+
+### Setting up an importer[¶](https://docs.python.org/3/library/importlib.html#setting-up-an-importer "Link to this heading")
+For deep customizations of import, you typically want to implement an [importer](https://docs.python.org/3/glossary.html#term-importer). This means managing both the [finder](https://docs.python.org/3/glossary.html#term-finder) and [loader](https://docs.python.org/3/glossary.html#term-loader) side of things. For finders there are two flavours to choose from depending on your needs: a [meta path finder](https://docs.python.org/3/glossary.html#term-meta-path-finder) or a [path entry finder](https://docs.python.org/3/glossary.html#term-path-entry-finder). The former is what you would put on [`sys.meta_path`](https://docs.python.org/3/library/sys.html#sys.meta_path "sys.meta_path") while the latter is what you create using a [path entry hook](https://docs.python.org/3/glossary.html#term-path-entry-hook) on [`sys.path_hooks`](https://docs.python.org/3/library/sys.html#sys.path_hooks "sys.path_hooks") which works with [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") entries to potentially create a finder. This example will show you how to register your own importers so that import will use them (for creating an importer for yourself, read the documentation for the appropriate classes defined within this package):
+```
+importimportlib.machinery
+importsys
+# For illustrative purposes only.
+SpamMetaPathFinder = importlib.machinery.PathFinder
+SpamPathEntryFinder = importlib.machinery.FileFinder
+loader_details = (importlib.machinery.SourceFileLoader,
+         importlib.machinery.SOURCE_SUFFIXES)
+# Setting up a meta path finder.
+# Make sure to put the finder in the proper location in the list in terms of
+# priority.
+sys.meta_path.append(SpamMetaPathFinder)
+# Setting up a path entry finder.
+# Make sure to put the path hook in the proper location in the list in terms
+# of priority.
+sys.path_hooks.append(SpamPathEntryFinder.path_hook(loader_details))
+
+```
+
+### Approximating [`importlib.import_module()`](https://docs.python.org/3/library/importlib.html#importlib.import_module "importlib.import_module")[¶](https://docs.python.org/3/library/importlib.html#approximating-importlib-import-module "Link to this heading")
+Import itself is implemented in Python code, making it possible to expose most of the import machinery through importlib. The following helps illustrate the various APIs that importlib exposes by providing an approximate implementation of [`importlib.import_module()`](https://docs.python.org/3/library/importlib.html#importlib.import_module "importlib.import_module"):
+```
+importimportlib.util
+importsys
+defimport_module(name, package=None):
+"""An approximate implementation of import."""
+  absolute_name = importlib.util.resolve_name(name, package)
+  try:
+    return sys.modules[absolute_name]
+  except KeyError:
+    pass
+  path = None
+  if '.' in absolute_name:
+    parent_name, _, child_name = absolute_name.rpartition('.')
+    parent_module = import_module(parent_name)
+    path = parent_module.__spec__.submodule_search_locations
+  for finder in sys.meta_path:
+    spec = finder.find_spec(absolute_name, path)
+    if spec is not None:
+      break
+  else:
+    msg = f'No module named {absolute_name!r}'
+    raise ModuleNotFoundError(msg, name=absolute_name)
+  module = importlib.util.module_from_spec(spec)
+  sys.modules[absolute_name] = module
+  spec.loader.exec_module(module)
+  if path is not None:
+    setattr(parent_module, child_name, module)
+  return module

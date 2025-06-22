@@ -1,0 +1,58 @@
+Title: Decimal Normalization and Canonical Values
+URL: https://docs.python.org/3/library/decimal.html
+Summary: The normalize method in the Decimal class produces canonical values by reducing numbers to their simplest form, removing trailing zeros while preserving the sign. It operates similarly to unary plus and adjusts coefficients and exponents appropriately. For instance, both `Decimal('32.100')` and `Decimal('0.321000e+2')` normalize to `Decimal('32.1')`. Rounding occurs before simplification, and in recent specifications, this method is also referred to as 'reduce'.
+---
+
+normalize(_context =None_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Decimal.normalize "Link to this definition")
+    
+Used for producing canonical values of an equivalence class within either the current context or the specified context.
+This has the same semantics as the unary plus operation, except that if the final result is finite it is reduced to its simplest form, with all trailing zeros removed and its sign preserved. That is, while the coefficient is non-zero and a multiple of ten the coefficient is divided by ten and the exponent is incremented by 1. Otherwise (the coefficient is zero) the exponent is set to 0. In all cases the sign is unchanged.
+For example, `Decimal('32.100')` and `Decimal('0.321000e+2')` both normalize to the equivalent value `Decimal('32.1')`.
+Note that rounding is applied _before_ reducing to simplest form.
+In the latest versions of the specification, this operation is also known as `reduce`. 
+
+number_class(_context =None_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Decimal.number_class "Link to this definition")
+    
+Return a string describing the _class_ of the operand. The returned value is one of the following ten strings.
+  * `"-Infinity"`, indicating that the operand is negative infinity.
+  * `"-Normal"`, indicating that the operand is a negative normal number.
+  * `"-Subnormal"`, indicating that the operand is negative and subnormal.
+  * `"-Zero"`, indicating that the operand is a negative zero.
+  * `"+Zero"`, indicating that the operand is a positive zero.
+  * `"+Subnormal"`, indicating that the operand is positive and subnormal.
+  * `"+Normal"`, indicating that the operand is a positive normal number.
+  * `"+Infinity"`, indicating that the operand is positive infinity.
+  * `"NaN"`, indicating that the operand is a quiet NaN (Not a Number).
+  * `"sNaN"`, indicating that the operand is a signaling NaN.
+
+
+
+quantize(_exp_ , _rounding =None_, _context =None_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Decimal.quantize "Link to this definition")
+    
+Return a value equal to the first operand after rounding and having the exponent of the second operand.
+>>>```
+>>> Decimal('1.41421356').quantize(Decimal('1.000'))
+Decimal('1.414')
+
+```
+
+Unlike other operations, if the length of the coefficient after the quantize operation would be greater than precision, then an [`InvalidOperation`](https://docs.python.org/3/library/decimal.html#decimal.InvalidOperation "decimal.InvalidOperation") is signaled. This guarantees that, unless there is an error condition, the quantized exponent is always equal to that of the right-hand operand.
+Also unlike other operations, quantize never signals Underflow, even if the result is subnormal and inexact.
+If the exponent of the second operand is larger than that of the first then rounding may be necessary. In this case, the rounding mode is determined by the `rounding` argument if given, else by the given `context` argument; if neither argument is given the rounding mode of the current thread’s context is used.
+An error is returned whenever the resulting exponent is greater than `Emax` or less than [`Etiny()`](https://docs.python.org/3/library/decimal.html#decimal.Context.Etiny "decimal.Context.Etiny"). 
+
+radix()[¶](https://docs.python.org/3/library/decimal.html#decimal.Decimal.radix "Link to this definition")
+    
+Return `Decimal(10)`, the radix (base) in which the [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") class does all its arithmetic. Included for compatibility with the specification. 
+
+remainder_near(_other_ , _context =None_)[¶](https://docs.python.org/3/library/decimal.html#decimal.Decimal.remainder_near "Link to this definition")
+    
+Return the remainder from dividing _self_ by _other_. This differs from `self % other` in that the sign of the remainder is chosen so as to minimize its absolute value. More precisely, the return value is `self - n * other` where `n` is the integer nearest to the exact value of `self / other`, and if two integers are equally near then the even one is chosen.
+If the result is zero then its sign will be the sign of _self_.
+>>>```
+>>> Decimal(18).remainder_near(Decimal(10))
+Decimal('-2')
+>>> Decimal(25).remainder_near(Decimal(10))
+Decimal('5')
+>>> Decimal(35).remainder_near(Decimal(10))
+Decimal('-5')

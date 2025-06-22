@@ -1,0 +1,64 @@
+Title: Comparisons in IP Address Management
+URL: https://docs.python.org/3/howto/ipaddress.html
+Summary: This section explains how to compare IP address objects using the `ipaddress` module in Python, demonstrating comparisons of IP addresses and noting that a TypeError occurs for comparisons across different types or versions.
+---
+
+```
+>>> addr4 = ipaddress.ip_address('192.0.2.1')
+>>> addr4 in ipaddress.ip_network('192.0.2.0/24')
+True
+>>> addr4 in ipaddress.ip_network('192.0.3.0/24')
+False
+
+```
+
+## Comparisons[¶](https://docs.python.org/3/howto/ipaddress.html#comparisons "Link to this heading")
+[`ipaddress`](https://docs.python.org/3/library/ipaddress.html#module-ipaddress "ipaddress: IPv4/IPv6 manipulation library.") provides some simple, hopefully intuitive ways to compare objects, where it makes sense:
+>>>```
+>>> ipaddress.ip_address('192.0.2.1') < ipaddress.ip_address('192.0.2.2')
+True
+
+```
+
+A [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception is raised if you try to compare objects of different versions or different types.
+## Using IP Addresses with other modules[¶](https://docs.python.org/3/howto/ipaddress.html#using-ip-addresses-with-other-modules "Link to this heading")
+Other modules that use IP addresses (such as [`socket`](https://docs.python.org/3/library/socket.html#module-socket "socket: Low-level networking interface.")) usually won’t accept objects from this module directly. Instead, they must be coerced to an integer or string that the other module will accept:
+>>>```
+>>> addr4 = ipaddress.ip_address('192.0.2.1')
+>>> str(addr4)
+'192.0.2.1'
+>>> int(addr4)
+3221225985
+
+```
+
+## Getting more detail when instance creation fails[¶](https://docs.python.org/3/howto/ipaddress.html#getting-more-detail-when-instance-creation-fails "Link to this heading")
+When creating address/network/interface objects using the version-agnostic factory functions, any errors will be reported as [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") with a generic error message that simply says the passed in value was not recognized as an object of that type. The lack of a specific error is because it’s necessary to know whether the value is _supposed_ to be IPv4 or IPv6 in order to provide more detail on why it has been rejected.
+To support use cases where it is useful to have access to this additional detail, the individual class constructors actually raise the [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") subclasses [`ipaddress.AddressValueError`](https://docs.python.org/3/library/ipaddress.html#ipaddress.AddressValueError "ipaddress.AddressValueError") and [`ipaddress.NetmaskValueError`](https://docs.python.org/3/library/ipaddress.html#ipaddress.NetmaskValueError "ipaddress.NetmaskValueError") to indicate exactly which part of the definition failed to parse correctly.
+The error messages are significantly more detailed when using the class constructors directly. For example:
+>>>```
+>>> ipaddress.ip_address("192.168.0.256")
+Traceback (most recent call last):
+...
+ValueError: '192.168.0.256' does not appear to be an IPv4 or IPv6 address
+>>> ipaddress.IPv4Address("192.168.0.256")
+Traceback (most recent call last):
+...
+ipaddress.AddressValueError: Octet 256 (> 255) not permitted in '192.168.0.256'
+>>> ipaddress.ip_network("192.168.0.1/64")
+Traceback (most recent call last):
+...
+ValueError: '192.168.0.1/64' does not appear to be an IPv4 or IPv6 network
+>>> ipaddress.IPv4Network("192.168.0.1/64")
+Traceback (most recent call last):
+...
+ipaddress.NetmaskValueError: '64' is not a valid netmask
+
+```
+
+However, both of the module specific exceptions have [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") as their parent class, so if you’re not concerned with the particular type of error, you can still write code like the following:
+```
+try:
+  network = ipaddress.IPv4Network(address)
+except ValueError:
+  print('address/netmask is invalid for IPv4:', address)

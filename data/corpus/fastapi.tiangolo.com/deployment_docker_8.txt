@@ -1,0 +1,91 @@
+Title: Docker Deployment Best Practices for FastAPI
+URL: https://fastapi.tiangolo.com/deployment/docker/
+Summary: This section emphasizes the proper use of the exec form in Docker CMD to ensure FastAPI shuts down gracefully and triggers lifespan events. It also provides a sample directory structure for a FastAPI project and references Docker documentation for additional technical insights.
+---
+
+```
+
+⛔️ **Shell** form:
+```
+# ⛔️ Don't do this
+CMDfastapirunapp/main.py--port80
+
+```
+
+Make sure to always use the **exec** form to ensure that FastAPI can shutdown gracefully and [lifespan events](https://fastapi.tiangolo.com/advanced/events/) are triggered.
+You can read more about it in the [Docker docs for shell and exec form](https://docs.docker.com/reference/dockerfile/#shell-and-exec-form).
+This can be quite noticeable when using `docker compose`. See this Docker Compose FAQ section for more technical details: [Why do my services take 10 seconds to recreate or stop?](https://docs.docker.com/compose/faq/#why-do-my-services-take-10-seconds-to-recreate-or-stop).
+#### Directory Structure[¶](https://fastapi.tiangolo.com/deployment/docker/#directory-structure "Permanent link")
+You should now have a directory structure like:
+```
+.
+├── app
+│   ├── __init__.py
+│  └── main.py
+├── Dockerfile
+└── requirements.txt
+
+```
+
+#### Behind a TLS Termination Proxy[¶](https://fastapi.tiangolo.com/deployment/docker/#behind-a-tls-termination-proxy "Permanent link")
+If you are running your container behind a TLS Termination Proxy (load balancer) like Nginx or Traefik, add the option `--proxy-headers`, this will tell Uvicorn (through the FastAPI CLI) to trust the headers sent by that proxy telling it that the application is running behind HTTPS, etc.
+```
+CMD["fastapi","run","app/main.py","--proxy-headers","--port","80"]
+
+```
+
+#### Docker Cache[¶](https://fastapi.tiangolo.com/deployment/docker/#docker-cache "Permanent link")
+There's an important trick in this `Dockerfile`, we first copy the **file with the dependencies alone** , not the rest of the code. Let me tell you why is that.
+```
+COPY./requirements.txt/code/requirements.txt
+
+```
+
+Docker and other tools **build** these container images **incrementally** , adding **one layer on top of the other** , starting from the top of the `Dockerfile` and adding any files created by each of the instructions of the `Dockerfile`.
+Docker and similar tools also use an **internal cache** when building the image, if a file hasn't changed since the last time building the container image, then it will **reuse the same layer** created the last time, instead of copying the file again and creating a new layer from scratch.
+Just avoiding the copy of files doesn't necessarily improve things too much, but because it used the cache for that step, it can **use the cache for the next step**. For example, it could use the cache for the instruction that installs dependencies with:
+```
+RUNpipinstall--no-cache-dir--upgrade-r/code/requirements.txt
+
+```
+
+The file with the package requirements **won't change frequently**. So, by copying only that file, Docker will be able to **use the cache** for that step.
+And then, Docker will be able to **use the cache for the next step** that downloads and install those dependencies. And here's where we **save a lot of time**. ✨ ...and avoid boredom waiting. 😪😆
+Downloading and installing the package dependencies **could take minutes** , but using the **cache** would **take seconds** at most.
+And as you would be building the container image again and again during development to check that your code changes are working, there's a lot of accumulated time this would save.
+Then, near the end of the `Dockerfile`, we copy all the code. As this is what **changes most frequently** , we put it near the end, because almost always, anything after this step will not be able to use the cache.
+```
+COPY./app/code/app
+
+```
+
+### Build the Docker Image[¶](https://fastapi.tiangolo.com/deployment/docker/#build-the-docker-image "Permanent link")
+Now that all the files are in place, let's build the container image.
+  * Go to the project directory (in where your `Dockerfile` is, containing your `app` directory).
+  * Build your FastAPI image:
+
+
+```
+
+fast →[](https://fastapi.tiangolo.com/deployment/docker/)docker build -t myimage .restart ↻[](https://fastapi.tiangolo.com/deployment/docker/)
+
+```
+
+Tip
+Notice the `.` at the end, it's equivalent to `./`, it tells Docker the directory to use to build the container image.
+In this case, it's the same current directory (`.`).
+### Start the Docker Container[¶](https://fastapi.tiangolo.com/deployment/docker/#start-the-docker-container "Permanent link")
+  * Run a container based on your image:
+
+
+```
+
+fast →[](https://fastapi.tiangolo.com/deployment/docker/)docker run -d --name mycontainer -p 80:80 myimagerestart ↻[](https://fastapi.tiangolo.com/deployment/docker/)
+
+```
+
+## Check it[¶](https://fastapi.tiangolo.com/deployment/docker/#check-it "Permanent link")
+You should be able to check it in your Docker container's URL, for example: <http://192.168.99.100/items/5?q=somequery> or <http://127.0.0.1/items/5?q=somequery> (or equivalent, using your Docker host).
+You will see something like:
+```
+{"item_id":5,"q":"somequery"}

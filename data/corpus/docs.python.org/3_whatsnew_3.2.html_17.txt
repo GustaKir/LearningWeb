@@ -1,0 +1,58 @@
+Title: Default Logging Configuration in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces a default logging configuration using a StreamHandler directed to sys.stderr for WARNING level events or higher. Previously, logging events without a set-up could raise exceptions or be dropped. Additionally, filter usage has been simplified to allow any callable as a predicate.
+---
+
+```
+
+If no configuration is set-up before a logging event occurs, there is now a default configuration using a [`StreamHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.StreamHandler "logging.StreamHandler") directed to [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr") for events of `WARNING` level or higher. Formerly, an event occurring before a configuration was set-up would either raise an exception or silently drop the event depending on the value of [`logging.raiseExceptions`](https://docs.python.org/3/library/logging.html#logging.raiseExceptions "logging.raiseExceptions"). The new default handler is stored in [`logging.lastResort`](https://docs.python.org/3/library/logging.html#logging.lastResort "logging.lastResort").
+The use of filters has been simplified. Instead of creating a [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") object, the predicate can be any Python callable that returns `True` or `False`.
+There were a number of other improvements that add flexibility and simplify configuration. See the module documentation for a full listing of changes in Python 3.2.
+### csv[¶](https://docs.python.org/3/whatsnew/3.2.html#csv "Link to this heading")
+The [`csv`](https://docs.python.org/3/library/csv.html#module-csv "csv: Write and read tabular data to and from delimited files.") module now supports a new dialect, [`unix_dialect`](https://docs.python.org/3/library/csv.html#csv.unix_dialect "csv.unix_dialect"), which applies quoting for all fields and a traditional Unix style with `'\n'` as the line terminator. The registered dialect name is `unix`.
+The [`csv.DictWriter`](https://docs.python.org/3/library/csv.html#csv.DictWriter "csv.DictWriter") has a new method, [`writeheader()`](https://docs.python.org/3/library/csv.html#csv.DictWriter.writeheader "csv.DictWriter.writeheader") for writing-out an initial row to document the field names:
+>>>```
+>>> importcsv,sys
+>>> w = csv.DictWriter(sys.stdout, ['name', 'dept'], dialect='unix')
+>>> w.writeheader()
+"name","dept"
+>>> w.writerows([
+...   {'name': 'tom', 'dept': 'accounting'},
+...   {'name': 'susan', 'dept': 'Salesl'}])
+"tom","accounting"
+"susan","sales"
+
+```
+
+(New dialect suggested by Jay Talbot in [bpo-5975](https://bugs.python.org/issue?@action=redirect&bpo=5975), and the new method suggested by Ed Abraham in [bpo-1537721](https://bugs.python.org/issue?@action=redirect&bpo=1537721).)
+### contextlib[¶](https://docs.python.org/3/whatsnew/3.2.html#contextlib "Link to this heading")
+There is a new and slightly mind-blowing tool [`ContextDecorator`](https://docs.python.org/3/library/contextlib.html#contextlib.ContextDecorator "contextlib.ContextDecorator") that is helpful for creating a [context manager](https://docs.python.org/3/glossary.html#term-context-manager) that does double duty as a function decorator.
+As a convenience, this new functionality is used by [`contextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager "contextlib.contextmanager") so that no extra effort is needed to support both roles.
+The basic idea is that both context managers and function decorators can be used for pre-action and post-action wrappers. Context managers wrap a group of statements using a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, and function decorators wrap a group of statements enclosed in a function. So, occasionally there is a need to write a pre-action or post-action wrapper that can be used in either role.
+For example, it is sometimes useful to wrap functions or groups of statements with a logger that can track the time of entry and time of exit. Rather than writing both a function decorator and a context manager for the task, the [`contextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager "contextlib.contextmanager") provides both capabilities in a single definition:
+```
+fromcontextlibimport contextmanager
+importlogging
+logging.basicConfig(level=logging.INFO)
+@contextmanager
+deftrack_entry_and_exit(name):
+  logging.info('Entering: %s', name)
+  yield
+  logging.info('Exiting: %s', name)
+
+```
+
+Formerly, this would have only been usable as a context manager:
+```
+with track_entry_and_exit('widget loader'):
+  print('Some time consuming activity goes here')
+  load_widget()
+
+```
+
+Now, it can be used as a decorator as well:
+```
+@track_entry_and_exit('widget loader')
+defactivity():
+  print('Some time consuming activity goes here')
+  load_widget()

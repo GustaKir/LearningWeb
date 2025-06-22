@@ -1,0 +1,105 @@
+Title: Introduction to typing.get_args and typing.get_protocol_members
+URL: https://docs.python.org/3/library/typing.html
+Summary: This documentation introduces the methods `typing.get_args` and `typing.get_protocol_members`, added in Python 3.8. `get_args` retrieves type arguments from a generic type, while `get_protocol_members` returns members defined in a `Protocol`. Examples illustrate the use of `get_args` with various types.
+---
+
+```
+
+Added in version 3.8. 
+
+typing.get_args(_tp_)[¶](https://docs.python.org/3/library/typing.html#typing.get_args "Link to this definition")
+    
+Get type arguments with all substitutions performed: for a typing object of the form `X[Y, Z, ...]` return `(Y, Z, ...)`.
+If `X` is a union or [`Literal`](https://docs.python.org/3/library/typing.html#typing.Literal "typing.Literal") contained in another generic type, the order of `(Y, Z, ...)` may be different from the order of the original arguments `[Y, Z, ...]` due to type caching. Return `()` for unsupported objects.
+Examples:
+```
+assert get_args(int) == ()
+assert get_args(Dict[int, str]) == (int, str)
+assert get_args(Union[int, str]) == (int, str)
+
+```
+
+Added in version 3.8. 
+
+typing.get_protocol_members(_tp_)[¶](https://docs.python.org/3/library/typing.html#typing.get_protocol_members "Link to this definition")
+    
+Return the set of members defined in a [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol").
+>>>```
+>>> fromtypingimport Protocol, get_protocol_members
+>>> classP(Protocol):
+...   defa(self) -> str: ...
+...   b: int
+>>> get_protocol_members(P) == frozenset({'a', 'b'})
+True
+
+```
+
+Raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") for arguments that are not Protocols.
+Added in version 3.13. 
+
+typing.is_protocol(_tp_)[¶](https://docs.python.org/3/library/typing.html#typing.is_protocol "Link to this definition")
+    
+Determine if a type is a [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol "typing.Protocol").
+For example:
+```
+classP(Protocol):
+  defa(self) -> str: ...
+  b: int
+is_protocol(P)  # => True
+is_protocol(int) # => False
+
+```
+
+Added in version 3.13. 
+
+typing.is_typeddict(_tp_)[¶](https://docs.python.org/3/library/typing.html#typing.is_typeddict "Link to this definition")
+    
+Check if a type is a [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict").
+For example:
+```
+classFilm(TypedDict):
+  title: str
+  year: int
+assert is_typeddict(Film)
+assert not is_typeddict(list | str)
+# TypedDict is a factory for creating typed dicts,
+# not a typed dict itself
+assert not is_typeddict(TypedDict)
+
+```
+
+Added in version 3.10. 
+
+_class_ typing.ForwardRef[¶](https://docs.python.org/3/library/typing.html#typing.ForwardRef "Link to this definition")
+    
+Class used for internal typing representation of string forward references.
+For example, `List["SomeClass"]` is implicitly transformed into `List[ForwardRef("SomeClass")]`. `ForwardRef` should not be instantiated by a user, but may be used by introspection tools.
+Note
+[**PEP 585**](https://peps.python.org/pep-0585/) generic types such as `list["SomeClass"]` will not be implicitly transformed into `list[ForwardRef("SomeClass")]` and thus will not automatically resolve to `list[SomeClass]`.
+Added in version 3.7.4. 
+
+typing.NoDefault[¶](https://docs.python.org/3/library/typing.html#typing.NoDefault "Link to this definition")
+    
+A sentinel object used to indicate that a type parameter has no default value. For example:
+>>>```
+>>> T = TypeVar("T")
+>>> T.__default__ is typing.NoDefault
+True
+>>> S = TypeVar("S", default=None)
+>>> S.__default__ is None
+True
+
+```
+
+Added in version 3.13.
+### Constant[¶](https://docs.python.org/3/library/typing.html#constant "Link to this heading") 
+
+typing.TYPE_CHECKING[¶](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING "Link to this definition")
+    
+A special constant that is assumed to be `True` by 3rd party static type checkers. It is `False` at runtime.
+Usage:
+```
+if TYPE_CHECKING:
+  importexpensive_mod
+deffun(arg: 'expensive_mod.SomeType') -> None:
+  local_var: expensive_mod.AnotherType = other_fun()

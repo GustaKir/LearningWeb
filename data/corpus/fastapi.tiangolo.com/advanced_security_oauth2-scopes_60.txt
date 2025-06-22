@@ -1,0 +1,56 @@
+Title: OAuth2 Scopes in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/
+Summary: This document covers the implementation of OAuth2 scopes in FastAPI applications. It demonstrates how to handle user authentication, including checking user status, generating access tokens with specified scopes, and retrieving user information. Key endpoints include the token generation route and user information retrieval.
+---
+
+"me"]),
+):
+  if current_user.disabled:
+    raise HTTPException(status_code=400, detail="Inactive user")
+  return current_user
+@app.post("/token")
+async deflogin_for_access_token(
+  form_data: OAuth2PasswordRequestForm = Depends(),
+) -> Token:
+  user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+  if not user:
+    raise HTTPException(status_code=400, detail="Incorrect username or password")
+  access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+  access_token = create_access_token(
+    data={"sub": user.username, "scopes": form_data.scopes},
+    expires_delta=access_token_expires,
+  )
+  return Token(access_token=access_token, token_type="bearer")
+@app.get("/users/me/", response_model=User)
+async defread_users_me(current_user: User = Depends(get_current_active_user)):
+  return current_user
+@app.get("/users/me/items/")
+async defread_own_items(
+  current_user: User = Security(get_current_active_user, scopes=["items"]),
+):
+  return [{"item_id": "Foo", "owner": current_user.username}]
+@app.get("/status/")
+async defread_system_status(current_user: User = Depends(get_current_user)):
+  return {"status": "ok"}
+
+```
+
+## Dependency tree and scopes[¶](https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/#dependency-tree-and-scopes "Permanent link")
+Let's review again this dependency tree and the scopes.
+As the `get_current_active_user` dependency has as a sub-dependency on `get_current_user`, the scope `"me"` declared at `get_current_active_user` will be included in the list of required scopes in the `security_scopes.scopes` passed to `get_current_user`.
+The _path operation_ itself also declares a scope, `"items"`, so this will also be in the list of `security_scopes.scopes` passed to `get_current_user`.
+Here's how the hierarchy of dependencies and scopes looks like:
+  * The _path operation_ `read_own_items` has:
+    * Required scopes `["items"]` with the dependency:
+    * `get_current_active_user`:
+      * The dependency function `get_current_active_user` has:
+        * Required scopes `["me"]` with the dependency:
+        * `get_current_user`:
+          * The dependency function `get_current_user` has:
+            * No scopes required by itself.
+            * A dependency using `oauth2_scheme`.
+            * A `security_scopes` parameter of type `SecurityScopes`:
+              * This `security_scopes` parameter has a property `scopes` with a `list` containing all these scopes declared above, so:
+                * `security_scopes.scopes` will contain `["me", "items"]` for the _path operation_ `read_own_items`.
+                * `security_scopes.scopes` will contain `["me"]` for the _path operation_ `read_users_me`, because it is declared in the dependency `get_current_active_user`.
+                * `security_scopes.scopes` will contain `[]` (nothing) for the _path operation_ `read_system_status`, because it didn't declare any `Security` with `scopes`, and its dependency, `get_current_user`, doesn't declare any `scopes` either.

@@ -1,0 +1,49 @@
+Title: PY_CXX_CONST and Building Values in Python C API
+URL: https://docs.python.org/3/c-api/arg.html
+Summary: This section describes the 'PY_CXX_CONST' constant used in the '_keywords_' parameter of the 'PyArg_ParseTupleAndKeywords()' and 'PyArg_VaParseTupleAndKeywords()' functions. It explains its default value and customization options. Additionally, it introduces the 'Py_BuildValue' function for building Python objects from C, including its return behavior.
+---
+
+```
+
+
+PY_CXX_CONST[¶](https://docs.python.org/3/c-api/arg.html#c.PY_CXX_CONST "Link to this definition")
+    
+The value to be inserted, if any, before char*const* in the _keywords_ parameter declaration of [`PyArg_ParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTupleAndKeywords "PyArg_ParseTupleAndKeywords") and [`PyArg_VaParseTupleAndKeywords()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_VaParseTupleAndKeywords "PyArg_VaParseTupleAndKeywords"). Default empty for C and `const` for C++ (constchar*const*). To override, define it to the desired value before including `Python.h`.
+Added in version 3.13.
+## Building values[¶](https://docs.python.org/3/c-api/arg.html#building-values "Link to this heading") 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*Py_BuildValue(constchar*format, ...)[¶](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a new value based on a format string similar to those accepted by the `PyArg_Parse*` family of functions and a sequence of values. Returns the value or `NULL` in the case of an error; an exception will be raised if `NULL` is returned.
+[`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") does not always build a tuple. It builds a tuple only if its format string contains two or more format units. If the format string is empty, it returns `None`; if it contains exactly one format unit, it returns whatever object is described by that format unit. To force it to return a tuple of size 0 or one, parenthesize the format string.
+When memory buffers are passed as parameters to supply data to build objects, as for the `s` and `s#` formats, the required data is copied. Buffers provided by the caller are never referenced by the objects created by [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue"). In other words, if your code invokes `malloc()` and passes the allocated memory to [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue"), your code is responsible for calling `free()` for that memory once [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue") returns.
+In the following description, the quoted form is the format unit; the entry in (round) parentheses is the Python object type that the format unit will return; and the entry in [square] brackets is the type of the C value(s) to be passed.
+The characters space, tab, colon and comma are ignored in format strings (but not within format units such as `s#`). This can be used to make long format strings a tad more readable. 
+
+`s` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or `None`) [const char *]
+    
+Convert a null-terminated C string to a Python [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") object using `'utf-8'` encoding. If the C string pointer is `NULL`, `None` is used. 
+
+`s#` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or `None`) [const char *, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")]
+    
+Convert a C string and its length to a Python [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") object using `'utf-8'` encoding. If the C string pointer is `NULL`, the length is ignored and `None` is returned. 
+
+`y` ([`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes")) [const char *]
+    
+This converts a C string to a Python [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object. If the C string pointer is `NULL`, `None` is returned. 
+
+`y#` ([`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes")) [const char *, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")]
+    
+This converts a C string and its lengths to a Python object. If the C string pointer is `NULL`, `None` is returned. 
+
+`z` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or `None`) [const char *]
+    
+Same as `s`. 
+
+`z#` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or `None`) [const char *, [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")]
+    
+Same as `s#`. 
+
+`u` ([`str`](https://docs.python.org/3/library/stdtypes.html#str "str")) [const wchar_t *]
+    
+Convert a null-terminated `wchar_t` buffer of Unicode (UTF-16 or UCS-4) data to a Python Unicode object. If the Unicode buffer pointer is `NULL`, `None` is returned.

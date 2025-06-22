@@ -1,0 +1,127 @@
+Title: How to Use Enums in Python
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This document discusses the usage and implementation of enumerations (enums) in Python, providing guidance on defining, accessing, and managing enums effectively.
+---
+
+#### Previous topic
+[Debugging C API extensions and CPython Internals with GDB](https://docs.python.org/3/howto/gdb_helpers.html "previous chapter")
+#### Next topic
+[Functional Programming HOWTO](https://docs.python.org/3/howto/functional.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/enum.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/functional.html "Functional Programming HOWTO") |
+  * [previous](https://docs.python.org/3/howto/gdb_helpers.html "Debugging C API extensions and CPython Internals with GDB") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Enum HOWTO](https://docs.python.org/3/howto/enum.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Enum HOWTO[¶](https://docs.python.org/3/howto/enum.html#enum-howto "Link to this heading")
+An [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") is a set of symbolic names bound to unique values. They are similar to global variables, but they offer a more useful [`repr()`](https://docs.python.org/3/library/functions.html#repr "repr"), grouping, type-safety, and a few other features.
+They are most useful when you have a variable that can take one of a limited selection of values. For example, the days of the week:
+>>>```
+>>> fromenumimport Enum
+>>> classWeekday(Enum):
+...   MONDAY = 1
+...   TUESDAY = 2
+...   WEDNESDAY = 3
+...   THURSDAY = 4
+...   FRIDAY = 5
+...   SATURDAY = 6
+...   SUNDAY = 7
+
+```
+
+Or perhaps the RGB primary colors:
+>>>```
+>>> fromenumimport Enum
+>>> classColor(Enum):
+...   RED = 1
+...   GREEN = 2
+...   BLUE = 3
+
+```
+
+As you can see, creating an [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") is as simple as writing a class that inherits from [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") itself.
+Note
+Case of Enum Members
+Because Enums are used to represent constants, and to help avoid issues with name clashes between mixin-class methods/attributes and enum names, we strongly recommend using UPPER_CASE names for members, and will be using that style in our examples.
+Depending on the nature of the enum a member’s value may or may not be important, but either way that value can be used to get the corresponding member:
+>>>```
+>>> Weekday(3)
+<Weekday.WEDNESDAY: 3>
+
+```
+
+As you can see, the `repr()` of a member shows the enum name, the member name, and the value. The `str()` of a member shows only the enum name and member name:
+>>>```
+>>> print(Weekday.THURSDAY)
+Weekday.THURSDAY
+
+```
+
+The _type_ of an enumeration member is the enum it belongs to:
+>>>```
+>>> type(Weekday.MONDAY)
+<enum 'Weekday'>
+>>> isinstance(Weekday.FRIDAY, Weekday)
+True
+
+```
+
+Enum members have an attribute that contains just their `name`:
+>>>```
+>>> print(Weekday.TUESDAY.name)
+TUESDAY
+
+```
+
+Likewise, they have an attribute for their `value`:
+>>>```
+>>> Weekday.WEDNESDAY.value
+3
+
+```
+
+Unlike many languages that treat enumerations solely as name/value pairs, Python Enums can have behavior added. For example, [`datetime.date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date") has two methods for returning the weekday: [`weekday()`](https://docs.python.org/3/library/datetime.html#datetime.date.weekday "datetime.date.weekday") and [`isoweekday()`](https://docs.python.org/3/library/datetime.html#datetime.date.isoweekday "datetime.date.isoweekday"). The difference is that one of them counts from 0-6 and the other from 1-7. Rather than keep track of that ourselves we can add a method to the `Weekday` enum to extract the day from the [`date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date") instance and return the matching enum member:
+```
+@classmethod
+deffrom_date(cls, date):
+  return cls(date.isoweekday())
+
+```
+
+The complete `Weekday` enum now looks like this:
+>>>```
+>>> classWeekday(Enum):
+...   MONDAY = 1
+...   TUESDAY = 2
+...   WEDNESDAY = 3
+...   THURSDAY = 4
+...   FRIDAY = 5
+...   SATURDAY = 6
+...   SUNDAY = 7
+...   #
+...   @classmethod
+...   deffrom_date(cls, date):
+...     return cls(date.isoweekday())
+
+```
+
+Now we can find out what today is! Observe:
+>>>```
+>>> fromdatetimeimport date
+>>> Weekday.from_date(date.today())
+<Weekday.TUESDAY: 2>

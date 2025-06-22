@@ -1,0 +1,36 @@
+Title: Logging LogRecord Class
+URL: https://docs.python.org/3/library/logging.html
+Summary: The `logging.LogRecord` class encapsulates all information related to a logged event, primarily using the `msg` and `args` parameters to form the message. Key parameters include `name` for the logger's name and `level` for the event's numeric level, among others.
+---
+
+_class_ logging.LogRecord(_name_ , _level_ , _pathname_ , _lineno_ , _msg_ , _args_ , _exc_info_ , _func =None_, _sinfo =None_)[¶](https://docs.python.org/3/library/logging.html#logging.LogRecord "Link to this definition")
+    
+Contains all the information pertinent to the event being logged.
+The primary information is passed in _msg_ and _args_ , which are combined using `msg % args` to create the `message` attribute of the record. 
+
+Parameters:
+    
+  * **name** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – The name of the logger used to log the event represented by this `LogRecord`. Note that the logger name in the `LogRecord` will always have this value, even though it may be emitted by a handler attached to a different (ancestor) logger.
+  * **level** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The [numeric level](https://docs.python.org/3/library/logging.html#levels) of the logging event (such as `10` for `DEBUG`, `20` for `INFO`, etc). Note that this is converted to _two_ attributes of the LogRecord: `levelno` for the numeric value and `levelname` for the corresponding level name.
+  * **pathname** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – The full string path of the source file where the logging call was made.
+  * **lineno** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The line number in the source file where the logging call was made.
+  * **msg** ([_Any_](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any")) – The event description message, which can be a %-format string with placeholders for variable data, or an arbitrary object (see [Using arbitrary objects as messages](https://docs.python.org/3/howto/logging.html#arbitrary-object-messages)).
+  * **args** ([_tuple_](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") _|_[_dict_](https://docs.python.org/3/library/stdtypes.html#dict "dict") _[_[_str_](https://docs.python.org/3/library/stdtypes.html#str "str") _,_[_Any_](https://docs.python.org/3/library/typing.html#typing.Any "typing.Any") _]_) – Variable data to merge into the _msg_ argument to obtain the event description.
+  * **exc_info** ([_tuple_](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") _[_[_type_](https://docs.python.org/3/library/functions.html#type "type") _[_[_BaseException_](https://docs.python.org/3/library/exceptions.html#BaseException "BaseException") _]__,_[_BaseException_](https://docs.python.org/3/library/exceptions.html#BaseException "BaseException") _,_[_types.TracebackType_](https://docs.python.org/3/library/types.html#types.TracebackType "types.TracebackType") _]__|__None_) – An exception tuple with the current exception information, as returned by [`sys.exc_info()`](https://docs.python.org/3/library/sys.html#sys.exc_info "sys.exc_info"), or `None` if no exception information is available.
+  * **func** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str") _|__None_) – The name of the function or method from which the logging call was invoked.
+  * **sinfo** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str") _|__None_) – A text string representing stack information from the base of the stack in the current thread, up to the logging call.
+
+
+
+getMessage()[¶](https://docs.python.org/3/library/logging.html#logging.LogRecord.getMessage "Link to this definition")
+    
+Returns the message for this [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") instance after merging any user-supplied arguments with the message. If the user-supplied message argument to the logging call is not a string, [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") is called on it to convert it to a string. This allows use of user-defined classes as messages, whose `__str__` method can return the actual format string to be used.
+Changed in version 3.2: The creation of a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") has been made more configurable by providing a factory which is used to create the record. The factory can be set using [`getLogRecordFactory()`](https://docs.python.org/3/library/logging.html#logging.getLogRecordFactory "logging.getLogRecordFactory") and [`setLogRecordFactory()`](https://docs.python.org/3/library/logging.html#logging.setLogRecordFactory "logging.setLogRecordFactory") (see this for the factory’s signature).
+This functionality can be used to inject your own values into a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord") at creation time. You can use the following pattern:
+```
+old_factory = logging.getLogRecordFactory()
+defrecord_factory(*args, **kwargs):
+  record = old_factory(*args, **kwargs)
+  record.custom_attribute = 0xdecafbad
+  return record
+logging.setLogRecordFactory(record_factory)

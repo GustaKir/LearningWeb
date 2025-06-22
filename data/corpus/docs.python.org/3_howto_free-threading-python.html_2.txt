@@ -1,0 +1,19 @@
+Title: Thread Safety in Free-Threaded CPython
+URL: https://docs.python.org/3/howto/free-threading-python.html
+Summary: This section discusses the thread safety in the free-threaded build of CPython compared to the GIL-enabled version. It highlights that built-in types like dict, list, and set utilize internal locks for concurrent modifications, similar to the GIL, but notes that Python does not guarantee consistent behavior for these operations. It advises using threading.Lock or other synchronization primitives for safe concurrent access.
+---
+
+## Thread safety[¶](https://docs.python.org/3/howto/free-threading-python.html#thread-safety "Link to this heading")
+The free-threaded build of CPython aims to provide similar thread-safety behavior at the Python level to the default GIL-enabled build. Built-in types like [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict"), [`list`](https://docs.python.org/3/library/stdtypes.html#list "list"), and [`set`](https://docs.python.org/3/library/stdtypes.html#set "set") use internal locks to protect against concurrent modifications in ways that behave similarly to the GIL. However, Python has not historically guaranteed specific behavior for concurrent modifications to these built-in types, so this should be treated as a description of the current implementation, not a guarantee of current or future behavior.
+Note
+It’s recommended to use the [`threading.Lock`](https://docs.python.org/3/library/threading.html#threading.Lock "threading.Lock") or other synchronization primitives instead of relying on the internal locks of built-in types, when possible.
+## Known limitations[¶](https://docs.python.org/3/howto/free-threading-python.html#known-limitations "Link to this heading")
+This section describes known limitations of the free-threaded CPython build.
+### Immortalization[¶](https://docs.python.org/3/howto/free-threading-python.html#immortalization "Link to this heading")
+The free-threaded build of the 3.13 release makes some objects [immortal](https://docs.python.org/3/glossary.html#term-immortal). Immortal objects are not deallocated and have reference counts that are never modified. This is done to avoid reference count contention that would prevent efficient multi-threaded scaling.
+An object will be made immortal when a new thread is started for the first time after the main thread is running. The following objects are immortalized:
+  * [function](https://docs.python.org/3/reference/datamodel.html#user-defined-funcs) objects declared at the module level
+  * [method](https://docs.python.org/3/reference/datamodel.html#instance-methods) descriptors
+  * [code](https://docs.python.org/3/reference/datamodel.html#code-objects) objects
+  * [module](https://docs.python.org/3/glossary.html#term-module) objects and their dictionaries
+  * [classes](https://docs.python.org/3/reference/datamodel.html#classes) (type objects)

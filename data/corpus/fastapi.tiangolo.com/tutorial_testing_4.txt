@@ -1,0 +1,109 @@
+Title: Testing in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/testing/
+Summary: This section outlines the process of testing in FastAPI, including the use of `TestClient`, separation of tests into app and testing files, and an extended example demonstrating these concepts. It also provides links for easy navigation through different topics related to testing.
+---
+
+Table of contents 
+  * [ Using `TestClient` ](https://fastapi.tiangolo.com/tutorial/testing/#using-testclient)
+  * [ Separating tests  ](https://fastapi.tiangolo.com/tutorial/testing/#separating-tests)
+    * [ **FastAPI** app file  ](https://fastapi.tiangolo.com/tutorial/testing/#fastapi-app-file)
+    * [ Testing file  ](https://fastapi.tiangolo.com/tutorial/testing/#testing-file)
+  * [ Testing: extended example  ](https://fastapi.tiangolo.com/tutorial/testing/#testing-extended-example)
+    * [ Extended **FastAPI** app file  ](https://fastapi.tiangolo.com/tutorial/testing/#extended-fastapi-app-file)
+    * [ Extended testing file  ](https://fastapi.tiangolo.com/tutorial/testing/#extended-testing-file)
+  * [ Run it  ](https://fastapi.tiangolo.com/tutorial/testing/#run-it)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+
+
+# Testing[¶](https://fastapi.tiangolo.com/tutorial/testing/#testing "Permanent link")
+Thanks to [Starlette](https://www.starlette.io/testclient/), testing **FastAPI** applications is easy and enjoyable.
+It is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.
+With it, you can use [pytest](https://docs.pytest.org/) directly with **FastAPI**.
+## Using `TestClient`[¶](https://fastapi.tiangolo.com/tutorial/testing/#using-testclient "Permanent link")
+Info
+To use `TestClient`, first install [`httpx`](https://www.python-httpx.org).
+Make sure you create a [virtual environment](https://fastapi.tiangolo.com/virtual-environments/), activate it, and then install it, for example:
+```
+$ pipinstallhttpx
+
+```
+
+Import `TestClient`.
+Create a `TestClient` by passing your **FastAPI** application to it.
+Create functions with a name that starts with `test_` (this is standard `pytest` conventions).
+Use the `TestClient` object the same way as you do with `httpx`.
+Write simple `assert` statements with the standard Python expressions that you need to check (again, standard `pytest`).
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/testing/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.testclientimport TestClient
+app = FastAPI()
+@app.get("/")
+async defread_main():
+  return {"msg": "Hello World"}
+client = TestClient(app)
+deftest_read_main():
+  response = client.get("/")
+  assert response.status_code == 200
+  assert response.json() == {"msg": "Hello World"}
+
+```
+
+Tip
+Notice that the testing functions are normal `def`, not `async def`.
+And the calls to the client are also normal calls, not using `await`.
+This allows you to use `pytest` directly without complications.
+Technical Details
+You could also use `from starlette.testclient import TestClient`.
+**FastAPI** provides the same `starlette.testclient` as `fastapi.testclient` just as a convenience for you, the developer. But it comes directly from Starlette.
+Tip
+If you want to call `async` functions in your tests apart from sending requests to your FastAPI application (e.g. asynchronous database functions), have a look at the [Async Tests](https://fastapi.tiangolo.com/advanced/async-tests/) in the advanced tutorial.
+## Separating tests[¶](https://fastapi.tiangolo.com/tutorial/testing/#separating-tests "Permanent link")
+In a real application, you probably would have your tests in a different file.
+And your **FastAPI** application might also be composed of several files/modules, etc.
+### **FastAPI** app file[¶](https://fastapi.tiangolo.com/tutorial/testing/#fastapi-app-file "Permanent link")
+Let's say you have a file structure as described in [Bigger Applications](https://fastapi.tiangolo.com/tutorial/bigger-applications/):
+```
+.
+├── app
+│   ├── __init__.py
+│   └── main.py
+
+```
+
+In the file `main.py` you have your **FastAPI** app:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/testing/#__tabbed_2_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/")
+async defread_main():
+  return {"msg": "Hello World"}
+
+```
+
+### Testing file[¶](https://fastapi.tiangolo.com/tutorial/testing/#testing-file "Permanent link")
+Then you could have a file `test_main.py` with your tests. It could live on the same Python package (the same directory with a `__init__.py` file):
+```
+.
+├── app
+│   ├── __init__.py
+│   ├── main.py
+│   └── test_main.py
+
+```
+
+Because this file is in the same package, you can use relative imports to import the object `app` from the `main` module (`main.py`):
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/testing/#__tabbed_3_1)
+```
+fromfastapi.testclientimport TestClient
+from.mainimport app
+client = TestClient(app)
+deftest_read_main():
+  response = client.get("/")
+  assert response.status_code == 200
+  assert response.json() == {"msg": "Hello World"}

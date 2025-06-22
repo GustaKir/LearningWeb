@@ -1,0 +1,84 @@
+Title: Terminating a Task Group in asyncio
+URL: https://docs.python.org/3/library/asyncio-task.html
+Summary: This section discusses how to terminate a task group in Python's asyncio library by raising a custom exception. It demonstrates the process using a `TerminateTaskGroup` exception and shows how to create and manage tasks within a TaskGroup context.
+---
+
+ancellations and correct preservation of cancellation counts.
+### Terminating a Task Group[¶](https://docs.python.org/3/library/asyncio-task.html#terminating-a-task-group "Link to this heading")
+While terminating a task group is not natively supported by the standard library, termination can be achieved by adding an exception-raising task to the task group and ignoring the raised exception:
+```
+importasyncio
+fromasyncioimport TaskGroup
+classTerminateTaskGroup(Exception):
+"""Exception raised to terminate a task group."""
+async defforce_terminate_task_group():
+"""Used to force termination of a task group."""
+  raise TerminateTaskGroup()
+async defjob(task_id, sleep_time):
+  print(f'Task {task_id}: start')
+  await asyncio.sleep(sleep_time)
+  print(f'Task {task_id}: done')
+async defmain():
+  try:
+    async with TaskGroup() as group:
+      # spawn some tasks
+      group.create_task(job(1, 0.5))
+      group.create_task(job(2, 1.5))
+      # sleep for 1 second
+      await asyncio.sleep(1)
+      # add an exception-raising task to force the group to terminate
+      group.create_task(force_terminate_task_group())
+  except* TerminateTaskGroup:
+    pass
+asyncio.run(main())
+
+```
+
+Expected output:
+```
+Task 1: start
+Task 2: start
+Task 1: done
+
+```
+
+## [Sleeping](https://docs.python.org/3/library/asyncio-task.html#id7)[¶](https://docs.python.org/3/library/asyncio-task.html#sleeping "Link to this heading") 
+
+_async_ asyncio.sleep(_delay_ , _result =None_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.sleep "Link to this definition")
+    
+Block for _delay_ seconds.
+If _result_ is provided, it is returned to the caller when the coroutine completes.
+`sleep()` always suspends the current task, allowing other tasks to run.
+Setting the delay to 0 provides an optimized path to allow other tasks to run. This can be used by long-running functions to avoid blocking the event loop for the full duration of the function call.
+Example of coroutine displaying the current date every second for 5 seconds:
+```
+importasyncio
+importdatetime
+async defdisplay_date():
+  loop = asyncio.get_running_loop()
+  end_time = loop.time() + 5.0
+  while True:
+    print(datetime.datetime.now())
+    if (loop.time() + 1.0) >= end_time:
+      break
+    await asyncio.sleep(1)
+asyncio.run(display_date())
+
+```
+
+Changed in version 3.10: Removed the _loop_ parameter.
+Changed in version 3.13: Raises [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if _delay_ is [`nan`](https://docs.python.org/3/library/math.html#math.nan "math.nan").
+## [Running Tasks Concurrently](https://docs.python.org/3/library/asyncio-task.html#id8)[¶](https://docs.python.org/3/library/asyncio-task.html#running-tasks-concurrently "Link to this heading") 
+
+_awaitable _asyncio.gather(_* aws_, _return_exceptions =False_)[¶](https://docs.python.org/3/library/asyncio-task.html#asyncio.gather "Link to this definition")
+    
+Run [awaitable objects](https://docs.python.org/3/library/asyncio-task.html#asyncio-awaitables) in the _aws_ sequence _concurrently_.
+If any awaitable in _aws_ is a coroutine, it is automatically scheduled as a Task.
+If all awaitables are completed successfully, the result is an aggregate list of returned values. The order of result values corresponds to the order of awaitables in _aws_.
+If _return_exceptions_ is `False` (default), the first raised exception is immediately propagated to the task that awaits on `gather()`. Other awaitables in the _aws_ sequence **won’t be cancelled** and will continue to run.
+If _return_exceptions_ is `True`, exceptions are treated the same as successful results, and aggregated in the result list.
+If `gather()` is _cancelled_ , all submitted awaitables (that have not completed yet) are also _cancelled_.
+If any Task or Future from the _aws_ sequence is _cancelled_ , it is treated as if it raised [`CancelledError`](https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError "asyncio.CancelledError") – the `gather()` call is **not** cancelled in this case. This is to prevent the cancellation of one submitted Task/Future to cause other Tasks/Futures to be cancelled.
+Note
+A new alternative to create and run tasks concurrently and wait for their completion is [`asyncio.TaskGroup`](https://docs.python.org/3/library/asyncio-task.html#asyncio.TaskGroup "asyncio.TaskGroup"). _TaskGroup_ provides stronger safety guarantees than _gather_ for scheduling a nesting of subtasks: if a task (or a subtask, a task scheduled by a task) raises an exception, _TaskGroup_ will, while _gather_ will not, cancel the remaining scheduled tasks).
+Example:

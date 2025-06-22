@@ -1,0 +1,36 @@
+Title: Subprocess Module Overview and Windows Argument Conversion
+URL: https://docs.python.org/3/library/subprocess.html
+Summary: This section discusses the availability of the subprocess module on Unix and Windows, highlighting changes in versions 3.3.4 and 3.11. It also explains how an argument sequence is converted to a string on Windows, detailing rules for delimiters, quoted strings, and escape characters.
+---
+
+```
+
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, Windows.
+Changed in version 3.3.4: Windows support added
+Changed in version 3.11: Added the _encoding_ and _errors_ parameters.
+## Notes[¶](https://docs.python.org/3/library/subprocess.html#notes "Link to this heading")
+### Converting an argument sequence to a string on Windows[¶](https://docs.python.org/3/library/subprocess.html#converting-an-argument-sequence-to-a-string-on-windows "Link to this heading")
+On Windows, an _args_ sequence is converted to a string that can be parsed using the following rules (which correspond to the rules used by the MS C runtime):
+  1. Arguments are delimited by white space, which is either a space or a tab.
+  2. A string surrounded by double quotation marks is interpreted as a single argument, regardless of white space contained within. A quoted string can be embedded in an argument.
+  3. A double quotation mark preceded by a backslash is interpreted as a literal double quotation mark.
+  4. Backslashes are interpreted literally, unless they immediately precede a double quotation mark.
+  5. If backslashes immediately precede a double quotation mark, every pair of backslashes is interpreted as a literal backslash. If the number of backslashes is odd, the last backslash escapes the next double quotation mark as described in rule 3.
+
+
+See also 
+
+[`shlex`](https://docs.python.org/3/library/shlex.html#module-shlex "shlex: Simple lexical analysis for Unix shell-like languages.")
+    
+Module which provides function to parse and escape command lines.
+### Disabling use of `vfork()` or `posix_spawn()`[¶](https://docs.python.org/3/library/subprocess.html#disabling-use-of-vfork-or-posix-spawn "Link to this heading")
+On Linux, [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") defaults to using the `vfork()` system call internally when it is safe to do so rather than `fork()`. This greatly improves performance.
+If you ever encounter a presumed highly unusual situation where you need to prevent `vfork()` from being used by Python, you can set the `subprocess._USE_VFORK` attribute to a false value.
+```
+subprocess._USE_VFORK = False # See CPython issue gh-NNNNNN.
+
+```
+
+Setting this has no impact on use of `posix_spawn()` which could use `vfork()` internally within its libc implementation. There is a similar `subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of that.
+```
+subprocess._USE_POSIX_SPAWN = False # See CPython issue gh-NNNNNN.

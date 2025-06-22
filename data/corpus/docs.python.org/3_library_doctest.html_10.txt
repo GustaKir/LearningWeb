@@ -1,0 +1,33 @@
+Title: doctest.testmod Function
+URL: https://docs.python.org/3/library/doctest.html
+Summary: The `doctest.testmod` function runs tests defined in the docstrings of functions and classes in a specified module, or the main module if none is supplied. It allows for several optional arguments to customize its behavior, such as reporting options and the inclusion of additional global variables.
+---
+
+doctest.testmod(_m =None_, _name =None_, _globs =None_, _verbose =None_, _report =True_, _optionflags =0_, _extraglobs =None_, _raise_on_error =False_, _exclude_empty =False_)[¶](https://docs.python.org/3/library/doctest.html#doctest.testmod "Link to this definition")
+    
+All arguments are optional, and all except for _m_ should be specified in keyword form.
+Test examples in docstrings in functions and classes reachable from module _m_ (or module [`__main__`](https://docs.python.org/3/library/__main__.html#module-__main__ "__main__: The environment where top-level code is run. Covers command-line interfaces, import-time behavior, and ``__name__ == '__main__'``.") if _m_ is not supplied or is `None`), starting with `m.__doc__`.
+Also test examples reachable from dict `m.__test__`, if it exists. `m.__test__` maps names (strings) to functions, classes and strings; function and class docstrings are searched for examples; strings are searched directly, as if they were docstrings.
+Only docstrings attached to objects belonging to module _m_ are searched.
+Return `(failure_count, test_count)`.
+Optional argument _name_ gives the name of the module; by default, or if `None`, `m.__name__` is used.
+Optional argument _exclude_empty_ defaults to false. If true, objects for which no doctests are found are excluded from consideration. The default is a backward compatibility hack, so that code still using [`doctest.master.summarize`](https://docs.python.org/3/library/doctest.html#doctest.DocTestRunner.summarize "doctest.DocTestRunner.summarize") in conjunction with [`testmod()`](https://docs.python.org/3/library/doctest.html#doctest.testmod "doctest.testmod") continues to get output for objects with no tests. The _exclude_empty_ argument to the newer [`DocTestFinder`](https://docs.python.org/3/library/doctest.html#doctest.DocTestFinder "doctest.DocTestFinder") constructor defaults to true.
+Optional arguments _extraglobs_ , _verbose_ , _report_ , _optionflags_ , _raise_on_error_ , and _globs_ are the same as for function [`testfile()`](https://docs.python.org/3/library/doctest.html#doctest.testfile "doctest.testfile") above, except that _globs_ defaults to `m.__dict__`. 
+
+doctest.run_docstring_examples(_f_ , _globs_ , _verbose =False_, _name ='NoName'_, _compileflags =None_, _optionflags =0_)[¶](https://docs.python.org/3/library/doctest.html#doctest.run_docstring_examples "Link to this definition")
+    
+Test examples associated with object _f_ ; for example, _f_ may be a string, a module, a function, or a class object.
+A shallow copy of dictionary argument _globs_ is used for the execution context.
+Optional argument _name_ is used in failure messages, and defaults to `"NoName"`.
+If optional argument _verbose_ is true, output is generated even if there are no failures. By default, output is generated only in case of an example failure.
+Optional argument _compileflags_ gives the set of flags that should be used by the Python compiler when running the examples. By default, or if `None`, flags are deduced corresponding to the set of future features found in _globs_.
+Optional argument _optionflags_ works as for function [`testfile()`](https://docs.python.org/3/library/doctest.html#doctest.testfile "doctest.testfile") above.
+## Unittest API[¶](https://docs.python.org/3/library/doctest.html#unittest-api "Link to this heading")
+As your collection of doctest’ed modules grows, you’ll want a way to run all their doctests systematically. [`doctest`](https://docs.python.org/3/library/doctest.html#module-doctest "doctest: Test pieces of code within docstrings.") provides two functions that can be used to create [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") test suites from modules and text files containing doctests. To integrate with [`unittest`](https://docs.python.org/3/library/unittest.html#module-unittest "unittest: Unit testing framework for Python.") test discovery, include a [load_tests](https://docs.python.org/3/library/unittest.html#load-tests-protocol) function in your test module:
+```
+importunittest
+importdoctest
+importmy_module_with_doctests
+defload_tests(loader, tests, ignore):
+  tests.addTests(doctest.DocTestSuite(my_module_with_doctests))
+  return tests

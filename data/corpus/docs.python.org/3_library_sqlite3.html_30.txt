@@ -1,0 +1,21 @@
+Title: SQLite3 Module Transaction Control
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: The `sqlite3` module provides methods for managing database transactions, emphasizing the recommended use of the autocommit attribute. It also mentions the older isolation_level attribute for compatibility with pre-Python 3.12 behavior.
+---
+
+```
+
+Note
+The `sqlite3` module API does not support strings containing surrogates.
+See also
+[Unicode HOWTO](https://docs.python.org/3/howto/unicode.html#unicode-howto)
+## Explanation[¶](https://docs.python.org/3/library/sqlite3.html#explanation "Link to this heading")
+### Transaction control[¶](https://docs.python.org/3/library/sqlite3.html#transaction-control "Link to this heading")
+`sqlite3` offers multiple methods of controlling whether, when and how database transactions are opened and closed. [Transaction control via the autocommit attribute](https://docs.python.org/3/library/sqlite3.html#sqlite3-transaction-control-autocommit) is recommended, while [Transaction control via the isolation_level attribute](https://docs.python.org/3/library/sqlite3.html#sqlite3-transaction-control-isolation-level) retains the pre-Python 3.12 behaviour.
+#### Transaction control via the `autocommit` attribute[¶](https://docs.python.org/3/library/sqlite3.html#transaction-control-via-the-autocommit-attribute "Link to this heading")
+The recommended way of controlling transaction behaviour is through the [`Connection.autocommit`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.autocommit "sqlite3.Connection.autocommit") attribute, which should preferably be set using the _autocommit_ parameter of [`connect()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.connect "sqlite3.connect").
+It is suggested to set _autocommit_ to `False`, which implies [**PEP 249**](https://peps.python.org/pep-0249/)-compliant transaction control. This means:
+  * `sqlite3` ensures that a transaction is always open, so [`connect()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.connect "sqlite3.connect"), [`Connection.commit()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.commit "sqlite3.Connection.commit"), and [`Connection.rollback()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.rollback "sqlite3.Connection.rollback") will implicitly open a new transaction (immediately after closing the pending one, for the latter two). `sqlite3` uses `BEGIN DEFERRED` statements when opening transactions.
+  * Transactions should be committed explicitly using `commit()`.
+  * Transactions should be rolled back explicitly using `rollback()`.
+  * An implicit rollback is performed if the database is [`close()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.close "sqlite3.Connection.close")-ed with pending changes.

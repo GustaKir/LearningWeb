@@ -1,0 +1,148 @@
+Title: Query Parameter Validation in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This section demonstrates how to define query parameters in FastAPI using the Query class. It illustrates the usage of query parameters with minimum length restrictions, and suggests using the Annotated version for better type hinting. Additionally, it introduces the potential for query parameters to accept multiple values.
+---
+
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: str | None = Query(min_length=3)):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Union[str, None] = Query(min_length=3)):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+## Query parameter list / multiple values[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values "Permanent link")
+When you define a query parameter explicitly with `Query` you can also declare it to receive a list of values, or said in another way, to receive multiple values.
+For example, to declare a query parameter `q` that can appear multiple times in the URL, you can write:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_24_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[list[str] | None, Query()] = None):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_25_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_25_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_25_3)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_25_4)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_25_5)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[Union[list[str], None], Query()] = None):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[Union[List[str], None], Query()] = None):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: list[str] | None = Query(default=None)):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Union[list[str], None] = Query(default=None)):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Union[List[str], None] = Query(default=None)):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+Then, with a URL like:
+```
+http://localhost:8000/items/?q=foo&q=bar
+
+```
+
+you would receive the multiple `q` _query parameters'_ values (`foo` and `bar`) in a Python `list` inside your _path operation function_ , in the _function parameter_ `q`.
+So, the response to that URL would be:
+```
+{
+"q":[
+"foo",
+"bar"
+]
+}
+
+```
+
+Tip
+To declare a query parameter with a type of `list`, like in the example above, you need to explicitly use `Query`, otherwise it would be interpreted as a request body.
+The interactive API docs will update accordingly, to allow multiple values:
+![](https://fastapi.tiangolo.com/img/tutorial/query-params-str-validations/image02.png)
+### Query parameter list / multiple values with defaults[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values-with-defaults "Permanent link")
+You can also define a default `list` of values if none are provided:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_26_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[list[str], Query()] = ["foo", "bar"]):
+  query_items = {"q": q}
+  return query_items
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_27_1)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_27_2)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_27_3)

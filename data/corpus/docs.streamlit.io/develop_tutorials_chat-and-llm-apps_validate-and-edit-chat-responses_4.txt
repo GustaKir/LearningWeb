@@ -1,0 +1,43 @@
+Title: Creating a Helper Function to Highlight Text
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses
+Summary: This section describes how to create a helper function named 'add_highlights' to visually indicate validation errors in response sentences. The function highlights sentences based on their validity, using customizable text and background colors, defaulting to red.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#create-a-helper-function-to-highlight-text)Create a helper function to highlight text
+To show your validation results to your user, you can highlight sentences that are marked as errors. Create a helper function to add text and background color to the detected errors.
+Complete function to highlight errors _expand_more_
+`def add_highlights(response_sentences, validation_list, bg="red", text="red"): return [ f":{text}[:{bg}-background[" + sentence + "]]" if not is_valid else sentence     for sentence, is_valid in zip(response_sentences, validation_list) ] `
+  1. Define a function that accepts the lists of sentences and their validations. Include parameters for the text and background colors of the highlight:
+`def add_highlights(response_sentences, validation_list, bg="red", text="red"): `
+For convenience, use a default of `"red"` for the highlight colors. You'll use this function to highlight all errors in red when summarizing the validation. If the user chooses to step through the errors individually, you'll highlight all the errors in gray (except the one in focus).
+  2. Use list comprehension to return a modified list of sentences that include the Markdown highlights where errors were detected:
+` return [ f":{text}[:{bg}-background[" + sentence + "]]" if not is_valid else sentence     for sentence, is_valid in zip(response_sentences, validation_list) ] `
+
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#initialize-and-display-your-chat-history)Initialize and display your chat history
+Your app will use Session State to track the stages of the validation and correction process.
+  1. Initialize Session State:
+`if "stage" not in st.session_state:   st.session_state.stage = "user"   st.session_state.history = []   st.session_state.pending = None   st.session_state.validation = {} `
+     * `st.session_state.stage` tracks where the user is in the multistage process. `"user"` means that the app is waiting for the user to enter a new prompt. The other values are `"validate"`, `"correct"`, and `"rewrite"`, which will be defined later.
+     * `st.session_state.history` stores the conversation history as a list of messages. Each message is a dictionary of message attributes (`"role"` and `"content"`).
+     * `st.session_state.pending` stores the next response before it is approved.
+     * `st.session_state.validation` stores the validation information for the pending response. This is a dictionary with the keys `"sentences"` and `"valid"` to store the lists of sentences and their validations, respectively.
+  2. Iterate through the messages in your chat history and display their contents in chat message containers:
+`for message in st.session_state.history: with st.chat_message(message["role"]):     st.write(message["content"]) `
+
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#define-the-user-stage)Define the `"user"` stage
+When `st.session_state.stage` is `"user"`, the app is waiting for a new prompt.
+  1. Start a conditional block for the `"user"` stage:
+`if st.session_state.stage == "user": `
+  2. Display a chat input widget, and start a nested conditional block from its output:
+` if user_input := st.chat_input("Enter a prompt"): `
+This nested block won't be executed until a user submits a prompt. When the app first loads (or returns to the `"user"` stage after finalizing a response), this is effectively the end of the script.
+The `:=` notation is shorthand to assign a variable within an expression.
+  3. Append the user prompt to the chat history and display it in a chat message container:
+`    st.session_state.history.append({"role": "user", "content": user_input}) with st.chat_message("user"):       st.write(user_input) `
+  4. Following the user's chat message container, display the chat response in another chat message container. Save the complete streamed response as a pending message in Session State:
+` with st.chat_message("assistant"):       response = st.write_stream(chat_stream())       st.session_state.pending = response `
+  5. Update the stage to `"validate"`, and rerun the app:
+`      st.session_state.stage = "validate"       st.rerun() `
+When a user submits a new prompt, the app will rerun and execute this conditional block. At the end of this block, the app will rerun again and continue in the `"validate"` stage.

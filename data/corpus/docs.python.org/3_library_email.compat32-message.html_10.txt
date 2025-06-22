@@ -1,0 +1,62 @@
+Title: Boundary Setting in Email Messages
+URL: https://docs.python.org/3/library/email.compat32-message.html
+Summary: The `set_boundary()` method sets the `boundary` parameter of the _Content-Type_ header in email messages. It quotes the boundary as necessary and raises a `HeaderParseError` if there is no _Content-Type_ header. Unlike deleting and re-adding the header, using `set_boundary()` modifies the existing header directly.
+---
+
+set_boundary(_boundary_)[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.set_boundary "Link to this definition")
+    
+Set the `boundary` parameter of the _Content-Type_ header to _boundary_. [`set_boundary()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.set_boundary "email.message.Message.set_boundary") will always quote _boundary_ if necessary. A [`HeaderParseError`](https://docs.python.org/3/library/email.errors.html#email.errors.HeaderParseError "email.errors.HeaderParseError") is raised if the message object has no _Content-Type_ header.
+Note that using this method is subtly different than deleting the old _Content-Type_ header and adding a new one with the new boundary via [`add_header()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.add_header "email.message.Message.add_header"), because [`set_boundary()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.set_boundary "email.message.Message.set_boundary") preserves the order of the _Content-Type_ header in the list of headers. However, it does _not_ preserve any continuation lines which may have been present in the original _Content-Type_ header. 
+
+get_content_charset(_failobj =None_)[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.get_content_charset "Link to this definition")
+    
+Return the `charset` parameter of the _Content-Type_ header, coerced to lower case. If there is no _Content-Type_ header, or if that header has no `charset` parameter, _failobj_ is returned.
+Note that this method differs from [`get_charset()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.get_charset "email.message.Message.get_charset") which returns the [`Charset`](https://docs.python.org/3/library/email.charset.html#email.charset.Charset "email.charset.Charset") instance for the default encoding of the message body. 
+
+get_charsets(_failobj =None_)[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.get_charsets "Link to this definition")
+    
+Return a list containing the character set names in the message. If the message is a _multipart_ , then the list will contain one element for each subpart in the payload, otherwise, it will be a list of length 1.
+Each item in the list will be a string which is the value of the `charset` parameter in the _Content-Type_ header for the represented subpart. However, if the subpart has no _Content-Type_ header, no `charset` parameter, or is not of the _text_ main MIME type, then that item in the returned list will be _failobj_. 
+
+get_content_disposition()[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.get_content_disposition "Link to this definition")
+    
+Return the lowercased value (without parameters) of the message’s _Content-Disposition_ header if it has one, or `None`. The possible values for this method are _inline_ , _attachment_ or `None` if the message follows [**RFC 2183**](https://datatracker.ietf.org/doc/html/rfc2183.html).
+Added in version 3.5. 
+
+walk()[¶](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.walk "Link to this definition")
+    
+The [`walk()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.walk "email.message.Message.walk") method is an all-purpose generator which can be used to iterate over all the parts and subparts of a message object tree, in depth-first traversal order. You will typically use [`walk()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.walk "email.message.Message.walk") as the iterator in a `for` loop; each iteration returns the next subpart.
+Here’s an example that prints the MIME type of every part of a multipart message structure:
+>>>```
+>>> for part in msg.walk():
+...   print(part.get_content_type())
+multipart/report
+text/plain
+message/delivery-status
+text/plain
+text/plain
+message/rfc822
+text/plain
+
+```
+
+`walk` iterates over the subparts of any part where [`is_multipart()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.is_multipart "email.message.Message.is_multipart") returns `True`, even though `msg.get_content_maintype() == 'multipart'` may return `False`. We can see this in our example by making use of the `_structure` debug helper function:
+>>>```
+>>> for part in msg.walk():
+...   print(part.get_content_maintype() == 'multipart',
+...      part.is_multipart())
+True True
+False False
+False True
+False False
+False False
+False True
+False False
+>>> _structure(msg)
+multipart/report
+  text/plain
+  message/delivery-status
+    text/plain
+    text/plain
+  message/rfc822
+    text/plain

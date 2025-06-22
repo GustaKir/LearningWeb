@@ -1,0 +1,35 @@
+Title: Creating a Streamlit App with Snowflake Connection
+URL: https://docs.streamlit.io/develop/tutorials/databases/snowflake
+Summary: This section guides users on how to write a Streamlit app by providing a code snippet that establishes a connection to Snowflake, retrieves data using a SQL query, and displays the results. It explains the functionality of the `st.connection` and `.query()` methods, highlighting features like query caching and the option to set a time-to-live (TTL) for cached results.
+---
+
+## [](https://docs.streamlit.io/develop/tutorials/databases/snowflake#write-your-streamlit-app)Write your Streamlit app
+  1. Copy the following code to your Streamlit app and save it. If you are not using the example database and table from the first section of this tutorial, replace the SQL query and results handling as appropriate.
+`# streamlit_app.py import streamlit as st conn = st.connection("snowflake") df = conn.query("SELECT * FROM mytable;", ttl="10m") for row in df.itertuples():   st.write(f"{row.NAME} has a :{row.PET}:") `
+The `st.connection` command creates a `SnowflakeConnection` object and handles secrets retrieval. The `.query()` method handles query caching and retries. By default, query results are cached without expiring. Setting `ttl="10m"` ensures that the query result is cached for no longer than 10 minutes. To disable caching, you can set `ttl=0` instead. Learn more in [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching).
+_push_pin_
+#### Note
+If you configured your connection using a named connection in `.snowflake/connections.toml` instead of `[default]` (Option 2 above), you must include your connection name in `st.connection`. If you have `[my_connection]` in your connections file, replace the line with `st.connection` as follows:
+`conn = st.connection("my_connection", type="snowflake") `
+  2. In your working directory, open a terminal, and run your Streamlit app.
+`streamlit run streamlit_app.py `
+If everything worked out (and you used the example table from the first section), your app should look like this:
+![Finished app screenshot](https://docs.streamlit.io/images/databases/streamlit-app.png)
+
+
+### [](https://docs.streamlit.io/develop/tutorials/databases/snowflake#use-a-snowpark-session)Use a Snowpark session
+The [SnowflakeConnection](https://docs.streamlit.io/develop/api-reference/connections/st.connections.snowflakeconnection) used above also provides access to [Snowpark sessions](https://docs.snowflake.com/en/developer-guide/snowpark/reference/python/session.html) for dataframe-style operations that run natively inside Snowflake. Using this approach, you can rewrite the app above as follows:
+`# streamlit_app.py import streamlit as st conn = st.connection("snowflake") @st.cache_data def load_table():   session = conn.session() return session.table("mytable").to_pandas() df = load_table() for row in df.itertuples():   st.write(f"{row.NAME} has a :{row.PET}:") `
+Because this example uses `.session()` instead of `.query()`, caching is added manually for better performance and efficiency.
+If everything worked out (and you used the example table from the first section), your app should look the same as the preceding screenshot.
+## [](https://docs.streamlit.io/develop/tutorials/databases/snowflake#connecting-to-snowflake-from-community-cloud)Connecting to Snowflake from Community Cloud
+This tutorial assumes a local Streamlit app, however you can also connect to Snowflake from apps hosted in Community Cloud. The main additional steps are:
+  * [Include information about dependencies](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies) using a `requirements.txt` file with `snowflake-snowpark-python` and any other dependencies.
+  * [Add your secrets](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management) to your Community Cloud app. You must use the `.streamlit/secrets.toml` format described in [Option 1](https://docs.streamlit.io/develop/tutorials/databases/snowflake#option-1-use-streamlitsecretstoml) above.
+
+[Previous: Public Google Sheet](https://docs.streamlit.io/develop/tutorials/databases/public-gsheet)[Next: Supabase](https://docs.streamlit.io/develop/tutorials/databases/supabase) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

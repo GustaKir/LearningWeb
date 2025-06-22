@@ -1,0 +1,88 @@
+Title: Differences Between TypeIs and TypeGuard
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section outlines the distinctions between `TypeIs` and `TypeGuard` in Python's typing module. Key differences include subtype requirements, type narrowing behaviors on true or false returns, and their implications for type checking. `TypeGuard` allows more flexibility when narrowing types compared to `TypeIs`.
+---
+
+```
+
+`TypeIs` and `TypeGuard` differ in the following ways:
+  * `TypeIs` requires the narrowed type to be a subtype of the input type, while `TypeGuard` does not. The main reason is to allow for things like narrowing `list[object]` to `list[str]` even though the latter is not a subtype of the former, since `list` is invariant.
+  * When a `TypeGuard` function returns `True`, type checkers narrow the type of the variable to exactly the `TypeGuard` type. When a `TypeIs` function returns `True`, type checkers can infer a more precise type combining the previously known type of the variable with the `TypeIs` type. (Technically, this is known as an intersection type.)
+  * When a `TypeGuard` function returns `False`, type checkers cannot narrow the type of the variable at all. When a `TypeIs` function returns `False`, type checkers can narrow the type of the variable to exclude the `TypeIs` type.
+
+
+Added in version 3.10. 
+
+typing.Unpack[¶](https://docs.python.org/3/library/typing.html#typing.Unpack "Link to this definition")
+    
+Typing operator to conceptually mark an object as having been unpacked.
+For example, using the unpack operator `*` on a [type variable tuple](https://docs.python.org/3/library/typing.html#typevartuple) is equivalent to using `Unpack` to mark the type variable tuple as having been unpacked:
+```
+Ts = TypeVarTuple('Ts')
+tup: tuple[*Ts]
+# Effectively does:
+tup: tuple[Unpack[Ts]]
+
+```
+
+In fact, `Unpack` can be used interchangeably with `*` in the context of [`typing.TypeVarTuple`](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple "typing.TypeVarTuple") and [`builtins.tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") types. You might see `Unpack` being used explicitly in older versions of Python, where `*` couldn’t be used in certain places:
+```
+# In older versions of Python, TypeVarTuple and Unpack
+# are located in the `typing_extensions` backports package.
+fromtyping_extensionsimport TypeVarTuple, Unpack
+Ts = TypeVarTuple('Ts')
+tup: tuple[*Ts]     # Syntax error on Python <= 3.10!
+tup: tuple[Unpack[Ts]] # Semantically equivalent, and backwards-compatible
+
+```
+
+`Unpack` can also be used along with [`typing.TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict "typing.TypedDict") for typing `**kwargs` in a function signature:
+```
+fromtypingimport TypedDict, Unpack
+classMovie(TypedDict):
+  name: str
+  year: int
+# This function expects two keyword arguments - `name` of type `str`
+# and `year` of type `int`.
+deffoo(**kwargs: Unpack[Movie]): ...
+
+```
+
+See [**PEP 692**](https://peps.python.org/pep-0692/) for more details on using `Unpack` for `**kwargs` typing.
+Added in version 3.11.
+#### Building generic types and type aliases[¶](https://docs.python.org/3/library/typing.html#building-generic-types-and-type-aliases "Link to this heading")
+The following classes should not be used directly as annotations. Their intended purpose is to be building blocks for creating generic types and type aliases.
+These objects can be created through special syntax ([type parameter lists](https://docs.python.org/3/reference/compound_stmts.html#type-params) and the [`type`](https://docs.python.org/3/reference/simple_stmts.html#type) statement). For compatibility with Python 3.11 and earlier, they can also be created without the dedicated syntax, as documented below. 
+
+_class_ typing.Generic[¶](https://docs.python.org/3/library/typing.html#typing.Generic "Link to this definition")
+    
+Abstract base class for generic types.
+A generic type is typically declared by adding a list of type parameters after the class name:
+```
+classMapping[KT, VT]:
+  def__getitem__(self, key: KT) -> VT:
+    ...
+    # Etc.
+
+```
+
+Such a class implicitly inherits from `Generic`. The runtime semantics of this syntax are discussed in the [Language Reference](https://docs.python.org/3/reference/compound_stmts.html#generic-classes).
+This class can then be used as follows:
+```
+deflookup_name[X, Y](mapping: Mapping[X, Y], key: X, default: Y) -> Y:
+  try:
+    return mapping[key]
+  except KeyError:
+    return default
+
+```
+
+Here the brackets after the function name indicate a [generic function](https://docs.python.org/3/reference/compound_stmts.html#generic-functions).
+For backwards compatibility, generic classes can also be declared by explicitly inheriting from `Generic`. In this case, the type parameters must be declared separately:
+```
+KT = TypeVar('KT')
+VT = TypeVar('VT')
+classMapping(Generic[KT, VT]):
+  def__getitem__(self, key: KT) -> VT:
+    ...
+    # Etc.

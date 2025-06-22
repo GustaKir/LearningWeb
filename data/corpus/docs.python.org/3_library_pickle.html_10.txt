@@ -1,0 +1,19 @@
+Title: Pickling Class Instances
+URL: https://docs.python.org/3/library/pickle.html
+Summary: This section explains the requirements for pickling functions and classes, emphasizing that they must be defined at the module's top level. It also clarifies that when class instances are pickled, only their instance data is saved, not the class's code, allowing for future updates. It suggests using version numbers in objects for compatibility with class changes.
+---
+
+```
+
+These restrictions are why picklable functions and classes must be defined at the top level of a module.
+Similarly, when class instances are pickled, their class’s code and data are not pickled along with them. Only the instance data are pickled. This is done on purpose, so you can fix bugs in a class or add methods to the class and still load objects that were created with an earlier version of the class. If you plan to have long-lived objects that will see many versions of a class, it may be worthwhile to put a version number in the objects so that suitable conversions can be made by the class’s [`__setstate__()`](https://docs.python.org/3/library/pickle.html#object.__setstate__ "object.__setstate__") method.
+## Pickling Class Instances[¶](https://docs.python.org/3/library/pickle.html#pickling-class-instances "Link to this heading")
+In this section, we describe the general mechanisms available to you to define, customize, and control how class instances are pickled and unpickled.
+In most cases, no additional code is needed to make instances picklable. By default, pickle will retrieve the class and the attributes of an instance via introspection. When a class instance is unpickled, its [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") method is usually _not_ invoked. The default behaviour first creates an uninitialized instance and then restores the saved attributes. The following code shows an implementation of this behaviour:
+```
+defsave(obj):
+  return (obj.__class__, obj.__dict__)
+defrestore(cls, attributes):
+  obj = cls.__new__(cls)
+  obj.__dict__.update(attributes)
+  return obj

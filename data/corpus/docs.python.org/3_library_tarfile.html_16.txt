@@ -1,0 +1,44 @@
+Title: Extracting Members with Callable Filters
+URL: https://docs.python.org/3/library/tarfile.html
+Summary: This section describes the behavior of a callable function used before extracting members from a tar file. It can return a modified `TarInfo` object, return `None` to skip the member, or raise an exception to abort the extraction process. It also notes that partial extraction may occur if the operation is aborted.
+---
+
+```
+
+The callable is called just before each member is extracted, so it can take the current state of the disk into account. It can:
+    * return a [`TarInfo`](https://docs.python.org/3/library/tarfile.html#tarfile.TarInfo "tarfile.TarInfo") object which will be used instead of the metadata in the archive, or
+    * return `None`, in which case the member will be skipped, or
+    * raise an exception to abort the operation or skip the member, depending on [`errorlevel`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.errorlevel "tarfile.TarFile.errorlevel"). Note that when extraction is aborted, [`extractall()`](https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.extractall "tarfile.TarFile.extractall") may leave the archive partially extracted. It does not attempt to clean up.
+
+
+### Default named filters[¶](https://docs.python.org/3/library/tarfile.html#default-named-filters "Link to this heading")
+The pre-defined, named filters are available as functions, so they can be reused in custom filters: 
+
+tarfile.fully_trusted_filter(_member_ , _path_)[¶](https://docs.python.org/3/library/tarfile.html#tarfile.fully_trusted_filter "Link to this definition")
+    
+Return _member_ unchanged.
+This implements the `'fully_trusted'` filter. 
+
+tarfile.tar_filter(_member_ , _path_)[¶](https://docs.python.org/3/library/tarfile.html#tarfile.tar_filter "Link to this definition")
+    
+Implements the `'tar'` filter.
+  * Strip leading slashes (`/` and [`os.sep`](https://docs.python.org/3/library/os.html#os.sep "os.sep")) from filenames.
+  * [Refuse](https://docs.python.org/3/library/tarfile.html#tarfile-extraction-refuse) to extract files with absolute paths (in case the name is absolute even after stripping slashes, e.g. `C:/foo` on Windows). This raises [`AbsolutePathError`](https://docs.python.org/3/library/tarfile.html#tarfile.AbsolutePathError "tarfile.AbsolutePathError").
+  * [Refuse](https://docs.python.org/3/library/tarfile.html#tarfile-extraction-refuse) to extract files whose absolute path (after following symlinks) would end up outside the destination. This raises [`OutsideDestinationError`](https://docs.python.org/3/library/tarfile.html#tarfile.OutsideDestinationError "tarfile.OutsideDestinationError").
+  * Clear high mode bits (setuid, setgid, sticky) and group/other write bits ([`S_IWGRP`](https://docs.python.org/3/library/stat.html#stat.S_IWGRP "stat.S_IWGRP") | [`S_IWOTH`](https://docs.python.org/3/library/stat.html#stat.S_IWOTH "stat.S_IWOTH")).
+
+
+Return the modified `TarInfo` member. 
+
+tarfile.data_filter(_member_ , _path_)[¶](https://docs.python.org/3/library/tarfile.html#tarfile.data_filter "Link to this definition")
+    
+Implements the `'data'` filter. In addition to what `tar_filter` does:
+  * [Refuse](https://docs.python.org/3/library/tarfile.html#tarfile-extraction-refuse) to extract links (hard or soft) that link to absolute paths, or ones that link outside the destination.
+This raises [`AbsoluteLinkError`](https://docs.python.org/3/library/tarfile.html#tarfile.AbsoluteLinkError "tarfile.AbsoluteLinkError") or [`LinkOutsideDestinationError`](https://docs.python.org/3/library/tarfile.html#tarfile.LinkOutsideDestinationError "tarfile.LinkOutsideDestinationError").
+Note that such files are refused even on platforms that do not support symbolic links.
+  * [Refuse](https://docs.python.org/3/library/tarfile.html#tarfile-extraction-refuse) to extract device files (including pipes). This raises [`SpecialFileError`](https://docs.python.org/3/library/tarfile.html#tarfile.SpecialFileError "tarfile.SpecialFileError").
+  * For regular files, including hard links:
+    * Set the owner read and write permissions ([`S_IRUSR`](https://docs.python.org/3/library/stat.html#stat.S_IRUSR "stat.S_IRUSR") | [`S_IWUSR`](https://docs.python.org/3/library/stat.html#stat.S_IWUSR "stat.S_IWUSR")).
+    * Remove the group & other executable permission ([`S_IXGRP`](https://docs.python.org/3/library/stat.html#stat.S_IXGRP "stat.S_IXGRP") | [`S_IXOTH`](https://docs.python.org/3/library/stat.html#stat.S_IXOTH "stat.S_IXOTH")) if the owner doesn’t have it ([`S_IXUSR`](https://docs.python.org/3/library/stat.html#stat.S_IXUSR "stat.S_IXUSR")).
+  * For other files (directories), set `mode` to `None`, so that extraction methods skip applying permission bits.
+  * Set user and group info (`uid`, `gid`, `uname`, `gname`) to `None`, so that extraction methods skip setting it.

@@ -1,0 +1,25 @@
+Title: SSL Context Creation
+URL: https://docs.python.org/3/library/ssl.html
+Summary: The documentation describes a convenience function for creating `SSLContext` objects tailored for specific purposes. The function `ssl.create_default_context` returns a new `SSLContext` with default settings that typically ensure higher security compared to directly using the `SSLContext` constructor.
+---
+
+```
+
+### Context creation[¶](https://docs.python.org/3/library/ssl.html#context-creation "Link to this heading")
+A convenience function helps create [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") objects for common purposes. 
+
+ssl.create_default_context(_purpose =Purpose.SERVER_AUTH_, _cafile =None_, _capath =None_, _cadata =None_)[¶](https://docs.python.org/3/library/ssl.html#ssl.create_default_context "Link to this definition")
+    
+Return a new [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") object with default settings for the given _purpose_. The settings are chosen by the [`ssl`](https://docs.python.org/3/library/ssl.html#module-ssl "ssl: TLS/SSL wrapper for socket objects") module, and usually represent a higher security level than when calling the [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") constructor directly.
+_cafile_ , _capath_ , _cadata_ represent optional CA certificates to trust for certificate verification, as in [`SSLContext.load_verify_locations()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.load_verify_locations "ssl.SSLContext.load_verify_locations"). If all three are [`None`](https://docs.python.org/3/library/constants.html#None "None"), this function can choose to trust the system’s default CA certificates instead.
+The settings are: [`PROTOCOL_TLS_CLIENT`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS_CLIENT "ssl.PROTOCOL_TLS_CLIENT") or [`PROTOCOL_TLS_SERVER`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS_SERVER "ssl.PROTOCOL_TLS_SERVER"), [`OP_NO_SSLv2`](https://docs.python.org/3/library/ssl.html#ssl.OP_NO_SSLv2 "ssl.OP_NO_SSLv2"), and [`OP_NO_SSLv3`](https://docs.python.org/3/library/ssl.html#ssl.OP_NO_SSLv3 "ssl.OP_NO_SSLv3") with high encryption cipher suites without RC4 and without unauthenticated cipher suites. Passing [`SERVER_AUTH`](https://docs.python.org/3/library/ssl.html#ssl.Purpose.SERVER_AUTH "ssl.Purpose.SERVER_AUTH") as _purpose_ sets [`verify_mode`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.verify_mode "ssl.SSLContext.verify_mode") to [`CERT_REQUIRED`](https://docs.python.org/3/library/ssl.html#ssl.CERT_REQUIRED "ssl.CERT_REQUIRED") and either loads CA certificates (when at least one of _cafile_ , _capath_ or _cadata_ is given) or uses [`SSLContext.load_default_certs()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.load_default_certs "ssl.SSLContext.load_default_certs") to load default CA certificates.
+When [`keylog_filename`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.keylog_filename "ssl.SSLContext.keylog_filename") is supported and the environment variable `SSLKEYLOGFILE` is set, [`create_default_context()`](https://docs.python.org/3/library/ssl.html#ssl.create_default_context "ssl.create_default_context") enables key logging.
+The default settings for this context include [`VERIFY_X509_PARTIAL_CHAIN`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_PARTIAL_CHAIN "ssl.VERIFY_X509_PARTIAL_CHAIN") and [`VERIFY_X509_STRICT`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_STRICT "ssl.VERIFY_X509_STRICT"). These make the underlying OpenSSL implementation behave more like a conforming implementation of [**RFC 5280**](https://datatracker.ietf.org/doc/html/rfc5280.html), in exchange for a small amount of incompatibility with older X.509 certificates.
+Note
+The protocol, options, cipher and other settings may change to more restrictive values anytime without prior deprecation. The values represent a fair balance between compatibility and security.
+If your application needs specific settings, you should create a [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") and apply the settings yourself.
+Note
+If you find that when certain older clients or servers attempt to connect with a [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") created by this function that they get an error stating “Protocol or cipher suite mismatch”, it may be that they only support SSL3.0 which this function excludes using the [`OP_NO_SSLv3`](https://docs.python.org/3/library/ssl.html#ssl.OP_NO_SSLv3 "ssl.OP_NO_SSLv3"). SSL3.0 is widely considered to be [completely broken](https://en.wikipedia.org/wiki/POODLE). If you still wish to continue to use this function but still allow SSL 3.0 connections you can re-enable them using:
+```
+ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
+ctx.options &= ~ssl.OP_NO_SSLv3

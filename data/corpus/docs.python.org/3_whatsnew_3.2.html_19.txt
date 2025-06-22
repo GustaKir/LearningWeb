@@ -1,0 +1,46 @@
+Title: Enhancements in Context Managers and FTP_TLS Class in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduced auto-closing context managers for file-like objects, including `mmap.mmap` and `fileinput.input()`, which simplify resource management. Additionally, the `FTP_TLS` class was enhanced to accept a `_context` parameter, allowing the use of `ssl.SSLContext` for improved SSL configuration management.
+---
+
+```
+
+Other file-like objects such as [`mmap.mmap`](https://docs.python.org/3/library/mmap.html#mmap.mmap "mmap.mmap") and [`fileinput.input()`](https://docs.python.org/3/library/fileinput.html#fileinput.input "fileinput.input") also grew auto-closing context managers:
+```
+with fileinput.input(files=('log1.txt', 'log2.txt')) as f:
+  for line in f:
+    process(line)
+
+```
+
+(Contributed by Tarek Ziadé and Giampaolo Rodolà in [bpo-4972](https://bugs.python.org/issue?@action=redirect&bpo=4972), and by Georg Brandl in [bpo-8046](https://bugs.python.org/issue?@action=redirect&bpo=8046) and [bpo-1286](https://bugs.python.org/issue?@action=redirect&bpo=1286).)
+The [`FTP_TLS`](https://docs.python.org/3/library/ftplib.html#ftplib.FTP_TLS "ftplib.FTP_TLS") class now accepts a _context_ parameter, which is a [`ssl.SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") object allowing bundling SSL configuration options, certificates and private keys into a single (potentially long-lived) structure.
+(Contributed by Giampaolo Rodolà; [bpo-8806](https://bugs.python.org/issue?@action=redirect&bpo=8806).)
+### popen[¶](https://docs.python.org/3/whatsnew/3.2.html#popen "Link to this heading")
+The [`os.popen()`](https://docs.python.org/3/library/os.html#os.popen "os.popen") and [`subprocess.Popen()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen "subprocess.Popen") functions now support [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statements for auto-closing of the file descriptors.
+(Contributed by Antoine Pitrou and Brian Curtin in [bpo-7461](https://bugs.python.org/issue?@action=redirect&bpo=7461) and [bpo-10554](https://bugs.python.org/issue?@action=redirect&bpo=10554).)
+### select[¶](https://docs.python.org/3/whatsnew/3.2.html#select "Link to this heading")
+The [`select`](https://docs.python.org/3/library/select.html#module-select "select: Wait for I/O completion on multiple streams.") module now exposes a new, constant attribute, [`PIPE_BUF`](https://docs.python.org/3/library/select.html#select.PIPE_BUF "select.PIPE_BUF"), which gives the minimum number of bytes which are guaranteed not to block when [`select.select()`](https://docs.python.org/3/library/select.html#select.select "select.select") says a pipe is ready for writing.
+>>>```
+>>> importselect
+>>> select.PIPE_BUF
+512
+
+```
+
+(Available on Unix systems. Patch by Sébastien Sablé in [bpo-9862](https://bugs.python.org/issue?@action=redirect&bpo=9862))
+### gzip and zipfile[¶](https://docs.python.org/3/whatsnew/3.2.html#gzip-and-zipfile "Link to this heading")
+[`gzip.GzipFile`](https://docs.python.org/3/library/gzip.html#gzip.GzipFile "gzip.GzipFile") now implements the [`io.BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase") [abstract base class](https://docs.python.org/3/glossary.html#term-abstract-base-class) (except for `truncate()`). It also has a [`peek()`](https://docs.python.org/3/library/gzip.html#gzip.GzipFile.peek "gzip.GzipFile.peek") method and supports unseekable as well as zero-padded file objects.
+The [`gzip`](https://docs.python.org/3/library/gzip.html#module-gzip "gzip: Interfaces for gzip compression and decompression using file objects.") module also gains the [`compress()`](https://docs.python.org/3/library/gzip.html#gzip.compress "gzip.compress") and [`decompress()`](https://docs.python.org/3/library/gzip.html#gzip.decompress "gzip.decompress") functions for easier in-memory compression and decompression. Keep in mind that text needs to be encoded as [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") before compressing and decompressing:
+>>>```
+>>> importgzip
+>>> s = 'Three shall be the number thou shalt count, '
+>>> s += 'and the number of the counting shall be three'
+>>> b = s.encode()            # convert to utf-8
+>>> len(b)
+89
+>>> c = gzip.compress(b)
+>>> len(c)
+77
+>>> gzip.decompress(c).decode()[:42]   # decompress and convert to text
+'Three shall be the number thou shalt count'

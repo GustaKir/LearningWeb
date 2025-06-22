@@ -1,0 +1,29 @@
+Title: Unicode Encoding and Handling
+URL: https://docs.python.org/3/library/codecs.html
+Summary: This document discusses the role of `U+FEFF` as both a BOM and a `ZERO WIDTH NO-BREAK SPACE` in Unicode. It emphasizes the need for software to handle both functionalities and introduces UTF-8, highlighting its 8-bit encoding that avoids byte order issues and explains its structure, which includes marker and payload bits.
+---
+
+a word to be split. It can e.g. be used to give hints to a ligature algorithm. With Unicode 4.0 using `U+FEFF` as a `ZERO WIDTH NO-BREAK SPACE` has been deprecated (with `U+2060` (`WORD JOINER`) assuming this role). Nevertheless Unicode software still must be able to handle `U+FEFF` in both roles: as a BOM it’s a device to determine the storage layout of the encoded bytes, and vanishes once the byte sequence has been decoded into a string; as a `ZERO WIDTH NO-BREAK SPACE` it’s a normal character that will be decoded like any other.
+There’s another encoding that is able to encode the full range of Unicode characters: UTF-8. UTF-8 is an 8-bit encoding, which means there are no issues with byte order in UTF-8. Each byte in a UTF-8 byte sequence consists of two parts: marker bits (the most significant bits) and payload bits. The marker bits are a sequence of zero to four `1` bits followed by a `0` bit. Unicode characters are encoded like this (with x being payload bits, which when concatenated give the Unicode character):
+Range | Encoding  
+---|---  
+`U-00000000` … `U-0000007F` | 0xxxxxxx  
+`U-00000080` … `U-000007FF` | 110xxxxx 10xxxxxx  
+`U-00000800` … `U-0000FFFF` | 1110xxxx 10xxxxxx 10xxxxxx  
+`U-00010000` … `U-0010FFFF` | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx  
+The least significant bit of the Unicode character is the rightmost x bit.
+As UTF-8 is an 8-bit encoding no BOM is required and any `U+FEFF` character in the decoded string (even if it’s the first character) is treated as a `ZERO WIDTH NO-BREAK SPACE`.
+Without external information it’s impossible to reliably determine which encoding was used for encoding a string. Each charmap encoding can decode any random byte sequence. However that’s not possible with UTF-8, as UTF-8 byte sequences have a structure that doesn’t allow arbitrary byte sequences. To increase the reliability with which a UTF-8 encoding can be detected, Microsoft invented a variant of UTF-8 (that Python calls `"utf-8-sig"`) for its Notepad program: Before any of the Unicode characters is written to the file, a UTF-8 encoded BOM (which looks like this as a byte sequence: `0xef`, `0xbb`, `0xbf`) is written. As it’s rather improbable that any charmap encoded file starts with these byte values (which would e.g. map to
+> LATIN SMALL LETTER I WITH DIAERESIS
+> RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+> INVERTED QUESTION MARK
+in iso-8859-1), this increases the probability that a `utf-8-sig` encoding can be correctly guessed from the byte sequence. So here the BOM is not used to be able to determine the byte order used for generating the byte sequence, but as a signature that helps in guessing the encoding. On encoding the utf-8-sig codec will write `0xef`, `0xbb`, `0xbf` as the first three bytes to the file. On decoding `utf-8-sig` will skip those three bytes if they appear as the first three bytes in the file. In UTF-8, the use of the BOM is discouraged and should generally be avoided.
+## Standard Encodings[¶](https://docs.python.org/3/library/codecs.html#standard-encodings "Link to this heading")
+Python comes with a number of codecs built-in, either implemented as C functions or with dictionaries as mapping tables. The following table lists the codecs by name, together with a few common aliases, and the languages for which the encoding is likely used. Neither the list of aliases nor the list of languages is meant to be exhaustive. Notice that spelling alternatives that only differ in case or use a hyphen instead of an underscore are also valid aliases; therefore, e.g. `'utf-8'` is a valid alias for the `'utf_8'` codec.
+**CPython implementation detail:** Some common encodings can bypass the codecs lookup machinery to improve performance. These optimization opportunities are only recognized by CPython for a limited set of (case insensitive) aliases: utf-8, utf8, latin-1, latin1, iso-8859-1, iso8859-1, mbcs (Windows only), ascii, us-ascii, utf-16, utf16, utf-32, utf32, and the same using underscores instead of dashes. Using alternative aliases for these encodings may result in slower execution.
+Changed in version 3.6: Optimization opportunity recognized for us-ascii.
+Many of the character sets support the same languages. They vary in individual characters (e.g. whether the EURO SIGN is supported or not), and in the assignment of characters to code positions. For the European languages in particular, the following variants typically exist:
+  * an ISO 8859 codeset
+  * a Microsoft Windows code page, which is typically derived from an 8859 codeset, but replaces control characters with additional graphic characters
+  * an IBM EBCDIC code page
+  * an IBM PC code page, which is ASCII compatible

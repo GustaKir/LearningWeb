@@ -1,0 +1,50 @@
+Title: File Control Operations in Python
+URL: https://docs.python.org/3/library/fcntl.html
+Summary: This documentation chunk details the `fcntl` module, specifically the `ioctl`, `flock`, and `lockf` functions. It explains how `flock()` performs lock operations on file descriptors and raises `OSError` exceptions on failure. It also mentions that an auditing event is raised for both `ioctl` and `flock` operations.
+---
+
+```
+
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `fcntl.ioctl` with arguments `fd`, `request`, `arg`. 
+
+fcntl.flock(_fd_ , _operation_ , _/_)[¶](https://docs.python.org/3/library/fcntl.html#fcntl.flock "Link to this definition")
+    
+Perform the lock operation _operation_ on file descriptor _fd_ (file objects providing a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method are accepted as well). See the Unix manual _[flock(2)](https://manpages.debian.org/flock\(2\))_ for details. (On some systems, this function is emulated using `fcntl()`.)
+If the `flock()` call fails, an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") exception is raised.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `fcntl.flock` with arguments `fd`, `operation`. 
+
+fcntl.lockf(_fd_ , _cmd_ , _len =0_, _start =0_, _whence =0_, _/_)[¶](https://docs.python.org/3/library/fcntl.html#fcntl.lockf "Link to this definition")
+    
+This is essentially a wrapper around the [`fcntl()`](https://docs.python.org/3/library/fcntl.html#fcntl.fcntl "fcntl.fcntl") locking calls. _fd_ is the file descriptor (file objects providing a [`fileno()`](https://docs.python.org/3/library/io.html#io.IOBase.fileno "io.IOBase.fileno") method are accepted as well) of the file to lock or unlock, and _cmd_ is one of the following values: 
+
+fcntl.LOCK_UN[¶](https://docs.python.org/3/library/fcntl.html#fcntl.LOCK_UN "Link to this definition")
+    
+Release an existing lock. 
+
+fcntl.LOCK_SH[¶](https://docs.python.org/3/library/fcntl.html#fcntl.LOCK_SH "Link to this definition")
+    
+Acquire a shared lock. 
+
+fcntl.LOCK_EX[¶](https://docs.python.org/3/library/fcntl.html#fcntl.LOCK_EX "Link to this definition")
+    
+Acquire an exclusive lock. 
+
+fcntl.LOCK_NB[¶](https://docs.python.org/3/library/fcntl.html#fcntl.LOCK_NB "Link to this definition")
+    
+Bitwise OR with any of the other three `LOCK_*` constants to make the request non-blocking.
+If `LOCK_NB` is used and the lock cannot be acquired, an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") will be raised and the exception will have an _errno_ attribute set to [`EACCES`](https://docs.python.org/3/library/errno.html#errno.EACCES "errno.EACCES") or [`EAGAIN`](https://docs.python.org/3/library/errno.html#errno.EAGAIN "errno.EAGAIN") (depending on the operating system; for portability, check for both values). On at least some systems, `LOCK_EX` can only be used if the file descriptor refers to a file opened for writing.
+_len_ is the number of bytes to lock, _start_ is the byte offset at which the lock starts, relative to _whence_ , and _whence_ is as with [`io.IOBase.seek()`](https://docs.python.org/3/library/io.html#io.IOBase.seek "io.IOBase.seek"), specifically:
+  * `0` – relative to the start of the file ([`os.SEEK_SET`](https://docs.python.org/3/library/os.html#os.SEEK_SET "os.SEEK_SET"))
+  * `1` – relative to the current buffer position ([`os.SEEK_CUR`](https://docs.python.org/3/library/os.html#os.SEEK_CUR "os.SEEK_CUR"))
+  * `2` – relative to the end of the file ([`os.SEEK_END`](https://docs.python.org/3/library/os.html#os.SEEK_END "os.SEEK_END"))
+
+
+The default for _start_ is 0, which means to start at the beginning of the file. The default for _len_ is 0 which means to lock to the end of the file. The default for _whence_ is also 0.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `fcntl.lockf` with arguments `fd`, `cmd`, `len`, `start`, `whence`.
+Examples (all on a SVR4 compliant system):
+```
+importstruct,fcntl,os
+f = open(...)
+rv = fcntl.fcntl(f, fcntl.F_SETFL, os.O_NDELAY)
+lockdata = struct.pack('hhllhh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
+rv = fcntl.fcntl(f, fcntl.F_SETLKW, lockdata)

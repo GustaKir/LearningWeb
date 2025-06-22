@@ -1,0 +1,67 @@
+Title: Understanding dataclasses.Field in Python
+URL: https://docs.python.org/3/library/dataclasses.html
+Summary: The class attribute values for `C.z` and `C.t` are set, whereas `C.x` and `C.y` remain unset. The `Field` objects provide descriptions for each field within a dataclass. They are created internally and should not be instantiated directly by users. Key attributes include `name`, `type`, `default`, `default_factory`, and others mirroring those in the `field()` function, while additional private attributes may exist.
+---
+
+```
+
+The class attribute `C.z` will be `10`, the class attribute `C.t` will be `20`, and the class attributes `C.x` and `C.y` will not be set. 
+
+_class_ dataclasses.Field[¶](https://docs.python.org/3/library/dataclasses.html#dataclasses.Field "Link to this definition")
+    
+`Field` objects describe each defined field. These objects are created internally, and are returned by the [`fields()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.fields "dataclasses.fields") module-level method (see below). Users should never instantiate a `Field` object directly. Its documented attributes are:
+  * `name`: The name of the field.
+  * `type`: The type of the field.
+  * `default`, `default_factory`, `init`, `repr`, `hash`, `compare`, `metadata`, and `kw_only` have the identical meaning and values as they do in the [`field()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.field "dataclasses.field") function.
+
+
+Other attributes may exist, but they are private and must not be inspected or relied on. 
+
+_class_ dataclasses.InitVar[¶](https://docs.python.org/3/library/dataclasses.html#dataclasses.InitVar "Link to this definition")
+    
+`InitVar[T]` type annotations describe variables that are [init-only](https://docs.python.org/3/library/dataclasses.html#dataclasses-init-only-variables). Fields annotated with `InitVar` are considered pseudo-fields, and thus are neither returned by the [`fields()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.fields "dataclasses.fields") function nor used in any way except adding them as parameters to [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") and an optional [`__post_init__()`](https://docs.python.org/3/library/dataclasses.html#dataclasses.__post_init__ "dataclasses.__post_init__"). 
+
+dataclasses.fields(_class_or_instance_)[¶](https://docs.python.org/3/library/dataclasses.html#dataclasses.fields "Link to this definition")
+    
+Returns a tuple of [`Field`](https://docs.python.org/3/library/dataclasses.html#dataclasses.Field "dataclasses.Field") objects that define the fields for this dataclass. Accepts either a dataclass, or an instance of a dataclass. Raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if not passed a dataclass or instance of one. Does not return pseudo-fields which are `ClassVar` or `InitVar`. 
+
+dataclasses.asdict(_obj_ , _*_ , _dict_factory =dict_)[¶](https://docs.python.org/3/library/dataclasses.html#dataclasses.asdict "Link to this definition")
+    
+Converts the dataclass _obj_ to a dict (by using the factory function _dict_factory_). Each dataclass is converted to a dict of its fields, as `name: value` pairs. dataclasses, dicts, lists, and tuples are recursed into. Other objects are copied with [`copy.deepcopy()`](https://docs.python.org/3/library/copy.html#copy.deepcopy "copy.deepcopy").
+Example of using `asdict()` on nested dataclasses:
+```
+@dataclass
+classPoint:
+   x: int
+   y: int
+@dataclass
+classC:
+   mylist: list[Point]
+p = Point(10, 20)
+assert asdict(p) == {'x': 10, 'y': 20}
+c = C([Point(0, 0), Point(10, 4)])
+assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
+
+```
+
+To create a shallow copy, the following workaround may be used:
+```
+{field.name: getattr(obj, field.name) for field in fields(obj)}
+
+```
+
+`asdict()` raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") if _obj_ is not a dataclass instance. 
+
+dataclasses.astuple(_obj_ , _*_ , _tuple_factory =tuple_)[¶](https://docs.python.org/3/library/dataclasses.html#dataclasses.astuple "Link to this definition")
+    
+Converts the dataclass _obj_ to a tuple (by using the factory function _tuple_factory_). Each dataclass is converted to a tuple of its field values. dataclasses, dicts, lists, and tuples are recursed into. Other objects are copied with [`copy.deepcopy()`](https://docs.python.org/3/library/copy.html#copy.deepcopy "copy.deepcopy").
+Continuing from the previous example:
+```
+assert astuple(p) == (10, 20)
+assert astuple(c) == ([(0, 0), (10, 4)],)
+
+```
+
+To create a shallow copy, the following workaround may be used:
+```
+tuple(getattr(obj, field.name) for field in dataclasses.fields(obj))

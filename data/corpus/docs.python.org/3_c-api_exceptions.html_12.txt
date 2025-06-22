@@ -1,0 +1,32 @@
+Title: PyErr_SetInterruptEx Function
+URL: https://docs.python.org/3/c-api/exceptions.html
+Summary: The `PyErr_SetInterruptEx` function simulates a signal arrival in Python's C API, allowing custom signal handling in C code while ensuring Python's signal handlers are triggered upon interruption. This function has been part of the Stable ABI since version 3.10.
+---
+
+intPyErr_SetInterruptEx(intsignum)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_SetInterruptEx "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.10._
+Simulate the effect of a signal arriving. The next time [`PyErr_CheckSignals()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_CheckSignals "PyErr_CheckSignals") is called, the Python signal handler for the given signal number will be called.
+This function can be called by C code that sets up its own signal handling and wants Python signal handlers to be invoked as expected when an interruption is requested (for example when the user presses Ctrl-C to interrupt an operation).
+If the given signal isn’t handled by Python (it was set to [`signal.SIG_DFL`](https://docs.python.org/3/library/signal.html#signal.SIG_DFL "signal.SIG_DFL") or [`signal.SIG_IGN`](https://docs.python.org/3/library/signal.html#signal.SIG_IGN "signal.SIG_IGN")), it will be ignored.
+If _signum_ is outside of the allowed range of signal numbers, `-1` is returned. Otherwise, `0` is returned. The error indicator is never changed by this function.
+Note
+This function is async-signal-safe. It can be called without the [GIL](https://docs.python.org/3/glossary.html#term-GIL) and from a C signal handler.
+Added in version 3.10. 
+
+intPySignal_SetWakeupFd(intfd)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PySignal_SetWakeupFd "Link to this definition")
+    
+This utility function specifies a file descriptor to which the signal number is written as a single byte whenever a signal is received. _fd_ must be non-blocking. It returns the previous such file descriptor.
+The value `-1` disables the feature; this is the initial state. This is equivalent to [`signal.set_wakeup_fd()`](https://docs.python.org/3/library/signal.html#signal.set_wakeup_fd "signal.set_wakeup_fd") in Python, but without any error checking. _fd_ should be a valid file descriptor. The function should only be called from the main thread.
+Changed in version 3.5: On Windows, the function now also supports socket handles.
+## Exception Classes[¶](https://docs.python.org/3/c-api/exceptions.html#exception-classes "Link to this heading") 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_NewException(constchar*name, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*base, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*dict)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_NewException "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This utility function creates and returns a new exception class. The _name_ argument must be the name of the new exception, a C string of the form `module.classname`. The _base_ and _dict_ arguments are normally `NULL`. This creates a class object derived from [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception") (accessible in C as `PyExc_Exception`).
+The [`__module__`](https://docs.python.org/3/reference/datamodel.html#type.__module__ "type.__module__") attribute of the new class is set to the first part (up to the last dot) of the _name_ argument, and the class name is set to the last part (after the last dot). The _base_ argument can be used to specify alternate base classes; it can either be only one class or a tuple of classes. The _dict_ argument can be used to specify a dictionary of class variables and methods. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyErr_NewExceptionWithDoc(constchar*name, constchar*doc, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*base, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*dict)[¶](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_NewExceptionWithDoc "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Same as [`PyErr_NewException()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_NewException "PyErr_NewException"), except that the new exception class can easily be given a docstring: If _doc_ is non-`NULL`, it will be used as the docstring for the exception class.
+Added in version 3.2.
+## Exception Objects[¶](https://docs.python.org/3/c-api/exceptions.html#exception-objects "Link to this heading")

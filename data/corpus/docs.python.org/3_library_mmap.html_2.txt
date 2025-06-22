@@ -1,0 +1,59 @@
+Title: mmap.mmap Function in Python
+URL: https://docs.python.org/3/library/mmap.html
+Summary: The `mmap.mmap` function maps a specified number of bytes from a file, creating a memory-mapped object. It can take optional parameters to define the mapping's flags, protection, and access type. The default mapping is shared among processes, while private mappings allow copy-on-write changes. If the length is zero, the mapping will match the current size of the file.
+---
+
+_class_ mmap.mmap(_fileno_ , _length_ , _flags =MAP_SHARED_, _prot =PROT_WRITE | PROT_READ_, _access =ACCESS_DEFAULT_, _offset =0_, _*_ , _trackfd =True_)
+    
+**(Unix version)** Maps _length_ bytes from the file specified by the file descriptor _fileno_ , and returns a mmap object. If _length_ is `0`, the maximum length of the map will be the current size of the file when [`mmap`](https://docs.python.org/3/library/mmap.html#mmap.mmap "mmap.mmap") is called.
+_flags_ specifies the nature of the mapping. [`MAP_PRIVATE`](https://docs.python.org/3/library/mmap.html#mmap.MAP_PRIVATE "mmap.MAP_PRIVATE") creates a private copy-on-write mapping, so changes to the contents of the mmap object will be private to this process, and [`MAP_SHARED`](https://docs.python.org/3/library/mmap.html#mmap.MAP_SHARED "mmap.MAP_SHARED") creates a mapping that’s shared with all other processes mapping the same areas of the file. The default value is [`MAP_SHARED`](https://docs.python.org/3/library/mmap.html#mmap.MAP_SHARED "mmap.MAP_SHARED"). Some systems have additional possible flags with the full list specified in [MAP_* constants](https://docs.python.org/3/library/mmap.html#map-constants).
+_prot_ , if specified, gives the desired memory protection; the two most useful values are `PROT_READ` and `PROT_WRITE`, to specify that the pages may be read or written. _prot_ defaults to `PROT_READ | PROT_WRITE`.
+_access_ may be specified in lieu of _flags_ and _prot_ as an optional keyword parameter. It is an error to specify both _flags_ , _prot_ and _access_. See the description of _access_ above for information on how to use this parameter.
+_offset_ may be specified as a non-negative integer offset. mmap references will be relative to the offset from the beginning of the file. _offset_ defaults to 0. _offset_ must be a multiple of `ALLOCATIONGRANULARITY` which is equal to `PAGESIZE` on Unix systems.
+If _trackfd_ is `False`, the file descriptor specified by _fileno_ will not be duplicated, and the resulting `mmap` object will not be associated with the map’s underlying file. This means that the [`size()`](https://docs.python.org/3/library/mmap.html#mmap.mmap.size "mmap.mmap.size") and [`resize()`](https://docs.python.org/3/library/mmap.html#mmap.mmap.resize "mmap.mmap.resize") methods will fail. This mode is useful to limit the number of open file descriptors.
+To ensure validity of the created memory mapping the file specified by the descriptor _fileno_ is internally automatically synchronized with the physical backing store on macOS.
+Changed in version 3.13: The _trackfd_ parameter was added.
+This example shows a simple way of using [`mmap`](https://docs.python.org/3/library/mmap.html#mmap.mmap "mmap.mmap"):
+```
+importmmap
+# write a simple example file
+with open("hello.txt", "wb") as f:
+  f.write(b"Hello Python!\n")
+with open("hello.txt", "r+b") as f:
+  # memory-map the file, size 0 means whole file
+  mm = mmap.mmap(f.fileno(), 0)
+  # read content via standard file methods
+  print(mm.readline()) # prints b"Hello Python!\n"
+  # read content via slice notation
+  print(mm[:5]) # prints b"Hello"
+  # update content using slice notation;
+  # note that new content must have same size
+  mm[6:] = b" world!\n"
+  # ... and read again using standard file methods
+  mm.seek(0)
+  print(mm.readline()) # prints b"Hello world!\n"
+  # close the map
+  mm.close()
+
+```
+
+[`mmap`](https://docs.python.org/3/library/mmap.html#mmap.mmap "mmap.mmap") can also be used as a context manager in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement:
+```
+importmmap
+with mmap.mmap(-1, 13) as mm:
+  mm.write(b"Hello world!")
+
+```
+
+Added in version 3.2: Context manager support.
+The next example demonstrates how to create an anonymous map and exchange data between the parent and child processes:
+```
+importmmap
+importos
+mm = mmap.mmap(-1, 13)
+mm.write(b"Hello world!")
+pid = os.fork()
+if pid == 0: # In a child process
+  mm.seek(0)
+  print(mm.readline())
+  mm.close()

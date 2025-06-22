@@ -1,0 +1,140 @@
+Title: WebSocket Chat Example with FastAPI
+URL: https://fastapi.tiangolo.com/advanced/websockets/
+Summary: This chunk provides a complete example of implementing a WebSocket chat application using FastAPI. It includes a FastAPI server setup, an HTML page with a chat interface, and JavaScript for handling WebSocket communication.
+---
+
+```
+fromfastapiimport FastAPI, WebSocket
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <form action="" onsubmit="sendMessage(event)">
+      <input type="text" id="messageText" autocomplete="off"/>
+      <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
+    <script>
+      var ws = new WebSocket("ws://localhost:8000/ws");
+      ws.onmessage = function(event) {
+        var messages = document.getElementById('messages')
+        var message = document.createElement('li')
+        var content = document.createTextNode(event.data)
+        message.appendChild(content)
+        messages.appendChild(message)
+      };
+      function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+      }
+    </script>
+  </body>
+</html>
+"""
+@app.get("/")
+async defget():
+  return HTMLResponse(html)
+@app.websocket("/ws")
+async defwebsocket_endpoint(websocket: WebSocket):
+  await websocket.accept()
+  while True:
+    data = await websocket.receive_text()
+    await websocket.send_text(f"Message text was: {data}")
+
+```
+
+Technical Details
+You could also use `from starlette.websockets import WebSocket`.
+**FastAPI** provides the same `WebSocket` directly just as a convenience for you, the developer. But it comes directly from Starlette.
+## Await for messages and send messages[¶](https://fastapi.tiangolo.com/advanced/websockets/#await-for-messages-and-send-messages "Permanent link")
+In your WebSocket route you can `await` for messages and send messages.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/websockets/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI, WebSocket
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+html = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat</h1>
+    <form action="" onsubmit="sendMessage(event)">
+      <input type="text" id="messageText" autocomplete="off"/>
+      <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
+    <script>
+      var ws = new WebSocket("ws://localhost:8000/ws");
+      ws.onmessage = function(event) {
+        var messages = document.getElementById('messages')
+        var message = document.createElement('li')
+        var content = document.createTextNode(event.data)
+        message.appendChild(content)
+        messages.appendChild(message)
+      };
+      function sendMessage(event) {
+        var input = document.getElementById("messageText")
+        ws.send(input.value)
+        input.value = ''
+        event.preventDefault()
+      }
+    </script>
+  </body>
+</html>
+"""
+@app.get("/")
+async defget():
+  return HTMLResponse(html)
+@app.websocket("/ws")
+async defwebsocket_endpoint(websocket: WebSocket):
+  await websocket.accept()
+  while True:
+    data = await websocket.receive_text()
+    await websocket.send_text(f"Message text was: {data}")
+
+```
+
+You can receive and send binary, text, and JSON data.
+## Try it[¶](https://fastapi.tiangolo.com/advanced/websockets/#try-it "Permanent link")
+If your file is named `main.py`, run your application with:
+```
+
+fast →[](https://fastapi.tiangolo.com/advanced/websockets/)fastapi dev main.pyINFO:   Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)restart ↻[](https://fastapi.tiangolo.com/advanced/websockets/)
+
+```
+
+Open your browser at <http://127.0.0.1:8000>.
+You will see a simple page like:
+![](https://fastapi.tiangolo.com/img/tutorial/websockets/image01.png)
+You can type messages in the input box, and send them:
+![](https://fastapi.tiangolo.com/img/tutorial/websockets/image02.png)
+And your **FastAPI** application with WebSockets will respond back:
+![](https://fastapi.tiangolo.com/img/tutorial/websockets/image03.png)
+You can send (and receive) many messages:
+![](https://fastapi.tiangolo.com/img/tutorial/websockets/image04.png)
+And all of them will use the same WebSocket connection.
+## Using `Depends` and others[¶](https://fastapi.tiangolo.com/advanced/websockets/#using-depends-and-others "Permanent link")
+In WebSocket endpoints you can import from `fastapi` and use:
+  * `Depends`
+  * `Security`
+  * `Cookie`
+  * `Header`
+  * `Path`
+  * `Query`
+
+
+They work the same way as for other FastAPI endpoints/_path operations_ :
+[Python 3.10+](https://fastapi.tiangolo.com/advanced/websockets/#__tabbed_4_1)

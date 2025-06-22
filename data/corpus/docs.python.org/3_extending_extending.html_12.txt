@@ -1,0 +1,51 @@
+Title: Ownership and References in Python C Extensions
+URL: https://docs.python.org/3/extending/extending.html
+Summary: This section discusses the management of object ownership and references in C functions called from Python. It highlights that C functions take ownership of passed items, while borrowed references from the caller ensure the object's lifetime. It also emphasizes the need for converting borrowed references to owned references using Py_INCREF() and mentions the requirements for returned references from C functions.
+---
+
+These functions take over ownership of the item passed to them — even if they fail! (Note that [`PyDict_SetItem()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_SetItem "PyDict_SetItem") and friends don’t take over ownership — they are “normal.”)
+When a C function is called from Python, it borrows references to its arguments from the caller. The caller owns a reference to the object, so the borrowed reference’s lifetime is guaranteed until the function returns. Only when such a borrowed reference must be stored or passed on, it must be turned into an owned reference by calling [`Py_INCREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_INCREF "Py_INCREF").
+The object reference returned from a C function that is called from Python must be an owned reference — ownership is transferred from the function to its caller.
+### 1.10.3. Thin Ice[¶](https://docs.python.org/3/extending/extending.html#thin-ice "Link to this heading")
+There are a few situations where seemingly harmless use of a borrowed reference can lead to problems. These all have to do with implicit invocations of the interpreter, which can cause the owner of a reference to dispose of it.
+The first and most important case to know about is using [`Py_DECREF()`](https://docs.python.org/3/c-api/refcounting.html#c.Py_DECREF "Py_DECREF") on an unrelated object while borrowing a reference to a list item. For instance:
+```
+void
+bug(PyObject*list)
+{
+PyObject*item=PyList_GetItem(list,0);
+PyList_SetItem(list,1,PyLong_FromLong(0L));
+PyObject_Print(item,stdout,0);/* BUG! */
+}
+
+```
+
+This function first borrows a reference to `list[0]`, then replaces `list[1]` with the value `0`, and finally prints the borrowed reference. Looks harmless, right? But it’s not!
+Let’s follow the control flow into [`PyList_SetItem()`](https://docs.python.org/3/c-api/list.html#c.PyList_SetItem "PyList_SetItem"). The list owns references to all its items, so when item 1 is replaced, it has to dispose of the original item 1. Now let’s suppose the original item 1 was an instance of a user-defined class, and let’s further suppose that the class defined a `__del__()` method. If this class instance has a reference count of 1, disposing of it will call its `__del__()` method.
+Since it is written in Python, the `__del__()` method can execute arbitrary Python code. Could it perhaps do something to invalidate the reference to `item` in `bug()`? You bet! Assuming that the list passed into `bug()` is accessible to the `__del__()` method, it could execute a statement to the effect of `del list[0]`, and assuming this was the last reference to that object, it would free the memory associated with it, thereby invalidating `item`.
+The solution, once you know the source of the problem, is easy: temporarily increment the reference count. The correct version of the function reads:
+```
+void
+no_bug(PyObject*list)
+{
+PyObject*item=PyList_GetItem(list,0);
+Py_INCREF(item);
+PyList_SetItem(list,1,PyLong_FromLong(0L));
+PyObject_Print(item,stdout,0);
+Py_DECREF(item);
+}
+
+```
+
+This is a true story. An older version of Python contained variants of this bug and someone spent a considerable amount of time in a C debugger to figure out why his `__del__()` methods would fail…
+The second case of problems with a borrowed reference is a variant involving threads. Normally, multiple threads in the Python interpreter can’t get in each other’s way, because there is a global lock protecting Python’s entire object space. However, it is possible to temporarily release this lock using the macro [`Py_BEGIN_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Py_BEGIN_ALLOW_THREADS"), and to re-acquire it using [`Py_END_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Py_END_ALLOW_THREADS"). This is common around blocking I/O calls, to let other threads use the processor while waiting for the I/O to complete. Obviously, the following function has the same problem as the previous one:
+```
+void
+bug(PyObject*list)
+{
+PyObject*item=PyList_GetItem(list,0);
+Py_BEGIN_ALLOW_THREADS
+...someblockingI/Ocall...
+Py_END_ALLOW_THREADS
+PyObject_Print(item,stdout,0);/* BUG! */
+}

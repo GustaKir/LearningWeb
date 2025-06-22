@@ -1,0 +1,73 @@
+Title: Improvements in File Handling and Descriptors in Python 2.2
+URL: https://docs.python.org/3/whatsnew/2.2.html
+Summary: This chunk discusses the obsolescence of the `posixfile` module, highlighting the introduction of `LockableFile`, which integrates file object methods while allowing compatibility with internal functions. Additionally, it addresses the lack of a consistent method for discovering object attributes and methods in previous Python versions, mentioning informal conventions and limitations related to `__dict__` inspection.
+---
+
+```
+
+The now-obsolete `posixfile` module contained a class that emulated all of a file object’s methods and also added a `lock()` method, but this class couldn’t be passed to internal functions that expected a built-in file, something which is possible with our new `LockableFile`.
+### Descriptors[¶](https://docs.python.org/3/whatsnew/2.2.html#descriptors "Link to this heading")
+In previous versions of Python, there was no consistent way to discover what attributes and methods were supported by an object. There were some informal conventions, such as defining `__members__` and `__methods__` attributes that were lists of names, but often the author of an extension type or a class wouldn’t bother to define them. You could fall back on inspecting the [`__dict__`](https://docs.python.org/3/reference/datamodel.html#object.__dict__ "object.__dict__") of an object, but when class inheritance or an arbitrary `__getattr__()` hook were in use this could still be inaccurate.
+The one big idea underlying the new class model is that an API for describing the attributes of an object using _descriptors_ has been formalized. Descriptors specify the value of an attribute, stating whether it’s a method or a field. With the descriptor API, static methods and class methods become possible, as well as more exotic constructs.
+Attribute descriptors are objects that live inside class objects, and have a few attributes of their own:
+  * [`__name__`](https://docs.python.org/3/library/stdtypes.html#definition.__name__ "definition.__name__") is the attribute’s name.
+  * [`__doc__`](https://docs.python.org/3/library/stdtypes.html#definition.__doc__ "definition.__doc__") is the attribute’s docstring.
+  * `__get__(object)` is a method that retrieves the attribute value from _object_.
+  * `__set__(object, value)` sets the attribute on _object_ to _value_.
+  * `__delete__(object, value)` deletes the _value_ attribute of _object_.
+
+
+For example, when you write `obj.x`, the steps that Python actually performs are:
+```
+descriptor = obj.__class__.x
+descriptor.__get__(obj)
+
+```
+
+For methods, [`descriptor.__get__`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") returns a temporary object that’s callable, and wraps up the instance and the method to be called on it. This is also why static methods and class methods are now possible; they have descriptors that wrap up just the method, or the method and the class. As a brief explanation of these new kinds of methods, static methods aren’t passed the instance, and therefore resemble regular functions. Class methods are passed the class of the object, but not the object itself. Static and class methods are defined like this:
+```
+classC(object):
+  deff(arg1, arg2):
+    ...
+  f = staticmethod(f)
+  defg(cls, arg1, arg2):
+    ...
+  g = classmethod(g)
+
+```
+
+The [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod") function takes the function `f()`, and returns it wrapped up in a descriptor so it can be stored in the class object. You might expect there to be special syntax for creating such methods (`def static f`, `defstatic f()`, or something like that) but no such syntax has been defined yet; that’s been left for future versions of Python.
+More new features, such as slots and properties, are also implemented as new kinds of descriptors, and it’s not difficult to write a descriptor class that does something novel. For example, it would be possible to write a descriptor class that made it possible to write Eiffel-style preconditions and postconditions for a method. A class that used this feature might be defined like this:
+```
+fromeiffelimport eiffelmethod
+classC(object):
+  deff(self, arg1, arg2):
+    # The actual function
+    ...
+  defpre_f(self):
+    # Check preconditions
+    ...
+  defpost_f(self):
+    # Check postconditions
+    ...
+  f = eiffelmethod(f, pre_f, post_f)
+
+```
+
+Note that a person using the new `eiffelmethod()` doesn’t have to understand anything about descriptors. This is why I think the new features don’t increase the basic complexity of the language. There will be a few wizards who need to know about it in order to write `eiffelmethod()` or the ZODB or whatever, but most users will just write code on top of the resulting libraries and ignore the implementation details.
+### Multiple Inheritance: The Diamond Rule[¶](https://docs.python.org/3/whatsnew/2.2.html#multiple-inheritance-the-diamond-rule "Link to this heading")
+Multiple inheritance has also been made more useful through changing the rules under which names are resolved. Consider this set of classes (diagram taken from [**PEP 253**](https://peps.python.org/pep-0253/) by Guido van Rossum):
+```
+   classA:
+    ^ ^ defsave(self): ...
+    /  \
+   /   \
+   /    \
+  /     \
+classB   classC:
+  ^     ^ defsave(self): ...
+   \    /
+   \   /
+    \  /
+    \ /
+   classD

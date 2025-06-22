@@ -1,0 +1,42 @@
+Title: Start and Stop a Streaming Fragment in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns
+Summary: This section explains how to use fragments in Streamlit to stream data independently from the main script, allowing for automatic reruns at set intervals. It also discusses how to programmatically start and stop the live streaming of fragments by setting the `run_every` parameter.
+---
+
+# [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#start-and-stop-a-streaming-fragment)Start and stop a streaming fragment
+Streamlit lets you turn functions into [fragments](https://docs.streamlit.io/develop/concepts/architecture/fragments), which can rerun independently from the full script. Additionally, you can tell Streamlit to rerun a fragment at a set time interval. This is great for streaming data or monitoring processes. You may want the user to start and stop this live streaming. To do this, programmatically set the `run_every` parameter for your fragment.
+## [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#applied-concepts)Applied concepts
+  * Use a fragment to stream live data.
+  * Start and stop a fragment from automatically rerunning.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#prerequisites)Prerequisites
+  * This tutorial requires the following version of Streamlit:
+`streamlit>=1.37.0 `
+  * You should have a clean working directory called `your-repository`.
+  * You should have a basic understanding of fragments.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#summary)Summary
+In this example, you'll build an app that streams two data series in a line chart. Your app will gather recent data on the first load of a session and statically display the line chart. Two buttons in the sidebar will allow users to start and stop data streaming to update the chart in real time. You'll use a fragment to manage the frequency and scope of the live updates.
+Here's a look at what you'll build:
+Complete code _expand_more_
+`import streamlit as st import pandas as pd import numpy as np from datetime import datetime, timedelta  def get_recent_data(last_timestamp): """Generate and return data from last timestamp to now, at most 60 seconds."""   now = datetime.now() if now - last_timestamp > timedelta(seconds=60):     last_timestamp = now - timedelta(seconds=60)   sample_time = timedelta(seconds=0.5) # time between data points   next_timestamp = last_timestamp + sample_time   timestamps = np.arange(next_timestamp, now, sample_time)   sample_values = np.random.randn(len(timestamps), 2)   data = pd.DataFrame(sample_values, index=timestamps, columns=["A", "B"]) return data  if "data" not in st.session_state:   st.session_state.data = get_recent_data(datetime.now() - timedelta(seconds=60)) if "stream" not in st.session_state:   st.session_state.stream = False def toggle_streaming():   st.session_state.stream = not st.session_state.stream  st.title("Data feed") st.sidebar.slider( "Check for updates every: (seconds)", 0.5, 5.0, value=1.0, key="run_every" ) st.sidebar.button( "Start streaming", disabled=st.session_state.stream, on_click=toggle_streaming ) st.sidebar.button( "Stop streaming", disabled=not st.session_state.stream, on_click=toggle_streaming ) if st.session_state.stream is True:   run_every = st.session_state.run_every else:   run_every = None @st.fragment(run_every=run_every) def show_latest_data():   last_timestamp = st.session_state.data.index[-1]   st.session_state.data = pd.concat( [st.session_state.data, get_recent_data(last_timestamp)] )   st.session_state.data = st.session_state.data[-100:]   st.line_chart(st.session_state.data)  show_latest_data() `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-tutorial-fragment-streaming.streamlit.app/?utm_medium=oembed)
+## [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#build-the-example)Build the example
+### [](https://docs.streamlit.io/develop/tutorials/execution-flow/start-and-stop-fragment-auto-reruns#initialize-your-app)Initialize your app
+  1. In `your_repository`, create a file named `app.py`.
+  2. In a terminal, change directories to `your_repository`, and start your app:
+`streamlit run app.py `
+Your app will be blank because you still need to add code.
+  3. In `app.py`, write the following:
+` import streamlit as st  import pandas as pd  import numpy as np  from datetime import datetime, timedelta `
+You'll be using these libraries as follows:
+     * You'll work with two data series in a `pandas.DataFrame`.
+     * You'll generate random data with `numpy`.
+     * The data will have `datetime.datetime` index values.
+  4. Save your `app.py` file, and view your running app.
+  5. In your app, select "**Always rerun** ", or press the "**A** " key.
+Your preview will be blank but will automatically update as you save changes to `app.py`.
+  6. Return to your code.

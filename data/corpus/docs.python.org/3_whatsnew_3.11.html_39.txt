@@ -1,0 +1,27 @@
+Title: Python 3.11 New Features Overview
+URL: https://docs.python.org/3/whatsnew/3.11.html
+Summary: In Python 3.11, the `PyType_Ready()` function raises an error for types using the `Py_TPFLAGS_HAVE_GC` flag without a traverse function. Additionally, heap types marked as `Py_TPFLAGS_IMMUTABLETYPE` can now use the PEP 590 vectorcall protocol, which was previously exclusive to static types.
+---
+
+```
+
+  * The [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready") function now raises an error if a type is defined with the [`Py_TPFLAGS_HAVE_GC`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_HAVE_GC "Py_TPFLAGS_HAVE_GC") flag set but has no traverse function ([`PyTypeObject.tp_traverse`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_traverse "PyTypeObject.tp_traverse")). (Contributed by Victor Stinner in [bpo-44263](https://bugs.python.org/issue?@action=redirect&bpo=44263).)
+  * Heap types with the [`Py_TPFLAGS_IMMUTABLETYPE`](https://docs.python.org/3/c-api/typeobj.html#c.Py_TPFLAGS_IMMUTABLETYPE "Py_TPFLAGS_IMMUTABLETYPE") flag can now inherit the [**PEP 590**](https://peps.python.org/pep-0590/) vectorcall protocol. Previously, this was only possible for [static types](https://docs.python.org/3/c-api/typeobj.html#static-types). (Contributed by Erlend E. Aasland in [bpo-43908](https://bugs.python.org/issue?@action=redirect&bpo=43908))
+  * Since [`Py_TYPE()`](https://docs.python.org/3/c-api/structures.html#c.Py_TYPE "Py_TYPE") is changed to a inline static function, `Py_TYPE(obj) = new_type` must be replaced with `Py_SET_TYPE(obj, new_type)`: see the [`Py_SET_TYPE()`](https://docs.python.org/3/c-api/structures.html#c.Py_SET_TYPE "Py_SET_TYPE") function (available since Python 3.9). For backward compatibility, this macro can be used:
+```
+#if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_TYPE)
+static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+{ ob->ob_type = type; }
+#define Py_SET_TYPE(ob, type) _Py_SET_TYPE((PyObject*)(ob), type)
+#endif
+
+```
+
+(Contributed by Victor Stinner in [bpo-39573](https://bugs.python.org/issue?@action=redirect&bpo=39573).)
+  * Since [`Py_SIZE()`](https://docs.python.org/3/c-api/structures.html#c.Py_SIZE "Py_SIZE") is changed to a inline static function, `Py_SIZE(obj) = new_size` must be replaced with `Py_SET_SIZE(obj, new_size)`: see the [`Py_SET_SIZE()`](https://docs.python.org/3/c-api/structures.html#c.Py_SET_SIZE "Py_SET_SIZE") function (available since Python 3.9). For backward compatibility, this macro can be used:
+```
+#if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE)
+static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
+{ ob->ob_size = size; }
+#define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
+#endif

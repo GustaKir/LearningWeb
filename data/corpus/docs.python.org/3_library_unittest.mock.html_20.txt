@@ -1,0 +1,69 @@
+Title: Using patch.dict() with Dictionary-like Objects
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: The patch.dict() function can be utilized with objects that behave like dictionaries, requiring support for item getting, setting, and deleting, as well as either iteration or membership tests. This necessitates the implementation of specific magic methods like __getitem__, __setitem__, __delitem__, along with either __iter__ or __contains__.
+---
+
+```
+
+[`patch.dict()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.dict "unittest.mock.patch.dict") can be used with dictionary like objects that aren’t actually dictionaries. At the very minimum they must support item getting, setting, deleting and either iteration or membership test. This corresponds to the magic methods [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__"), [`__setitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__setitem__ "object.__setitem__"), [`__delitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__delitem__ "object.__delitem__") and either [`__iter__()`](https://docs.python.org/3/library/stdtypes.html#container.__iter__ "container.__iter__") or [`__contains__()`](https://docs.python.org/3/reference/datamodel.html#object.__contains__ "object.__contains__").
+>>>```
+>>> classContainer:
+...   def__init__(self):
+...     self.values = {}
+...   def__getitem__(self, name):
+...     return self.values[name]
+...   def__setitem__(self, name, value):
+...     self.values[name] = value
+...   def__delitem__(self, name):
+...     del self.values[name]
+...   def__iter__(self):
+...     return iter(self.values)
+...
+>>> thing = Container()
+>>> thing['one'] = 1
+>>> with patch.dict(thing, one=2, two=3):
+...   assert thing['one'] == 2
+...   assert thing['two'] == 3
+...
+>>> assert thing['one'] == 1
+>>> assert list(thing) == ['one']
+
+```
+
+### patch.multiple[¶](https://docs.python.org/3/library/unittest.mock.html#patch-multiple "Link to this heading") 
+
+patch.multiple(_target_ , _spec =None_, _create =False_, _spec_set =None_, _autospec =None_, _new_callable =None_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "Link to this definition")
+    
+Perform multiple patches in a single call. It takes the object to be patched (either as an object or a string to fetch the object by importing) and keyword arguments for the patches:
+```
+with patch.multiple(settings, FIRST_PATCH='one', SECOND_PATCH='two'):
+  ...
+
+```
+
+Use [`DEFAULT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.DEFAULT "unittest.mock.DEFAULT") as the value if you want [`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple") to create mocks for you. In this case the created mocks are passed into a decorated function by keyword, and a dictionary is returned when [`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple") is used as a context manager.
+[`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple") can be used as a decorator, class decorator or a context manager. The arguments _spec_ , _spec_set_ , _create_ , _autospec_ and _new_callable_ have the same meaning as for [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch"). These arguments will be applied to _all_ patches done by [`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple").
+When used as a class decorator [`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple") honours `patch.TEST_PREFIX` for choosing which methods to wrap.
+If you want [`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple") to create mocks for you, then you can use [`DEFAULT`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.DEFAULT "unittest.mock.DEFAULT") as the value. If you use [`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple") as a decorator then the created mocks are passed into the decorated function by keyword.
+>>>```
+>>> thing = object()
+>>> other = object()
+>>> @patch.multiple('__main__', thing=DEFAULT, other=DEFAULT)
+... deftest_function(thing, other):
+...   assert isinstance(thing, MagicMock)
+...   assert isinstance(other, MagicMock)
+...
+>>> test_function()
+
+```
+
+[`patch.multiple()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.multiple "unittest.mock.patch.multiple") can be nested with other `patch` decorators, but put arguments passed by keyword _after_ any of the standard arguments created by [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch"):
+>>>```
+>>> @patch('sys.exit')
+... @patch.multiple('__main__', thing=DEFAULT, other=DEFAULT)
+... deftest_function(mock_exit, other, thing):
+...   assert 'other' in repr(other)
+...   assert 'thing' in repr(thing)
+...   assert 'exit' in repr(mock_exit)
+...
+>>> test_function()

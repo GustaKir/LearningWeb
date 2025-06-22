@@ -1,0 +1,151 @@
+Title: Using UploadFile with Additional Metadata in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/request-files/
+Summary: This section describes how to use `File()` with `UploadFile` in FastAPI to include additional metadata when handling file uploads. It provides example code snippets for file uploads in an asynchronous FastAPI application, demonstrating both byte file and `UploadFile` handling.
+---
+
+```
+
+## `UploadFile` with Additional Metadata[¶](https://fastapi.tiangolo.com/tutorial/request-files/#uploadfile-with-additional-metadata "Permanent link")
+You can also use `File()` with `UploadFile`, for example, to set additional metadata:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_9_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[bytes, File(description="A file read as bytes")]):
+  return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(
+  file: Annotated[UploadFile, File(description="A file read as UploadFile")],
+):
+  return {"filename": file.filename}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_10_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_10_2)
+```
+fromfastapiimport FastAPI, File, UploadFile
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: Annotated[bytes, File(description="A file read as bytes")]):
+  return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(
+  file: Annotated[UploadFile, File(description="A file read as UploadFile")],
+):
+  return {"filename": file.filename}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, File, UploadFile
+app = FastAPI()
+@app.post("/files/")
+async defcreate_file(file: bytes = File(description="A file read as bytes")):
+  return {"file_size": len(file)}
+@app.post("/uploadfile/")
+async defcreate_upload_file(
+  file: UploadFile = File(description="A file read as UploadFile"),
+):
+  return {"filename": file.filename}
+
+```
+
+## Multiple File Uploads[¶](https://fastapi.tiangolo.com/tutorial/request-files/#multiple-file-uploads "Permanent link")
+It's possible to upload several files at the same time.
+They would be associated to the same "form field" sent using "form data".
+To use that, declare a list of `bytes` or `UploadFile`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_11_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, File, UploadFile
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+@app.post("/files/")
+async defcreate_files(files: Annotated[list[bytes], File()]):
+  return {"file_sizes": [len(file) for file in files]}
+@app.post("/uploadfiles/")
+async defcreate_upload_files(files: list[UploadFile]):
+  return {"filenames": [file.filename for file in files]}
+@app.get("/")
+async defmain():
+  content = """
+<body>
+<form action="/files/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+  """
+  return HTMLResponse(content=content)
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_12_1)[Python 3.9+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_12_2)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/request-files/#__tabbed_12_3)
+```
+fromtypingimport List
+fromfastapiimport FastAPI, File, UploadFile
+fromfastapi.responsesimport HTMLResponse
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.post("/files/")
+async defcreate_files(files: Annotated[List[bytes], File()]):
+  return {"file_sizes": [len(file) for file in files]}
+@app.post("/uploadfiles/")
+async defcreate_upload_files(files: List[UploadFile]):
+  return {"filenames": [file.filename for file in files]}
+@app.get("/")
+async defmain():
+  content = """
+<body>
+<form action="/files/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+  """
+  return HTMLResponse(content=content)
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, File, UploadFile
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+@app.post("/files/")
+async defcreate_files(files: list[bytes] = File()):
+  return {"file_sizes": [len(file) for file in files]}
+@app.post("/uploadfiles/")
+async defcreate_upload_files(files: list[UploadFile]):
+  return {"filenames": [file.filename for file in files]}
+@app.get("/")
+async defmain():
+  content = """
+<body>
+<form action="/files/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+  """
+  return HTMLResponse(content=content)

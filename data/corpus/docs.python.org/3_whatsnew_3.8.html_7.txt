@@ -1,0 +1,73 @@
+Title: Enhancements to the pow() Function with Negative Exponents
+URL: https://docs.python.org/3/whatsnew/3.8.html
+Summary: Python 3.8 introduces an enhancement to the three-argument form of the pow() function, allowing negative exponents when the base is relatively prime to the modulus. This enables the computation of modular inverses, useful in solving linear Diophantine equations, demonstrating how to find integer solutions using modular arithmetic.
+---
+
+```
+
+(Contributed by Victor Stinner in [bpo-37032](https://bugs.python.org/issue?@action=redirect&bpo=37032).)
+  * For integers, the three-argument form of the [`pow()`](https://docs.python.org/3/library/functions.html#pow "pow") function now permits the exponent to be negative in the case where the base is relatively prime to the modulus. It then computes a modular inverse to the base when the exponent is `-1`, and a suitable power of that inverse for other negative exponents. For example, to compute the [modular multiplicative inverse](https://en.wikipedia.org/wiki/Modular_multiplicative_inverse) of 38 modulo 137, write:
+>>>```
+>>> pow(38, -1, 137)
+119
+>>> 119 * 38 % 137
+1
+
+```
+
+Modular inverses arise in the solution of [linear Diophantine equations](https://en.wikipedia.org/wiki/Diophantine_equation). For example, to find integer solutions for `4258𝑥 + 147𝑦 = 369`, first rewrite as `4258𝑥 ≡ 369 (mod 147)` then solve:
+>>>```
+>>> x = 369 * pow(4258, -1, 147) % 147
+>>> y = (4258 * x - 369) // -147
+>>> 4258 * x + 147 * y
+369
+
+```
+
+(Contributed by Mark Dickinson in [bpo-36027](https://bugs.python.org/issue?@action=redirect&bpo=36027).)
+  * Dict comprehensions have been synced-up with dict literals so that the key is computed first and the value second:
+>>>```
+>>> # Dict comprehension
+>>> cast = {input('role? '): input('actor? ') for i in range(2)}
+role? King Arthur
+actor? Chapman
+role? Black Knight
+actor? Cleese
+>>> # Dict literal
+>>> cast = {input('role? '): input('actor? ')}
+role? Sir Robin
+actor? Eric Idle
+
+```
+
+The guaranteed execution order is helpful with assignment expressions because variables assigned in the key expression will be available in the value expression:
+>>>```
+>>> names = ['Martin von Löwis', 'Łukasz Langa', 'Walter Dörwald']
+>>> {(n := normalize('NFC', name)).casefold() : n for name in names}
+{'martin von löwis': 'Martin von Löwis',
+ 'łukasz langa': 'Łukasz Langa',
+ 'walter dörwald': 'Walter Dörwald'}
+
+```
+
+(Contributed by Jörn Heissler in [bpo-35224](https://bugs.python.org/issue?@action=redirect&bpo=35224).)
+  * The [`object.__reduce__()`](https://docs.python.org/3/library/pickle.html#object.__reduce__ "object.__reduce__") method can now return a tuple from two to six elements long. Formerly, five was the limit. The new, optional sixth element is a callable with a `(obj, state)` signature. This allows the direct control over the state-updating behavior of a specific object. If not _None_ , this callable will have priority over the object’s `__setstate__()` method. (Contributed by Pierre Glaser and Olivier Grisel in [bpo-35900](https://bugs.python.org/issue?@action=redirect&bpo=35900).)
+
+
+## New Modules[¶](https://docs.python.org/3/whatsnew/3.8.html#new-modules "Link to this heading")
+  * The new [`importlib.metadata`](https://docs.python.org/3/library/importlib.metadata.html#module-importlib.metadata "importlib.metadata: Accessing package metadata") module provides (provisional) support for reading metadata from third-party packages. For example, it can extract an installed package’s version number, list of entry points, and more:
+>>>```
+>>> # Note following example requires that the popular "requests"
+>>> # package has been installed.
+>>>
+>>> fromimportlib.metadataimport version, requires, files
+>>> version('requests')
+'2.22.0'
+>>> list(requires('requests'))
+['chardet (<3.1.0,>=3.0.2)']
+>>> list(files('requests'))[:5]
+[PackagePath('requests-2.22.0.dist-info/INSTALLER'),
+ PackagePath('requests-2.22.0.dist-info/LICENSE'),
+ PackagePath('requests-2.22.0.dist-info/METADATA'),
+ PackagePath('requests-2.22.0.dist-info/RECORD'),
+ PackagePath('requests-2.22.0.dist-info/WHEEL')]

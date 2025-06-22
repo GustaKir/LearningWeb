@@ -1,0 +1,83 @@
+Title: Using NormalDist for Normal Distributions
+URL: https://docs.python.org/3/library/statistics.html
+Summary: This section discusses how to use the NormalDist class for normal distributions in Python. It explains that dividing a constant by a NormalDist instance is unsupported, while adding and subtracting two independent NormalDist instances is valid. Examples include converting temperatures and combining birth weights with drug effects.
+---
+
+```
+>>> temperature_february = NormalDist(5, 2.5)       # Celsius
+>>> temperature_february * (9/5) + 32           # Fahrenheit
+NormalDist(mu=41.0, sigma=4.5)
+
+```
+
+Dividing a constant by an instance of [`NormalDist`](https://docs.python.org/3/library/statistics.html#statistics.NormalDist "statistics.NormalDist") is not supported because the result wouldn’t be normally distributed.
+Since normal distributions arise from additive effects of independent variables, it is possible to [add and subtract two independent normally distributed random variables](https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables) represented as instances of [`NormalDist`](https://docs.python.org/3/library/statistics.html#statistics.NormalDist "statistics.NormalDist"). For example:
+>>>```
+>>> birth_weights = NormalDist.from_samples([2.5, 3.1, 2.1, 2.4, 2.7, 3.5])
+>>> drug_effects = NormalDist(0.4, 0.15)
+>>> combined = birth_weights + drug_effects
+>>> round(combined.mean, 1)
+3.1
+>>> round(combined.stdev, 1)
+0.5
+
+```
+
+Added in version 3.8.
+## Examples and Recipes[¶](https://docs.python.org/3/library/statistics.html#examples-and-recipes "Link to this heading")
+### Classic probability problems[¶](https://docs.python.org/3/library/statistics.html#classic-probability-problems "Link to this heading")
+[`NormalDist`](https://docs.python.org/3/library/statistics.html#statistics.NormalDist "statistics.NormalDist") readily solves classic probability problems.
+For example, given [historical data for SAT exams](https://nces.ed.gov/programs/digest/d17/tables/dt17_226.40.asp) showing that scores are normally distributed with a mean of 1060 and a standard deviation of 195, determine the percentage of students with test scores between 1100 and 1200, after rounding to the nearest whole number:
+>>>```
+>>> sat = NormalDist(1060, 195)
+>>> fraction = sat.cdf(1200 + 0.5) - sat.cdf(1100 - 0.5)
+>>> round(fraction * 100.0, 1)
+18.4
+
+```
+
+Find the [quartiles](https://en.wikipedia.org/wiki/Quartile) and [deciles](https://en.wikipedia.org/wiki/Decile) for the SAT scores:
+>>>```
+>>> list(map(round, sat.quantiles()))
+[928, 1060, 1192]
+>>> list(map(round, sat.quantiles(n=10)))
+[810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
+
+```
+
+### Monte Carlo inputs for simulations[¶](https://docs.python.org/3/library/statistics.html#monte-carlo-inputs-for-simulations "Link to this heading")
+To estimate the distribution for a model that isn’t easy to solve analytically, [`NormalDist`](https://docs.python.org/3/library/statistics.html#statistics.NormalDist "statistics.NormalDist") can generate input samples for a [Monte Carlo simulation](https://en.wikipedia.org/wiki/Monte_Carlo_method):
+>>>```
+>>> defmodel(x, y, z):
+...   return (3*x + 7*x*y - 5*y) / (11 * z)
+...
+>>> n = 100_000
+>>> X = NormalDist(10, 2.5).samples(n, seed=3652260728)
+>>> Y = NormalDist(15, 1.75).samples(n, seed=4582495471)
+>>> Z = NormalDist(50, 1.25).samples(n, seed=6582483453)
+>>> quantiles(map(model, X, Y, Z))
+[1.4591308524824727, 1.8035946855390597, 2.175091447274739]
+
+```
+
+### Approximating binomial distributions[¶](https://docs.python.org/3/library/statistics.html#approximating-binomial-distributions "Link to this heading")
+Normal distributions can be used to approximate [Binomial distributions](https://mathworld.wolfram.com/BinomialDistribution.html) when the sample size is large and when the probability of a successful trial is near 50%.
+For example, an open source conference has 750 attendees and two rooms with a 500 person capacity. There is a talk about Python and another about Ruby. In previous conferences, 65% of the attendees preferred to listen to Python talks. Assuming the population preferences haven’t changed, what is the probability that the Python room will stay within its capacity limits?
+>>>```
+>>> n = 750       # Sample size
+>>> p = 0.65      # Preference for Python
+>>> q = 1.0 - p     # Preference for Ruby
+>>> k = 500       # Room capacity
+>>> # Approximation using the cumulative normal distribution
+>>> frommathimport sqrt
+>>> round(NormalDist(mu=n*p, sigma=sqrt(n*p*q)).cdf(k + 0.5), 4)
+0.8402
+>>> # Exact solution using the cumulative binomial distribution
+>>> frommathimport comb, fsum
+>>> round(fsum(comb(n, r) * p**r * q**(n-r) for r in range(k+1)), 4)
+0.8402
+>>> # Approximation using a simulation
+>>> fromrandomimport seed, binomialvariate
+>>> seed(8675309)
+>>> mean(binomialvariate(n, p) <= k for i in range(10_000))
+0.8406

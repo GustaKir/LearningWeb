@@ -1,0 +1,67 @@
+Title: Enhancements in Memoryview and Local Namespace Handling in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces a new `release()` method for `memoryview` objects, allowing for proper resource management through context management. Additionally, it becomes legal to delete variables from the local namespace that are free variables in nested functions, enhancing the flexibility of variable scope handling.
+---
+
+```
+
+(Proposed and implemented by Mark Dickinson; [bpo-9337](https://bugs.python.org/issue?@action=redirect&bpo=9337).)
+  * [`memoryview`](https://docs.python.org/3/library/stdtypes.html#memoryview "memoryview") objects now have a [`release()`](https://docs.python.org/3/library/stdtypes.html#memoryview.release "memoryview.release") method and they also now support the context management protocol. This allows timely release of any resources that were acquired when requesting a buffer from the original object.
+>>>```
+>>> with memoryview(b'abcdefgh') as v:
+...   print(v.tolist())
+[97, 98, 99, 100, 101, 102, 103, 104]
+
+```
+
+(Added by Antoine Pitrou; [bpo-9757](https://bugs.python.org/issue?@action=redirect&bpo=9757).)
+  * Previously it was illegal to delete a name from the local namespace if it occurs as a free variable in a nested block:
+```
+defouter(x):
+  definner():
+    return x
+  inner()
+  del x
+
+```
+
+This is now allowed. Remember that the target of an [`except`](https://docs.python.org/3/reference/compound_stmts.html#except) clause is cleared, so this code which used to work with Python 2.6, raised a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError") with Python 3.1 and now works again:
+```
+deff():
+  defprint_error():
+    print(e)
+  try:
+    something
+  except Exception as e:
+    print_error()
+    # implicit "del e" here
+
+```
+
+(See [bpo-4617](https://bugs.python.org/issue?@action=redirect&bpo=4617).)
+  * [Struct sequence types](https://docs.python.org/3/c-api/tuple.html#struct-sequence-objects) are now subclasses of tuple. This means that C structures like those returned by [`os.stat()`](https://docs.python.org/3/library/os.html#os.stat "os.stat"), [`time.gmtime()`](https://docs.python.org/3/library/time.html#time.gmtime "time.gmtime"), and [`sys.version_info`](https://docs.python.org/3/library/sys.html#sys.version_info "sys.version_info") now work like a [named tuple](https://docs.python.org/3/glossary.html#term-named-tuple) and now work with functions and methods that expect a tuple as an argument. This is a big step forward in making the C structures as flexible as their pure Python counterparts:
+>>>```
+>>> importsys
+>>> isinstance(sys.version_info, tuple)
+True
+>>> 'Version %d.%d.%d%s(%d)' % sys.version_info
+'Version 3.2.0 final(0)'
+
+```
+
+(Suggested by Arfrever Frehtes Taifersar Arahesis and implemented by Benjamin Peterson in [bpo-8413](https://bugs.python.org/issue?@action=redirect&bpo=8413).)
+  * Warnings are now easier to control using the [`PYTHONWARNINGS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONWARNINGS) environment variable as an alternative to using `-W` at the command line:
+```
+$ exportPYTHONWARNINGS='ignore::RuntimeWarning::,once::UnicodeWarning::'
+
+```
+
+(Suggested by Barry Warsaw and implemented by Philip Jenvey in [bpo-7301](https://bugs.python.org/issue?@action=redirect&bpo=7301).)
+  * A new warning category, [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning"), has been added. It is emitted when potential issues with resource consumption or cleanup are detected. It is silenced by default in normal release builds but can be enabled through the means provided by the [`warnings`](https://docs.python.org/3/library/warnings.html#module-warnings "warnings: Issue warning messages and control their disposition.") module, or on the command line.
+A [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning") is issued at interpreter shutdown if the [`gc.garbage`](https://docs.python.org/3/library/gc.html#gc.garbage "gc.garbage") list isn’t empty, and if [`gc.DEBUG_UNCOLLECTABLE`](https://docs.python.org/3/library/gc.html#gc.DEBUG_UNCOLLECTABLE "gc.DEBUG_UNCOLLECTABLE") is set, all uncollectable objects are printed. This is meant to make the programmer aware that their code contains object finalization issues.
+A [`ResourceWarning`](https://docs.python.org/3/library/exceptions.html#ResourceWarning "ResourceWarning") is also issued when a [file object](https://docs.python.org/3/glossary.html#term-file-object) is destroyed without having been explicitly closed. While the deallocator for such object ensures it closes the underlying operating system resource (usually, a file descriptor), the delay in deallocating the object could produce various issues, especially under Windows. Here is an example of enabling the warning from the command line:
+```
+$ python-q-Wdefault
+>>> f = open("foo", "wb")
+>>> del f
+__main__:1: ResourceWarning: unclosed file <_io.BufferedWriter name='foo'>

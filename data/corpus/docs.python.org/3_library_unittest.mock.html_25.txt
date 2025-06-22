@@ -1,0 +1,108 @@
+Title: Default Return Values for Protocol Methods in unittest.mock
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section details the default return values for various protocol methods when using the unittest.mock library. It lists methods such as `__lt__`, `__gt__`, and `__int__` along with their corresponding default values, which can be manually changed if desired. An example demonstrates creating a MagicMock instance and retrieving an integer value from it.
+---
+
+```
+
+By default many of the protocol methods are required to return objects of a specific type. These methods are preconfigured with a default return value, so that they can be used without you having to do anything if you aren’t interested in the return value. You can still _set_ the return value manually if you want to change the default.
+Methods and their defaults:
+  * `__lt__`: [`NotImplemented`](https://docs.python.org/3/library/constants.html#NotImplemented "NotImplemented")
+  * `__gt__`: `NotImplemented`
+  * `__le__`: `NotImplemented`
+  * `__ge__`: `NotImplemented`
+  * `__int__`: `1`
+  * `__contains__`: `False`
+  * `__len__`: `0`
+  * `__iter__`: `iter([])`
+  * `__exit__`: `False`
+  * `__aexit__`: `False`
+  * `__complex__`: `1j`
+  * `__float__`: `1.0`
+  * `__bool__`: `True`
+  * `__index__`: `1`
+  * `__hash__`: default hash for the mock
+  * `__str__`: default str for the mock
+  * `__sizeof__`: default sizeof for the mock
+
+
+For example:
+>>>```
+>>> mock = MagicMock()
+>>> int(mock)
+1
+>>> len(mock)
+0
+>>> list(mock)
+[]
+>>> object() in mock
+False
+
+```
+
+The two equality methods, `__eq__()` and `__ne__()`, are special. They do the default equality comparison on identity, using the [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect") attribute, unless you change their return value to return something else:
+>>>```
+>>> MagicMock() == 3
+False
+>>> MagicMock() != 3
+True
+>>> mock = MagicMock()
+>>> mock.__eq__.return_value = True
+>>> mock == 3
+True
+
+```
+
+The return value of `MagicMock.__iter__()` can be any iterable object and isn’t required to be an iterator:
+>>>```
+>>> mock = MagicMock()
+>>> mock.__iter__.return_value = ['a', 'b', 'c']
+>>> list(mock)
+['a', 'b', 'c']
+>>> list(mock)
+['a', 'b', 'c']
+
+```
+
+If the return value _is_ an iterator, then iterating over it once will consume it and subsequent iterations will result in an empty list:
+>>>```
+>>> mock.__iter__.return_value = iter(['a', 'b', 'c'])
+>>> list(mock)
+['a', 'b', 'c']
+>>> list(mock)
+[]
+
+```
+
+`MagicMock` has all of the supported magic methods configured except for some of the obscure and obsolete ones. You can still set these up if you want.
+Magic methods that are supported but not setup by default in `MagicMock` are:
+  * `__subclasses__`
+  * `__dir__`
+  * `__format__`
+  * `__get__`, `__set__` and `__delete__`
+  * `__reversed__` and `__missing__`
+  * `__reduce__`, `__reduce_ex__`, `__getinitargs__`, `__getnewargs__`, `__getstate__` and `__setstate__`
+  * `__getformat__`
+
+[[2](https://docs.python.org/3/library/unittest.mock.html#id7)]
+Magic methods _should_ be looked up on the class rather than the instance. Different versions of Python are inconsistent about applying this rule. The supported protocol methods should work with all supported versions of Python.
+[[3](https://docs.python.org/3/library/unittest.mock.html#id8)]
+The function is basically hooked up to the class, but each `Mock` instance is kept isolated from the others.
+## Helpers[¶](https://docs.python.org/3/library/unittest.mock.html#helpers "Link to this heading")
+### sentinel[¶](https://docs.python.org/3/library/unittest.mock.html#sentinel "Link to this heading") 
+
+unittest.mock.sentinel[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.sentinel "Link to this definition")
+    
+The `sentinel` object provides a convenient way of providing unique objects for your tests.
+Attributes are created on demand when you access them by name. Accessing the same attribute will always return the same object. The objects returned have a sensible repr so that test failure messages are readable.
+Changed in version 3.7: The `sentinel` attributes now preserve their identity when they are [`copied`](https://docs.python.org/3/library/copy.html#module-copy "copy: Shallow and deep copy operations.") or [`pickled`](https://docs.python.org/3/library/pickle.html#module-pickle "pickle: Convert Python objects to streams of bytes and back.").
+Sometimes when testing you need to test that a specific object is passed as an argument to another method, or returned. It can be common to create named sentinel objects to test this. [`sentinel`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.sentinel "unittest.mock.sentinel") provides a convenient way of creating and testing the identity of objects like this.
+In this example we monkey patch `method` to return `sentinel.some_object`:
+>>>```
+>>> real = ProductionClass()
+>>> real.method = Mock(name="method")
+>>> real.method.return_value = sentinel.some_object
+>>> result = real.method()
+>>> assert result is sentinel.some_object
+>>> result
+sentinel.some_object

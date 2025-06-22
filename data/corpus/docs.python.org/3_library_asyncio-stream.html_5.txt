@@ -1,0 +1,102 @@
+Title: Asynchronous TCP Echo Server Example
+URL: https://docs.python.org/3/library/asyncio-stream.html
+Summary: This chunk presents an example of a simple asynchronous TCP echo server using Python's asyncio library. It defines an `handle_echo` function to process incoming messages and a `main` function to start the server, listening on localhost at port 8888. The server echoes received messages back to the client and handles connection management.
+---
+
+```
+importasyncio
+async defhandle_echo(reader, writer):
+  data = await reader.read(100)
+  message = data.decode()
+  addr = writer.get_extra_info('peername')
+  print(f"Received {message!r} from {addr!r}")
+  print(f"Send: {message!r}")
+  writer.write(data)
+  await writer.drain()
+  print("Close the connection")
+  writer.close()
+  await writer.wait_closed()
+async defmain():
+  server = await asyncio.start_server(
+    handle_echo, '127.0.0.1', 8888)
+  addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+  print(f'Serving on {addrs}')
+  async with server:
+    await server.serve_forever()
+asyncio.run(main())
+
+```
+
+See also
+The [TCP echo server protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-example-tcp-echo-server-protocol) example uses the [`loop.create_server()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server "asyncio.loop.create_server") method.
+### Get HTTP headers[¶](https://docs.python.org/3/library/asyncio-stream.html#get-http-headers "Link to this heading")
+Simple example querying HTTP headers of the URL passed on the command line:
+```
+importasyncio
+importurllib.parse
+importsys
+async defprint_http_headers(url):
+  url = urllib.parse.urlsplit(url)
+  if url.scheme == 'https':
+    reader, writer = await asyncio.open_connection(
+      url.hostname, 443, ssl=True)
+  else:
+    reader, writer = await asyncio.open_connection(
+      url.hostname, 80)
+  query = (
+    f"HEAD {url.pathor'/'} HTTP/1.0\r\n"
+    f"Host: {url.hostname}\r\n"
+    f"\r\n"
+  )
+  writer.write(query.encode('latin-1'))
+  while True:
+    line = await reader.readline()
+    if not line:
+      break
+    line = line.decode('latin1').rstrip()
+    if line:
+      print(f'HTTP header> {line}')
+  # Ignore the body, close the socket
+  writer.close()
+  await writer.wait_closed()
+url = sys.argv[1]
+asyncio.run(print_http_headers(url))
+
+```
+
+Usage:
+```
+python example.py http://example.com/path/page.html
+
+```
+
+or with HTTPS:
+```
+python example.py https://example.com/path/page.html
+
+```
+
+### Register an open socket to wait for data using streams[¶](https://docs.python.org/3/library/asyncio-stream.html#register-an-open-socket-to-wait-for-data-using-streams "Link to this heading")
+Coroutine waiting until a socket receives data using the [`open_connection()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.open_connection "asyncio.open_connection") function:
+```
+importasyncio
+importsocket
+async defwait_for_data():
+  # Get a reference to the current event loop because
+  # we want to access low-level APIs.
+  loop = asyncio.get_running_loop()
+  # Create a pair of connected sockets.
+  rsock, wsock = socket.socketpair()
+  # Register the open socket to wait for data.
+  reader, writer = await asyncio.open_connection(sock=rsock)
+  # Simulate the reception of data from the network
+  loop.call_soon(wsock.send, 'abc'.encode())
+  # Wait for data
+  data = await reader.read(100)
+  # Got data, we are done: close the socket
+  print("Received:", data.decode())
+  writer.close()
+  await writer.wait_closed()
+  # Close the second socket
+  wsock.close()
+asyncio.run(wait_for_data())

@@ -1,0 +1,89 @@
+Title: FastAPI Security: First Steps
+URL: https://fastapi.tiangolo.com/tutorial/security/first-steps/
+Summary: This section covers the introductory steps for implementing security in a FastAPI application, including creating a main.py file, running the application, and understanding the OAuth2 password flow with FastAPI's OAuth2PasswordBearer.
+---
+
+Table of contents 
+  * [ How it looks  ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#how-it-looks)
+  * [ Create `main.py` ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#create-mainpy)
+  * [ Run it  ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#run-it)
+  * [ Check it  ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#check-it)
+  * [ The `password` flow  ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#the-password-flow)
+  * [ **FastAPI** 's `OAuth2PasswordBearer` ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#fastapis-oauth2passwordbearer)
+    * [ Use it  ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#use-it)
+  * [ What it does  ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#what-it-does)
+  * [ Recap  ](https://fastapi.tiangolo.com/tutorial/security/first-steps/#recap)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+  4. [ Security  ](https://fastapi.tiangolo.com/tutorial/security/)
+
+
+# Security - First Steps[¶](https://fastapi.tiangolo.com/tutorial/security/first-steps/#security-first-steps "Permanent link")
+Let's imagine that you have your **backend** API in some domain.
+And you have a **frontend** in another domain or in a different path of the same domain (or in a mobile application).
+And you want to have a way for the frontend to authenticate with the backend, using a **username** and **password**.
+We can use **OAuth2** to build that with **FastAPI**.
+But let's save you the time of reading the full long specification just to find those little pieces of information you need.
+Let's use the tools provided by **FastAPI** to handle security.
+## How it looks[¶](https://fastapi.tiangolo.com/tutorial/security/first-steps/#how-it-looks "Permanent link")
+Let's first just use the code and see how it works, and then we'll come back to understand what's happening.
+## Create `main.py`[¶](https://fastapi.tiangolo.com/tutorial/security/first-steps/#create-mainpy "Permanent link")
+Copy the example in a file `main.py`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/security/first-steps/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+@app.get("/items/")
+async defread_items(token: Annotated[str, Depends(oauth2_scheme)]):
+  return {"token": token}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/security/first-steps/#__tabbed_2_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/security/first-steps/#__tabbed_2_2)
+```
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+@app.get("/items/")
+async defread_items(token: Annotated[str, Depends(oauth2_scheme)]):
+  return {"token": token}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI
+fromfastapi.securityimport OAuth2PasswordBearer
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+@app.get("/items/")
+async defread_items(token: str = Depends(oauth2_scheme)):
+  return {"token": token}
+
+```
+
+## Run it[¶](https://fastapi.tiangolo.com/tutorial/security/first-steps/#run-it "Permanent link")
+Info
+The [`python-multipart`](https://github.com/Kludex/python-multipart) package is automatically installed with **FastAPI** when you run the `pip install "fastapi[standard]"` command.
+However, if you use the `pip install fastapi` command, the `python-multipart` package is not included by default.
+To install it manually, make sure you create a [virtual environment](https://fastapi.tiangolo.com/virtual-environments/), activate it, and then install it with:
+```
+$ pipinstallpython-multipart
+
+```
+
+This is because **OAuth2** uses "form data" for sending the `username` and `password`.
+Run the example with:
+```
+
+fast →[](https://fastapi.tiangolo.com/tutorial/security/first-steps/)fastapi dev main.pyINFO:   Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)restart ↻[](https://fastapi.tiangolo.com/tutorial/security/first-steps/)

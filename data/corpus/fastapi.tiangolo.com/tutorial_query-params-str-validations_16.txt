@@ -1,0 +1,138 @@
+Title: Query Parameters and Validations in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This document illustrates how to implement query parameters with validations in FastAPI. It includes a simple example where a validation function checks if the provided ID starts with 'isbn-' or 'imdb-'. The application responds with either a specific item from a predefined set or chooses a random item if no ID is provided.
+---
+
+```
+importrandom
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[Union[str, None], AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+```
+importrandom
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[Union[str, None], AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+Info
+This is available with Pydantic version 2 or above. 😎
+Tip
+If you need to do any type of validation that requires communicating with any **external component** , like a database or another API, you should instead use **FastAPI Dependencies** , you will learn about them later.
+These custom validators are for things that can be checked with **only** the **same data** provided in the request.
+### Understand that Code[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#understand-that-code "Permanent link")
+The important point is just using **`AfterValidator`with a function inside`Annotated`**. Feel free to skip this part. 🤸
+But if you're curious about this specific code example and you're still entertained, here are some extra details.
+#### String with `value.startswith()`[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#string-with-valuestartswith "Permanent link")
+Did you notice? a string using `value.startswith()` can take a tuple, and it will check each value in the tuple:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_42_1)
+```
+# Code above omitted 👆
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+# Code below omitted 👇
+
+```
+
+👀 Full file preview
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_43_1)
+```
+importrandom
+fromtypingimport Annotated
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[str | None, AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_44_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_44_2)
+```
+importrandom
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[Union[str, None], AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```

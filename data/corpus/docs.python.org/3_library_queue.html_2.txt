@@ -1,0 +1,37 @@
+Title: Queue.put() Method in Python
+URL: https://docs.python.org/3/library/queue.html
+Summary: The Queue.put() method adds an item to the queue. It can block until space is available, with an optional timeout. If block is false and no slot is free, it raises a Full exception. A ShutDown exception is raised if the queue has been shut down.
+---
+
+Queue.put(_item_ , _block =True_, _timeout =None_)[¶](https://docs.python.org/3/library/queue.html#queue.Queue.put "Link to this definition")
+    
+Put _item_ into the queue. If optional args _block_ is true and _timeout_ is `None` (the default), block if necessary until a free slot is available. If _timeout_ is a positive number, it blocks at most _timeout_ seconds and raises the [`Full`](https://docs.python.org/3/library/queue.html#queue.Full "queue.Full") exception if no free slot was available within that time. Otherwise (_block_ is false), put an item on the queue if a free slot is immediately available, else raise the [`Full`](https://docs.python.org/3/library/queue.html#queue.Full "queue.Full") exception (_timeout_ is ignored in that case).
+Raises [`ShutDown`](https://docs.python.org/3/library/queue.html#queue.ShutDown "queue.ShutDown") if the queue has been shut down. 
+
+Queue.put_nowait(_item_)[¶](https://docs.python.org/3/library/queue.html#queue.Queue.put_nowait "Link to this definition")
+    
+Equivalent to `put(item, block=False)`. 
+
+Queue.get(_block =True_, _timeout =None_)[¶](https://docs.python.org/3/library/queue.html#queue.Queue.get "Link to this definition")
+    
+Remove and return an item from the queue. If optional args _block_ is true and _timeout_ is `None` (the default), block if necessary until an item is available. If _timeout_ is a positive number, it blocks at most _timeout_ seconds and raises the [`Empty`](https://docs.python.org/3/library/queue.html#queue.Empty "queue.Empty") exception if no item was available within that time. Otherwise (_block_ is false), return an item if one is immediately available, else raise the [`Empty`](https://docs.python.org/3/library/queue.html#queue.Empty "queue.Empty") exception (_timeout_ is ignored in that case).
+Prior to 3.0 on POSIX systems, and for all versions on Windows, if _block_ is true and _timeout_ is `None`, this operation goes into an uninterruptible wait on an underlying lock. This means that no exceptions can occur, and in particular a SIGINT will not trigger a [`KeyboardInterrupt`](https://docs.python.org/3/library/exceptions.html#KeyboardInterrupt "KeyboardInterrupt").
+Raises [`ShutDown`](https://docs.python.org/3/library/queue.html#queue.ShutDown "queue.ShutDown") if the queue has been shut down and is empty, or if the queue has been shut down immediately. 
+
+Queue.get_nowait()[¶](https://docs.python.org/3/library/queue.html#queue.Queue.get_nowait "Link to this definition")
+    
+Equivalent to `get(False)`.
+Two methods are offered to support tracking whether enqueued tasks have been fully processed by daemon consumer threads. 
+
+Queue.task_done()[¶](https://docs.python.org/3/library/queue.html#queue.Queue.task_done "Link to this definition")
+    
+Indicate that a formerly enqueued task is complete. Used by queue consumer threads. For each [`get()`](https://docs.python.org/3/library/queue.html#queue.Queue.get "queue.Queue.get") used to fetch a task, a subsequent call to [`task_done()`](https://docs.python.org/3/library/queue.html#queue.Queue.task_done "queue.Queue.task_done") tells the queue that the processing on the task is complete.
+If a [`join()`](https://docs.python.org/3/library/queue.html#queue.Queue.join "queue.Queue.join") is currently blocking, it will resume when all items have been processed (meaning that a [`task_done()`](https://docs.python.org/3/library/queue.html#queue.Queue.task_done "queue.Queue.task_done") call was received for every item that had been [`put()`](https://docs.python.org/3/library/queue.html#queue.Queue.put "queue.Queue.put") into the queue).
+`shutdown(immediate=True)` calls [`task_done()`](https://docs.python.org/3/library/queue.html#queue.Queue.task_done "queue.Queue.task_done") for each remaining item in the queue.
+Raises a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if called more times than there were items placed in the queue. 
+
+Queue.join()[¶](https://docs.python.org/3/library/queue.html#queue.Queue.join "Link to this definition")
+    
+Blocks until all items in the queue have been gotten and processed.
+The count of unfinished tasks goes up whenever an item is added to the queue. The count goes down whenever a consumer thread calls [`task_done()`](https://docs.python.org/3/library/queue.html#queue.Queue.task_done "queue.Queue.task_done") to indicate that the item was retrieved and all work on it is complete. When the count of unfinished tasks drops to zero, [`join()`](https://docs.python.org/3/library/queue.html#queue.Queue.join "queue.Queue.join") unblocks.
+Example of how to wait for enqueued tasks to be completed:

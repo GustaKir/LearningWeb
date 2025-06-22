@@ -1,0 +1,34 @@
+Title: Email Content Encoding in Python
+URL: https://docs.python.org/3/library/email.contentmanager.html
+Summary: This section outlines how to encode strings to bytes using a specified character set (_charset_) and content transfer encoding (_cte_) for email content in Python. It highlights the default values, possible content transfer encodings, and error handling when encoding fails.
+---
+
+If _charset_ is provided (which is valid only for `str`), encode the string to bytes using the specified character set. The default is `utf-8`. If the specified _charset_ is a known alias for a standard MIME charset name, use the standard charset instead.
+If _cte_ is set, encode the payload using the specified content transfer encoding, and set the _Content-Transfer-Encoding_ header to that value. Possible values for _cte_ are `quoted-printable`, `base64`, `7bit`, `8bit`, and `binary`. If the input cannot be encoded in the specified encoding (for example, specifying a _cte_ of `7bit` for an input that contains non-ASCII values), raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError").
+  * For `str` objects, if _cte_ is not set use heuristics to determine the most compact encoding. Prior to encoding, [`str.splitlines()`](https://docs.python.org/3/library/stdtypes.html#str.splitlines "str.splitlines") is used to normalize all line boundaries, ensuring that each line of the payload is terminated by the current policy’s [`linesep`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy.linesep "email.policy.Policy.linesep") property (even if the original string did not end with one).
+  * For `bytes` objects, _cte_ is taken to be base64 if not set, and the aforementioned newline translation is not performed.
+  * For [`EmailMessage`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage "email.message.EmailMessage"), per [**RFC 2046**](https://datatracker.ietf.org/doc/html/rfc2046.html), raise an error if a _cte_ of `quoted-printable` or `base64` is requested for _subtype_ `rfc822`, and for any _cte_ other than `7bit` for _subtype_ `external-body`. For `message/rfc822`, use `8bit` if _cte_ is not specified. For all other values of _subtype_ , use `7bit`.
+
+
+Note
+A _cte_ of `binary` does not actually work correctly yet. The `EmailMessage` object as modified by `set_content` is correct, but [`BytesGenerator`](https://docs.python.org/3/library/email.generator.html#email.generator.BytesGenerator "email.generator.BytesGenerator") does not serialize it correctly.
+If _disposition_ is set, use it as the value of the _Content-Disposition_ header. If not specified, and _filename_ is specified, add the header with the value `attachment`. If _disposition_ is not specified and _filename_ is also not specified, do not add the header. The only valid values for _disposition_ are `attachment` and `inline`.
+If _filename_ is specified, use it as the value of the `filename` parameter of the _Content-Disposition_ header.
+If _cid_ is specified, add a _Content-ID_ header with _cid_ as its value.
+If _params_ is specified, iterate its `items` method and use the resulting `(key, value)` pairs to set additional parameters on the _Content-Type_ header.
+If _headers_ is specified and is a list of strings of the form `headername: headervalue` or a list of `header` objects (distinguished from strings by having a `name` attribute), add the headers to _msg_.
+Footnotes
+[[1](https://docs.python.org/3/library/email.contentmanager.html#id1)]
+Originally added in 3.4 as a [provisional module](https://docs.python.org/3/glossary.html#term-provisional-package)
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [`email.contentmanager`: Managing MIME Content](https://docs.python.org/3/library/email.contentmanager.html)
+    * [Content Manager Instances](https://docs.python.org/3/library/email.contentmanager.html#content-manager-instances)
+
+
+#### Previous topic
+[`email.headerregistry`: Custom Header Objects](https://docs.python.org/3/library/email.headerregistry.html "previous chapter")
+#### Next topic
+[`email`: Examples](https://docs.python.org/3/library/email.examples.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/library/email.contentmanager.rst)

@@ -1,0 +1,113 @@
+Title: Path Operation Configuration in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/path-operation-configuration/
+Summary: This section covers the configuration of path operations in FastAPI, including response status codes, tagging with enums, providing summaries and descriptions, utilizing docstrings for descriptions, detailing response descriptions, and deprecating path operations.
+---
+
+Table of contents 
+  * [ Response Status Code  ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#response-status-code)
+  * [ Tags  ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#tags)
+    * [ Tags with Enums  ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#tags-with-enums)
+  * [ Summary and description  ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#summary-and-description)
+  * [ Description from docstring  ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#description-from-docstring)
+  * [ Response description  ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#response-description)
+  * [ Deprecate a _path operation_ ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#deprecate-a-path-operation)
+  * [ Recap  ](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#recap)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+
+
+# Path Operation Configuration[¶](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#path-operation-configuration "Permanent link")
+There are several parameters that you can pass to your _path operation decorator_ to configure it.
+Warning
+Notice that these parameters are passed directly to the _path operation decorator_ , not to your _path operation function_.
+## Response Status Code[¶](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#response-status-code "Permanent link")
+You can define the (HTTP) `status_code` to be used in the response of your _path operation_.
+You can pass directly the `int` code, like `404`.
+But if you don't remember what each number code is for, you can use the shortcut constants in `status`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI, status
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+  tags: set[str] = set()
+@app.post("/items/", response_model=Item, status_code=status.HTTP_201_CREATED)
+async defcreate_item(item: Item):
+  return item
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_2_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_2_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, status
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: set[str] = set()
+@app.post("/items/", response_model=Item, status_code=status.HTTP_201_CREATED)
+async defcreate_item(item: Item):
+  return item
+
+```
+
+```
+fromtypingimport Set, Union
+fromfastapiimport FastAPI, status
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: Set[str] = set()
+@app.post("/items/", response_model=Item, status_code=status.HTTP_201_CREATED)
+async defcreate_item(item: Item):
+  return item
+
+```
+
+That status code will be used in the response and will be added to the OpenAPI schema.
+Technical Details
+You could also use `from starlette import status`.
+**FastAPI** provides the same `starlette.status` as `fastapi.status` just as a convenience for you, the developer. But it comes directly from Starlette.
+## Tags[¶](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#tags "Permanent link")
+You can add tags to your _path operation_ , pass the parameter `tags` with a `list` of `str` (commonly just one `str`):
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+  tags: set[str] = set()
+@app.post("/items/", response_model=Item, tags=["items"])
+async defcreate_item(item: Item):
+  return item
+@app.get("/items/", tags=["items"])
+async defread_items():
+  return [{"name": "Foo", "price": 42}]
+@app.get("/users/", tags=["users"])
+async defread_users():
+  return [{"username": "johndoe"}]
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_4_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-operation-configuration/#__tabbed_4_2)

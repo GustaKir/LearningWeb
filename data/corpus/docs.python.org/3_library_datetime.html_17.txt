@@ -1,0 +1,28 @@
+Title: datetime.fold
+URL: https://docs.python.org/3/library/datetime.html
+Summary: The 'datetime.fold' attribute is used to disambiguate wall times during repeated intervals, such as when clocks are rolled back for daylight saving time. Added in Python 3.6, it uses values 0 and 1 to denote the earlier and later moments of the same wall time. Supported operations include time arithmetic, equality comparison, and order comparison.
+---
+
+datetime.fold[¶](https://docs.python.org/3/library/datetime.html#datetime.datetime.fold "Link to this definition")
+    
+In `[0, 1]`. Used to disambiguate wall times during a repeated interval. (A repeated interval occurs when clocks are rolled back at the end of daylight saving time or when the UTC offset for the current zone is decreased for political reasons.) The values 0 and 1 represent, respectively, the earlier and later of the two moments with the same wall time representation.
+Added in version 3.6.
+Supported operations:
+Operation | Result  
+---|---  
+`datetime2 = datetime1 + timedelta` | (1)  
+`datetime2 = datetime1 - timedelta` | (2)  
+`timedelta = datetime1 - datetime2` | (3)  
+`datetime1 == datetime2` `datetime1 != datetime2` | Equality comparison. (4)  
+`datetime1 < datetime2` `datetime1 > datetime2` `datetime1 <= datetime2` `datetime1 >= datetime2` | Order comparison. (5)  
+  1. `datetime2` is a duration of `timedelta` removed from `datetime1`, moving forward in time if `timedelta.days > 0`, or backward if `timedelta.days < 0`. The result has the same [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attribute as the input datetime, and `datetime2 - datetime1 == timedelta` after. [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") is raised if `datetime2.year` would be smaller than [`MINYEAR`](https://docs.python.org/3/library/datetime.html#datetime.MINYEAR "datetime.MINYEAR") or larger than [`MAXYEAR`](https://docs.python.org/3/library/datetime.html#datetime.MAXYEAR "datetime.MAXYEAR"). Note that no time zone adjustments are done even if the input is an aware object.
+  2. Computes the `datetime2` such that `datetime2 + timedelta == datetime1`. As for addition, the result has the same [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attribute as the input datetime, and no time zone adjustments are done even if the input is aware.
+  3. Subtraction of a [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") from a [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") is defined only if both operands are naive, or if both are aware. If one is aware and the other is naive, [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") is raised.
+If both are naive, or both are aware and have the same [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attribute, the [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attributes are ignored, and the result is a [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") object `t` such that `datetime2 + t == datetime1`. No time zone adjustments are done in this case.
+If both are aware and have different [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attributes, `a-b` acts as if `a` and `b` were first converted to naive UTC datetimes. The result is `(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None) - b.utcoffset())` except that the implementation never overflows.
+  4. [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") objects are equal if they represent the same date and time, taking into account the time zone.
+Naive and aware `datetime` objects are never equal.
+If both comparands are aware, and have the same `tzinfo` attribute, the `tzinfo` and [`fold`](https://docs.python.org/3/library/datetime.html#datetime.datetime.fold "datetime.datetime.fold") attributes are ignored and the base datetimes are compared. If both comparands are aware and have different [`tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.datetime.tzinfo "datetime.datetime.tzinfo") attributes, the comparison acts as comparands were first converted to UTC datetimes except that the implementation never overflows. `datetime` instances in a repeated interval are never equal to `datetime` instances in other time zone.
+  5. _datetime1_ is considered less than _datetime2_ when _datetime1_ precedes _datetime2_ in time, taking into account the time zone.
+Order comparison between naive and aware [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") objects raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError").
+If both comparands are aware, and have the same `tzinfo` attribute, the `tzinfo` and [`fold`](https://docs.python.org/3/library/datetime.html#datetime.datetime.fold "datetime.datetime.fold") attributes are ignored and the base datetimes are compared. If both comparands are aware and have different [`tzinfo`](https:/

@@ -1,0 +1,60 @@
+Title: Release Notes for FastAPI Version 0.95.0
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: FastAPI version 0.95.0 introduces support for dependencies and parameters using `Annotated`, enhancing function parameter handling. This change retains default values across different usages and improves editor support for required arguments. The standardization of `Annotated` facilitates compatibility with tools like Typer, allowing functions to be reused between APIs and CLIs.
+---
+
+## 0.95.0[¶](https://fastapi.tiangolo.com/release-notes/#0950 "Permanent link")
+### Highlights[¶](https://fastapi.tiangolo.com/release-notes/#highlights_1 "Permanent link")
+This release adds support for dependencies and parameters using `Annotated` and recommends its usage. ✨
+This has **several benefits** , one of the main ones is that now the parameters of your functions with `Annotated` would **not be affected** at all.
+If you call those functions in **other places in your code** , the actual **default values** will be kept, your editor will help you notice missing **required arguments** , Python will require you to pass required arguments at **runtime** , you will be able to **use the same functions** for different things and with different libraries (e.g. **Typer** will soon support `Annotated` too, then you could use the same function for an API and a CLI), etc.
+Because `Annotated` is **standard Python** , you still get all the **benefits** from editors and tools, like **autocompletion** , **inline errors** , etc.
+One of the **biggest benefits** is that now you can create `Annotated` dependencies that are then shared by multiple _path operation functions_ , this will allow you to **reduce** a lot of **code duplication** in your codebase, while keeping all the support from editors and tools.
+For example, you could have code like this:
+```
+defget_current_user(token: str):
+  # authenticate user
+  return User()
+@app.get("/items/")
+defread_items(user: User = Depends(get_current_user)):
+  ...
+@app.post("/items/")
+defcreate_item(*, user: User = Depends(get_current_user), item: Item):
+  ...
+@app.get("/items/{item_id}")
+defread_item(*, user: User = Depends(get_current_user), item_id: int):
+  ...
+@app.delete("/items/{item_id}")
+defdelete_item(*, user: User = Depends(get_current_user), item_id: int):
+  ...
+
+```
+
+There's a bit of code duplication for the dependency:
+```
+user: User = Depends(get_current_user)
+
+```
+
+...the bigger the codebase, the more noticeable it is.
+Now you can create an annotated dependency once, like this:
+```
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+```
+
+And then you can reuse this `Annotated` dependency:
+```
+CurrentUser = Annotated[User, Depends(get_current_user)]
+@app.get("/items/")
+defread_items(user: CurrentUser):
+  ...
+@app.post("/items/")
+defcreate_item(user: CurrentUser, item: Item):
+  ...
+@app.get("/items/{item_id}")
+defread_item(user: CurrentUser, item_id: int):
+  ...
+@app.delete("/items/{item_id}")
+defdelete_item(user: CurrentUser, item_id: int):
+  ...

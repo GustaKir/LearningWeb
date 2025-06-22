@@ -1,0 +1,125 @@
+Title: FastAPI Testing Tutorial
+URL: https://fastapi.tiangolo.com/tutorial/testing/
+Summary: This section provides code snippets for testing a FastAPI application, including a basic API setup with endpoints to retrieve and create items. The implementation includes security checks using a fake token and error handling for various scenarios like invalid tokens and item existence.
+---
+
+```
+fromfastapiimport FastAPI, Header, HTTPException
+frompydanticimport BaseModel
+fake_secret_token = "coneofsilence"
+fake_db = {
+  "foo": {"id": "foo", "title": "Foo", "description": "There goes my hero"},
+  "bar": {"id": "bar", "title": "Bar", "description": "The bartenders"},
+}
+app = FastAPI()
+classItem(BaseModel):
+  id: str
+  title: str
+  description: str | None = None
+@app.get("/items/{item_id}", response_model=Item)
+async defread_main(item_id: str, x_token: str = Header()):
+  if x_token != fake_secret_token:
+    raise HTTPException(status_code=400, detail="Invalid X-Token header")
+  if item_id not in fake_db:
+    raise HTTPException(status_code=404, detail="Item not found")
+  return fake_db[item_id]
+@app.post("/items/", response_model=Item)
+async defcreate_item(item: Item, x_token: str = Header()):
+  if x_token != fake_secret_token:
+    raise HTTPException(status_code=400, detail="Invalid X-Token header")
+  if item.id in fake_db:
+    raise HTTPException(status_code=409, detail="Item already exists")
+  fake_db[item.id] = item
+  return item
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Header, HTTPException
+frompydanticimport BaseModel
+fake_secret_token = "coneofsilence"
+fake_db = {
+  "foo": {"id": "foo", "title": "Foo", "description": "There goes my hero"},
+  "bar": {"id": "bar", "title": "Bar", "description": "The bartenders"},
+}
+app = FastAPI()
+classItem(BaseModel):
+  id: str
+  title: str
+  description: Union[str, None] = None
+@app.get("/items/{item_id}", response_model=Item)
+async defread_main(item_id: str, x_token: str = Header()):
+  if x_token != fake_secret_token:
+    raise HTTPException(status_code=400, detail="Invalid X-Token header")
+  if item_id not in fake_db:
+    raise HTTPException(status_code=404, detail="Item not found")
+  return fake_db[item_id]
+@app.post("/items/", response_model=Item)
+async defcreate_item(item: Item, x_token: str = Header()):
+  if x_token != fake_secret_token:
+    raise HTTPException(status_code=400, detail="Invalid X-Token header")
+  if item.id in fake_db:
+    raise HTTPException(status_code=409, detail="Item already exists")
+  fake_db[item.id] = item
+  return item
+
+```
+
+### Extended testing file[¶](https://fastapi.tiangolo.com/tutorial/testing/#extended-testing-file "Permanent link")
+You could then update `test_main.py` with the extended tests:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/testing/#__tabbed_5_1)
+```
+fromfastapi.testclientimport TestClient
+from.mainimport app
+client = TestClient(app)
+deftest_read_item():
+  response = client.get("/items/foo", headers={"X-Token": "coneofsilence"})
+  assert response.status_code == 200
+  assert response.json() == {
+    "id": "foo",
+    "title": "Foo",
+    "description": "There goes my hero",
+  }
+deftest_read_item_bad_token():
+  response = client.get("/items/foo", headers={"X-Token": "hailhydra"})
+  assert response.status_code == 400
+  assert response.json() == {"detail": "Invalid X-Token header"}
+deftest_read_nonexistent_item():
+  response = client.get("/items/baz", headers={"X-Token": "coneofsilence"})
+  assert response.status_code == 404
+  assert response.json() == {"detail": "Item not found"}
+deftest_create_item():
+  response = client.post(
+    "/items/",
+    headers={"X-Token": "coneofsilence"},
+    json={"id": "foobar", "title": "Foo Bar", "description": "The Foo Barters"},
+  )
+  assert response.status_code == 200
+  assert response.json() == {
+    "id": "foobar",
+    "title": "Foo Bar",
+    "description": "The Foo Barters",
+  }
+deftest_create_item_bad_token():
+  response = client.post(
+    "/items/",
+    headers={"X-Token": "hailhydra"},
+    json={"id": "bazz", "title": "Bazz", "description": "Drop the bazz"},
+  )
+  assert response.status_code == 400
+  assert response.json() == {"detail": "Invalid X-Token header"}
+deftest_create_existing_item():
+  response = client.post(
+    "/items/",
+    headers={"X-Token": "coneofsilence"},
+    json={
+      "id": "foo",
+      "title": "The Foo ID Stealers",
+      "description": "There goes my stealer",
+    },
+  )
+  assert response.status_code == 409
+  assert response.json() == {"detail": "Item already exists"}

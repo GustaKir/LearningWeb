@@ -1,0 +1,123 @@
+Title: OpenAPI Configuration in FastAPI
+URL: https://fastapi.tiangolo.com/reference/fastapi/
+Summary: This section discusses the configuration of OpenAPI tags in FastAPI. Tags help organize path operations and their order can influence the display in tools such as Swagger UI. Each tag must be unique and can include a name, description, and external documentation.
+---
+
+```
+      """
+    ),
+  ] = "/openapi.json",
+  openapi_tags: Annotated[
+    Optional[List[Dict[str, Any]]],
+    Doc(
+"""
+      A list of tags used by OpenAPI, these are the same `tags` you can set
+      in the *path operations*, like:
+      * `@app.get("/users/", tags=["users"])`
+      * `@app.get("/items/", tags=["items"])`
+      The order of the tags can be used to specify the order shown in
+      tools like Swagger UI, used in the automatic path `/docs`.
+      It's not required to specify all the tags used.
+      The tags that are not declared MAY be organized randomly or based
+      on the tools' logic. Each tag name in the list MUST be unique.
+      The value of each item is a `dict` containing:
+      * `name`: The name of the tag.
+      * `description`: A short description of the tag.
+        [CommonMark syntax](https://commonmark.org/) MAY be used for rich
+        text representation.
+      * `externalDocs`: Additional external documentation for this tag. If
+        provided, it would contain a `dict` with:
+        * `description`: A short description of the target documentation.
+          [CommonMark syntax](https://commonmark.org/) MAY be used for
+          rich text representation.
+        * `url`: The URL for the target documentation. Value MUST be in
+          the form of a URL.
+      Read more in the
+      [FastAPI docs for Metadata and Docs URLs](https://fastapi.tiangolo.com/tutorial/metadata/#metadata-for-tags).
+      **Example**
+  ```python
+      from fastapi import FastAPI
+      tags_metadata = [
+        {
+          "name": "users",
+          "description": "Operations with users. The **login** logic is also here.",
+        },
+        {
+          "name": "items",
+          "description": "Manage items. So _fancy_ they have their own docs.",
+          "externalDocs": {
+            "description": "Items external docs",
+            "url": "https://fastapi.tiangolo.com/",
+          },
+        },
+      ]
+      app = FastAPI(openapi_tags=tags_metadata)
+  ```
+      """
+    ),
+  ] = None,
+  servers: Annotated[
+    Optional[List[Dict[str, Union[str, Any]]]],
+    Doc(
+"""
+      A `list` of `dict`s with connectivity information to a target server.
+      You would use it, for example, if your application is served from
+      different domains and you want to use the same Swagger UI in the
+      browser to interact with each of them (instead of having multiple
+      browser tabs open). Or if you want to leave fixed the possible URLs.
+      If the servers `list` is not provided, or is an empty `list`, the
+      default value would be a `dict` with a `url` value of `/`.
+      Each item in the `list` is a `dict` containing:
+      * `url`: A URL to the target host. This URL supports Server Variables
+      and MAY be relative, to indicate that the host location is relative
+      to the location where the OpenAPI document is being served. Variable
+      substitutions will be made when a variable is named in `{`brackets`}`.
+      * `description`: An optional string describing the host designated by
+      the URL. [CommonMark syntax](https://commonmark.org/) MAY be used for
+      rich text representation.
+      * `variables`: A `dict` between a variable name and its value. The value
+        is used for substitution in the server's URL template.
+      Read more in the
+      [FastAPI docs for Behind a Proxy](https://fastapi.tiangolo.com/advanced/behind-a-proxy/#additional-servers).
+      **Example**
+  ```python
+      from fastapi import FastAPI
+      app = FastAPI(
+        servers=[
+          {"url": "https://stag.example.com", "description": "Staging environment"},
+          {"url": "https://prod.example.com", "description": "Production environment"},
+        ]
+      )
+  ```
+      """
+    ),
+  ] = None,
+  dependencies: Annotated[
+    Optional[Sequence[Depends]],
+    Doc(
+"""
+      A list of global dependencies, they will be applied to each
+      *path operation*, including in sub-routers.
+      Read more about it in the
+      [FastAPI docs for Global Dependencies](https://fastapi.tiangolo.com/tutorial/dependencies/global-dependencies/).
+      **Example**
+  ```python
+      from fastapi import Depends, FastAPI
+      from .dependencies import func_dep_1, func_dep_2
+      app = FastAPI(dependencies=[Depends(func_dep_1), Depends(func_dep_2)])
+  ```
+      """
+    ),
+  ] = None,
+  default_response_class: Annotated[
+    Type[Response],
+    Doc(
+"""
+      The default response class to be used.
+      Read more in the
+      [FastAPI docs for Custom Response - HTML, Stream, File, others](https://fastapi.tiangolo.com/advanced/custom-response/#default-response-class).
+      **Example**
+  ```python
+      from fastapi import FastAPI
+      from fastapi.responses import ORJSONResponse
+      app = FastAPI(default_response_class=ORJSONResponse)

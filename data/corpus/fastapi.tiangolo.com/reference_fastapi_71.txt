@@ -1,0 +1,211 @@
+Title: Adding Middleware in FastAPI
+URL: https://fastapi.tiangolo.com/reference/fastapi/
+Summary: This section explains how to add middleware to a FastAPI application, currently only supporting `http` middleware. An example is provided where a middleware function is implemented to add a process time header to responses.
+---
+
+```
+4497
+4498
+4499
+4500
+4501
+4502
+4503
+4504
+4505
+4506
+4507
+4508
+4509
+4510
+4511
+4512
+4513
+4514
+4515
+4516
+4517
+4518
+4519
+4520
+4521
+4522
+4523
+4524
+4525
+4526
+4527
+4528
+4529
+4530
+4531
+4532
+4533
+4534
+4535
+4536
+4537
+4538
+```
+| ```
+defmiddleware(
+  self,
+  middleware_type: Annotated[
+    str,
+    Doc(
+"""
+      The type of middleware. Currently only supports `http`.
+      """
+    ),
+  ],
+) -> Callable[[DecoratedCallable], DecoratedCallable]:
+"""
+  Add a middleware to the application.
+  Read more about it in the
+  [FastAPI docs for Middleware](https://fastapi.tiangolo.com/tutorial/middleware/).
+  ## Example
+  ```python
+  import time
+  from fastapi import FastAPI, Request
+  app = FastAPI()
+  @app.middleware("http")
+  async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
+  ```
+  """
+  defdecorator(func: DecoratedCallable) -> DecoratedCallable:
+    self.add_middleware(BaseHTTPMiddleware, dispatch=func)
+    return func
+  return decorator
+
+```
+  
+---|---  
+###  exception_handler [¶](https://fastapi.tiangolo.com/reference/fastapi/#fastapi.FastAPI.exception_handler "Permanent link")
+```
+exception_handler(exc_class_or_status_code)
+
+```
+
+Add an exception handler to the app.
+Read more about it in the [FastAPI docs for Handling Errors](https://fastapi.tiangolo.com/tutorial/handling-errors/).
+##### Example[¶](https://fastapi.tiangolo.com/reference/fastapi/#fastapi.FastAPI.exception_handler--example "Permanent link")
+```
+fromfastapiimport FastAPI, Request
+fromfastapi.responsesimport JSONResponse
+classUnicornException(Exception):
+  def__init__(self, name: str):
+    self.name = name
+app = FastAPI()
+@app.exception_handler(UnicornException)
+async defunicorn_exception_handler(request: Request, exc: UnicornException):
+  return JSONResponse(
+    status_code=418,
+    content={"message": f"Oops! {exc.name} did something. There goes a rainbow..."},
+  )
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`exc_class_or_status_code` |  The Exception class this would handle, or a status code. **TYPE:** `Union[int, Type[Exception]]`  
+Source code in `fastapi/applications.py`
+```
+4540
+4541
+4542
+4543
+4544
+4545
+4546
+4547
+4548
+4549
+4550
+4551
+4552
+4553
+4554
+4555
+4556
+4557
+4558
+4559
+4560
+4561
+4562
+4563
+4564
+4565
+4566
+4567
+4568
+4569
+4570
+4571
+4572
+4573
+4574
+4575
+4576
+4577
+4578
+4579
+4580
+4581
+4582
+4583
+4584
+4585
+```
+| ```
+defexception_handler(
+  self,
+  exc_class_or_status_code: Annotated[
+    Union[int, Type[Exception]],
+    Doc(
+"""
+      The Exception class this would handle, or a status code.
+      """
+    ),
+  ],
+) -> Callable[[DecoratedCallable], DecoratedCallable]:
+"""
+  Add an exception handler to the app.
+  Read more about it in the
+  [FastAPI docs for Handling Errors](https://fastapi.tiangolo.com/tutorial/handling-errors/).
+  ## Example
+  ```python
+  from fastapi import FastAPI, Request
+  from fastapi.responses import JSONResponse
+  class UnicornException(Exception):
+    def __init__(self, name: str):
+      self.name = name
+  app = FastAPI()
+  @app.exception_handler(UnicornException)
+  async def unicorn_exception_handler(request: Request, exc: UnicornException):
+    return JSONResponse(
+      status_code=418,
+      content={"message": f"Oops! {exc.name} did something. There goes a rainbow..."},
+    )
+  ```
+  """
+  defdecorator(func: DecoratedCallable) -> DecoratedCallable:
+    self.add_exception_handler(exc_class_or_status_code, func)
+    return func
+  return decorator
+
+```
+  
+---|---  
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Reference  ](https://fastapi.tiangolo.com/reference/) [ Next  Request Parameters  ](https://fastapi.tiangolo.com/reference/parameters/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

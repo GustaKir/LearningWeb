@@ -1,0 +1,61 @@
+Title: Debugging C API Extensions and CPython Internals with GDB
+URL: https://docs.python.org/3/howto/gdb_helpers.html
+Summary: This document provides guidance on using GDB to debug C API extensions and the internals of CPython. It covers prerequisites, including setup for Python built from source and from a Linux distribution, as well as information on using the debug build and development mode.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Debugging C API extensions and CPython Internals with GDB](https://docs.python.org/3/howto/gdb_helpers.html)
+    * [Prerequisites](https://docs.python.org/3/howto/gdb_helpers.html#prerequisites)
+      * [Setup with Python built from source](https://docs.python.org/3/howto/gdb_helpers.html#setup-with-python-built-from-source)
+      * [Setup for Python from a Linux distro](https://docs.python.org/3/howto/gdb_helpers.html#setup-for-python-from-a-linux-distro)
+    * [Using the Debug build and Development mode](https://docs.python.org/3/howto/gdb_helpers.html#using-the-debug-build-and-development-mode)
+    * [Using the `python-gdb` extension](https://docs.python.org/3/howto/gdb_helpers.html#using-the-python-gdb-extension)
+      * [Pretty-printers](https://docs.python.org/3/howto/gdb_helpers.html#pretty-printers)
+      * [`py-list`](https://docs.python.org/3/howto/gdb_helpers.html#py-list)
+      * [`py-up` and `py-down`](https://docs.python.org/3/howto/gdb_helpers.html#py-up-and-py-down)
+      * [`py-bt`](https://docs.python.org/3/howto/gdb_helpers.html#py-bt)
+      * [`py-print`](https://docs.python.org/3/howto/gdb_helpers.html#py-print)
+      * [`py-locals`](https://docs.python.org/3/howto/gdb_helpers.html#py-locals)
+    * [Use with GDB commands](https://docs.python.org/3/howto/gdb_helpers.html#use-with-gdb-commands)
+
+
+#### Previous topic
+[Descriptor Guide](https://docs.python.org/3/howto/descriptor.html "previous chapter")
+#### Next topic
+[Enum HOWTO](https://docs.python.org/3/howto/enum.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/gdb_helpers.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/enum.html "Enum HOWTO") |
+  * [previous](https://docs.python.org/3/howto/descriptor.html "Descriptor Guide") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Debugging C API extensions and CPython Internals with GDB](https://docs.python.org/3/howto/gdb_helpers.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Debugging C API extensions and CPython Internals with GDB[¶](https://docs.python.org/3/howto/gdb_helpers.html#debugging-c-api-extensions-and-cpython-internals-with-gdb "Link to this heading")
+This document explains how the Python GDB extension, `python-gdb.py`, can be used with the GDB debugger to debug CPython extensions and the CPython interpreter itself.
+When debugging low-level problems such as crashes or deadlocks, a low-level debugger, such as GDB, is useful to diagnose and correct the issue. By default, GDB (or any of its front-ends) doesn’t support high-level information specific to the CPython interpreter.
+The `python-gdb.py` extension adds CPython interpreter information to GDB. The extension helps introspect the stack of currently executing Python functions. Given a Python object represented by a [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* pointer, the extension surfaces the type and value of the object.
+Developers who are working on CPython extensions or tinkering with parts of CPython that are written in C can use this document to learn how to use the `python-gdb.py` extension with GDB.
+Note
+This document assumes that you are familiar with the basics of GDB and the CPython C API. It consolidates guidance from the [devguide](https://devguide.python.org) and the [Python wiki](https://wiki.python.org/moin/DebuggingWithGdb).
+## Prerequisites[¶](https://docs.python.org/3/howto/gdb_helpers.html#prerequisites "Link to this heading")
+You need to have:
+  * GDB 7 or later. (For earlier versions of GDB, see `Misc/gdbinit` in the sources of Python 3.11 or earlier.)
+  * GDB-compatible debugging information for Python and any extension you are debugging.
+  * The `python-gdb.py` extension.

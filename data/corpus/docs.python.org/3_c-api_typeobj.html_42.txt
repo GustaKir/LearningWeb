@@ -1,0 +1,70 @@
+Title: Releasing Buffer Resources in Python C API
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section outlines the process for releasing resources associated with a buffer in the Python C API. It specifies that if no resources need to be released, the `bf_releasebuffer` function can be NULL. It details the standard steps for implementation, including decrementing an internal counter and freeing memory if the counter reaches zero. Additionally, it emphasizes that the exporter must use the `internal` field for tracking resources and clarifies that the `view->obj` must not be decremented manually.
+---
+
+```
+
+Handle a request to release the resources of the buffer. If no resources need to be released, [`PyBufferProcs.bf_releasebuffer`](https://docs.python.org/3/c-api/typeobj.html#c.PyBufferProcs.bf_releasebuffer "PyBufferProcs.bf_releasebuffer") may be `NULL`. Otherwise, a standard implementation of this function will take these optional steps:
+  1. Decrement an internal counter for the number of exports.
+  2. If the counter is `0`, free all memory associated with _view_.
+
+
+The exporter MUST use the [`internal`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.internal "Py_buffer.internal") field to keep track of buffer-specific resources. This field is guaranteed to remain constant, while a consumer MAY pass a copy of the original buffer as the _view_ argument.
+This function MUST NOT decrement view->obj, since that is done automatically in [`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release") (this scheme is useful for breaking reference cycles).
+[`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release") is the interface for the consumer that wraps this function.
+## Async Object Structures[¶](https://docs.python.org/3/c-api/typeobj.html#async-object-structures "Link to this heading")
+Added in version 3.5. 
+
+typePyAsyncMethods[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods "Link to this definition")
+    
+This structure holds pointers to the functions required to implement [awaitable](https://docs.python.org/3/glossary.html#term-awaitable) and [asynchronous iterator](https://docs.python.org/3/glossary.html#term-asynchronous-iterator) objects.
+Here is the structure definition:
+```
+typedefstruct{
+unaryfuncam_await;
+unaryfuncam_aiter;
+unaryfuncam_anext;
+sendfuncam_send;
+}PyAsyncMethods;
+
+```
+
+
+[unaryfunc](https://docs.python.org/3/c-api/typeobj.html#c.unaryfunc "unaryfunc")[PyAsyncMethods](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods "PyAsyncMethods").am_await[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods.am_await "Link to this definition")
+    
+The signature of this function is:
+```
+PyObject*am_await(PyObject*self);
+
+```
+
+The returned object must be an [iterator](https://docs.python.org/3/glossary.html#term-iterator), i.e. [`PyIter_Check()`](https://docs.python.org/3/c-api/iter.html#c.PyIter_Check "PyIter_Check") must return `1` for it.
+This slot may be set to `NULL` if an object is not an [awaitable](https://docs.python.org/3/glossary.html#term-awaitable). 
+
+[unaryfunc](https://docs.python.org/3/c-api/typeobj.html#c.unaryfunc "unaryfunc")[PyAsyncMethods](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods "PyAsyncMethods").am_aiter[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods.am_aiter "Link to this definition")
+    
+The signature of this function is:
+```
+PyObject*am_aiter(PyObject*self);
+
+```
+
+Must return an [asynchronous iterator](https://docs.python.org/3/glossary.html#term-asynchronous-iterator) object. See [`__anext__()`](https://docs.python.org/3/reference/datamodel.html#object.__anext__ "object.__anext__") for details.
+This slot may be set to `NULL` if an object does not implement asynchronous iteration protocol. 
+
+[unaryfunc](https://docs.python.org/3/c-api/typeobj.html#c.unaryfunc "unaryfunc")[PyAsyncMethods](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods "PyAsyncMethods").am_anext[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods.am_anext "Link to this definition")
+    
+The signature of this function is:
+```
+PyObject*am_anext(PyObject*self);
+
+```
+
+Must return an [awaitable](https://docs.python.org/3/glossary.html#term-awaitable) object. See [`__anext__()`](https://docs.python.org/3/reference/datamodel.html#object.__anext__ "object.__anext__") for details. This slot may be set to `NULL`. 
+
+[sendfunc](https://docs.python.org/3/c-api/typeobj.html#c.sendfunc "sendfunc")[PyAsyncMethods](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods "PyAsyncMethods").am_send[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyAsyncMethods.am_send "Link to this definition")
+    
+The signature of this function is:
+```
+PySendResultam_send(PyObject*self,PyObject*arg,PyObject**result);

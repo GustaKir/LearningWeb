@@ -1,0 +1,40 @@
+Title: Multiprocessing Connection Methods
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: This section describes methods related to the multiprocessing connection, including obtaining the file descriptor, closing the connection, and checking for available data to read with a polling mechanism.
+---
+
+fileno()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.fileno "Link to this definition")
+    
+Return the file descriptor or handle used by the connection. 
+
+close()[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.close "Link to this definition")
+    
+Close the connection.
+This is called automatically when the connection is garbage collected. 
+
+poll([_timeout_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.poll "Link to this definition")
+    
+Return whether there is any data available to be read.
+If _timeout_ is not specified then it will return immediately. If _timeout_ is a number then this specifies the maximum time in seconds to block. If _timeout_ is `None` then an infinite timeout is used.
+Note that multiple connection objects may be polled at once by using [`multiprocessing.connection.wait()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.wait "multiprocessing.connection.wait"). 
+
+send_bytes(_buffer_[, _offset_[, _size_]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.send_bytes "Link to this definition")
+    
+Send byte data from a [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object) as a complete message.
+If _offset_ is given then data is read from that position in _buffer_. If _size_ is given then that many bytes will be read from buffer. Very large buffers (approximately 32 MiB+, though it depends on the OS) may raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") exception 
+
+recv_bytes([_maxlength_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.recv_bytes "Link to this definition")
+    
+Return a complete message of byte data sent from the other end of the connection as a string. Blocks until there is something to receive. Raises [`EOFError`](https://docs.python.org/3/library/exceptions.html#EOFError "EOFError") if there is nothing left to receive and the other end has closed.
+If _maxlength_ is specified and the message is longer than _maxlength_ then [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised and the connection will no longer be readable.
+Changed in version 3.3: This function used to raise [`IOError`](https://docs.python.org/3/library/exceptions.html#IOError "IOError"), which is now an alias of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError"). 
+
+recv_bytes_into(_buffer_[, _offset_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.recv_bytes_into "Link to this definition")
+    
+Read into _buffer_ a complete message of byte data sent from the other end of the connection and return the number of bytes in the message. Blocks until there is something to receive. Raises [`EOFError`](https://docs.python.org/3/library/exceptions.html#EOFError "EOFError") if there is nothing left to receive and the other end was closed.
+_buffer_ must be a writable [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object). If _offset_ is given then the message will be written into the buffer from that position. Offset must be a non-negative integer less than the length of _buffer_ (in bytes).
+If the buffer is too short then a `BufferTooShort` exception is raised and the complete message is available as `e.args[0]` where `e` is the exception instance.
+Changed in version 3.3: Connection objects themselves can now be transferred between processes using [`Connection.send()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.send "multiprocessing.connection.Connection.send") and [`Connection.recv()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.recv "multiprocessing.connection.Connection.recv").
+Connection objects also now support the context management protocol – see [Context Manager Types](https://docs.python.org/3/library/stdtypes.html#typecontextmanager). [`__enter__()`](https://docs.python.org/3/library/stdtypes.html#contextmanager.__enter__ "contextmanager.__enter__") returns the connection object, and [`__exit__()`](https://docs.python.org/3/library/stdtypes.html#contextmanager.__exit__ "contextmanager.__exit__") calls [`close()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.close "multiprocessing.connection.Connection.close").
+For example:
+>>>

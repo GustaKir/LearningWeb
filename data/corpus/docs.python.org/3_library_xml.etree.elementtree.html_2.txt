@@ -1,0 +1,41 @@
+Title: XML Parsing Behavior and Pull API Overview
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: This section explains that the XML parsing module skips comments, processing instructions, and document type declarations by default but allows access to these elements through specific APIs. It also introduces the Pull API for non-blocking parsing capabilities.
+---
+
+```
+
+Note
+Not all elements of the XML input will end up as elements of the parsed tree. Currently, this module skips over any XML comments, processing instructions, and document type declarations in the input. Nevertheless, trees built using this module’s API rather than parsing from XML text can have comments and processing instructions in them; they will be included when generating XML output. A document type declaration may be accessed by passing a custom [`TreeBuilder`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.TreeBuilder "xml.etree.ElementTree.TreeBuilder") instance to the [`XMLParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser "xml.etree.ElementTree.XMLParser") constructor.
+### Pull API for non-blocking parsing[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#pull-api-for-non-blocking-parsing "Link to this heading")
+Most parsing functions provided by this module require the whole document to be read at once before returning any result. It is possible to use an [`XMLParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser "xml.etree.ElementTree.XMLParser") and feed data into it incrementally, but it is a push API that calls methods on a callback target, which is too low-level and inconvenient for most needs. Sometimes what the user really wants is to be able to parse XML incrementally, without blocking operations, while enjoying the convenience of fully constructed [`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") objects.
+The most powerful tool for doing this is [`XMLPullParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser "xml.etree.ElementTree.XMLPullParser"). It does not require a blocking read to obtain the XML data, and is instead fed with data incrementally with [`XMLPullParser.feed()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.feed "xml.etree.ElementTree.XMLPullParser.feed") calls. To get the parsed XML elements, call [`XMLPullParser.read_events()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.read_events "xml.etree.ElementTree.XMLPullParser.read_events"). Here is an example:
+>>>```
+>>> parser = ET.XMLPullParser(['start', 'end'])
+>>> parser.feed('<mytag>sometext')
+>>> list(parser.read_events())
+[('start', <Element 'mytag' at 0x7fa66db2be58>)]
+>>> parser.feed(' more text</mytag>')
+>>> for event, elem in parser.read_events():
+...   print(event)
+...   print(elem.tag, 'text=', elem.text)
+...
+end
+mytag text= sometext more text
+
+```
+
+The obvious use case is applications that operate in a non-blocking fashion where the XML data is being received from a socket or read incrementally from some storage device. In such cases, blocking reads are unacceptable.
+Because it’s so flexible, [`XMLPullParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser "xml.etree.ElementTree.XMLPullParser") can be inconvenient to use for simpler use-cases. If you don’t mind your application blocking on reading XML data but would still like to have incremental parsing capabilities, take a look at [`iterparse()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.iterparse "xml.etree.ElementTree.iterparse"). It can be useful when you’re reading a large XML document and don’t want to hold it wholly in memory.
+Where _immediate_ feedback through events is wanted, calling method [`XMLPullParser.flush()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLPullParser.flush "xml.etree.ElementTree.XMLPullParser.flush") can help reduce delay; please make sure to study the related security notes.
+### Finding interesting elements[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#finding-interesting-elements "Link to this heading")
+[`Element`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element "xml.etree.ElementTree.Element") has some useful methods that help iterate recursively over all the sub-tree below it (its children, their children, and so on). For example, [`Element.iter()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.Element.iter "xml.etree.ElementTree.Element.iter"):
+>>>```
+>>> for neighbor in root.iter('neighbor'):
+...   print(neighbor.attrib)
+...
+{'name': 'Austria', 'direction': 'E'}
+{'name': 'Switzerland', 'direction': 'W'}
+{'name': 'Malaysia', 'direction': 'N'}
+{'name': 'Costa Rica', 'direction': 'W'}
+{'name': 'Colombia', 'direction': 'E'}

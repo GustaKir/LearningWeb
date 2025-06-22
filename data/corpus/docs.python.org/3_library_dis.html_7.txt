@@ -1,0 +1,114 @@
+Title: Python 3.12 Bytecode Instructions
+URL: https://docs.python.org/3/library/dis.html
+Summary: This section describes various bytecode instructions introduced in Python 3.12, including BINARY_SLICE for slicing operations, STORE_SLICE for storing values in slices, and GET_AWAITABLE for handling coroutine objects. Each instruction includes a code snippet for its implementation.
+---
+
+```
+key = STACK.pop()
+container = STACK.pop()
+del container[key]
+
+```
+
+
+BINARY_SLICE[¶](https://docs.python.org/3/library/dis.html#opcode-BINARY_SLICE "Link to this definition")
+    
+Implements:
+```
+end = STACK.pop()
+start = STACK.pop()
+container = STACK.pop()
+STACK.append(container[start:end])
+
+```
+
+Added in version 3.12. 
+
+STORE_SLICE[¶](https://docs.python.org/3/library/dis.html#opcode-STORE_SLICE "Link to this definition")
+    
+Implements:
+```
+end = STACK.pop()
+start = STACK.pop()
+container = STACK.pop()
+values = STACK.pop()
+container[start:end] = value
+
+```
+
+Added in version 3.12.
+**Coroutine opcodes** 
+
+GET_AWAITABLE(_where_)[¶](https://docs.python.org/3/library/dis.html#opcode-GET_AWAITABLE "Link to this definition")
+    
+Implements `STACK[-1] = get_awaitable(STACK[-1])`, where `get_awaitable(o)` returns `o` if `o` is a coroutine object or a generator object with the [`CO_ITERABLE_COROUTINE`](https://docs.python.org/3/library/inspect.html#inspect.CO_ITERABLE_COROUTINE "inspect.CO_ITERABLE_COROUTINE") flag, or resolves `o.__await__`.
+> If the `where` operand is nonzero, it indicates where the instruction occurs:
+>   * `1`: After a call to `__aenter__`
+>   * `2`: After a call to `__aexit__`
+> 
+
+Added in version 3.5.
+Changed in version 3.11: Previously, this instruction did not have an oparg. 
+
+GET_AITER[¶](https://docs.python.org/3/library/dis.html#opcode-GET_AITER "Link to this definition")
+    
+Implements `STACK[-1] = STACK[-1].__aiter__()`.
+Added in version 3.5.
+Changed in version 3.7: Returning awaitable objects from `__aiter__` is no longer supported. 
+
+GET_ANEXT[¶](https://docs.python.org/3/library/dis.html#opcode-GET_ANEXT "Link to this definition")
+    
+Implement `STACK.append(get_awaitable(STACK[-1].__anext__()))` to the stack. See `GET_AWAITABLE` for details about `get_awaitable`.
+Added in version 3.5. 
+
+END_ASYNC_FOR[¶](https://docs.python.org/3/library/dis.html#opcode-END_ASYNC_FOR "Link to this definition")
+    
+Terminates an [`async for`](https://docs.python.org/3/reference/compound_stmts.html#async-for) loop. Handles an exception raised when awaiting a next item. The stack contains the async iterable in `STACK[-2]` and the raised exception in `STACK[-1]`. Both are popped. If the exception is not [`StopAsyncIteration`](https://docs.python.org/3/library/exceptions.html#StopAsyncIteration "StopAsyncIteration"), it is re-raised.
+Added in version 3.8.
+Changed in version 3.11: Exception representation on the stack now consist of one, not three, items. 
+
+CLEANUP_THROW[¶](https://docs.python.org/3/library/dis.html#opcode-CLEANUP_THROW "Link to this definition")
+    
+Handles an exception raised during a [`throw()`](https://docs.python.org/3/reference/expressions.html#generator.throw "generator.throw") or [`close()`](https://docs.python.org/3/reference/expressions.html#generator.close "generator.close") call through the current frame. If `STACK[-1]` is an instance of [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"), pop three values from the stack and push its `value` member. Otherwise, re-raise `STACK[-1]`.
+Added in version 3.12. 
+
+BEFORE_ASYNC_WITH[¶](https://docs.python.org/3/library/dis.html#opcode-BEFORE_ASYNC_WITH "Link to this definition")
+    
+Resolves `__aenter__` and `__aexit__` from `STACK[-1]`. Pushes `__aexit__` and result of `__aenter__()` to the stack:
+```
+STACK.extend((__aexit__, __aenter__())
+
+```
+
+Added in version 3.5.
+**Miscellaneous opcodes** 
+
+SET_ADD(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-SET_ADD "Link to this definition")
+    
+Implements:
+```
+item = STACK.pop()
+set.add(STACK[-i], item)
+
+```
+
+Used to implement set comprehensions. 
+
+LIST_APPEND(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-LIST_APPEND "Link to this definition")
+    
+Implements:
+```
+item = STACK.pop()
+list.append(STACK[-i], item)
+
+```
+
+Used to implement list comprehensions. 
+
+MAP_ADD(_i_)[¶](https://docs.python.org/3/library/dis.html#opcode-MAP_ADD "Link to this definition")
+    
+Implements:
+```
+value = STACK.pop()
+key = STACK.pop()
+dict.__setitem__(STACK[-i], key, value)

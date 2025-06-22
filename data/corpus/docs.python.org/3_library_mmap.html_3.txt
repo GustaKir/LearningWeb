@@ -1,0 +1,59 @@
+Title: Memory-Mapped File Methods in Python
+URL: https://docs.python.org/3/library/mmap.html
+Summary: This section covers the methods available for memory-mapped file objects in Python, including 'close()', which closes the mmap object without closing the underlying file, and 'find()', which locates the lowest index of a subsequence within a specified range. It also mentions the 'closed' attribute indicating if the mmap object is closed, added in version 3.2.
+---
+
+```
+
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `mmap.__new__` with arguments `fileno`, `length`, `access`, `offset`.
+Memory-mapped file objects support the following methods: 
+
+close()[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.close "Link to this definition")
+    
+Closes the mmap. Subsequent calls to other methods of the object will result in a ValueError exception being raised. This will not close the open file. 
+
+closed[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.closed "Link to this definition")
+    
+`True` if the file is closed.
+Added in version 3.2. 
+
+find(_sub_[, _start_[, _end_]])[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.find "Link to this definition")
+    
+Returns the lowest index in the object where the subsequence _sub_ is found, such that _sub_ is contained in the range [_start_ , _end_]. Optional arguments _start_ and _end_ are interpreted as in slice notation. Returns `-1` on failure.
+Changed in version 3.5: Writable [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object) is now accepted. 
+
+flush([_offset_[, _size_]])[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.flush "Link to this definition")
+    
+Flushes changes made to the in-memory copy of a file back to disk. Without use of this call there is no guarantee that changes are written back before the object is destroyed. If _offset_ and _size_ are specified, only changes to the given range of bytes will be flushed to disk; otherwise, the whole extent of the mapping is flushed. _offset_ must be a multiple of the `PAGESIZE` or `ALLOCATIONGRANULARITY`.
+`None` is returned to indicate success. An exception is raised when the call failed.
+Changed in version 3.8: Previously, a nonzero value was returned on success; zero was returned on error under Windows. A zero value was returned on success; an exception was raised on error under Unix. 
+
+madvise(_option_[, _start_[, _length_]])[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.madvise "Link to this definition")
+    
+Send advice _option_ to the kernel about the memory region beginning at _start_ and extending _length_ bytes. _option_ must be one of the [MADV_* constants](https://docs.python.org/3/library/mmap.html#madvise-constants) available on the system. If _start_ and _length_ are omitted, the entire mapping is spanned. On some systems (including Linux), _start_ must be a multiple of the `PAGESIZE`.
+Availability: Systems with the `madvise()` system call.
+Added in version 3.8. 
+
+move(_dest_ , _src_ , _count_)[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.move "Link to this definition")
+    
+Copy the _count_ bytes starting at offset _src_ to the destination index _dest_. If the mmap was created with `ACCESS_READ`, then calls to move will raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception. 
+
+read([_n_])[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.read "Link to this definition")
+    
+Return a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") containing up to _n_ bytes starting from the current file position. If the argument is omitted, `None` or negative, return all bytes from the current file position to the end of the mapping. The file position is updated to point after the bytes that were returned.
+Changed in version 3.3: Argument can be omitted or `None`. 
+
+read_byte()[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.read_byte "Link to this definition")
+    
+Returns a byte at the current file position as an integer, and advances the file position by 1. 
+
+readline()[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.readline "Link to this definition")
+    
+Returns a single line, starting at the current file position and up to the next newline. The file position is updated to point after the bytes that were returned. 
+
+resize(_newsize_)[¶](https://docs.python.org/3/library/mmap.html#mmap.mmap.resize "Link to this definition")
+    
+Resizes the map and the underlying file, if any.
+Resizing a map created with _access_ of `ACCESS_READ` or `ACCESS_COPY`, will raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception. Resizing a map created with with _trackfd_ set to `False`, will raise a [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") exception.
+**On Windows** : Resizing the map will raise an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") if there are other maps against the same named file. Resizing an anonymous map (ie against the pagefile) will silently create a new map with the original data copied over up to the length of the new size.
+Changed in version 3.11: Correctly fails if attempting to resize when another map is held Allows resize against an anonymous map on Windows

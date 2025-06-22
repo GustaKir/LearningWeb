@@ -1,0 +1,81 @@
+Title: Using `patch()` with Mocks in Python's `unittest.mock`
+URL: https://docs.python.org/3/library/unittest.mock.html
+Summary: This section covers the use of `patch()` from the `unittest.mock` library to replace objects in tests. It provides an example of replacing `sys.stdout` with an `io.StringIO` instance to capture printed output, and details how to configure a mock with arbitrary keyword arguments during the patch call.
+---
+
+```
+
+Another use case might be to replace an object with an [`io.StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") instance:
+>>>```
+>>> fromioimport StringIO
+>>> deffoo():
+...   print('Something')
+...
+>>> @patch('sys.stdout', new_callable=StringIO)
+... deftest(mock_stdout):
+...   foo()
+...   assert mock_stdout.getvalue() == 'Something\n'
+...
+>>> test()
+
+```
+
+When [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") is creating a mock for you, it is common that the first thing you need to do is to configure the mock. Some of that configuration can be done in the call to patch. Any arbitrary keywords you pass into the call will be used to set attributes on the created mock:
+>>>```
+>>> patcher = patch('__main__.thing', first='one', second='two')
+>>> mock_thing = patcher.start()
+>>> mock_thing.first
+'one'
+>>> mock_thing.second
+'two'
+
+```
+
+As well as attributes on the created mock attributes, like the [`return_value`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.return_value "unittest.mock.Mock.return_value") and [`side_effect`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.side_effect "unittest.mock.Mock.side_effect"), of child mocks can also be configured. These aren’t syntactically valid to pass in directly as keyword arguments, but a dictionary with these as keys can still be expanded into a [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") call using `**`:
+>>>```
+>>> config = {'method.return_value': 3, 'other.side_effect': KeyError}
+>>> patcher = patch('__main__.thing', **config)
+>>> mock_thing = patcher.start()
+>>> mock_thing.method()
+3
+>>> mock_thing.other()
+Traceback (most recent call last):
+...
+KeyError
+
+```
+
+By default, attempting to patch a function in a module (or a method or an attribute in a class) that does not exist will fail with [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError"):
+>>>```
+>>> @patch('sys.non_existing_attribute', 42)
+... deftest():
+...   assert sys.non_existing_attribute == 42
+...
+>>> test()
+Traceback (most recent call last):
+...
+AttributeError: <module 'sys' (built-in)> does not have the attribute 'non_existing_attribute'
+
+```
+
+but adding `create=True` in the call to [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") will make the previous example work as expected:
+>>>```
+>>> @patch('sys.non_existing_attribute', 42, create=True)
+... deftest(mock_stdout):
+...   assert sys.non_existing_attribute == 42
+...
+>>> test()
+
+```
+
+Changed in version 3.8: [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch") now returns an [`AsyncMock`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.AsyncMock "unittest.mock.AsyncMock") if the target is an async function.
+### patch.object[¶](https://docs.python.org/3/library/unittest.mock.html#patch-object "Link to this heading") 
+
+patch.object(_target_ , _attribute_ , _new =DEFAULT_, _spec =None_, _create =False_, _spec_set =None_, _autospec =None_, _new_callable =None_, _** kwargs_)[¶](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.object "Link to this definition")
+    
+patch the named member (_attribute_) on an object (_target_) with a mock object.
+[`patch.object()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.object "unittest.mock.patch.object") can be used as a decorator, class decorator or a context manager. Arguments _new_ , _spec_ , _create_ , _spec_set_ , _autospec_ and _new_callable_ have the same meaning as for [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch"). Like [`patch()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch "unittest.mock.patch"), [`patch.object()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.object "unittest.mock.patch.object") takes arbitrary keyword arguments for configuring the mock object it creates.
+When used as a class decorator [`patch.object()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.object "unittest.mock.patch.object") honours `patch.TEST_PREFIX` for choosing which methods to wrap.
+You can either call [`patch.object()`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch.object "unittest.mock.patch.object") with three arguments or two arguments. The three argument form takes the object to be patched, the attribute name and the object to replace the attribute with.
+When calling with the two argument form you omit the replacement object, and a mock is created for you and passed in as an extra argument to the decorated function:
+>>>

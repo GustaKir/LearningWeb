@@ -1,0 +1,58 @@
+Title: Using Callbacks in FastAPI for Invoice Notifications
+URL: https://fastapi.tiangolo.com/advanced/openapi-callbacks/
+Summary: This document outlines how to implement OpenAPI callbacks in FastAPI, specifically for handling invoice notifications. It includes code examples to create an invoice and set up callback routing for events related to the invoice, enabling external developers to receive notifications when an invoice is created and processed.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport APIRouter, FastAPI
+frompydanticimport BaseModel, HttpUrl
+app = FastAPI()
+classInvoice(BaseModel):
+  id: str
+  title: Union[str, None] = None
+  customer: str
+  total: float
+classInvoiceEvent(BaseModel):
+  description: str
+  paid: bool
+classInvoiceEventReceived(BaseModel):
+  ok: bool
+invoices_callback_router = APIRouter()
+@invoices_callback_router.post(
+  "{$callback_url}/invoices/{$request.body.id}", response_model=InvoiceEventReceived
+)
+definvoice_notification(body: InvoiceEvent):
+  pass
+@app.post("/invoices/", callbacks=invoices_callback_router.routes)
+defcreate_invoice(invoice: Invoice, callback_url: Union[HttpUrl, None] = None):
+"""
+  Create an invoice.
+  This will (let's imagine) let the API user (some external developer) create an
+  invoice.
+  And this path operation will:
+  * Send the invoice to the client.
+  * Collect the money from the client.
+  * Send a notification back to the API user (the external developer), as a callback.
+    * At this point is that the API will somehow send a POST request to the
+      external API with the notification of the invoice event
+      (e.g. "payment successful").
+  """
+  # Send the invoice, collect the money, send the notification (the callback)
+  return {"msg": "Invoice received"}
+
+```
+
+Tip
+Notice that you are not passing the router itself (`invoices_callback_router`) to `callback=`, but the attribute `.routes`, as in `invoices_callback_router.routes`.
+### Check the docs[¶](https://fastapi.tiangolo.com/advanced/openapi-callbacks/#check-the-docs "Permanent link")
+Now you can start your app and go to <http://127.0.0.1:8000/docs>.
+You will see your docs including a "Callbacks" section for your _path operation_ that shows how the _external API_ should look like:
+![](https://fastapi.tiangolo.com/img/tutorial/openapi-callbacks/image01.png)
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Settings and Environment Variables  ](https://fastapi.tiangolo.com/advanced/settings/) [ Next  OpenAPI Webhooks  ](https://fastapi.tiangolo.com/advanced/openapi-webhooks/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

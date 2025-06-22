@@ -1,0 +1,36 @@
+Title: Lexical Analysis: String Representation and Escapes
+URL: https://docs.python.org/3/reference/lexical_analysis.html
+Summary: This section discusses string representation in Python, including the use of triple-quoted strings and string literal concatenation. It highlights changes in octal escape handling since Python 3.11, including warnings for values exceeding `0o377` and the requirement of exactly two hex digits, contrasting with Standard C.
+---
+
+```
+
+The same result can be achieved using [triple-quoted strings](https://docs.python.org/3/reference/lexical_analysis.html#strings), or parentheses and [string literal concatenation](https://docs.python.org/3/reference/lexical_analysis.html#string-concatenation).
+  2. As in Standard C, up to three octal digits are accepted.
+Changed in version 3.11: Octal escapes with value larger than `0o377` produce a [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning").
+Changed in version 3.12: Octal escapes with value larger than `0o377` produce a [`SyntaxWarning`](https://docs.python.org/3/library/exceptions.html#SyntaxWarning "SyntaxWarning"). In a future Python version they will be eventually a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError").
+  3. Unlike in Standard C, exactly two hex digits are required.
+  4. In a bytes literal, hexadecimal and octal escapes denote the byte with the given value. In a string literal, these escapes denote a Unicode character with the given value.
+  5. Changed in version 3.3: Support for name aliases [[1]](https://docs.python.org/3/reference/lexical_analysis.html#id16) has been added.
+  6. Exactly four hex digits are required.
+  7. Any Unicode character can be encoded this way. Exactly eight hex digits are required.
+
+
+Unlike Standard C, all unrecognized escape sequences are left in the string unchanged, i.e., _the backslash is left in the result_. (This behavior is useful when debugging: if an escape sequence is mistyped, the resulting output is more easily recognized as broken.) It is also important to note that the escape sequences only recognized in string literals fall into the category of unrecognized escapes for bytes literals.
+Changed in version 3.6: Unrecognized escape sequences produce a [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning").
+Changed in version 3.12: Unrecognized escape sequences produce a [`SyntaxWarning`](https://docs.python.org/3/library/exceptions.html#SyntaxWarning "SyntaxWarning"). In a future Python version they will be eventually a [`SyntaxError`](https://docs.python.org/3/library/exceptions.html#SyntaxError "SyntaxError").
+Even in a raw literal, quotes can be escaped with a backslash, but the backslash remains in the result; for example, `r"\""` is a valid string literal consisting of two characters: a backslash and a double quote; `r"\"` is not a valid string literal (even a raw string cannot end in an odd number of backslashes). Specifically, _a raw literal cannot end in a single backslash_ (since the backslash would escape the following quote character). Note also that a single backslash followed by a newline is interpreted as those two characters as part of the literal, _not_ as a line continuation.
+### 2.4.2. String literal concatenation[¶](https://docs.python.org/3/reference/lexical_analysis.html#string-literal-concatenation "Link to this heading")
+Multiple adjacent string or bytes literals (delimited by whitespace), possibly using different quoting conventions, are allowed, and their meaning is the same as their concatenation. Thus, `"hello" 'world'` is equivalent to `"helloworld"`. This feature can be used to reduce the number of backslashes needed, to split long strings conveniently across long lines, or even to add comments to parts of strings, for example:
+```
+re.compile("[A-Za-z_]"    # letter or underscore
+      "[A-Za-z0-9_]*"  # letter, digit or underscore
+     )
+
+```
+
+Note that this feature is defined at the syntactical level, but implemented at compile time. The ‘+’ operator must be used to concatenate string expressions at run time. Also note that literal concatenation can use different quoting styles for each component (even mixing raw strings and triple quoted strings), and formatted string literals may be concatenated with plain string literals.
+### 2.4.3. f-strings[¶](https://docs.python.org/3/reference/lexical_analysis.html#formatted-string-literals "Link to this heading")
+Added in version 3.6.
+A _formatted string literal_ or _f-string_ is a string literal that is prefixed with `'f'` or `'F'`. These strings may contain replacement fields, which are expressions delimited by curly braces `{}`. While other string literals always have a constant value, formatted strings are really expressions evaluated at run time.
+Escape sequences are decoded like in ordinary string literals (except when a literal is also marked as a raw string). After decoding, the grammar for the contents of the string is:

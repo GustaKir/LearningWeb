@@ -1,0 +1,45 @@
+Title: invalidate_caches Method in importlib
+URL: https://docs.python.org/3/library/importlib.html
+Summary: The invalidate_caches() class method triggers the invalidate_caches() method on all path finders in sys.path_importer_cache that support it. It removes entries set to None from the cache. Changes in version 3.7 included removing None entries, and in version 3.4, it affects objects in sys.path_hooks.
+---
+
+_classmethod_ invalidate_caches()[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.PathFinder.invalidate_caches "Link to this definition")
+    
+Calls [`importlib.abc.PathEntryFinder.invalidate_caches()`](https://docs.python.org/3/library/importlib.html#importlib.abc.PathEntryFinder.invalidate_caches "importlib.abc.PathEntryFinder.invalidate_caches") on all finders stored in [`sys.path_importer_cache`](https://docs.python.org/3/library/sys.html#sys.path_importer_cache "sys.path_importer_cache") that define the method. Otherwise entries in [`sys.path_importer_cache`](https://docs.python.org/3/library/sys.html#sys.path_importer_cache "sys.path_importer_cache") set to `None` are deleted.
+Changed in version 3.7: Entries of `None` in [`sys.path_importer_cache`](https://docs.python.org/3/library/sys.html#sys.path_importer_cache "sys.path_importer_cache") are deleted.
+Changed in version 3.4: Calls objects in [`sys.path_hooks`](https://docs.python.org/3/library/sys.html#sys.path_hooks "sys.path_hooks") with the current working directory for `''` (i.e. the empty string). 
+
+_class_ importlib.machinery.FileFinder(_path_ , _* loader_details_)[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder "Link to this definition")
+    
+A concrete implementation of [`importlib.abc.PathEntryFinder`](https://docs.python.org/3/library/importlib.html#importlib.abc.PathEntryFinder "importlib.abc.PathEntryFinder") which caches results from the file system.
+The _path_ argument is the directory for which the finder is in charge of searching.
+The _loader_details_ argument is a variable number of 2-item tuples each containing a loader and a sequence of file suffixes the loader recognizes. The loaders are expected to be callables which accept two arguments of the module’s name and the path to the file found.
+The finder will cache the directory contents as necessary, making stat calls for each module search to verify the cache is not outdated. Because cache staleness relies upon the granularity of the operating system’s state information of the file system, there is a potential race condition of searching for a module, creating a new file, and then searching for the module the new file represents. If the operations happen fast enough to fit within the granularity of stat calls, then the module search will fail. To prevent this from happening, when you create a module dynamically, make sure to call [`importlib.invalidate_caches()`](https://docs.python.org/3/library/importlib.html#importlib.invalidate_caches "importlib.invalidate_caches").
+Added in version 3.3. 
+
+path[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder.path "Link to this definition")
+    
+The path the finder will search in. 
+
+find_spec(_fullname_ , _target =None_)[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder.find_spec "Link to this definition")
+    
+Attempt to find the spec to handle _fullname_ within [`path`](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder.path "importlib.machinery.FileFinder.path").
+Added in version 3.4. 
+
+invalidate_caches()[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder.invalidate_caches "Link to this definition")
+    
+Clear out the internal cache. 
+
+_classmethod_ path_hook(_* loader_details_)[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder.path_hook "Link to this definition")
+    
+A class method which returns a closure for use on [`sys.path_hooks`](https://docs.python.org/3/library/sys.html#sys.path_hooks "sys.path_hooks"). An instance of [`FileFinder`](https://docs.python.org/3/library/importlib.html#importlib.machinery.FileFinder "importlib.machinery.FileFinder") is returned by the closure using the path argument given to the closure directly and _loader_details_ indirectly.
+If the argument to the closure is not an existing directory, [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") is raised. 
+
+_class_ importlib.machinery.SourceFileLoader(_fullname_ , _path_)[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.SourceFileLoader "Link to this definition")
+    
+A concrete implementation of [`importlib.abc.SourceLoader`](https://docs.python.org/3/library/importlib.html#importlib.abc.SourceLoader "importlib.abc.SourceLoader") by subclassing [`importlib.abc.FileLoader`](https://docs.python.org/3/library/importlib.html#importlib.abc.FileLoader "importlib.abc.FileLoader") and providing some concrete implementations of other methods.
+Added in version 3.3. 
+
+name[¶](https://docs.python.org/3/library/importlib.html#importlib.machinery.SourceFileLoader.name "Link to this definition")
+    
+The name of the module that this loader will handle.

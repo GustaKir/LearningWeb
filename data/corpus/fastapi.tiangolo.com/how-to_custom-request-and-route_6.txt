@@ -1,0 +1,74 @@
+Title: Custom Request and Route in FastAPI
+URL: https://fastapi.tiangolo.com/how-to/custom-request-and-route/
+Summary: This document outlines how to create a custom route handler in FastAPI using a subclass of APIRoute. It demonstrates tracking response time by modifying the route handler to log the duration and response details. An example is provided where a basic FastAPI application is set up with a timed route.
+---
+
+```
+importtime
+fromtypingimport Callable
+fromfastapiimport APIRouter, FastAPI, Request, Response
+fromfastapi.routingimport APIRoute
+classTimedRoute(APIRoute):
+  defget_route_handler(self) -> Callable:
+    original_route_handler = super().get_route_handler()
+    async defcustom_route_handler(request: Request) -> Response:
+      before = time.time()
+      response: Response = await original_route_handler(request)
+      duration = time.time() - before
+      response.headers["X-Response-Time"] = str(duration)
+      print(f"route duration: {duration}")
+      print(f"route response: {response}")
+      print(f"route response headers: {response.headers}")
+      return response
+    return custom_route_handler
+app = FastAPI()
+router = APIRouter(route_class=TimedRoute)
+@app.get("/")
+async defnot_timed():
+  return {"message": "Not timed"}
+@router.get("/timed")
+async deftimed():
+  return {"message": "It's the time of my life"}
+app.include_router(router)
+
+```
+
+In this example, the _path operations_ under the `router` will use the custom `TimedRoute` class, and will have an extra `X-Response-Time` header in the response with the time it took to generate the response:
+[Python 3.8+](https://fastapi.tiangolo.com/how-to/custom-request-and-route/#__tabbed_6_1)
+```
+importtime
+fromtypingimport Callable
+fromfastapiimport APIRouter, FastAPI, Request, Response
+fromfastapi.routingimport APIRoute
+classTimedRoute(APIRoute):
+  defget_route_handler(self) -> Callable:
+    original_route_handler = super().get_route_handler()
+    async defcustom_route_handler(request: Request) -> Response:
+      before = time.time()
+      response: Response = await original_route_handler(request)
+      duration = time.time() - before
+      response.headers["X-Response-Time"] = str(duration)
+      print(f"route duration: {duration}")
+      print(f"route response: {response}")
+      print(f"route response headers: {response.headers}")
+      return response
+    return custom_route_handler
+app = FastAPI()
+router = APIRouter(route_class=TimedRoute)
+@app.get("/")
+async defnot_timed():
+  return {"message": "Not timed"}
+@router.get("/timed")
+async deftimed():
+  return {"message": "It's the time of my life"}
+app.include_router(router)
+
+```
+
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  GraphQL  ](https://fastapi.tiangolo.com/how-to/graphql/) [ Next  Conditional OpenAPI  ](https://fastapi.tiangolo.com/how-to/conditional-openapi/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

@@ -1,0 +1,27 @@
+Title: RLock.release() Method in Python's Threading Library
+URL: https://docs.python.org/3/library/threading.html
+Summary: The release() method decrements the recursion level of a lock. If the level reaches zero, the lock is reset to unlocked, allowing one blocked thread to proceed. The method should only be called by the thread that owns the lock; otherwise, a RuntimeError is raised. It has no return value.
+---
+
+release()[¶](https://docs.python.org/3/library/threading.html#threading.RLock.release "Link to this definition")
+    
+Release a lock, decrementing the recursion level. If after the decrement it is zero, reset the lock to unlocked (not owned by any thread), and if any other threads are blocked waiting for the lock to become unlocked, allow exactly one of them to proceed. If after the decrement the recursion level is still nonzero, the lock remains locked and owned by the calling thread.
+Only call this method when the calling thread owns the lock. A [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised if this method is called when the lock is not acquired.
+There is no return value.
+## Condition Objects[¶](https://docs.python.org/3/library/threading.html#condition-objects "Link to this heading")
+A condition variable is always associated with some kind of lock; this can be passed in or one will be created by default. Passing one in is useful when several condition variables must share the same lock. The lock is part of the condition object: you don’t have to track it separately.
+A condition variable obeys the [context management protocol](https://docs.python.org/3/library/threading.html#with-locks): using the `with` statement acquires the associated lock for the duration of the enclosed block. The [`acquire()`](https://docs.python.org/3/library/threading.html#threading.Condition.acquire "threading.Condition.acquire") and [`release()`](https://docs.python.org/3/library/threading.html#threading.Condition.release "threading.Condition.release") methods also call the corresponding methods of the associated lock.
+Other methods must be called with the associated lock held. The [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait") method releases the lock, and then blocks until another thread awakens it by calling [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") or [`notify_all()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "threading.Condition.notify_all"). Once awakened, [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait") re-acquires the lock and returns. It is also possible to specify a timeout.
+The [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") method wakes up one of the threads waiting for the condition variable, if any are waiting. The [`notify_all()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "threading.Condition.notify_all") method wakes up all threads waiting for the condition variable.
+Note: the [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") and [`notify_all()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "threading.Condition.notify_all") methods don’t release the lock; this means that the thread or threads awakened will not return from their [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait") call immediately, but only when the thread that called [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") or [`notify_all()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "threading.Condition.notify_all") finally relinquishes ownership of the lock.
+The typical programming style using condition variables uses the lock to synchronize access to some shared state; threads that are interested in a particular change of state call [`wait()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait "threading.Condition.wait") repeatedly until they see the desired state, while threads that modify the state call [`notify()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify "threading.Condition.notify") or [`notify_all()`](https://docs.python.org/3/library/threading.html#threading.Condition.notify_all "threading.Condition.notify_all") when they change the state in such a way that it could possibly be a desired state for one of the waiters. For example, the following code is a generic producer-consumer situation with unlimited buffer capacity:
+```
+# Consume one item
+with cv:
+  while not an_item_is_available():
+    cv.wait()
+  get_an_available_item()
+# Produce one item
+with cv:
+  make_an_item_available()
+  cv.notify()

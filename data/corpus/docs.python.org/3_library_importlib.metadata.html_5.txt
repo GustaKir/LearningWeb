@@ -1,0 +1,53 @@
+Title: Importlib Metadata Documentation - Distributions
+URL: https://docs.python.org/3/library/importlib.metadata.html
+Summary: The content discusses the `packages_distributions()` function, which returns a dictionary of installed packages and their distributions. It notes that some editable installs may not provide top-level names, making the function unreliable in such cases. The section also introduces the `importlib.metadata.distribution(_distribution_name_)` method, which retrieves a `Distribution` instance for a specified package and outlines the potential `PackageNotFoundError` exception.
+---
+
+```
+>>> packages_distributions()
+{'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
+
+```
+
+Some editable installs, [do not supply top-level names](https://github.com/pypa/packaging-problems/issues/609), and thus this function is not reliable with such installs.
+Added in version 3.10.
+## Distributions[¶](https://docs.python.org/3/library/importlib.metadata.html#distributions "Link to this heading") 
+
+importlib.metadata.distribution(_distribution_name_)[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.distribution "Link to this definition")
+    
+Return a [`Distribution`](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.Distribution "importlib.metadata.Distribution") instance describing the named distribution package.
+Raises [`PackageNotFoundError`](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.PackageNotFoundError "importlib.metadata.PackageNotFoundError") if the named distribution package is not installed in the current Python environment. 
+
+_class_ importlib.metadata.Distribution[¶](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.Distribution "Link to this definition")
+    
+Details of an installed distribution package.
+Note: different `Distribution` instances do not currently compare equal, even if they relate to the same installed distribution and accordingly have the same attributes.
+While the module level API described above is the most common and convenient usage, you can get all of that information from the `Distribution` class. `Distribution` is an abstract object that represents the metadata for a Python [Distribution Package](https://packaging.python.org/en/latest/glossary/#term-Distribution-Package). You can get the concrete `Distribution` subclass instance for an installed distribution package by calling the [`distribution()`](https://docs.python.org/3/library/importlib.metadata.html#importlib.metadata.distribution "importlib.metadata.distribution") function:
+>>>```
+>>> fromimportlib.metadataimport distribution
+>>> dist = distribution('wheel')
+>>> type(dist)
+<class 'importlib.metadata.PathDistribution'>
+
+```
+
+Thus, an alternative way to get the version number is through the `Distribution` instance:
+>>>```
+>>> dist.version
+'0.32.3'
+
+```
+
+There are all kinds of additional metadata available on `Distribution` instances:
+>>>```
+>>> dist.metadata['Requires-Python']
+'>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+>>> dist.metadata['License']
+'MIT'
+
+```
+
+For editable packages, an `origin` property may present [**PEP 610**](https://peps.python.org/pep-0610/) metadata:
+>>>```
+>>> dist.origin.url
+'file:///path/to/wheel-0.32.3.editable-py3-none-any.whl'

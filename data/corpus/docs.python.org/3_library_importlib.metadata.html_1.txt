@@ -1,0 +1,42 @@
+Title: importlib.metadata – Accessing Package Metadata
+URL: https://docs.python.org/3/library/importlib.metadata.html
+Summary: The `importlib.metadata` library, added in Python 3.8 and made stable in 3.10, provides access to metadata of installed distribution packages, including entry points and top-level names. It is designed to replace similar functionalities in the entry point and metadata APIs of setuptools.
+---
+
+# `importlib.metadata` – Accessing package metadata[¶](https://docs.python.org/3/library/importlib.metadata.html#module-importlib.metadata "Link to this heading")
+Added in version 3.8.
+Changed in version 3.10: `importlib.metadata` is no longer provisional.
+**Source code:** [Lib/importlib/metadata/__init__.py](https://github.com/python/cpython/tree/3.13/Lib/importlib/metadata/__init__.py)
+`importlib.metadata` is a library that provides access to the metadata of an installed [Distribution Package](https://packaging.python.org/en/latest/glossary/#term-Distribution-Package), such as its entry points or its top-level names ([Import Package](https://packaging.python.org/en/latest/glossary/#term-Import-Package)s, modules, if any). Built in part on Python’s import system, this library intends to replace similar functionality in the [entry point API](https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points) and [metadata API](https://setuptools.readthedocs.io/en/latest/pkg_resources.html#metadata-api) of `pkg_resources`. Along with [`importlib.resources`](https://docs.python.org/3/library/importlib.resources.html#module-importlib.resources "importlib.resources: Package resource reading, opening, and access"), this package can eliminate the need to use the older and less efficient `pkg_resources` package.
+`importlib.metadata` operates on third-party _distribution packages_ installed into Python’s `site-packages` directory via tools such as [pip](https://pypi.org/project/pip/). Specifically, it works with distributions with discoverable `dist-info` or `egg-info` directories, and metadata defined by the [Core metadata specifications](https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata).
+Important
+These are _not_ necessarily equivalent to or correspond 1:1 with the top-level _import package_ names that can be imported inside Python code. One _distribution package_ can contain multiple _import packages_ (and single modules), and one top-level _import package_ may map to multiple _distribution packages_ if it is a namespace package. You can use [packages_distributions()](https://docs.python.org/3/library/importlib.metadata.html#package-distributions) to get a mapping between them.
+By default, distribution metadata can live on the file system or in zip archives on [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"). Through an extension mechanism, the metadata can live almost anywhere.
+See also 
+
+<https://importlib-metadata.readthedocs.io/>
+    
+The documentation for `importlib_metadata`, which supplies a backport of `importlib.metadata`. This includes an [API reference](https://importlib-metadata.readthedocs.io/en/latest/api.html) for this module’s classes and functions, as well as a [migration guide](https://importlib-metadata.readthedocs.io/en/latest/migration.html) for existing users of `pkg_resources`.
+## Overview[¶](https://docs.python.org/3/library/importlib.metadata.html#overview "Link to this heading")
+Let’s say you wanted to get the version string for a [Distribution Package](https://packaging.python.org/en/latest/glossary/#term-Distribution-Package) you’ve installed using `pip`. We start by creating a virtual environment and installing something into it:
+```
+$ python-mvenvexample
+$ sourceexample/bin/activate
+(example) $ python-mpipinstallwheel
+
+```
+
+You can get the version string for `wheel` by running the following:
+>>>```
+(example) $ python
+>>> fromimportlib.metadataimport version
+>>> version('wheel')
+'0.32.3'
+
+```
+
+You can also get a collection of entry points selectable by properties of the EntryPoint (typically ‘group’ or ‘name’), such as `console_scripts`, `distutils.commands` and others. Each group contains a collection of [EntryPoint](https://docs.python.org/3/library/importlib.metadata.html#entry-points) objects.
+You can get the [metadata for a distribution](https://docs.python.org/3/library/importlib.metadata.html#metadata):
+>>>```
+>>> list(metadata('wheel'))
+['Metadata-Version', 'Name', 'Version', 'Summary', 'Home-page', 'Author', 'Author-email', 'Maintainer', 'Maintainer-email', 'License', 'Project-URL', 'Project-URL', 'Project-URL', 'Keywords', 'Platform', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Classifier', 'Requires-Python', 'Provides-Extra', 'Requires-Dist', 'Requires-Dist']

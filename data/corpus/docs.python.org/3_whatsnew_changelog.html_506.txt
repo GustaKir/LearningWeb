@@ -1,0 +1,19 @@
+Title: C API Updates in Python
+URL: https://docs.python.org/3/whatsnew/changelog.html
+Summary: This section outlines several updates to the C API in Python, including a memory leak fix in `Py_SetStandardStreamEncoding()`, changes to `PyDoc_VAR` and `PyDoc_STRVAR` for creating static constant variables, and modifications to internal constants used by debug hooks in memory allocators.
+---
+
+### C API[¶](https://docs.python.org/3/whatsnew/changelog.html#id456 "Link to this heading")
+  * [bpo-36763](https://bugs.python.org/issue?@action=redirect&bpo=36763): Fix memory leak in `Py_SetStandardStreamEncoding()`: release memory if the function is called twice.
+  * [bpo-36641](https://bugs.python.org/issue?@action=redirect&bpo=36641): PyDoc_VAR(name) and [PyDoc_STRVAR](https://docs.python.org/3/c-api/intro.html#c.PyDoc_STRVAR "PyDoc_STRVAR")(name,str) now create `static const char name[]` instead of `static char name[]`. Patch by Inada Naoki.
+  * [bpo-36389](https://bugs.python.org/issue?@action=redirect&bpo=36389): Change the value of `CLEANBYTE`, `DEADDYTE` and `FORBIDDENBYTE` internal constants used by debug hooks on Python memory allocators ([`PyMem_SetupDebugHooks()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetupDebugHooks "PyMem_SetupDebugHooks") function). Byte patterns `0xCB`, `0xDB` and `0xFB` have been replaced with `0xCD`, `0xDD` and `0xFD` to use the same values than Windows CRT debug `malloc()` and `free()`.
+  * [bpo-36443](https://bugs.python.org/issue?@action=redirect&bpo=36443): Since Python 3.7.0, calling [`Py_DecodeLocale()`](https://docs.python.org/3/c-api/sys.html#c.Py_DecodeLocale "Py_DecodeLocale") before [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize") produces mojibake if the `LC_CTYPE` locale is coerced and/or if the UTF-8 Mode is enabled by the user configuration. The LC_CTYPE coercion and UTF-8 Mode are now disabled by default to fix the mojibake issue. They must now be enabled explicitly (opt-in) using the new `_Py_PreInitialize()` API with `_PyPreConfig`.
+  * [bpo-36025](https://bugs.python.org/issue?@action=redirect&bpo=36025): Fixed an accidental change to the datetime C API where the arguments to the [`PyDate_FromTimestamp()`](https://docs.python.org/3/c-api/datetime.html#c.PyDate_FromTimestamp "PyDate_FromTimestamp") function were incorrectly interpreted as a single timestamp rather than an arguments tuple, which causes existing code to start raising [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError"). The backwards-incompatible change was only present in alpha releases of Python 3.8. Patch by Paul Ganssle.
+  * [bpo-35810](https://bugs.python.org/issue?@action=redirect&bpo=35810): Modify `PyObject_Init` to correctly increase the refcount of heap-allocated Type objects. Also fix the refcounts of the heap-allocated types that were either doing this manually or not decreasing the type’s refcount in tp_dealloc
+
+
+## Python 3.8.0 alpha 3[¶](https://docs.python.org/3/whatsnew/changelog.html#python-3-8-0-alpha-3 "Link to this heading")
+_Release date: 2019-03-25_
+### Security[¶](https://docs.python.org/3/whatsnew/changelog.html#id457 "Link to this heading")
+  * [bpo-36216](https://bugs.python.org/issue?@action=redirect&bpo=36216): Changes urlsplit() to raise ValueError when the URL contains characters that decompose under IDNA encoding (NFKC-normalization) into characters that affect how the URL is parsed.
+  * [bpo-35121](https://bugs.python.org/issue?@action=redirect&bpo=35121): Don’t send cookies of domain A without Domain attribute to domain B when domain A is a suffix match of domain B while using a cookiejar with [`http.cookiejar.DefaultCookiePolicy`](https://docs.python.org/3/library/http.cookiejar.html#http.cookiejar.DefaultCookiePolicy "http.cookiejar.DefaultCookiePolicy") policy. Patch by Karthikeyan Singaravelan.

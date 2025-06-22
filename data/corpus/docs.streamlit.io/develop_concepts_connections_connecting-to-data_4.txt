@@ -1,0 +1,19 @@
+Title: Connecting to Data in Streamlit
+URL: https://docs.streamlit.io/develop/concepts/connections/connecting-to-data
+Summary: This document discusses the importance of understanding thread safety when using data connections in Streamlit, especially with third-party connections. It also outlines the process of building a custom connection using existing drivers or SDKs, emphasizing its benefits for extending support to new data sources and enhancing organizational practices.
+---
+
+Refer to [Caching](https://docs.streamlit.io/develop/concepts/architecture/caching) for more information.
+For apps that could get significant concurrent usage, ensure that you understand any thread safety implications of your connection, particularly when using a connection built by a third party. Connections built by Streamlit should provide thread-safe operations by default.
+### [](https://docs.streamlit.io/develop/concepts/connections/connecting-to-data#build-your-own-connection)Build your own connection
+Building your own basic connection implementation using an existing driver or SDK is quite straightforward in most cases. However, you can add more complex functionality with further effort. This custom implementation can be a great way to extend support to a new data source and contribute to the Streamlit ecosystem.
+Maintaining a tailored internal Connection implementation across many apps can be a powerful practice for organizations with frequently used access patterns and data sources.
+Check out the [Build your own Connection page](https://experimental-connection.streamlit.app/Build_your_own) in the st.experimental connection demo app below for a quick tutorial and working implementation. This demo builds a minimal but very functional Connection on top of DuckDB.
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://experimental-connection.streamlit.app/Build_your_own/?utm_medium=oembed)
+The typical steps are:
+  1. Declare the Connection class, extending [`ExperimentalBaseConnection`](https://docs.streamlit.io/develop/api-reference/connections/st.connections.experimentalbaseconnection) with the type parameter bound to the underlying connection object:
+`from streamlit.connections import ExperimentalBaseConnection import duckdb class DuckDBConnection(ExperimentalBaseConnection[duckdb.DuckDBPyConnection]) `
+  2. Implement the `_connect` method that reads any kwargs, external config/credential locations, and Streamlit secrets to initialize the underlying connection:
+`def _connect(self, **kwargs) -> duckdb.DuckDBPyConnection: if 'database' in kwargs:     db = kwargs.pop('database') else:     db = self._secrets['database'] return duckdb.connect(database=db, **kwargs) `
+  3. Add useful helper methods that make sense for your connection (wrapping them in `st.cache_data` where caching is desired)

@@ -1,0 +1,69 @@
+Title: Using tee() for Efficient Peekable Iterators
+URL: https://docs.python.org/3/library/itertools.html
+Summary: This section explains the behavior of the tee iterator in Python's itertools library, particularly when the input is already a tee object. It highlights the 'flattening step' that allows nested tee calls to share data efficiently and become peekable. The provided example demonstrates how to implement a lookahead function to return the next value without advancing the input iterator.
+---
+
+```
+
+When the input _iterable_ is already a tee iterator object, all members of the return tuple are constructed as if they had been produced by the upstream [`tee()`](https://docs.python.org/3/library/itertools.html#itertools.tee "itertools.tee") call. This “flattening step” allows nested [`tee()`](https://docs.python.org/3/library/itertools.html#itertools.tee "itertools.tee") calls to share the same underlying data chain and to have a single update step rather than a chain of calls.
+The flattening property makes tee iterators efficiently peekable:
+```
+deflookahead(tee_iterator):
+   "Return the next value without moving the input forward"
+   [forked_iterator] = tee(tee_iterator, 1)
+   return next(forked_iterator)
+
+```
+
+>>>```
+>>> iterator = iter('abcdef')
+>>> [iterator] = tee(iterator, 1)  # Make the input peekable
+>>> next(iterator)         # Move the iterator forward
+'a'
+>>> lookahead(iterator)       # Check next value
+'b'
+>>> next(iterator)         # Continue moving forward
+'b'
+
+```
+
+`tee` iterators are not threadsafe. A [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") may be raised when simultaneously using iterators returned by the same [`tee()`](https://docs.python.org/3/library/itertools.html#itertools.tee "itertools.tee") call, even if the original _iterable_ is threadsafe.
+This itertool may require significant auxiliary storage (depending on how much temporary data needs to be stored). In general, if one iterator uses most or all of the data before another iterator starts, it is faster to use [`list()`](https://docs.python.org/3/library/stdtypes.html#list "list") instead of [`tee()`](https://docs.python.org/3/library/itertools.html#itertools.tee "itertools.tee"). 
+
+itertools.zip_longest(_* iterables_, _fillvalue =None_)[¶](https://docs.python.org/3/library/itertools.html#itertools.zip_longest "Link to this definition")
+    
+Make an iterator that aggregates elements from each of the _iterables_.
+If the iterables are of uneven length, missing values are filled-in with _fillvalue_. If not specified, _fillvalue_ defaults to `None`.
+Iteration continues until the longest iterable is exhausted.
+Roughly equivalent to:
+```
+defzip_longest(*iterables, fillvalue=None):
+  # zip_longest('ABCD', 'xy', fillvalue='-') → Ax By C- D-
+  iterators = list(map(iter, iterables))
+  num_active = len(iterators)
+  if not num_active:
+    return
+  while True:
+    values = []
+    for i, iterator in enumerate(iterators):
+      try:
+        value = next(iterator)
+      except StopIteration:
+        num_active -= 1
+        if not num_active:
+          return
+        iterators[i] = repeat(fillvalue)
+        value = fillvalue
+      values.append(value)
+    yield tuple(values)
+
+```
+
+If one of the iterables is potentially infinite, then the [`zip_longest()`](https://docs.python.org/3/library/itertools.html#itertools.zip_longest "itertools.zip_longest") function should be wrapped with something that limits the number of calls (for example [`islice()`](https://docs.python.org/3/library/itertools.html#itertools.islice "itertools.islice") or [`takewhile()`](https://docs.python.org/3/library/itertools.html#itertools.takewhile "itertools.takewhile")).
+## Itertools Recipes[¶](https://docs.python.org/3/library/itertools.html#itertools-recipes "Link to this heading")
+This section shows recipes for creating an extended toolset using the existing itertools as building blocks.
+The primary purpose of the itertools recipes is educational. The recipes show various ways of thinking about individual tools — for example, that `chain.from_iterable` is related to the concept of flattening. The recipes also give ideas about ways that the tools can be combined — for example, how `starmap()` and `repeat()` can work together. The recipes also show patterns for using itertools with the [`operator`](https://docs.python.org/3/library/operator.html#module-operator "operator: Functions corresponding to the standard operators.") and [`collections`](https://docs.python.org/3/library/collections.html#module-collections "collections: Container datatypes") modules as well as with the built-in itertools such as `map()`, `filter()`, `reversed()`, and `enumerate()`.
+A secondary purpose of the recipes is to serve as an incubator. The `accumulate()`, `compress()`, and `pairwise()` itertools started out as recipes. Currently, the `sliding_window()`, `iter_index()`, and `sieve()` recipes are being tested to see whether they prove their worth.
+Substantially all of these recipes and many, many others can be installed from the [more-itertools](https://pypi.org/project/more-itertools/) project found on the Python Package Index:
+```
+python -m pip install more-itertools

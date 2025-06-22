@@ -1,0 +1,26 @@
+Title: PEP 3148: The concurrent.futures Module
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The new `concurrent.futures` module introduces a top-level namespace for managing concurrency in Python, offering a uniform high-level interface for threads and processes, inspired by Java's concurrency model. It includes a `Future` object for managing asynchronous operations.
+---
+
+```
+
+See also 
+
+[**PEP 391**](https://peps.python.org/pep-0391/) - Dictionary Based Configuration for Logging
+    
+PEP written by Vinay Sajip.
+## PEP 3148: The `concurrent.futures` module[¶](https://docs.python.org/3/whatsnew/3.2.html#pep-3148-the-concurrent-futures-module "Link to this heading")
+Code for creating and managing concurrency is being collected in a new top-level namespace, _concurrent_. Its first member is a _futures_ package which provides a uniform high-level interface for managing threads and processes.
+The design for [`concurrent.futures`](https://docs.python.org/3/library/concurrent.futures.html#module-concurrent.futures "concurrent.futures: Execute computations concurrently using threads or processes.") was inspired by the _java.util.concurrent_ package. In that model, a running call and its result are represented by a [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") object that abstracts features common to threads, processes, and remote procedure calls. That object supports status checks (running or done), timeouts, cancellations, adding callbacks, and access to results or exceptions.
+The primary offering of the new module is a pair of executor classes for launching and managing calls. The goal of the executors is to make it easier to use existing tools for making parallel calls. They save the effort needed to setup a pool of resources, launch the calls, create a results queue, add time-out handling, and limit the total number of threads, processes, or remote procedure calls.
+Ideally, each application should share a single executor across multiple components so that process and thread limits can be centrally managed. This solves the design challenge that arises when each component has its own competing strategy for resource management.
+Both classes share a common interface with three methods: [`submit()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.submit "concurrent.futures.Executor.submit") for scheduling a callable and returning a [`Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") object; [`map()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.map "concurrent.futures.Executor.map") for scheduling many asynchronous calls at a time, and [`shutdown()`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown "concurrent.futures.Executor.shutdown") for freeing resources. The class is a [context manager](https://docs.python.org/3/glossary.html#term-context-manager) and can be used in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement to assure that resources are automatically released when currently pending futures are done executing.
+A simple of example of [`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor") is a launch of four parallel threads for copying files:
+```
+importconcurrent.futures,shutil
+with concurrent.futures.ThreadPoolExecutor(max_workers=4) as e:
+  e.submit(shutil.copy, 'src1.txt', 'dest1.txt')
+  e.submit(shutil.copy, 'src2.txt', 'dest2.txt')
+  e.submit(shutil.copy, 'src3.txt', 'dest3.txt')
+  e.submit(shutil.copy, 'src3.txt', 'dest4.txt')

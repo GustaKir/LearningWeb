@@ -1,0 +1,37 @@
+Title: Command Line Argument Parsing in Python
+URL: https://docs.python.org/3/library/optparse.html
+Summary: The document discusses Python's options for command line argument parsing, recommending `argparse` for its functionality and ease of use. It notes that `getopt` exists mainly for backward compatibility and niche applications, while `optparse` is suggested as an alternative to `argparse`.
+---
+
+In the absence of more specific argument parsing design constraints, [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") is the recommended choice for implementing command line applications, as it offers the highest level of baseline functionality with the least application level code.
+[`getopt`](https://docs.python.org/3/library/getopt.html#module-getopt "getopt: Portable parser for command line options; support both short and long option names.") is retained almost entirely for backwards compatibility reasons. However, it also serves a niche use case as a tool for prototyping and testing command line argument handling in `getopt`-based C applications.
+[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") should be considered as an alternative to [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.") in the following cases:
+  * an application is already using [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") and doesn’t want to risk the subtle behavioural changes that may arise when migrating to [`argparse`](https://docs.python.org/3/library/argparse.html#module-argparse "argparse: Command-line option and argument parsing library.")
+  * the application requires additional control over the way options and positional parameters are interleaved on the command line (including the ability to disable the interleaving feature completely)
+  * the application requires additional control over the incremental parsing of command line elements (while `argparse` does support this, the exact way it works in practice is undesirable for some use cases)
+  * the application requires additional control over the handling of options which accept parameter values that may start with `-` (such as delegated options to be passed to invoked subprocesses)
+  * the application requires some other command line parameter processing behavior which `argparse` does not support, but which can be implemented in terms of the lower level interface offered by `optparse`
+
+
+These considerations also mean that [`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") is likely to provide a better foundation for library authors writing third party command line argument processing libraries.
+As a concrete example, consider the following two command line argument parsing configurations, the first using `optparse`, and the second using `argparse`:
+```
+importoptparse
+if __name__ == '__main__':
+  parser = optparse.OptionParser()
+  parser.add_option('-o', '--output')
+  parser.add_option('-v', dest='verbose', action='store_true')
+  opts, args = parser.parse_args()
+  process(args, output=opts.output, verbose=opts.verbose)
+
+```
+
+```
+importargparse
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-o', '--output')
+  parser.add_argument('-v', dest='verbose', action='store_true')
+  parser.add_argument('rest', nargs='*')
+  args = parser.parse_args()
+  process(args.rest, output=args.output, verbose=args.verbose)

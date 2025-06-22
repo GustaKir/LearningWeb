@@ -1,0 +1,35 @@
+Title: OS Module Exit Codes and Process Forking
+URL: https://docs.python.org/3/library/os.html
+Summary: This section describes various exit codes from the Python os module, including os.EX_NOPERM for insufficient permissions, os.EX_CONFIG for configuration errors, and os.EX_NOTFOUND for missing entries. Additionally, it mentions the os.fork() function, which is used to create a child process.
+---
+
+os.EX_NOPERM[¶](https://docs.python.org/3/library/os.html#os.EX_NOPERM "Link to this definition")
+    
+Exit code that means that there were insufficient permissions to perform the operation (but not intended for file system problems).
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, not WASI. 
+
+os.EX_CONFIG[¶](https://docs.python.org/3/library/os.html#os.EX_CONFIG "Link to this definition")
+    
+Exit code that means that some kind of configuration error occurred.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, not WASI. 
+
+os.EX_NOTFOUND[¶](https://docs.python.org/3/library/os.html#os.EX_NOTFOUND "Link to this definition")
+    
+Exit code that means something like “an entry was not found”.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, not WASI. 
+
+os.fork()[¶](https://docs.python.org/3/library/os.html#os.fork "Link to this definition")
+    
+Fork a child process. Return `0` in the child and the child’s process id in the parent. If an error occurs [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised.
+Note that some platforms including FreeBSD <= 6.3 and Cygwin have known issues when using `fork()` from a thread.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `os.fork` with no arguments.
+Warning
+If you use TLS sockets in an application calling `fork()`, see the warning in the [`ssl`](https://docs.python.org/3/library/ssl.html#module-ssl "ssl: TLS/SSL wrapper for socket objects") documentation.
+Warning
+On macOS the use of this function is unsafe when mixed with using higher-level system APIs, and that includes using [`urllib.request`](https://docs.python.org/3/library/urllib.request.html#module-urllib.request "urllib.request: Extensible library for opening URLs.").
+Changed in version 3.8: Calling `fork()` in a subinterpreter is no longer supported ([`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised).
+Changed in version 3.12: If Python is able to detect that your process has multiple threads, [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") now raises a [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning").
+We chose to surface this as a warning, when detectable, to better inform developers of a design problem that the POSIX platform specifically notes as not supported. Even in code that _appears_ to work, it has never been safe to mix threading with [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") on POSIX platforms. The CPython runtime itself has always made API calls that are not safe for use in the child process when threads existed in the parent (such as `malloc` and `free`).
+Users of macOS or users of libc or malloc implementations other than those typically found in glibc to date are among those already more likely to experience deadlocks running such code.
+See [this discussion on fork being incompatible with threads](https://discuss.python.org/t/33555) for technical details of why we’re surfacing this longstanding platform compatibility problem to developers.
+[Availability](https://docs.python.org/3/library/intro.html#availability): POSIX, not WASI, not Android, not iOS.

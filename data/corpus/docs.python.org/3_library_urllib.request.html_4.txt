@@ -1,0 +1,33 @@
+Title: Using urllib.request for URL Handling and Proxy Configuration
+URL: https://docs.python.org/3/library/urllib.request.html
+Summary: This section provides examples of using the `url2pathname` function in the `urllib.request` module to convert a URL into a file system path. Additionally, it explains the `getproxies` function, which returns a dictionary of proxy server mappings based on environment variables and system configurations, with special behavior for CGI environments.
+---
+
+```
+>>> fromurllib.requestimport url2pathname
+>>> url = 'file:///C:/Program%20Files'
+>>> url2pathname(url.removeprefix('file:'))
+'C:\\Program Files'
+
+```
+
+
+urllib.request.getproxies()[¶](https://docs.python.org/3/library/urllib.request.html#urllib.request.getproxies "Link to this definition")
+    
+This helper function returns a dictionary of scheme to proxy server URL mappings. It scans the environment for variables named `<scheme>_proxy`, in a case insensitive approach, for all operating systems first, and when it cannot find it, looks for proxy information from System Configuration for macOS and Windows Systems Registry for Windows. If both lowercase and uppercase environment variables exist (and disagree), lowercase is preferred.
+Note
+If the environment variable `REQUEST_METHOD` is set, which usually indicates your script is running in a CGI environment, the environment variable `HTTP_PROXY` (uppercase `_PROXY`) will be ignored. This is because that variable can be injected by a client using the “Proxy:” HTTP header. If you need to use an HTTP proxy in a CGI environment, either use `ProxyHandler` explicitly, or make sure the variable name is in lowercase (or at least the `_proxy` suffix).
+The following classes are provided: 
+
+_class_ urllib.request.Request(_url_ , _data =None_, _headers ={}_, _origin_req_host =None_, _unverifiable =False_, _method =None_)[¶](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request "Link to this definition")
+    
+This class is an abstraction of a URL request.
+_url_ should be a string containing a valid, properly encoded URL.
+_data_ must be an object specifying additional data to send to the server, or `None` if no such data is needed. Currently HTTP requests are the only ones that use _data_. The supported object types include bytes, file-like objects, and iterables of bytes-like objects. If no `Content-Length` nor `Transfer-Encoding` header field has been provided, [`HTTPHandler`](https://docs.python.org/3/library/urllib.request.html#urllib.request.HTTPHandler "urllib.request.HTTPHandler") will set these headers according to the type of _data_. `Content-Length` will be used to send bytes objects, while `Transfer-Encoding: chunked` as specified in [**RFC 7230**](https://datatracker.ietf.org/doc/html/rfc7230.html), Section 3.3.1 will be used to send files and other iterables.
+For an HTTP POST request method, _data_ should be a buffer in the standard _application/x-www-form-urlencoded_ format. The [`urllib.parse.urlencode()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlencode "urllib.parse.urlencode") function takes a mapping or sequence of 2-tuples and returns an ASCII string in this format. It should be encoded to bytes before being used as the _data_ parameter.
+_headers_ should be a dictionary, and will be treated as if [`add_header()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request.add_header "urllib.request.Request.add_header") was called with each key and value as arguments. This is often used to “spoof” the `User-Agent` header value, which is used by a browser to identify itself – some HTTP servers only allow requests coming from common browsers as opposed to scripts. For example, Mozilla Firefox may identify itself as `"Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"`, while [`urllib`](https://docs.python.org/3/library/urllib.html#module-urllib "urllib")’s default user agent string is `"Python-urllib/2.6"` (on Python 2.6). All header keys are sent in camel case.
+An appropriate `Content-Type` header should be included if the _data_ argument is present. If this header has not been provided and _data_ is not `None`, `Content-Type: application/x-www-form-urlencoded` will be added as a default.
+The next two arguments are only of interest for correct handling of third-party HTTP cookies:
+_origin_req_host_ should be the request-host of the origin transaction, as defined by [**RFC 2965**](https://datatracker.ietf.org/doc/html/rfc2965.html). It defaults to `http.cookiejar.request_host(self)`. This is the host name or IP address of the original request that was initiated by the user. For example, if the request is for an image in an HTML document, this should be the request-host of the request for the page containing the image.
+_unverifiable_ should indicate whether the request is unverifiable, as defined by [**RFC 2965**](https://datatracker.ietf.org/doc/html/rfc2965.html). It defaults to `False`. An unverifiable request is one whose URL the user did not have the option to approve. For example, if the request is for an image in an HTML document, and the user had no option to approve the automatic fetching of the image, this should be true.
+_method_ should be a string that indicates the HTTP request method that will be used (e.g. `'HEAD'`). If provided, its value is stored in the [`method`](https://docs.python.org/3/library/urllib.request.html#urllib.request.Request.method "urllib.requ

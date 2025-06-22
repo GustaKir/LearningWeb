@@ -1,0 +1,54 @@
+Title: Using Custom Message Objects in Logging
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section discusses how to utilize custom message objects for logging by employing {}- and $- formatting. It outlines two example classes, BraceMessage and DollarMessage, which format log messages by calling their respective __str__ methods, demonstrating an alternative method for constructing log messages in the logging package.
+---
+
+"logging.LogRecord") for more information.
+### Using custom message objects[¶](https://docs.python.org/3/howto/logging-cookbook.html#using-custom-message-objects "Link to this heading")
+There is another, perhaps simpler way that you can use {}- and $- formatting to construct your individual log messages. You may recall (from [Using arbitrary objects as messages](https://docs.python.org/3/howto/logging.html#arbitrary-object-messages)) that when logging you can use an arbitrary object as a message format string, and that the logging package will call [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") on that object to get the actual format string. Consider the following two classes:
+```
+classBraceMessage:
+  def__init__(self, fmt, /, *args, **kwargs):
+    self.fmt = fmt
+    self.args = args
+    self.kwargs = kwargs
+  def__str__(self):
+    return self.fmt.format(*self.args, **self.kwargs)
+classDollarMessage:
+  def__init__(self, fmt, /, **kwargs):
+    self.fmt = fmt
+    self.kwargs = kwargs
+  def__str__(self):
+    fromstringimport Template
+    return Template(self.fmt).substitute(**self.kwargs)
+
+```
+
+Either of these can be used in place of a format string, to allow {}- or $-formatting to be used to build the actual “message” part which appears in the formatted log output in place of “%(message)s” or “{message}” or “$message”. If you find it a little unwieldy to use the class names whenever you want to log something, you can make it more palatable if you use an alias such as `M` or `_` for the message (or perhaps `__`, if you are using `_` for localization).
+Examples of this approach are given below. Firstly, formatting with [`str.format()`](https://docs.python.org/3/library/stdtypes.html#str.format "str.format"):
+>>>```
+>>> __ = BraceMessage
+>>> print(__('Message with {0}{1}', 2, 'placeholders'))
+Message with 2 placeholders
+>>> classPoint: pass
+...
+>>> p = Point()
+>>> p.x = 0.5
+>>> p.y = 0.5
+>>> print(__('Message with coordinates: ({point.x:.2f}, {point.y:.2f})', point=p))
+Message with coordinates: (0.50, 0.50)
+
+```
+
+Secondly, formatting with [`string.Template`](https://docs.python.org/3/library/string.html#string.Template "string.Template"):
+>>>```
+>>> __ = DollarMessage
+>>> print(__('Message with $num $what', num=2, what='placeholders'))
+Message with 2 placeholders
+>>>
+
+```
+
+One thing to note is that you pay no significant performance penalty with this approach: the actual formatting happens not when you make the logging call, but when (and if) the logged message is actually about to be output to a log by a handler. So the only slightly unusual thing which might trip you up is that the parentheses go around the format string and the arguments, not just the format string. That’s because the __ notation is just syntax sugar for a constructor call to one of the `_XXX_Message`classes shown above.
+## Configuring filters with [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig")[¶](https://docs.python.org/3/howto/logging-cookbook.html#configuring-filters-with-dictconfig "Link to this heading")
+You _can_ configure filters using [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig"), though it might not be obvious at first glance how to do it (hence this recipe). Since [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") is the only filter class included in the standard library, and it is unlikely to cater to many requirements (it’s only there as a base class), you will typically need to define your own [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") subclass with an overridden [`filter()`](https://docs.python.org/3/library/logging.html#logging.Filter.filter "logging.Filter.filter") method. To do this, specify the `()` key in the configuration dictionary for the filter, specifying a callable which will be used to create the filter (a class is the most obvious, but you can provide any callable which returns a [`Filter`](https://docs.python.org/3/library/logging.html#logging.Filter "logging.Filter") instance). Here is a complete example:

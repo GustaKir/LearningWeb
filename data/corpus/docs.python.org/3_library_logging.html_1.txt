@@ -1,0 +1,41 @@
+Title: Hierarchical Logging in Python's Logging Module
+URL: https://docs.python.org/3/library/logging.html
+Summary: This section discusses the idiomatic use of Python's logging module by creating module-level loggers with `getLogger(__name__)`. It highlights the concept of hierarchical logging, where messages from module-level loggers are forwarded to higher-level loggers, including the root logger. Effective logging requires configuration to set levels and destinations, often managed at the root level, to enhance control and functionality.
+---
+
+```
+
+The key feature of this idiomatic usage is that the majority of code is simply creating a module level logger with `getLogger(__name__)`, and using that logger to do any needed logging. This is concise, while allowing downstream code fine-grained control if needed. Logged messages to the module-level logger get forwarded to handlers of loggers in higher-level modules, all the way up to the highest-level logger known as the root logger; this approach is known as hierarchical logging.
+For logging to be useful, it needs to be configured: setting the levels and destinations for each logger, potentially changing how specific modules log, often based on command-line arguments or application configuration. In most cases, like the one above, only the root logger needs to be so configured, since all the lower level loggers at module level eventually forward their messages to its handlers. [`basicConfig()`](https://docs.python.org/3/library/logging.html#logging.basicConfig "logging.basicConfig") provides a quick way to configure the root logger that handles many use cases.
+The module provides a lot of functionality and flexibility. If you are unfamiliar with logging, the best way to get to grips with it is to view the tutorials (**see the links above and on the right**).
+The basic classes defined by the module, together with their attributes and methods, are listed in the sections below.
+  * Loggers expose the interface that application code directly uses.
+  * Handlers send the log records (created by loggers) to the appropriate destination.
+  * Filters provide a finer grained facility for determining which log records to output.
+  * Formatters specify the layout of log records in the final output.
+
+
+## Logger Objects[¶](https://docs.python.org/3/library/logging.html#logger-objects "Link to this heading")
+Loggers have the following attributes and methods. Note that Loggers should _NEVER_ be instantiated directly, but always through the module-level function `logging.getLogger(name)`. Multiple calls to [`getLogger()`](https://docs.python.org/3/library/logging.html#logging.getLogger "logging.getLogger") with the same name will always return a reference to the same Logger object.
+The `name` is potentially a period-separated hierarchical value, like `foo.bar.baz` (though it could also be just plain `foo`, for example). Loggers that are further down in the hierarchical list are children of loggers higher up in the list. For example, given a logger with a name of `foo`, loggers with names of `foo.bar`, `foo.bar.baz`, and `foo.bam` are all descendants of `foo`. In addition, all loggers are descendants of the root logger. The logger name hierarchy is analogous to the Python package hierarchy, and identical to it if you organise your loggers on a per-module basis using the recommended construction `logging.getLogger(__name__)`. That’s because in a module, `__name__` is the module’s name in the Python package namespace. 
+
+_class_ logging.Logger[¶](https://docs.python.org/3/library/logging.html#logging.Logger "Link to this definition")
+     
+
+name[¶](https://docs.python.org/3/library/logging.html#logging.Logger.name "Link to this definition")
+    
+This is the logger’s name, and is the value that was passed to [`getLogger()`](https://docs.python.org/3/library/logging.html#logging.getLogger "logging.getLogger") to obtain the logger.
+Note
+This attribute should be treated as read-only. 
+
+level[¶](https://docs.python.org/3/library/logging.html#logging.Logger.level "Link to this definition")
+    
+The threshold of this logger, as set by the [`setLevel()`](https://docs.python.org/3/library/logging.html#logging.Logger.setLevel "logging.Logger.setLevel") method.
+Note
+Do not set this attribute directly - always use [`setLevel()`](https://docs.python.org/3/library/logging.html#logging.Logger.setLevel "logging.Logger.setLevel"), which has checks for the level passed to it. 
+
+parent[¶](https://docs.python.org/3/library/logging.html#logging.Logger.parent "Link to this definition")
+    
+The parent logger of this logger. It may change based on later instantiation of loggers which are higher up in the namespace hierarchy.
+Note
+This value should be treated as read-only.

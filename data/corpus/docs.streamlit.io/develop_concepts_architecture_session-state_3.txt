@@ -1,0 +1,26 @@
+Title: Managing State in Streamlit with Callbacks and Forms
+URL: https://docs.streamlit.io/develop/concepts/architecture/session-state
+Summary: This section illustrates how to manage session state in Streamlit applications using callbacks and forms. It provides an example of a counter that updates its count and the last updated time based on user input from a form. The example includes initializing session state variables and defining an update function triggered by a form submission.
+---
+
+store when it was last updated. We illustrate doing this using Callbacks and `st.form`:
+`import streamlit as st import datetime st.title('Counter Example') if 'count' not in st.session_state:   st.session_state.count = 0   st.session_state.last_updated = datetime.time(0,0) def update_counter():   st.session_state.count += st.session_state.increment_value   st.session_state.last_updated = st.session_state.update_time with st.form(key='my_form'):   st.time_input(label='Enter the time', value=datetime.datetime.now().time(), key='update_time')   st.number_input('Enter a value', value=0, step=1, key='increment_value')   submit = st.form_submit_button(label='Update', on_click=update_counter) st.write('Current Count = ', st.session_state.count) st.write('Last Updated = ', st.session_state.last_updated) `
+## [](https://docs.streamlit.io/develop/concepts/architecture/session-state#advanced-concepts)Advanced concepts
+### [](https://docs.streamlit.io/develop/concepts/architecture/session-state#session-state-and-widget-state-association)Session State and Widget State association
+Session State provides the functionality to store variables across reruns. Widget state (i.e. the value of a widget) is also stored in a session.
+For simplicity, we have _unified_ this information in one place. i.e. the Session State. This convenience feature makes it super easy to read or write to the widget's state anywhere in the app's code. Session State variables mirror the widget value using the `key` argument.
+We illustrate this with the following example. Let's say we have an app with a slider to represent temperature in Celsius. We can **set** and **get** the value of the temperature widget by using the Session State API, as follows:
+`import streamlit as st if "celsius" not in st.session_state: # set the initial default value of the slider widget   st.session_state.celsius = 50.0 st.slider( "Temperature in Celsius",   min_value=-100.0,   max_value=100.0,   key="celsius" ) # This will get the value of the slider widget st.write(st.session_state.celsius) `
+There is a limitation to setting widget values using the Session State API.
+_priority_high_
+#### Important
+Streamlit **does not allow** setting widget values via the Session State API for `st.button` and `st.file_uploader`.
+The following example will raise a `StreamlitAPIException` on trying to set the state of `st.button` via the Session State API:
+`import streamlit as st if 'my_button' not in st.session_state:   st.session_state.my_button = True # Streamlit will raise an Exception on trying to set the state of button st.button('Submit', key='my_button') `
+![state-button-exception](https://docs.streamlit.io/images/state_button_exception.png)
+### [](https://docs.streamlit.io/develop/concepts/architecture/session-state#serializable-session-state)Serializable Session State
+Serialization refers to the process of converting an object or data structure into a format that can be persisted and shared, and allowing you to recover the data’s original structure. Python’s built-in [pickle](https://docs.python.org/3/library/pickle.html) module serializes Python objects to a byte stream ("pickling") and deserializes the stream into an object ("unpickling").
+By default, Streamlit’s [Session State](https://docs.streamlit.io/develop/concepts/architecture/session-state) allows you to persist any Python object for the duration of the session, irrespective of the object’s pickle-serializability. This property lets you store Python primitives such as integers, floating-point numbers, complex numbers and booleans, dataframes, and even [lambdas](https://docs.python.org/3/reference/expressions.html#lambda) returned by functions. However, some execution environments may require serializing all data in Session State, so it may be useful to detect incompatibility during development, or when the execution environment will stop supporting it in the future.
+To that end, Streamlit provides a `runner.enforceSerializableSessionState` [configuration option](https://docs.streamlit.io/develop/concepts/configuration) that, when set to `true`, only allows pickle-serializable objects in Session State. To enable the option, either create a global or project config file with the following or use it as a command-line flag:
+`# .streamlit/config.toml [runner] enforceSerializableSessionState = true `
+By "_pickle-serializable_ ", we mean calling `pickle.dumps(obj)` should not raise a [`PicklingError`](https://docs.python.org/3/library/pickle.html#pickle.PicklingError) exception. When the config option is enabled, adding unserializable data to session state should result in an exception.

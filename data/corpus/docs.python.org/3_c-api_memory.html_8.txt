@@ -1,0 +1,47 @@
+Title: Debug Hooks in Python Memory Allocators
+URL: https://docs.python.org/3/c-api/memory.html
+Summary: The `PyMem_SetupDebugHooks()` function sets up debug hooks in Python memory allocators to detect memory errors when Python is built in debug mode. This function is called during Python's preinitialization, with the option to use the `PYTHONMALLOC` environment variable to enable additional debug functionalities.
+---
+
+voidPyMem_SetupDebugHooks(void)[¶](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetupDebugHooks "Link to this definition")
+    
+Setup [debug hooks in the Python memory allocators](https://docs.python.org/3/c-api/memory.html#pymem-debug-hooks) to detect memory errors.
+## Debug hooks on the Python memory allocators[¶](https://docs.python.org/3/c-api/memory.html#debug-hooks-on-the-python-memory-allocators "Link to this heading")
+When [Python is built in debug mode](https://docs.python.org/3/using/configure.html#debug-build), the [`PyMem_SetupDebugHooks()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetupDebugHooks "PyMem_SetupDebugHooks") function is called at the [Python preinitialization](https://docs.python.org/3/c-api/init_config.html#c-preinit) to setup debug hooks on Python memory allocators to detect memory errors.
+The [`PYTHONMALLOC`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONMALLOC) environment variable can be used to install debug hooks on a Python compiled in release mode (ex: `PYTHONMALLOC=debug`).
+The [`PyMem_SetupDebugHooks()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetupDebugHooks "PyMem_SetupDebugHooks") function can be used to set debug hooks after calling [`PyMem_SetAllocator()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_SetAllocator "PyMem_SetAllocator").
+These debug hooks fill dynamically allocated memory blocks with special, recognizable bit patterns. Newly allocated memory is filled with the byte `0xCD` (`PYMEM_CLEANBYTE`), freed memory is filled with the byte `0xDD` (`PYMEM_DEADBYTE`). Memory blocks are surrounded by “forbidden bytes” filled with the byte `0xFD` (`PYMEM_FORBIDDENBYTE`). Strings of these bytes are unlikely to be valid addresses, floats, or ASCII strings.
+Runtime checks:
+  * Detect API violations. For example, detect if [`PyObject_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Free "PyObject_Free") is called on a memory block allocated by [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc").
+  * Detect write before the start of the buffer (buffer underflow).
+  * Detect write after the end of the buffer (buffer overflow).
+  * Check that the [GIL](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) is held when allocator functions of [`PYMEM_DOMAIN_OBJ`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_OBJ "PYMEM_DOMAIN_OBJ") (ex: [`PyObject_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Malloc "PyObject_Malloc")) and [`PYMEM_DOMAIN_MEM`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_MEM "PYMEM_DOMAIN_MEM") (ex: [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc")) domains are called.
+
+
+On error, the debug hooks use the [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") module to get the traceback where a memory block was allocated. The traceback is only displayed if [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.") is tracing Python memory allocations and the memory block was traced.
+Let _S_ = `sizeof(size_t)`. `2*S` bytes are added at each end of each block of _N_ bytes requested. The memory layout is like so, where p represents the address returned by a malloc-like or realloc-like function (`p[i:j]` means the slice of bytes from `*(p+i)` inclusive up to `*(p+j)` exclusive; note that the treatment of negative indices differs from a Python slice): 
+
+`p[-2*S:-S]`
+    
+Number of bytes originally asked for. This is a size_t, big-endian (easier to read in a memory dump). 
+
+`p[-S]`
+    
+API identifier (ASCII character):
+  * `'r'` for [`PYMEM_DOMAIN_RAW`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_RAW "PYMEM_DOMAIN_RAW").
+  * `'m'` for [`PYMEM_DOMAIN_MEM`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_MEM "PYMEM_DOMAIN_MEM").
+  * `'o'` for [`PYMEM_DOMAIN_OBJ`](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_OBJ "PYMEM_DOMAIN_OBJ").
+
+
+
+`p[-S+1:0]`
+    
+Copies of PYMEM_FORBIDDENBYTE. Used to catch under- writes and reads. 
+
+`p[0:N]`
+    
+The requested memory, filled with copies of PYMEM_CLEANBYTE, used to catch reference to uninitialized memory. When a realloc-like function is called requesting a larger memory block, the new excess bytes are also filled with PYMEM_CLEANBYTE. When a free-like function is called, these are overwritten with PYMEM_DEADBYTE, to catch reference to freed memory. When a realloc- like function is called requesting a smaller memory block, the excess old bytes are also filled with PYMEM_DEADBYTE. 
+
+`p[N:N+S]`
+    
+Copies of PYMEM_FORBIDDENBYTE. Used to catch over- writes and reads.

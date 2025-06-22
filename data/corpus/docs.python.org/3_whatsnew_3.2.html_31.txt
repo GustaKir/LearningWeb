@@ -1,0 +1,20 @@
+Title: Python 3.2: Updates to the mailbox Module
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The mailbox module has been updated in Python 3.2 to support better handling of email messages using bytes instead of text. This improvement addresses encoding challenges, allowing for a more robust manipulation of mailboxes.
+---
+
+```
+
+(Work by Nick Coghlan, Dan Mahn, and Senthil Kumaran in [bpo-2987](https://bugs.python.org/issue?@action=redirect&bpo=2987), [bpo-5468](https://bugs.python.org/issue?@action=redirect&bpo=5468), and [bpo-9873](https://bugs.python.org/issue?@action=redirect&bpo=9873).)
+### mailbox[¶](https://docs.python.org/3/whatsnew/3.2.html#mailbox "Link to this heading")
+Thanks to a concerted effort by R. David Murray, the [`mailbox`](https://docs.python.org/3/library/mailbox.html#module-mailbox "mailbox: Manipulate mailboxes in various formats") module has been fixed for Python 3.2. The challenge was that mailbox had been originally designed with a text interface, but email messages are best represented with [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") because various parts of a message may have different encodings.
+The solution harnessed the [`email`](https://docs.python.org/3/library/email.html#module-email "email: Package supporting the parsing, manipulating, and generating email messages.") package’s binary support for parsing arbitrary email messages. In addition, the solution required a number of API changes.
+As expected, the [`add()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.add "mailbox.Mailbox.add") method for [`mailbox.Mailbox`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox "mailbox.Mailbox") objects now accepts binary input.
+[`StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") and text file input are deprecated. Also, string input will fail early if non-ASCII characters are used. Previously it would fail when the email was processed in a later step.
+There is also support for binary output. The [`get_file()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.get_file "mailbox.Mailbox.get_file") method now returns a file in the binary mode (where it used to incorrectly set the file to text-mode). There is also a new [`get_bytes()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.get_bytes "mailbox.Mailbox.get_bytes") method that returns a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") representation of a message corresponding to a given _key_.
+It is still possible to get non-binary output using the old API’s [`get_string()`](https://docs.python.org/3/library/mailbox.html#mailbox.Mailbox.get_string "mailbox.Mailbox.get_string") method, but that approach is not very useful. Instead, it is best to extract messages from a [`Message`](https://docs.python.org/3/library/mailbox.html#mailbox.Message "mailbox.Message") object or to load them from binary input.
+(Contributed by R. David Murray, with efforts from Steffen Daode Nurpmeso and an initial patch by Victor Stinner in [bpo-9124](https://bugs.python.org/issue?@action=redirect&bpo=9124).)
+### turtledemo[¶](https://docs.python.org/3/whatsnew/3.2.html#turtledemo "Link to this heading")
+The demonstration code for the [`turtle`](https://docs.python.org/3/library/turtle.html#module-turtle "turtle: An educational framework for simple graphics applications") module was moved from the _Demo_ directory to main library. It includes over a dozen sample scripts with lively displays. Being on [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"), it can now be run directly from the command-line:
+```
+$ python-mturtledemo

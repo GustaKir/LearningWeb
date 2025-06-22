@@ -1,0 +1,134 @@
+Title: Using Response Models in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/response-model/
+Summary: This section demonstrates how to use response models in FastAPI to define and return structured JSON data. It includes examples of creating a POST endpoint to create items and a GET endpoint to read a list of items using a Pydantic model for validation and serialization.
+---
+
+```
+fromtypingimport Any, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: list[str] = []
+@app.post("/items/", response_model=Item)
+async defcreate_item(item: Item) -> Any:
+  return item
+@app.get("/items/", response_model=list[Item])
+async defread_items() -> Any:
+  return [
+    {"name": "Portal Gun", "price": 42.0},
+    {"name": "Plumbus", "price": 32.0},
+  ]
+
+```
+
+```
+fromtypingimport Any, List, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: List[str] = []
+@app.post("/items/", response_model=Item)
+async defcreate_item(item: Item) -> Any:
+  return item
+@app.get("/items/", response_model=List[Item])
+async defread_items() -> Any:
+  return [
+    {"name": "Portal Gun", "price": 42.0},
+    {"name": "Plumbus", "price": 32.0},
+  ]
+
+```
+
+Note
+Notice that `response_model` is a parameter of the "decorator" method (`get`, `post`, etc). Not of your _path operation function_ , like all the parameters and body.
+`response_model` receives the same type you would declare for a Pydantic model field, so, it can be a Pydantic model, but it can also be, e.g. a `list` of Pydantic models, like `List[Item]`.
+FastAPI will use this `response_model` to do all the data documentation, validation, etc. and also to **convert and filter the output data** to its type declaration.
+Tip
+If you have strict type checks in your editor, mypy, etc, you can declare the function return type as `Any`.
+That way you tell the editor that you are intentionally returning anything. But FastAPI will still do the data documentation, validation, filtering, etc. with the `response_model`.
+### `response_model` Priority[¶](https://fastapi.tiangolo.com/tutorial/response-model/#response_model-priority "Permanent link")
+If you declare both a return type and a `response_model`, the `response_model` will take priority and be used by FastAPI.
+This way you can add correct type annotations to your functions even when you are returning a type different than the response model, to be used by the editor and tools like mypy. And still you can have FastAPI do the data validation, documentation, etc. using the `response_model`.
+You can also use `response_model=None` to disable creating a response model for that _path operation_ , you might need to do it if you are adding type annotations for things that are not valid Pydantic fields, you will see an example of that in one of the sections below.
+## Return the same input data[¶](https://fastapi.tiangolo.com/tutorial/response-model/#return-the-same-input-data "Permanent link")
+Here we are declaring a `UserIn` model, it will contain a plaintext password:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: str | None = None
+# Don't do this in production!
+@app.post("/user/")
+async defcreate_user(user: UserIn) -> UserIn:
+  return user
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_6_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: Union[str, None] = None
+# Don't do this in production!
+@app.post("/user/")
+async defcreate_user(user: UserIn) -> UserIn:
+  return user
+
+```
+
+Info
+To use `EmailStr`, first install [`email-validator`](https://github.com/JoshData/python-email-validator).
+Make sure you create a [virtual environment](https://fastapi.tiangolo.com/virtual-environments/), activate it, and then install it, for example:
+```
+$ pipinstallemail-validator
+
+```
+
+or with:
+```
+$ pipinstall"pydantic[email]"
+
+```
+
+And we are using this model to declare our input and the same model to declare our output:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_7_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel, EmailStr
+app = FastAPI()
+classUserIn(BaseModel):
+  username: str
+  password: str
+  email: EmailStr
+  full_name: str | None = None
+# Don't do this in production!
+@app.post("/user/")
+async defcreate_user(user: UserIn) -> UserIn:
+  return user
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/response-model/#__tabbed_8_1)

@@ -1,0 +1,61 @@
+Title: SQLConnection.connect Method
+URL: https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection
+Summary: The SQLConnection.connect method in Streamlit (Version 1.44.0) allows users to create a new connection object by calling `.connect()` on the SQLAlchemy Engine. This method should not be confused with the internal `_connect` method used for implementing a Streamlit Connection.
+---
+
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionconnect)SQLConnection.connect
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Call `.connect()` on the underlying SQLAlchemy Engine, returning a new connection object.
+Calling this method is equivalent to calling `self._instance.connect()`.
+NOTE: This method should not be confused with the internal `_connect` method used to implement a Streamlit Connection.
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/sql_connection.py#L353 "View st.connect source code on GitHub")  
+---  
+SQLConnection.connect()  
+Returns  
+(sqlalchemy.engine.Connection) | A new SQLAlchemy connection object.  
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionquery)SQLConnection.query
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Run a read-only query.
+This method implements query result caching and simple error handling/retries. The caching behavior is identical to that of using `@st.cache_data`.
+Note
+Queries that are run without a specified ttl are cached indefinitely.
+All keyword arguments passed to this function are passed down to [`pandas.read_sql`](https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html), except `ttl`.
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/sql_connection.py#L223 "View st.query source code on GitHub")  
+---  
+SQLConnection.query(sql, *, show_spinner="Running `sql.query(...)`.", ttl=None, index_col=None, chunksize=None, params=None, **kwargs)  
+Parameters  
+sql (str) |  The read-only SQL query to execute.  
+show_spinner (boolean or string) |  Enable the spinner. The default is to show a spinner when there is a "cache miss" and the cached resource is being created. If a string, the value of the show_spinner param will be used for the spinner text.  
+ttl (float, int, timedelta or None) |  The maximum number of seconds to keep results in the cache, or None if cached results should not expire. The default is None.  
+index_col (str, list of str, or None) |  Column(s) to set as index(MultiIndex). Default is None.  
+chunksize (int or None) |  If specified, return an iterator where chunksize is the number of rows to include in each chunk. Default is None.  
+params (list, tuple, dict or None) |  List of parameters to pass to the execute method. The syntax used to pass parameters is database driver dependent. Check your database driver documentation for which of the five syntax styles, described in [PEP 249 paramstyle](https://peps.python.org/pep-0249/#paramstyle), is supported. Default is None.  
+**kwargs (dict) |  Additional keyword arguments are passed to [`pandas.read_sql`](https://pandas.pydata.org/docs/reference/api/pandas.read_sql.html).  
+Returns  
+(pandas.DataFrame) | The result of running the query, formatted as a pandas DataFrame.  
+#### Example
+```
+import streamlit as st
+conn = st.connection("sql")
+df = conn.query(
+  "SELECT * FROM pet_owners WHERE owner = :owner",
+  ttl=3600,
+  params={"owner": "barbara"},
+)
+st.dataframe(df)
+```
+
+Copy
+## [](https://docs.streamlit.io/develop/api-reference/connections/st.connections.sqlconnection#sqlconnectionreset)SQLConnection.reset
+Streamlit VersionVersion 1.44.0Version 1.43.0Version 1.42.0Version 1.41.0Version 1.40.0Version 1.39.0Version 1.38.0Version 1.37.0Version 1.36.0Version 1.35.0Version 1.34.0Version 1.33.0Version 1.32.0Version 1.31.0Version 1.30.0Version 1.29.0Version 1.28.0Version 1.27.0Version 1.26.0Version 1.25.0Version 1.24.0Version 1.23.0Version 1.22.0Version 1.21.0Version 1.20.0
+Reset this connection so that it gets reinitialized the next time it's used.
+This method can be useful when a connection has become stale, an auth token has expired, or in similar scenarios where a broken connection might be fixed by reinitializing it. Note that some connection methods may already use `reset()` in their error handling code.
+Function signature[[source]](https://github.com/streamlit/streamlit/blob/1.44.0/lib/streamlit/connections/base_connection.py#L121 "View st.reset source code on GitHub")  
+---  
+SQLConnection.reset()  
+Returns  
+(None) | No description  
+#### Example

@@ -1,0 +1,30 @@
+Title: ThreadPool Class in Multiprocessing
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The ThreadPool class in the multiprocessing library manages a pool of worker threads for job submissions. It is compatible with the Pool class and requires proper resource management through context management or by calling close() and terminate().
+---
+
+_class_ multiprocessing.pool.ThreadPool([_processes_[, _initializer_[, _initargs_]]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.ThreadPool "Link to this definition")
+    
+A thread pool object which controls a pool of worker threads to which jobs can be submitted. [`ThreadPool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.ThreadPool "multiprocessing.pool.ThreadPool") instances are fully interface compatible with [`Pool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "multiprocessing.pool.Pool") instances, and their resources must also be properly managed, either by using the pool as a context manager or by calling [`close()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool.close "multiprocessing.pool.Pool.close") and [`terminate()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool.terminate "multiprocessing.pool.Pool.terminate") manually.
+_processes_ is the number of worker threads to use. If _processes_ is `None` then the number returned by [`os.process_cpu_count()`](https://docs.python.org/3/library/os.html#os.process_cpu_count "os.process_cpu_count") is used.
+If _initializer_ is not `None` then each worker process will call `initializer(*initargs)` when it starts.
+Unlike [`Pool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "multiprocessing.pool.Pool"), _maxtasksperchild_ and _context_ cannot be provided.
+Note
+A [`ThreadPool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.ThreadPool "multiprocessing.pool.ThreadPool") shares the same interface as [`Pool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "multiprocessing.pool.Pool"), which is designed around a pool of processes and predates the introduction of the [`concurrent.futures`](https://docs.python.org/3/library/concurrent.futures.html#module-concurrent.futures "concurrent.futures: Execute computations concurrently using threads or processes.") module. As such, it inherits some operations that don’t make sense for a pool backed by threads, and it has its own type for representing the status of asynchronous jobs, [`AsyncResult`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.AsyncResult "multiprocessing.pool.AsyncResult"), that is not understood by any other libraries.
+Users should generally prefer to use [`concurrent.futures.ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor"), which has a simpler interface that was designed around threads from the start, and which returns [`concurrent.futures.Future`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Future "concurrent.futures.Future") instances that are compatible with many other libraries, including [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.").
+## Programming guidelines[¶](https://docs.python.org/3/library/multiprocessing.html#programming-guidelines "Link to this heading")
+There are certain guidelines and idioms which should be adhered to when using [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.").
+### All start methods[¶](https://docs.python.org/3/library/multiprocessing.html#all-start-methods "Link to this heading")
+The following applies to all start methods.
+Avoid shared state
+> As far as possible one should try to avoid shifting large amounts of data between processes.
+> It is probably best to stick to using queues or pipes for communication between processes rather than using the lower level synchronization primitives.
+Picklability
+> Ensure that the arguments to the methods of proxies are picklable.
+Thread safety of proxies
+> Do not use a proxy object from more than one thread unless you protect it with a lock.
+> (There is never a problem with different processes using the _same_ proxy.)
+Joining zombie processes
+> On POSIX when a process finishes but has not been joined it becomes a zombie. There should never be very many because each time a new process starts (or [`active_children()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.active_children "multiprocessing.active_children") is called) all completed processes which have not yet been joined will be joined. Also calling a finished process’s [`Process.is_alive`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Process.is_alive "multiprocessing.Process.is_alive") will join the process. Even so it is probably good practice to explicitly join all the processes that you start.
+Better to inherit than pickle/unpickle
+> When using the _spawn_ or _forkserver_ start methods many types from [`multiprocessing`](https://docs.pytho

@@ -1,0 +1,69 @@
+Title: Python Environment Configuration and Multi-Phase Initialization
+URL: https://docs.python.org/3/c-api/init_config.html
+Summary: This section discusses the `__PYVENV_LAUNCHER__` environment variable for setting `PyConfig.base_executable`, the `Py_GetArgcArgv()` function to retrieve the original command line arguments, and introduces a private provisional API for multi-phase initialization, a key feature of PEP 432.
+---
+
+The `__PYVENV_LAUNCHER__` environment variable is used to set [`PyConfig.base_executable`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.base_executable "PyConfig.base_executable").
+## Py_GetArgcArgv()[¶](https://docs.python.org/3/c-api/init_config.html#py-getargcargv "Link to this heading") 
+
+voidPy_GetArgcArgv(int*argc, wchar_t***argv)[¶](https://docs.python.org/3/c-api/init_config.html#c.Py_GetArgcArgv "Link to this definition")
+    
+Get the original command line arguments, before Python modified them.
+See also [`PyConfig.orig_argv`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.orig_argv "PyConfig.orig_argv") member.
+## Multi-Phase Initialization Private Provisional API[¶](https://docs.python.org/3/c-api/init_config.html#multi-phase-initialization-private-provisional-api "Link to this heading")
+This section is a private provisional API introducing multi-phase initialization, the core feature of [**PEP 432**](https://peps.python.org/pep-0432/):
+  * “Core” initialization phase, “bare minimum Python”:
+    * Builtin types;
+    * Builtin exceptions;
+    * Builtin and frozen modules;
+    * The [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module is only partially initialized (ex: [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path") doesn’t exist yet).
+  * “Main” initialization phase, Python is fully initialized:
+    * Install and configure [`importlib`](https://docs.python.org/3/library/importlib.html#module-importlib "importlib: The implementation of the import machinery.");
+    * Apply the [Path Configuration](https://docs.python.org/3/c-api/init_config.html#init-path-config);
+    * Install signal handlers;
+    * Finish [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module initialization (ex: create [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") and [`sys.path`](https://docs.python.org/3/library/sys.html#sys.path "sys.path"));
+    * Enable optional features like [`faulthandler`](https://docs.python.org/3/library/faulthandler.html#module-faulthandler "faulthandler: Dump the Python traceback.") and [`tracemalloc`](https://docs.python.org/3/library/tracemalloc.html#module-tracemalloc "tracemalloc: Trace memory allocations.");
+    * Import the [`site`](https://docs.python.org/3/library/site.html#module-site "site: Module responsible for site-specific configuration.") module;
+    * etc.
+
+
+Private provisional API:
+  * `PyConfig._init_main`: if set to `0`, [`Py_InitializeFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_InitializeFromConfig "Py_InitializeFromConfig") stops at the “Core” initialization phase.
+
+
+
+[PyStatus](https://docs.python.org/3/c-api/init_config.html#c.PyStatus "PyStatus")_Py_InitializeMain(void)[¶](https://docs.python.org/3/c-api/init_config.html#c._Py_InitializeMain "Link to this definition")
+    
+Move to the “Main” initialization phase, finish the Python initialization.
+No module is imported during the “Core” phase and the `importlib` module is not configured: the [Path Configuration](https://docs.python.org/3/c-api/init_config.html#init-path-config) is only applied during the “Main” phase. It may allow to customize Python in Python to override or tune the [Path Configuration](https://docs.python.org/3/c-api/init_config.html#init-path-config), maybe install a custom [`sys.meta_path`](https://docs.python.org/3/library/sys.html#sys.meta_path "sys.meta_path") importer or an import hook, etc.
+It may become possible to calculate the [Path Configuration](https://docs.python.org/3/c-api/init_config.html#init-path-config) in Python, after the Core phase and before the Main phase, which is one of the [**PEP 432**](https://peps.python.org/pep-0432/) motivation.
+The “Core” phase is not properly defined: what should be and what should not be available at this phase is not specified yet. The API is marked as private and provisional: the API can be modified or even be removed anytime until a proper public API is designed.
+Example running Python code between “Core” and “Main” initialization phases:
+```
+voidinit_python(void)
+{
+PyStatusstatus;
+PyConfigconfig;
+PyConfig_InitPythonConfig(&config);
+config._init_main=0;
+/* ... customize 'config' configuration ... */
+status=Py_InitializeFromConfig(&config);
+PyConfig_Clear(&config);
+if(PyStatus_Exception(status)){
+Py_ExitStatusException(status);
+}
+/* Use sys.stderr because sys.stdout is only created
+    by _Py_InitializeMain() */
+intres=PyRun_SimpleString(
+"import sys; "
+"print('Run Python code before _Py_InitializeMain', "
+"file=sys.stderr)");
+if(res<0){
+exit(1);
+}
+/* ... put more configuration code here ... */
+status=_Py_InitializeMain();
+if(PyStatus_Exception(status)){
+Py_ExitStatusException(status);
+}
+}

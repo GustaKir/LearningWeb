@@ -1,0 +1,160 @@
+Title: Using Nested Models in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/body-nested-models/
+Summary: This document outlines how to define a nested model using FastAPI and Pydantic. The example shows creating an `Item` model with various fields, including optional fields and a list. It emphasizes the correct way to declare lists with specific types, in particular with references to Python 3.9 and above's list typing, and mentions considerations for earlier Python versions.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: list = []
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+This will make `tags` be a list, although it doesn't declare the type of the elements of the list.
+## List fields with type parameter[¶](https://fastapi.tiangolo.com/tutorial/body-nested-models/#list-fields-with-type-parameter "Permanent link")
+But Python has a specific way to declare lists with internal types, or "type parameters":
+### Import typing's `List`[¶](https://fastapi.tiangolo.com/tutorial/body-nested-models/#import-typings-list "Permanent link")
+In Python 3.9 and above you can use the standard `list` to declare these type annotations as we'll see below. 💡
+But in Python versions before 3.9 (3.6 and above), you first need to import `List` from standard Python's `typing` module:
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_3_1)
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: List[str] = []
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_4_1)[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_4_2)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+  tags: list[str] = []
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: list[str] = []
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+### Declare a `list` with a type parameter[¶](https://fastapi.tiangolo.com/tutorial/body-nested-models/#declare-a-list-with-a-type-parameter "Permanent link")
+To declare types that have type parameters (internal types), like `list`, `dict`, `tuple`:
+  * If you are in a Python version lower than 3.9, import their equivalent version from the `typing` module
+  * Pass the internal type(s) as "type parameters" using square brackets: `[` and `]`
+
+
+In Python 3.9 it would be:
+```
+my_list: list[str]
+
+```
+
+In versions of Python before 3.9, it would be:
+```
+fromtypingimport List
+my_list: List[str]
+
+```
+
+That's all standard Python syntax for type declarations.
+Use that same standard syntax for model attributes with internal types.
+So, in our example, we can make `tags` be specifically a "list of strings":
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+  tags: list[str] = []
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_6_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body-nested-models/#__tabbed_6_2)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: list[str] = []
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results
+
+```
+
+```
+fromtypingimport List, Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+app = FastAPI()
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+  tags: List[str] = []
+@app.put("/items/{item_id}")
+async defupdate_item(item_id: int, item: Item):
+  results = {"item_id": item_id, "item": item}
+  return results

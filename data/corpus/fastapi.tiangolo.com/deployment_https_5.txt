@@ -1,0 +1,47 @@
+Title: Introduction to Let's Encrypt
+URL: https://fastapi.tiangolo.com/deployment/https/
+Summary: Let's Encrypt provides free, automated HTTPS certificates, making them accessible without the cumbersome process and cost associated with traditional third-party certificates. The short lifespan of these certificates enhances security, and the project aims to ensure continuous, free HTTPS for all users.
+---
+
+## Let's Encrypt[¶](https://fastapi.tiangolo.com/deployment/https/#lets-encrypt "Permanent link")
+Before Let's Encrypt, these **HTTPS certificates** were sold by trusted third parties.
+The process to acquire one of these certificates used to be cumbersome, require quite some paperwork and the certificates were quite expensive.
+But then **[Let's Encrypt](https://letsencrypt.org/)** was created.
+It is a project from the Linux Foundation. It provides **HTTPS certificates for free** , in an automated way. These certificates use all the standard cryptographic security, and are short-lived (about 3 months), so the **security is actually better** because of their reduced lifespan.
+The domains are securely verified and the certificates are generated automatically. This also allows automating the renewal of these certificates.
+The idea is to automate the acquisition and renewal of these certificates so that you can have **secure HTTPS, for free, forever**.
+## HTTPS for Developers[¶](https://fastapi.tiangolo.com/deployment/https/#https-for-developers "Permanent link")
+Here's an example of how an HTTPS API could look like, step by step, paying attention mainly to the ideas important for developers.
+### Domain Name[¶](https://fastapi.tiangolo.com/deployment/https/#domain-name "Permanent link")
+It would probably all start by you **acquiring** some **domain name**. Then, you would configure it in a DNS server (possibly your same cloud provider).
+You would probably get a cloud server (a virtual machine) or something similar, and it would have a fixed **public IP address**.
+In the DNS server(s) you would configure a record (an "`A record`") to point **your domain** to the public **IP address of your server**.
+You would probably do this just once, the first time, when setting everything up.
+Tip
+This Domain Name part is way before HTTPS, but as everything depends on the domain and the IP address, it's worth mentioning it here.
+### DNS[¶](https://fastapi.tiangolo.com/deployment/https/#dns "Permanent link")
+Now let's focus on all the actual HTTPS parts.
+First, the browser would check with the **DNS servers** what is the **IP for the domain** , in this case, `someapp.example.com`.
+The DNS servers would tell the browser to use some specific **IP address**. That would be the public IP address used by your server, that you configured in the DNS servers.
+![](https://fastapi.tiangolo.com/img/deployment/https/https01.svg)
+### TLS Handshake Start[¶](https://fastapi.tiangolo.com/deployment/https/#tls-handshake-start "Permanent link")
+The browser would then communicate with that IP address on **port 443** (the HTTPS port).
+The first part of the communication is just to establish the connection between the client and the server and to decide the cryptographic keys they will use, etc.
+![](https://fastapi.tiangolo.com/img/deployment/https/https02.svg)
+This interaction between the client and the server to establish the TLS connection is called the **TLS handshake**.
+### TLS with SNI Extension[¶](https://fastapi.tiangolo.com/deployment/https/#tls-with-sni-extension "Permanent link")
+**Only one process** in the server can be listening on a specific **port** in a specific **IP address**. There could be other processes listening on other ports in the same IP address, but only one for each combination of IP address and port.
+TLS (HTTPS) uses the specific port `443` by default. So that's the port we would need.
+As only one process can be listening on this port, the process that would do it would be the **TLS Termination Proxy**.
+The TLS Termination Proxy would have access to one or more **TLS certificates** (HTTPS certificates).
+Using the **SNI extension** discussed above, the TLS Termination Proxy would check which of the TLS (HTTPS) certificates available it should use for this connection, using the one that matches the domain expected by the client.
+In this case, it would use the certificate for `someapp.example.com`.
+![](https://fastapi.tiangolo.com/img/deployment/https/https03.svg)
+The client already **trusts** the entity that generated that TLS certificate (in this case Let's Encrypt, but we'll see about that later), so it can **verify** that the certificate is valid.
+Then, using the certificate, the client and the TLS Termination Proxy **decide how to encrypt** the rest of the **TCP communication**. This completes the **TLS Handshake** part.
+After this, the client and the server have an **encrypted TCP connection** , this is what TLS provides. And then they can use that connection to start the actual **HTTP communication**.
+And that's what **HTTPS** is, it's just plain **HTTP** inside a **secure TLS connection** instead of a pure (unencrypted) TCP connection.
+Tip
+Notice that the encryption of the communication happens at the **TCP level** , not at the HTTP level.
+### HTTPS Request[¶](https://fastapi.tiangolo.com/deployment/https/#https-request "Permanent link")
+Now that the client and server (specifically the browser and the TLS Terminat

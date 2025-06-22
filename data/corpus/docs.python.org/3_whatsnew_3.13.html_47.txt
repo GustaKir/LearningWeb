@@ -1,0 +1,32 @@
+Title: Deprecation of Functions in Python 3.9
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: This section discusses the removal of several deprecated functions in Python 3.9, specifically `PyEval_CallObject()` and `PyEval_CallObjectWithKeywords()`. Users are advised to use `PyObject_CallNoArgs()` or `PyObject_Call()` instead, highlighting important differences in argument requirements between the new and old functions.
+---
+
+```
+
+(Contributed by Inada Naoki in [gh-85275](https://github.com/python/cpython/issues/85275).)
+  * Remove various functions deprecated in Python 3.9:
+    * `PyEval_CallObject()`, `PyEval_CallObjectWithKeywords()`: Use [`PyObject_CallNoArgs()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallNoArgs "PyObject_CallNoArgs") or [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call") instead.
+Warning
+In [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call"), positional arguments must be a [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") and must not be `NULL`, and keyword arguments must be a [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") or `NULL`, whereas the removed functions checked argument types and accepted `NULL` positional and keyword arguments. To replace `PyEval_CallObjectWithKeywords(func, NULL, kwargs)` with [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call"), pass an empty tuple as positional arguments using [`PyTuple_New(0)`](https://docs.python.org/3/c-api/tuple.html#c.PyTuple_New "PyTuple_New").
+    * `PyEval_CallFunction()`: Use [`PyObject_CallFunction()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallFunction "PyObject_CallFunction") instead.
+    * `PyEval_CallMethod()`: Use [`PyObject_CallMethod()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallMethod "PyObject_CallMethod") instead.
+    * `PyCFunction_Call()`: Use [`PyObject_Call()`](https://docs.python.org/3/c-api/call.html#c.PyObject_Call "PyObject_Call") instead.
+(Contributed by Victor Stinner in [gh-105107](https://github.com/python/cpython/issues/105107).)
+  * Remove the following old functions to configure the Python initialization, deprecated in Python 3.11:
+    * `PySys_AddWarnOptionUnicode()`: Use [`PyConfig.warnoptions`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.warnoptions "PyConfig.warnoptions") instead.
+    * `PySys_AddWarnOption()`: Use [`PyConfig.warnoptions`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.warnoptions "PyConfig.warnoptions") instead.
+    * `PySys_AddXOption()`: Use [`PyConfig.xoptions`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.xoptions "PyConfig.xoptions") instead.
+    * `PySys_HasWarnOptions()`: Use [`PyConfig.xoptions`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.xoptions "PyConfig.xoptions") instead.
+    * `PySys_SetPath()`: Set [`PyConfig.module_search_paths`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths "PyConfig.module_search_paths") instead.
+    * `Py_SetPath()`: Set [`PyConfig.module_search_paths`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.module_search_paths "PyConfig.module_search_paths") instead.
+    * `Py_SetStandardStreamEncoding()`: Set [`PyConfig.stdio_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.stdio_encoding "PyConfig.stdio_encoding") instead, and set also maybe [`PyConfig.legacy_windows_stdio`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.legacy_windows_stdio "PyConfig.legacy_windows_stdio") (on Windows).
+    * `_Py_SetProgramFullPath()`: Set [`PyConfig.executable`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.executable "PyConfig.executable") instead.
+Use the new [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig") API of the [Python Initialization Configuration](https://docs.python.org/3/c-api/init_config.html#init-config) instead ([**PEP 587**](https://peps.python.org/pep-0587/)), added to Python 3.8. (Contributed by Victor Stinner in [gh-105145](https://github.com/python/cpython/issues/105145).)
+  * Remove `PyEval_AcquireLock()` and `PyEval_ReleaseLock()` functions, deprecated in Python 3.2. They didn’t update the current thread state. They can be replaced with:
+    * [`PyEval_SaveThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "PyEval_SaveThread") and [`PyEval_RestoreThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread");
+    * low-level [`PyEval_AcquireThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_AcquireThread "PyEval_AcquireThread") and [`PyEval_RestoreThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread");
+    * or [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") and [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release").
+(Contributed by Victor Stinner in [gh-105182](https://github.com/python/cpython/issues/105182).)
+  * Remove the `PyEval_ThreadsInitialized()` function, deprecated in Python 3.9. Since Python 3.7, `Py_Initialize()` always creates the GIL: calling `PyEval_InitThreads()` does nothing and `PyEval_ThreadsInitialized()` always return

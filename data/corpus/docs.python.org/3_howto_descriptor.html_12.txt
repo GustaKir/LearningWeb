@@ -1,0 +1,114 @@
+Title: Using Class Methods in Python
+URL: https://docs.python.org/3/howto/descriptor.html
+Summary: This section discusses the utility of class methods in Python, particularly for creating alternate class constructors. An example showcasing the `dict.fromkeys()` method is provided, illustrating how to create a new dictionary with unique keys from an iterable. The section also hints at a Python equivalent of the `classmethod` function.
+---
+
+```
+
+This behavior is useful whenever the method only needs to have a class reference and does not rely on data stored in a specific instance. One use for class methods is to create alternate class constructors. For example, the classmethod [`dict.fromkeys()`](https://docs.python.org/3/library/stdtypes.html#dict.fromkeys "dict.fromkeys") creates a new dictionary from a list of keys. The pure Python equivalent is:
+```
+classDict(dict):
+  @classmethod
+  deffromkeys(cls, iterable, value=None):
+    "Emulate dict_fromkeys() in Objects/dictobject.c"
+    d = cls()
+    for key in iterable:
+      d[key] = value
+    return d
+
+```
+
+Now a new dictionary of unique keys can be constructed like this:
+>>>```
+>>> d = Dict.fromkeys('abracadabra')
+>>> type(d) is Dict
+True
+>>> d
+{'a': None, 'b': None, 'r': None, 'c': None, 'd': None}
+
+```
+
+Using the non-data descriptor protocol, a pure Python version of [`classmethod()`](https://docs.python.org/3/library/functions.html#classmethod "classmethod") would look like this:
+```
+importfunctools
+classClassMethod:
+  "Emulate PyClassMethod_Type() in Objects/funcobject.c"
+  def__init__(self, f):
+    self.f = f
+    functools.update_wrapper(self, f)
+  def__get__(self, obj, cls=None):
+    if cls is None:
+      cls = type(obj)
+    return MethodType(self.f, cls)
+
+```
+
+The [`functools.update_wrapper()`](https://docs.python.org/3/library/functools.html#functools.update_wrapper "functools.update_wrapper") call in `ClassMethod` adds a `__wrapped__` attribute that refers to the underlying function. Also it carries forward the attributes necessary to make the wrapper look like the wrapped function: [`__name__`](https://docs.python.org/3/reference/datamodel.html#function.__name__ "function.__name__"), [`__qualname__`](https://docs.python.org/3/reference/datamodel.html#function.__qualname__ "function.__qualname__"), [`__doc__`](https://docs.python.org/3/reference/datamodel.html#function.__doc__ "function.__doc__"), and [`__annotations__`](https://docs.python.org/3/reference/datamodel.html#function.__annotations__ "function.__annotations__").
+### [Member objects and __slots__](https://docs.python.org/3/howto/descriptor.html#id29)[¶](https://docs.python.org/3/howto/descriptor.html#member-objects-and-slots "Link to this heading")
+When a class defines `__slots__`, it replaces instance dictionaries with a fixed-length array of slot values. From a user point of view that has several effects:
+1. Provides immediate detection of bugs due to misspelled attribute assignments. Only attribute names specified in `__slots__` are allowed:
+```
+classVehicle:
+  __slots__ = ('id_number', 'make', 'model')
+
+```
+
+>>>```
+>>> auto = Vehicle()
+>>> auto.id_nubmer = 'VYE483814LQEX'
+Traceback (most recent call last):
+...
+AttributeError: 'Vehicle' object has no attribute 'id_nubmer'
+
+```
+
+2. Helps create immutable objects where descriptors manage access to private attributes stored in `__slots__`:
+```
+classImmutable:
+  __slots__ = ('_dept', '_name')     # Replace the instance dictionary
+  def__init__(self, dept, name):
+    self._dept = dept          # Store to private attribute
+    self._name = name          # Store to private attribute
+  @property                # Read-only descriptor
+  defdept(self):
+    return self._dept
+  @property
+  defname(self):             # Read-only descriptor
+    return self._name
+
+```
+
+>>>```
+>>> mark = Immutable('Botany', 'Mark Watney')
+>>> mark.dept
+'Botany'
+>>> mark.dept = 'Space Pirate'
+Traceback (most recent call last):
+...
+AttributeError: property 'dept' of 'Immutable' object has no setter
+>>> mark.location = 'Mars'
+Traceback (most recent call last):
+...
+AttributeError: 'Immutable' object has no attribute 'location'
+
+```
+
+3. Saves memory. On a 64-bit Linux build, an instance with two attributes takes 48 bytes with `__slots__` and 152 bytes without. This [flyweight design pattern](https://en.wikipedia.org/wiki/Flyweight_pattern) likely only matters when a large number of instances are going to be created.
+4. Improves speed. Reading instance variables is 35% faster with `__slots__` (as measured with Python 3.10 on an Apple M1 processor).
+5. Blocks tools like [`functools.cached_property()`](https://docs.python.org/3/library/functools.html#functools.cached_property "functools.cached_property") which require an instance dictionary to function correctly:
+```
+fromfunctoolsimport cached_property
+classCP:
+  __slots__ = ()             # Eliminates the instance dict
+  @cached_property            # Requires an instance dict
+  defpi(self):
+    return 4 * sum((-1.0)**n / (2.0*n + 1.0)
+            for n in reversed(range(100_000)))
+
+```
+
+>>>```
+>>> CP().pi
+Traceback (most recent call last):
+...
+TypeError: No '__dict__' attribute on 'CP' instance to cache 'pi' property.

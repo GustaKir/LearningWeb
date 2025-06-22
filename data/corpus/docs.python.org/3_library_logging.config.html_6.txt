@@ -1,0 +1,30 @@
+Title: Configuring Loggers and Handlers in Python Logging
+URL: https://docs.python.org/3/library/logging.config.html
+Summary: This section describes the instantiation of logging handlers, specifically a `StreamHandler` for console output and a `RotatingFileHandler` for file logging. It also outlines how to configure loggers using a dictionary, detailing optional keys such as `level`, `propagate`, and `filters`, which were updated in version 3.11.
+---
+
+```
+
+the handler with id `console` is instantiated as a [`logging.StreamHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.StreamHandler "logging.StreamHandler"), using `sys.stdout` as the underlying stream. The handler with id `file` is instantiated as a [`logging.handlers.RotatingFileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.RotatingFileHandler "logging.handlers.RotatingFileHandler") with the keyword arguments `filename='logconfig.log', maxBytes=1024, backupCount=3`.
+  * _loggers_ - the corresponding value will be a dict in which each key is a logger name and each value is a dict describing how to configure the corresponding Logger instance.
+The configuring dict is searched for the following keys:
+    * `level` (optional). The level of the logger.
+    * `propagate` (optional). The propagation setting of the logger.
+    * `filters` (optional). A list of ids of the filters for this logger.
+Changed in version 3.11: `filters` can take filter instances in addition to ids.
+    * `handlers` (optional). A list of ids of the handlers for this logger.
+The specified loggers will be configured according to the level, propagation, filters and handlers specified.
+  * _root_ - this will be the configuration for the root logger. Processing of the configuration will be as for any logger, except that the `propagate` setting will not be applicable.
+  * _incremental_ - whether the configuration is to be interpreted as incremental to the existing configuration. This value defaults to `False`, which means that the specified configuration replaces the existing configuration with the same semantics as used by the existing [`fileConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.fileConfig "logging.config.fileConfig") API.
+If the specified value is `True`, the configuration is processed as described in the section on [Incremental Configuration](https://docs.python.org/3/library/logging.config.html#logging-config-dict-incremental).
+  * _disable_existing_loggers_ - whether any existing non-root loggers are to be disabled. This setting mirrors the parameter of the same name in [`fileConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.fileConfig "logging.config.fileConfig"). If absent, this parameter defaults to `True`. This value is ignored if _incremental_ is `True`.
+
+
+### Incremental Configuration[¶](https://docs.python.org/3/library/logging.config.html#incremental-configuration "Link to this heading")
+It is difficult to provide complete flexibility for incremental configuration. For example, because objects such as filters and formatters are anonymous, once a configuration is set up, it is not possible to refer to such anonymous objects when augmenting a configuration.
+Furthermore, there is not a compelling case for arbitrarily altering the object graph of loggers, handlers, filters, formatters at run-time, once a configuration is set up; the verbosity of loggers and handlers can be controlled just by setting levels (and, in the case of loggers, propagation flags). Changing the object graph arbitrarily in a safe way is problematic in a multi-threaded environment; while not impossible, the benefits are not worth the complexity it adds to the implementation.
+Thus, when the `incremental` key of a configuration dict is present and is `True`, the system will completely ignore any `formatters` and `filters` entries, and process only the `level` settings in the `handlers` entries, and the `level` and `propagate` settings in the `loggers` and `root` entries.
+Using a value in the configuration dict lets configurations to be sent over the wire as pickled dicts to a socket listener. Thus, the logging verbosity of a long-running application can be altered over time with no need to stop and restart the application.
+### Object connections[¶](https://docs.python.org/3/library/logging.config.html#object-connections "Link to this heading")
+The schema describes a set of logging objects - loggers, handlers, formatters, filters - which are connected to each other in an object graph. Thus, the schema needs to represent connections between the objects. For example, say that, once configured, a particular logger has attached to it a particular handler. For the purposes of this discussion, we can say that the logger represents the source, and the handler the destination, of a connection between the two. Of course in the configured objects this is represented by the logger holding a reference to the handler. In the configuration dict, this is done by giving each destination object an id which identifies it unambiguously, and then using the id in the source object’s configuration to indicate that a connection exists between the source and the destination object with that id.
+So, for example, consider the following YAML snippet:

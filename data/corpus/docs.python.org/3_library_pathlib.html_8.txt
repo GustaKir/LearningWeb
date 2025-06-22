@@ -1,0 +1,114 @@
+Title: Using the Path.from_uri() Method in pathlib
+URL: https://docs.python.org/3/library/pathlib.html
+Summary: This section demonstrates how the `Path.from_uri()` method in the `pathlib` library creates path objects from file URIs. It shows examples of valid URIs and notes that a `ValueError` is raised if the URI does not start with `file:` or if the path is not absolute. Additionally, the `Path.as_uri()` method is discussed, which converts a path to a 'file' URI, also raising a `ValueError` for non-absolute paths.
+---
+
+```
+>>> p = Path.from_uri('file:////server/share')
+WindowsPath('//server/share')
+>>> p = Path.from_uri('file://///server/share')
+WindowsPath('//server/share')
+>>> p = Path.from_uri('file:c:/windows')
+WindowsPath('c:/windows')
+>>> p = Path.from_uri('file:/c|/windows')
+WindowsPath('c:/windows')
+
+```
+
+[`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised if the URI does not start with `file:`, or the parsed path isn’t absolute.
+Added in version 3.13. 
+
+Path.as_uri()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.as_uri "Link to this definition")
+    
+Represent the path as a ‘file’ URI. [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") is raised if the path isn’t absolute.
+>>>```
+>>> p = PosixPath('/etc/passwd')
+>>> p.as_uri()
+'file:///etc/passwd'
+>>> p = WindowsPath('c:/Windows')
+>>> p.as_uri()
+'file:///c:/Windows'
+
+```
+
+For historical reasons, this method is also available from [`PurePath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath "pathlib.PurePath") objects. However, its use of [`os.fsencode()`](https://docs.python.org/3/library/os.html#os.fsencode "os.fsencode") makes it strictly impure.
+### Expanding and resolving paths[¶](https://docs.python.org/3/library/pathlib.html#expanding-and-resolving-paths "Link to this heading") 
+
+_classmethod_ Path.home()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.home "Link to this definition")
+    
+Return a new path object representing the user’s home directory (as returned by [`os.path.expanduser()`](https://docs.python.org/3/library/os.path.html#os.path.expanduser "os.path.expanduser") with `~` construct). If the home directory can’t be resolved, [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised.
+>>>```
+>>> Path.home()
+PosixPath('/home/antoine')
+
+```
+
+Added in version 3.5. 
+
+Path.expanduser()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.expanduser "Link to this definition")
+    
+Return a new path with expanded `~` and `~user` constructs, as returned by [`os.path.expanduser()`](https://docs.python.org/3/library/os.path.html#os.path.expanduser "os.path.expanduser"). If a home directory can’t be resolved, [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised.
+>>>```
+>>> p = PosixPath('~/films/Monty Python')
+>>> p.expanduser()
+PosixPath('/home/eric/films/Monty Python')
+
+```
+
+Added in version 3.5. 
+
+_classmethod_ Path.cwd()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd "Link to this definition")
+    
+Return a new path object representing the current directory (as returned by [`os.getcwd()`](https://docs.python.org/3/library/os.html#os.getcwd "os.getcwd")):
+>>>```
+>>> Path.cwd()
+PosixPath('/home/antoine/pathlib')
+
+```
+
+
+Path.absolute()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.absolute "Link to this definition")
+    
+Make the path absolute, without normalization or resolving symlinks. Returns a new path object:
+>>>```
+>>> p = Path('tests')
+>>> p
+PosixPath('tests')
+>>> p.absolute()
+PosixPath('/home/antoine/pathlib/tests')
+
+```
+
+
+Path.resolve(_strict =False_)[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.resolve "Link to this definition")
+    
+Make the path absolute, resolving any symlinks. A new path object is returned:
+>>>```
+>>> p = Path()
+>>> p
+PosixPath('.')
+>>> p.resolve()
+PosixPath('/home/antoine/pathlib')
+
+```
+
+“`..`” components are also eliminated (this is the only method to do so):
+>>>```
+>>> p = Path('docs/../setup.py')
+>>> p.resolve()
+PosixPath('/home/antoine/pathlib/setup.py')
+
+```
+
+If a path doesn’t exist or a symlink loop is encountered, and _strict_ is `True`, [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised. If _strict_ is `False`, the path is resolved as far as possible and any remainder is appended without checking whether it exists.
+Changed in version 3.6: The _strict_ parameter was added (pre-3.6 behavior is strict).
+Changed in version 3.13: Symlink loops are treated like other errors: [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised in strict mode, and no exception is raised in non-strict mode. In previous versions, [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") is raised no matter the value of _strict_. 
+
+Path.readlink()[¶](https://docs.python.org/3/library/pathlib.html#pathlib.Path.readlink "Link to this definition")
+    
+Return the path to which the symbolic link points (as returned by [`os.readlink()`](https://docs.python.org/3/library/os.html#os.readlink "os.readlink")):
+>>>```
+>>> p = Path('mylink')
+>>> p.symlink_to('setup.py')
+>>> p.readlink()
+PosixPath('setup.py')

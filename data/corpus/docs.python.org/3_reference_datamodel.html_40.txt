@@ -1,0 +1,26 @@
+Title: Operator Methods and Container Protocols in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: This section discusses the implementation of numerical operator methods `__rmul__()` and `__imul__()`, along with the importance of the `__contains__()` and `__iter__()` methods for mappings and sequences. It recommends that implementations allow efficient use of the `in` operator and support iteration through keys or values.
+---
+
+object.__rmul__") and [`__imul__()`](https://docs.python.org/3/reference/datamodel.html#object.__imul__ "object.__imul__") described below; they should not define other numerical operators. It is recommended that both mappings and sequences implement the [`__contains__()`](https://docs.python.org/3/reference/datamodel.html#object.__contains__ "object.__contains__") method to allow efficient use of the `in` operator; for mappings, `in` should search the mapping’s keys; for sequences, it should search through the values. It is further recommended that both mappings and sequences implement the [`__iter__()`](https://docs.python.org/3/reference/datamodel.html#object.__iter__ "object.__iter__") method to allow efficient iteration through the container; for mappings, `__iter__()` should iterate through the object’s keys; for sequences, it should iterate through the values. 
+
+object.__len__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__len__ "Link to this definition")
+    
+Called to implement the built-in function [`len()`](https://docs.python.org/3/library/functions.html#len "len"). Should return the length of the object, an integer `>=` 0. Also, an object that doesn’t define a [`__bool__()`](https://docs.python.org/3/reference/datamodel.html#object.__bool__ "object.__bool__") method and whose `__len__()` method returns zero is considered to be false in a Boolean context.
+**CPython implementation detail:** In CPython, the length is required to be at most [`sys.maxsize`](https://docs.python.org/3/library/sys.html#sys.maxsize "sys.maxsize"). If the length is larger than `sys.maxsize` some features (such as [`len()`](https://docs.python.org/3/library/functions.html#len "len")) may raise [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError"). To prevent raising `OverflowError` by truth value testing, an object must define a [`__bool__()`](https://docs.python.org/3/reference/datamodel.html#object.__bool__ "object.__bool__") method. 
+
+object.__length_hint__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__length_hint__ "Link to this definition")
+    
+Called to implement [`operator.length_hint()`](https://docs.python.org/3/library/operator.html#operator.length_hint "operator.length_hint"). Should return an estimated length for the object (which may be greater or less than the actual length). The length must be an integer `>=` 0. The return value may also be [`NotImplemented`](https://docs.python.org/3/library/constants.html#NotImplemented "NotImplemented"), which is treated the same as if the `__length_hint__` method didn’t exist at all. This method is purely an optimization and is never required for correctness.
+Added in version 3.4.
+Note
+Slicing is done exclusively with the following three methods. A call like
+```
+a[1:2] = b
+
+```
+
+is translated to
+```
+a[slice(1, 2, None)] = b

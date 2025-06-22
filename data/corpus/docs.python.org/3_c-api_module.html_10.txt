@@ -1,0 +1,40 @@
+Title: Module C API: Adding Constants
+URL: https://docs.python.org/3/c-api/module.html
+Summary: This section details the deprecated function `PyModule_AddObject()` and introduces `PyModule_AddIntConstant()`, a function for adding integer constants to a module. The latter is part of the Stable ABI and simplifies the initialization process by using `PyLong_FromLong()` to add constants efficiently.
+---
+
+```
+
+Deprecated since version 3.13: [`PyModule_AddObject()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObject "PyModule_AddObject") is [soft deprecated](https://docs.python.org/3/glossary.html#term-soft-deprecated). 
+
+intPyModule_AddIntConstant([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, constchar*name, longvalue)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddIntConstant "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Add an integer constant to _module_ as _name_. This convenience function can be used from the module’s initialization function. Return `-1` with an exception set on error, `0` on success.
+This is a convenience function that calls [`PyLong_FromLong()`](https://docs.python.org/3/c-api/long.html#c.PyLong_FromLong "PyLong_FromLong") and [`PyModule_AddObjectRef()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "PyModule_AddObjectRef"); see their documentation for details. 
+
+intPyModule_AddStringConstant([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, constchar*name, constchar*value)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddStringConstant "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Add a string constant to _module_ as _name_. This convenience function can be used from the module’s initialization function. The string _value_ must be `NULL`-terminated. Return `-1` with an exception set on error, `0` on success.
+This is a convenience function that calls [`PyUnicode_InternFromString()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_InternFromString "PyUnicode_InternFromString") and [`PyModule_AddObjectRef()`](https://docs.python.org/3/c-api/module.html#c.PyModule_AddObjectRef "PyModule_AddObjectRef"); see their documentation for details. 
+
+PyModule_AddIntMacro(module, macro)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddIntMacro "Link to this definition")
+    
+Add an int constant to _module_. The name and the value are taken from _macro_. For example `PyModule_AddIntMacro(module, AF_INET)` adds the int constant _AF_INET_ with the value of _AF_INET_ to _module_. Return `-1` with an exception set on error, `0` on success. 
+
+PyModule_AddStringMacro(module, macro)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddStringMacro "Link to this definition")
+    
+Add a string constant to _module_. 
+
+intPyModule_AddType([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, [PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type)[¶](https://docs.python.org/3/c-api/module.html#c.PyModule_AddType "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.10._
+Add a type object to _module_. The type object is finalized by calling internally [`PyType_Ready()`](https://docs.python.org/3/c-api/type.html#c.PyType_Ready "PyType_Ready"). The name of the type object is taken from the last component of [`tp_name`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_name "PyTypeObject.tp_name") after dot. Return `-1` with an exception set on error, `0` on success.
+Added in version 3.9. 
+
+intPyUnstable_Module_SetGIL([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*module, void*gil)[¶](https://docs.python.org/3/c-api/module.html#c.PyUnstable_Module_SetGIL "Link to this definition")
+    
+_This is[ Unstable API](https://docs.python.org/3/c-api/stable.html#unstable-c-api). It may change without warning in minor releases._
+Indicate that _module_ does or does not support running without the global interpreter lock (GIL), using one of the values from [`Py_mod_gil`](https://docs.python.org/3/c-api/module.html#c.Py_mod_gil "Py_mod_gil"). It must be called during _module_ ’s initialization function. If this function is not called during module initialization, the import machinery assumes the module does not support running without the GIL. This function is only available in Python builds configured with [`--disable-gil`](https://docs.python.org/3/using/configure.html#cmdoption-disable-gil). Return `-1` with an exception set on error, `0` on success.
+Added in version 3.13.
+## Module lookup[¶](https://docs.python.org/3/c-api/module.html#module-lookup "Link to this heading")
+Single-phase initialization creates singleton modules that can be looked up in the context of the current interpreter. This allows the module object to be retrieved later with only a reference to the module definition.
+These functions will not work on modules created using multi-phase initialization, since multiple such modules can be created from a single definition.

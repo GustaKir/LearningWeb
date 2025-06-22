@@ -1,0 +1,49 @@
+Title: Using ZipFile as a Context Manager
+URL: https://docs.python.org/3/library/zipfile.html
+Summary: This section describes how to use the `ZipFile` class as a context manager in Python. It highlights that the context manager ensures proper handling of the zip file, even if exceptions occur. Additionally, it notes that the `_metadata_encoding_` attribute influences the encoding of metadata across the instance and cannot be customized for individual members, addressing compatibility with legacy archive formats.
+---
+
+ter the `with` statement’s suite is finished—even if an exception occurs:
+```
+with ZipFile('spam.zip', 'w') as myzip:
+  myzip.write('eggs.txt')
+
+```
+
+Note
+_metadata_encoding_ is an instance-wide setting for the ZipFile. It is not currently possible to set this on a per-member basis.
+This attribute is a workaround for legacy implementations which produce archives with names in the current locale encoding or code page (mostly on Windows). According to the .ZIP standard, the encoding of metadata may be specified to be either IBM code page (default) or UTF-8 by a flag in the archive header. That flag takes precedence over _metadata_encoding_ , which is a Python-specific extension.
+Changed in version 3.2: Added the ability to use [`ZipFile`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile "zipfile.ZipFile") as a context manager.
+Changed in version 3.3: Added support for [`bzip2`](https://docs.python.org/3/library/bz2.html#module-bz2 "bz2: Interfaces for bzip2 compression and decompression.") and [`lzma`](https://docs.python.org/3/library/lzma.html#module-lzma "lzma: A Python wrapper for the liblzma compression library.") compression.
+Changed in version 3.4: ZIP64 extensions are enabled by default.
+Changed in version 3.5: Added support for writing to unseekable streams. Added support for the `'x'` mode.
+Changed in version 3.6: Previously, a plain [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") was raised for unrecognized compression values.
+Changed in version 3.6.2: The _file_ parameter accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+Changed in version 3.7: Add the _compresslevel_ parameter.
+Changed in version 3.8: The _strict_timestamps_ keyword-only parameter.
+Changed in version 3.11: Added support for specifying member name encoding for reading metadata in the zipfile’s directory and file headers. 
+
+ZipFile.close()[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.close "Link to this definition")
+    
+Close the archive file. You must call [`close()`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.close "zipfile.ZipFile.close") before exiting your program or essential records will not be written. 
+
+ZipFile.getinfo(_name_)[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.getinfo "Link to this definition")
+    
+Return a [`ZipInfo`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo "zipfile.ZipInfo") object with information about the archive member _name_. Calling [`getinfo()`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.getinfo "zipfile.ZipFile.getinfo") for a name not currently contained in the archive will raise a [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError"). 
+
+ZipFile.infolist()[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.infolist "Link to this definition")
+    
+Return a list containing a [`ZipInfo`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo "zipfile.ZipInfo") object for each member of the archive. The objects are in the same order as their entries in the actual ZIP file on disk if an existing archive was opened. 
+
+ZipFile.namelist()[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.namelist "Link to this definition")
+    
+Return a list of archive members by name. 
+
+ZipFile.open(_name_ , _mode ='r'_, _pwd =None_, _*_ , _force_zip64 =False_)[¶](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.open "Link to this definition")
+    
+Access a member of the archive as a binary file-like object. _name_ can be either the name of a file within the archive or a [`ZipInfo`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo "zipfile.ZipInfo") object. The _mode_ parameter, if included, must be `'r'` (the default) or `'w'`. _pwd_ is the password used to decrypt encrypted ZIP files as a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object.
+[`open()`](https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.open "zipfile.ZipFile.open") is also a context manager and therefore supports the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement:
+```
+with ZipFile('spam.zip') as myzip:
+  with myzip.open('eggs.txt') as myfile:
+    print(myfile.read())

@@ -1,0 +1,85 @@
+Title: Making a Phonebook
+URL: https://docs.python.org/3/library/re.html
+Summary: This section demonstrates how to use the `split()` method from the `re` library to split a string representation of a phonebook into a list of entries, effectively converting the textual data into a more manageable format for Python.
+---
+
+```
+
+### Making a Phonebook[¶](https://docs.python.org/3/library/re.html#making-a-phonebook "Link to this heading")
+[`split()`](https://docs.python.org/3/library/re.html#re.split "re.split") splits a string into a list delimited by the passed pattern. The method is invaluable for converting textual data into data structures that can be easily read and modified by Python as demonstrated in the following example that creates a phonebook.
+First, here is the input. Normally it may come from a file, here we are using triple-quoted string syntax
+>>>```
+>>> text = """Ross McFluff: 834.345.1254 155 Elm Street
+...
+... Ronald Heathmore: 892.345.3428 436 Finley Avenue
+... Frank Burger: 925.541.7625 662 South Dogwood Way
+...
+...
+... Heather Albrecht: 548.326.4584 919 Park Place"""
+
+```
+
+The entries are separated by one or more newlines. Now we convert the string into a list with each nonempty line having its own entry:
+>>>```
+>>> entries = re.split("\n+", text)
+>>> entries
+['Ross McFluff: 834.345.1254 155 Elm Street',
+'Ronald Heathmore: 892.345.3428 436 Finley Avenue',
+'Frank Burger: 925.541.7625 662 South Dogwood Way',
+'Heather Albrecht: 548.326.4584 919 Park Place']
+
+```
+
+Finally, split each entry into a list with first name, last name, telephone number, and address. We use the `maxsplit` parameter of [`split()`](https://docs.python.org/3/library/re.html#re.split "re.split") because the address has spaces, our splitting pattern, in it:
+>>>```
+>>> [re.split(":? ", entry, maxsplit=3) for entry in entries]
+[['Ross', 'McFluff', '834.345.1254', '155 Elm Street'],
+['Ronald', 'Heathmore', '892.345.3428', '436 Finley Avenue'],
+['Frank', 'Burger', '925.541.7625', '662 South Dogwood Way'],
+['Heather', 'Albrecht', '548.326.4584', '919 Park Place']]
+
+```
+
+The `:?` pattern matches the colon after the last name, so that it does not occur in the result list. With a `maxsplit` of `4`, we could separate the house number from the street name:
+>>>```
+>>> [re.split(":? ", entry, maxsplit=4) for entry in entries]
+[['Ross', 'McFluff', '834.345.1254', '155', 'Elm Street'],
+['Ronald', 'Heathmore', '892.345.3428', '436', 'Finley Avenue'],
+['Frank', 'Burger', '925.541.7625', '662', 'South Dogwood Way'],
+['Heather', 'Albrecht', '548.326.4584', '919', 'Park Place']]
+
+```
+
+### Text Munging[¶](https://docs.python.org/3/library/re.html#text-munging "Link to this heading")
+[`sub()`](https://docs.python.org/3/library/re.html#re.sub "re.sub") replaces every occurrence of a pattern with a string or the result of a function. This example demonstrates using [`sub()`](https://docs.python.org/3/library/re.html#re.sub "re.sub") with a function to “munge” text, or randomize the order of all the characters in each word of a sentence except for the first and last characters:
+>>>```
+>>> defrepl(m):
+...   inner_word = list(m.group(2))
+...   random.shuffle(inner_word)
+...   return m.group(1) + "".join(inner_word) + m.group(3)
+...
+>>> text = "Professor Abdolmalek, please report your absences promptly."
+>>> re.sub(r"(\w)(\w+)(\w)", repl, text)
+'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'
+>>> re.sub(r"(\w)(\w+)(\w)", repl, text)
+'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
+
+```
+
+### Finding all Adverbs[¶](https://docs.python.org/3/library/re.html#finding-all-adverbs "Link to this heading")
+[`findall()`](https://docs.python.org/3/library/re.html#re.findall "re.findall") matches _all_ occurrences of a pattern, not just the first one as [`search()`](https://docs.python.org/3/library/re.html#re.search "re.search") does. For example, if a writer wanted to find all of the adverbs in some text, they might use [`findall()`](https://docs.python.org/3/library/re.html#re.findall "re.findall") in the following manner:
+>>>```
+>>> text = "He was carefully disguised but captured quickly by police."
+>>> re.findall(r"\w+ly\b", text)
+['carefully', 'quickly']
+
+```
+
+### Finding all Adverbs and their Positions[¶](https://docs.python.org/3/library/re.html#finding-all-adverbs-and-their-positions "Link to this heading")
+If one wants more information about all matches of a pattern than the matched text, [`finditer()`](https://docs.python.org/3/library/re.html#re.finditer "re.finditer") is useful as it provides [`Match`](https://docs.python.org/3/library/re.html#re.Match "re.Match") objects instead of strings. Continuing with the previous example, if a writer wanted to find all of the adverbs _and their positions_ in some text, they would use [`finditer()`](https://docs.python.org/3/library/re.html#re.finditer "re.finditer") in the following manner:
+>>>```
+>>> text = "He was carefully disguised but captured quickly by police."
+>>> for m in re.finditer(r"\w+ly\b", text):
+...   print('%02d-%02d: %s' % (m.start(), m.end(), m.group(0)))
+07-16: carefully
+40-47: quickly

@@ -1,0 +1,71 @@
+Title: Introduction to the itertools Module
+URL: https://docs.python.org/3/howto/functional.html
+Summary: This section introduces the itertools module, which provides various functions for creating and manipulating iterators. It highlights the dangers of improperly using iterators and outlines the types of functions available in the module, including those that create new iterators, treat elements as function arguments, select portions of output, and group outputs.
+---
+
+```
+
+You should avoid doing this, though, because an element may be taken from the longer iterators and discarded. This means you can’t go on to use the iterators further because you risk skipping a discarded element.
+## The itertools module[¶](https://docs.python.org/3/howto/functional.html#the-itertools-module "Link to this heading")
+The [`itertools`](https://docs.python.org/3/library/itertools.html#module-itertools "itertools: Functions creating iterators for efficient looping.") module contains a number of commonly used iterators as well as functions for combining several iterators. This section will introduce the module’s contents by showing small examples.
+The module’s functions fall into a few broad classes:
+  * Functions that create a new iterator based on an existing iterator.
+  * Functions for treating an iterator’s elements as function arguments.
+  * Functions for selecting portions of an iterator’s output.
+  * A function for grouping an iterator’s output.
+
+
+### Creating new iterators[¶](https://docs.python.org/3/howto/functional.html#creating-new-iterators "Link to this heading")
+[`itertools.count(start, step)`](https://docs.python.org/3/library/itertools.html#itertools.count "itertools.count") returns an infinite stream of evenly spaced values. You can optionally supply the starting number, which defaults to 0, and the interval between numbers, which defaults to 1:
+```
+itertools.count() =>
+ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...
+itertools.count(10) =>
+ 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ...
+itertools.count(10, 5) =>
+ 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, ...
+
+```
+
+[`itertools.cycle(iter)`](https://docs.python.org/3/library/itertools.html#itertools.cycle "itertools.cycle") saves a copy of the contents of a provided iterable and returns a new iterator that returns its elements from first to last. The new iterator will repeat these elements infinitely.
+```
+itertools.cycle([1, 2, 3, 4, 5]) =>
+ 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, ...
+
+```
+
+[`itertools.repeat(elem, [n])`](https://docs.python.org/3/library/itertools.html#itertools.repeat "itertools.repeat") returns the provided element _n_ times, or returns the element endlessly if _n_ is not provided.
+```
+itertools.repeat('abc') =>
+ abc, abc, abc, abc, abc, abc, abc, abc, abc, abc, ...
+itertools.repeat('abc', 5) =>
+ abc, abc, abc, abc, abc
+
+```
+
+[`itertools.chain(iterA, iterB, ...)`](https://docs.python.org/3/library/itertools.html#itertools.chain "itertools.chain") takes an arbitrary number of iterables as input, and returns all the elements of the first iterator, then all the elements of the second, and so on, until all of the iterables have been exhausted.
+```
+itertools.chain(['a', 'b', 'c'], (1, 2, 3)) =>
+ a, b, c, 1, 2, 3
+
+```
+
+[`itertools.islice(iter, [start], stop, [step])`](https://docs.python.org/3/library/itertools.html#itertools.islice "itertools.islice") returns a stream that’s a slice of the iterator. With a single _stop_ argument, it will return the first _stop_ elements. If you supply a starting index, you’ll get _stop-start_ elements, and if you supply a value for _step_ , elements will be skipped accordingly. Unlike Python’s string and list slicing, you can’t use negative values for _start_ , _stop_ , or _step_.
+```
+itertools.islice(range(10), 8) =>
+ 0, 1, 2, 3, 4, 5, 6, 7
+itertools.islice(range(10), 2, 8) =>
+ 2, 3, 4, 5, 6, 7
+itertools.islice(range(10), 2, 8, 2) =>
+ 2, 4, 6
+
+```
+
+[`itertools.tee(iter, [n])`](https://docs.python.org/3/library/itertools.html#itertools.tee "itertools.tee") replicates an iterator; it returns _n_ independent iterators that will all return the contents of the source iterator. If you don’t supply a value for _n_ , the default is 2. Replicating iterators requires saving some of the contents of the source iterator, so this can consume significant memory if the iterator is large and one of the new iterators is consumed more than the others.
+```
+itertools.tee( itertools.count() ) =>
+  iterA, iterB
+where iterA ->
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...
+and  iterB ->
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...

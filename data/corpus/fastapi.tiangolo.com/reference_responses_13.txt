@@ -1,0 +1,210 @@
+Title: FastAPI Responses Reference
+URL: https://fastapi.tiangolo.com/reference/responses/
+Summary: This section describes the parameters of the `fastapi.responses.Response` class, including `path`, `status_code`, `headers`, `media_type`, `background`, `filename`, `stat_result`, `method`, and `content_disposition_type`, along with their types and default values.
+---
+
+```
+
+Bases: `Response[](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.Response "<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>      <span class="doc doc-object-name doc-class-name">fastapi.responses.Response</span> \(<code>starlette.responses.Response</code>\)")`
+PARAMETER | DESCRIPTION  
+---|---  
+`path` |  **TYPE:** `str | PathLike[str]`  
+`status_code` |  **TYPE:** `int` **DEFAULT:** `200`  
+`headers` |  **TYPE:** `Mapping[str, str] | None` **DEFAULT:** `None`  
+`media_type` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`background` |  **TYPE:** `BackgroundTask | None` **DEFAULT:** `None`  
+`filename` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`stat_result` |  **TYPE:** `stat_result | None` **DEFAULT:** `None`  
+`method` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`content_disposition_type` |  **TYPE:** `str` **DEFAULT:** `'attachment'`  
+Source code in `starlette/responses.py`
+```
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+```
+| ```
+def__init__(
+  self,
+  path: str | os.PathLike[str],
+  status_code: int = 200,
+  headers: typing.Mapping[str, str] | None = None,
+  media_type: str | None = None,
+  background: BackgroundTask | None = None,
+  filename: str | None = None,
+  stat_result: os.stat_result | None = None,
+  method: str | None = None,
+  content_disposition_type: str = "attachment",
+) -> None:
+  self.path = path
+  self.status_code = status_code
+  self.filename = filename
+  if method is not None:
+    warnings.warn(
+      "The 'method' parameter is not used, and it will be removed.",
+      DeprecationWarning,
+    )
+  if media_type is None:
+    media_type = guess_type(filename or path)[0] or "text/plain"
+  self.media_type = media_type
+  self.background = background
+  self.init_headers(headers)
+  self.headers.setdefault("accept-ranges", "bytes")
+  if self.filename is not None:
+    content_disposition_filename = quote(self.filename)
+    if content_disposition_filename != self.filename:
+      content_disposition = f"{content_disposition_type}; filename*=utf-8''{content_disposition_filename}"
+    else:
+      content_disposition = f'{content_disposition_type}; filename="{self.filename}"'
+    self.headers.setdefault("content-disposition", content_disposition)
+  self.stat_result = stat_result
+  if stat_result is not None:
+    self.set_stat_headers(stat_result)
+
+```
+  
+---|---  
+###  chunk_size `class-attribute` `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.chunk_size "Permanent link")
+```
+chunk_size = 64 * 1024
+
+```
+
+###  charset `class-attribute` `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.charset "Permanent link")
+```
+charset = 'utf-8'
+
+```
+
+###  status_code `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.status_code "Permanent link")
+```
+status_code = status_code
+
+```
+
+###  media_type `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.media_type "Permanent link")
+```
+media_type = media_type
+
+```
+
+###  body `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.body "Permanent link")
+```
+body = render(content)
+
+```
+
+###  background `instance-attribute` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.background "Permanent link")
+```
+background = background
+
+```
+
+###  headers `property` [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.headers "Permanent link")
+```
+headers
+
+```
+
+###  render [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.render "Permanent link")
+```
+render(content)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`content` |  **TYPE:** `Any`  
+Source code in `starlette/responses.py`
+```
+48
+49
+50
+51
+52
+53
+```
+| ```
+defrender(self, content: typing.Any) -> bytes | memoryview:
+  if content is None:
+    return b""
+  if isinstance(content, (bytes, memoryview)):
+    return content
+  return content.encode(self.charset) # type: ignore
+
+```
+  
+---|---  
+###  init_headers [¶](https://fastapi.tiangolo.com/reference/responses/#fastapi.responses.FileResponse.init_headers "Permanent link")
+```
+init_headers(headers=None)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`headers` |  **TYPE:** `Mapping[str, str] | None` **DEFAULT:** `None`  
+Source code in `starlette/responses.py`
+```
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+```
+|

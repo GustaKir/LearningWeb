@@ -1,0 +1,36 @@
+Title: Chunked Transfer Encoding in HTTP 1.1
+URL: https://docs.python.org/3/library/http.client.html
+Summary: Chunked transfer encoding is introduced in HTTP 1.1, requiring a Content-Length specification or a non-file str/bytes-like object if the server's handling of HTTP 1.1 is unknown. Changes in versions 3.2 and 3.6 include the ability for _body_ to be iterable and automatic chunk-encoding for file and iterable objects when neither Content-Length nor Transfer-Encoding are set.
+---
+
+```
+
+Note
+Chunked transfer encoding has been added to the HTTP protocol version 1.1. Unless the HTTP server is known to handle HTTP 1.1, the caller must either specify the Content-Length, or must pass a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or bytes-like object that is not also a file as the body representation.
+Changed in version 3.2: _body_ can now be an iterable.
+Changed in version 3.6: If neither Content-Length nor Transfer-Encoding are set in _headers_ , file and iterable _body_ objects are now chunk-encoded. The _encode_chunked_ argument was added. No attempt is made to determine the Content-Length for file objects. 
+
+HTTPConnection.getresponse()[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.getresponse "Link to this definition")
+    
+Should be called after a request is sent to get the response from the server. Returns an [`HTTPResponse`](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse "http.client.HTTPResponse") instance.
+Note
+Note that you must have read the whole response before you can send a new request to the server.
+Changed in version 3.5: If a [`ConnectionError`](https://docs.python.org/3/library/exceptions.html#ConnectionError "ConnectionError") or subclass is raised, the [`HTTPConnection`](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection "http.client.HTTPConnection") object will be ready to reconnect when a new request is sent. 
+
+HTTPConnection.set_debuglevel(_level_)[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.set_debuglevel "Link to this definition")
+    
+Set the debugging level. The default debug level is `0`, meaning no debugging output is printed. Any value greater than `0` will cause all currently defined debug output to be printed to stdout. The `debuglevel` is passed to any new [`HTTPResponse`](https://docs.python.org/3/library/http.client.html#http.client.HTTPResponse "http.client.HTTPResponse") objects that are created.
+Added in version 3.1. 
+
+HTTPConnection.set_tunnel(_host_ , _port =None_, _headers =None_)[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.set_tunnel "Link to this definition")
+    
+Set the host and the port for HTTP Connect Tunnelling. This allows running the connection through a proxy server.
+The _host_ and _port_ arguments specify the endpoint of the tunneled connection (i.e. the address included in the CONNECT request, _not_ the address of the proxy server).
+The _headers_ argument should be a mapping of extra HTTP headers to send with the CONNECT request.
+As HTTP/1.1 is used for HTTP CONNECT tunnelling request, [as per the RFC](https://datatracker.ietf.org/doc/html/rfc7231#section-4.3.6), a HTTP `Host:` header must be provided, matching the authority-form of the request target provided as the destination for the CONNECT request. If a HTTP `Host:` header is not provided via the headers argument, one is generated and transmitted automatically.
+For example, to tunnel through a HTTPS proxy server running locally on port 8080, we would pass the address of the proxy to the [`HTTPSConnection`](https://docs.python.org/3/library/http.client.html#http.client.HTTPSConnection "http.client.HTTPSConnection") constructor, and the address of the host that we eventually want to reach to the [`set_tunnel()`](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.set_tunnel "http.client.HTTPConnection.set_tunnel") method:
+>>>```
+>>> importhttp.client
+>>> conn = http.client.HTTPSConnection("localhost", 8080)
+>>> conn.set_tunnel("www.python.org")
+>>> conn.request("HEAD","/index.html")

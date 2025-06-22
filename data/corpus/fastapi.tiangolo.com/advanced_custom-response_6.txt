@@ -1,0 +1,92 @@
+Title: Custom Response Handling in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/custom-response/
+Summary: This section discusses how to handle custom responses in FastAPI, specifically how to document responses in OpenAPI when returning a `Response` object. It notes that directly returning a `Response` from a path operation function will not be documented and explains how to use the `response_class` parameter to achieve documentation while customizing the response.
+---
+
+```
+
+Warning
+A `Response` returned directly by your _path operation function_ won't be documented in OpenAPI (for example, the `Content-Type` won't be documented) and won't be visible in the automatic interactive docs.
+Info
+Of course, the actual `Content-Type` header, status code, etc, will come from the `Response` object you returned.
+### Document in OpenAPI and override `Response`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#document-in-openapi-and-override-response "Permanent link")
+If you want to override the response from inside of the function but at the same time document the "media type" in OpenAPI, you can use the `response_class` parameter AND return a `Response` object.
+The `response_class` will then be used only to document the OpenAPI _path operation_ , but your `Response` will be used as is.
+#### Return an `HTMLResponse` directly[¶](https://fastapi.tiangolo.com/advanced/custom-response/#return-an-htmlresponse-directly "Permanent link")
+For example, it could be something like:
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_4_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport HTMLResponse
+app = FastAPI()
+defgenerate_html_response():
+  html_content = """
+  <html>
+    <head>
+      <title>Some HTML in here</title>
+    </head>
+    <body>
+      <h1>Look ma! HTML!</h1>
+    </body>
+  </html>
+  """
+  return HTMLResponse(content=html_content, status_code=200)
+@app.get("/items/", response_class=HTMLResponse)
+async defread_items():
+  return generate_html_response()
+
+```
+
+In this example, the function `generate_html_response()` already generates and returns a `Response` instead of returning the HTML in a `str`.
+By returning the result of calling `generate_html_response()`, you are already returning a `Response` that will override the default **FastAPI** behavior.
+But as you passed the `HTMLResponse` in the `response_class` too, **FastAPI** will know how to document it in OpenAPI and the interactive docs as HTML with `text/html`:
+![](https://fastapi.tiangolo.com/img/tutorial/custom-response/image01.png)
+## Available responses[¶](https://fastapi.tiangolo.com/advanced/custom-response/#available-responses "Permanent link")
+Here are some of the available responses.
+Keep in mind that you can use `Response` to return anything else, or even create a custom sub-class.
+Technical Details
+You could also use `from starlette.responses import HTMLResponse`.
+**FastAPI** provides the same `starlette.responses` as `fastapi.responses` just as a convenience for you, the developer. But most of the available responses come directly from Starlette.
+### `Response`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#response "Permanent link")
+The main `Response` class, all the other responses inherit from it.
+You can return it directly.
+It accepts the following parameters:
+  * `content` - A `str` or `bytes`.
+  * `status_code` - An `int` HTTP status code.
+  * `headers` - A `dict` of strings.
+  * `media_type` - A `str` giving the media type. E.g. `"text/html"`.
+
+
+FastAPI (actually Starlette) will automatically include a Content-Length header. It will also include a Content-Type header, based on the `media_type` and appending a charset for text types.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_5_1)
+```
+fromfastapiimport FastAPI, Response
+app = FastAPI()
+@app.get("/legacy/")
+defget_legacy_data():
+  data = """<?xml version="1.0"?>
+  <shampoo>
+  <Header>
+    Apply shampoo here.
+  </Header>
+  <Body>
+    You'll have to use soap here.
+  </Body>
+  </shampoo>
+  """
+  return Response(content=data, media_type="application/xml")
+
+```
+
+### `HTMLResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#htmlresponse "Permanent link")
+Takes some text or bytes and returns an HTML response, as you read above.
+### `PlainTextResponse`[¶](https://fastapi.tiangolo.com/advanced/custom-response/#plaintextresponse "Permanent link")
+Takes some text or bytes and returns a plain text response.
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/custom-response/#__tabbed_6_1)
+```
+fromfastapiimport FastAPI
+fromfastapi.responsesimport PlainTextResponse
+app = FastAPI()
+@app.get("/", response_class=PlainTextResponse)
+async defmain():
+  return "Hello World"

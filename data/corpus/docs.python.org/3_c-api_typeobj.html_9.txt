@@ -1,0 +1,21 @@
+Title: PyObject Slots
+URL: https://docs.python.org/3/c-api/typeobj.html
+Summary: This section explains the structure of the type object in Python, specifically its extension from the PyVarObject structure. It details the use of the ob_size field for dynamic types created using type_new(), and notes the requirements for instances of type objects regarding the ob_size field.
+---
+
+```
+
+## PyObject Slots[¶](https://docs.python.org/3/c-api/typeobj.html#pyobject-slots "Link to this heading")
+The type object structure extends the [`PyVarObject`](https://docs.python.org/3/c-api/structures.html#c.PyVarObject "PyVarObject") structure. The [`ob_size`](https://docs.python.org/3/c-api/typeobj.html#c.PyVarObject.ob_size "PyVarObject.ob_size") field is used for dynamic types (created by `type_new()`, usually called from a class statement). Note that [`PyType_Type`](https://docs.python.org/3/c-api/type.html#c.PyType_Type "PyType_Type") (the metatype) initializes [`tp_itemsize`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_itemsize "PyTypeObject.tp_itemsize"), which means that its instances (i.e. type objects) _must_ have the [`ob_size`](https://docs.python.org/3/c-api/typeobj.html#c.PyVarObject.ob_size "PyVarObject.ob_size") field. 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject").ob_refcnt[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyObject.ob_refcnt "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is the type object’s reference count, initialized to `1` by the `PyObject_HEAD_INIT` macro. Note that for [statically allocated type objects](https://docs.python.org/3/c-api/typeobj.html#static-types), the type’s instances (objects whose [`ob_type`](https://docs.python.org/3/c-api/typeobj.html#c.PyObject.ob_type "PyObject.ob_type") points back to the type) do _not_ count as references. But for [dynamically allocated type objects](https://docs.python.org/3/c-api/typeobj.html#heap-types), the instances _do_ count as references.
+**Inheritance:**
+This field is not inherited by subtypes. 
+
+[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject").ob_type[¶](https://docs.python.org/3/c-api/typeobj.html#c.PyObject.ob_type "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This is the type’s type, in other words its metatype. It is initialized by the argument to the `PyObject_HEAD_INIT` macro, and its value should normally be `&PyType_Type`. However, for dynamically loadable extension modules that must be usable on Windows (at least), the compiler complains that this is not a valid initializer. Therefore, the convention is to pass `NULL` to the `PyObject_HEAD_INIT` macro and to initialize this field explicitly at the start of the module’s initialization function, before doing anything else. This is typically done like this:
+```
+Foo_Type.ob_type=&PyType_Type;

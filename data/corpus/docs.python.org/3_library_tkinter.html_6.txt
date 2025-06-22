@@ -1,0 +1,52 @@
+Title: Understanding Tcl Syntax in Tkinter
+URL: https://docs.python.org/3/library/tkinter.html
+Summary: This section explains how Tcl's syntax aligns with Tkinter, highlighting the correspondence between Tcl commands for creating widgets, widget options, and widget hierarchy. It notes that Tcl uses object pathnames while Tkinter utilizes object references and parent-child relationships for widget hierarchy. Additionally, Tcl commands are represented as methods in Tkinter, showcasing differences in handling operations.
+---
+
+```
+
+Tcl’s syntax is similar to many shell languages, where the first word is the command to be executed, with arguments to that command following it, separated by spaces. Without getting into too many details, notice the following:
+  * The commands used to create widgets (like `ttk::frame`) correspond to widget classes in Tkinter.
+  * Tcl widget options (like `-text`) correspond to keyword arguments in Tkinter.
+  * Widgets are referred to by a _pathname_ in Tcl (like `.frm.btn`), whereas Tkinter doesn’t use names but object references.
+  * A widget’s place in the widget hierarchy is encoded in its (hierarchical) pathname, which uses a `.` (dot) as a path separator. The pathname for the root window is just `.` (dot). In Tkinter, the hierarchy is defined not by pathname but by specifying the parent widget when creating each child widget.
+  * Operations which are implemented as separate _commands_ in Tcl (like `grid` or `destroy`) are represented as _methods_ on Tkinter widget objects. As you’ll see shortly, at other times Tcl uses what appear to be method calls on widget objects, which more closely mirror what would is used in Tkinter.
+
+
+### How do I…? What option does…?[¶](https://docs.python.org/3/library/tkinter.html#how-do-i-what-option-does "Link to this heading")
+If you’re not sure how to do something in Tkinter, and you can’t immediately find it in the tutorial or reference documentation you’re using, there are a few strategies that can be helpful.
+First, remember that the details of how individual widgets work may vary across different versions of both Tkinter and Tcl/Tk. If you’re searching documentation, make sure it corresponds to the Python and Tcl/Tk versions installed on your system.
+When searching for how to use an API, it helps to know the exact name of the class, option, or method that you’re using. Introspection, either in an interactive Python shell or with [`print()`](https://docs.python.org/3/library/functions.html#print "print"), can help you identify what you need.
+To find out what configuration options are available on any widget, call its `configure()` method, which returns a dictionary containing a variety of information about each object, including its default and current values. Use `keys()` to get just the names of each option.
+```
+btn = ttk.Button(frm, ...)
+print(btn.configure().keys())
+
+```
+
+As most widgets have many configuration options in common, it can be useful to find out which are specific to a particular widget class. Comparing the list of options to that of a simpler widget, like a frame, is one way to do that.
+```
+print(set(btn.configure().keys()) - set(frm.configure().keys()))
+
+```
+
+Similarly, you can find the available methods for a widget object using the standard [`dir()`](https://docs.python.org/3/library/functions.html#dir "dir") function. If you try it, you’ll see there are over 200 common widget methods, so again identifying those specific to a widget class is helpful.
+```
+print(dir(btn))
+print(set(dir(btn)) - set(dir(frm)))
+
+```
+
+### Navigating the Tcl/Tk Reference Manual[¶](https://docs.python.org/3/library/tkinter.html#navigating-the-tcl-tk-reference-manual "Link to this heading")
+As noted, the official [Tk commands](https://www.tcl.tk/man/tcl8.6/TkCmd/contents.htm) reference manual (man pages) is often the most accurate description of what specific operations on widgets do. Even when you know the name of the option or method that you need, you may still have a few places to look.
+While all operations in Tkinter are implemented as method calls on widget objects, you’ve seen that many Tcl/Tk operations appear as commands that take a widget pathname as its first parameter, followed by optional parameters, e.g.
+```
+destroy .
+grid .frm.btn -column 0 -row 0
+
+```
+
+Others, however, look more like methods called on a widget object (in fact, when you create a widget in Tcl/Tk, it creates a Tcl command with the name of the widget pathname, with the first parameter to that command being the name of a method to call).
+```
+.frm.btn invoke
+.frm.lbl configure -text "Goodbye"

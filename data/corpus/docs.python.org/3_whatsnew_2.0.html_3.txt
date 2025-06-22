@@ -1,0 +1,42 @@
+Title: Python 2.0 Unicode Support Enhancements
+URL: https://docs.python.org/3/whatsnew/2.0.html
+Summary: This section discusses the `errors` parameter for handling encoding errors in Python, detailing options such as 'strict', 'ignore', and 'replace'. It highlights the acceptance of Unicode strings by certain built-ins and introduces the new `unicodedata` module, which provides access to Unicode character properties.
+---
+
+The `errors` parameter specifies the treatment of characters that are invalid for the current encoding; passing `'strict'` as the value causes an exception to be raised on any encoding error, while `'ignore'` causes errors to be silently ignored and `'replace'` uses U+FFFD, the official replacement character, in case of any problems.
+  * The `exec` statement, and various built-ins such as `eval()`, `getattr()`, and `setattr()` will also accept Unicode strings as well as regular strings. (It’s possible that the process of fixing this missed some built-ins; if you find a built-in function that accepts strings but doesn’t accept Unicode strings at all, please report it as a bug.)
+
+
+A new module, [`unicodedata`](https://docs.python.org/3/library/unicodedata.html#module-unicodedata "unicodedata: Access the Unicode Database."), provides an interface to Unicode character properties. For example, `unicodedata.category(u'A')` returns the 2-character string ‘Lu’, the ‘L’ denoting it’s a letter, and ‘u’ meaning that it’s uppercase. `unicodedata.bidirectional(u'\u0660')` returns ‘AN’, meaning that U+0660 is an Arabic number.
+The [`codecs`](https://docs.python.org/3/library/codecs.html#module-codecs "codecs: Encode and decode data and streams.") module contains functions to look up existing encodings and register new ones. Unless you want to implement a new encoding, you’ll most often use the `codecs.lookup(encoding)` function, which returns a 4-element tuple: `(encode_func, decode_func, stream_reader, stream_writer)`.
+  * _encode_func_ is a function that takes a Unicode string, and returns a 2-tuple `(string, length)`. _string_ is an 8-bit string containing a portion (perhaps all) of the Unicode string converted into the given encoding, and _length_ tells you how much of the Unicode string was converted.
+  * _decode_func_ is the opposite of _encode_func_ , taking an 8-bit string and returning a 2-tuple `(ustring, length)`, consisting of the resulting Unicode string _ustring_ and the integer _length_ telling how much of the 8-bit string was consumed.
+  * _stream_reader_ is a class that supports decoding input from a stream. _stream_reader(file_obj)_ returns an object that supports the `read()`, `readline()`, and `readlines()` methods. These methods will all translate from the given encoding and return Unicode strings.
+  * _stream_writer_ , similarly, is a class that supports encoding output to a stream. _stream_writer(file_obj)_ returns an object that supports the `write()` and `writelines()` methods. These methods expect Unicode strings, translating them to the given encoding on output.
+
+
+For example, the following code writes a Unicode string into a file, encoding it as UTF-8:
+```
+importcodecs
+unistr = u'\u0660\u2000ab ...'
+(UTF8_encode, UTF8_decode,
+ UTF8_streamreader, UTF8_streamwriter) = codecs.lookup('UTF-8')
+output = UTF8_streamwriter( open( '/tmp/output', 'wb') )
+output.write( unistr )
+output.close()
+
+```
+
+The following code would then read UTF-8 input from the file:
+```
+input = UTF8_streamreader( open( '/tmp/output', 'rb') )
+print repr(input.read())
+input.close()
+
+```
+
+Unicode-aware regular expressions are available through the [`re`](https://docs.python.org/3/library/re.html#module-re "re: Regular expression operations.") module, which has a new underlying implementation called SRE written by Fredrik Lundh of Secret Labs AB.
+A `-U` command line option was added which causes the Python compiler to interpret all string literals as Unicode string literals. This is intended to be used in testing and future-proofing your Python code, since some future version of Python may drop support for 8-bit strings and provide only Unicode strings.
+## List Comprehensions[¶](https://docs.python.org/3/whatsnew/2.0.html#list-comprehensions "Link to this heading")
+Lists are a workhorse data type in Python, and many programs manipulate a list at some point. Two common operations on lists are to loop over them, and either pick out the elements that meet a certain criterion, or apply some function to each element. For example, given a list of strings, you might want to pull out all the strings containing a given substring, or strip off trailing whitespace from each line.
+The existing [`map()`](https://docs.python.org/3/library/functions.html#map "map") and [`filter()`](https://docs.python.org/3/library/functions.html#filter "filter") functions can be used for this purpose, but they require a function as one of their arguments. This is fine if there’s an existing built-in function that can be passed directly, but if there isn’t, you have to create a little function to do the required work, and Python’s scoping rules make the result ugly if the little function needs additional information. Take the first example in the previous paragraph, finding all the strings in the list containing a given substring. You could write the following to do it:

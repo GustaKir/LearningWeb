@@ -1,0 +1,40 @@
+Title: ZoneInfo File Serialization
+URL: https://docs.python.org/3/library/zoneinfo.html
+Summary: The `ZoneInfo.from_file` method raises an exception on pickling. It is recommended to use a wrapper or custom serialization function for pickling. The serialized time zone data must be available in both environments, and consistency cannot be guaranteed across different time zone data versions.
+---
+
+```
+
+  3. `ZoneInfo.from_file(fobj, /, key=None)`: When constructed from a file, the `ZoneInfo` object raises an exception on pickling. If an end user wants to pickle a `ZoneInfo` constructed from a file, it is recommended that they use a wrapper type or a custom serialization function: either serializing by key or storing the contents of the file object and serializing that.
+
+
+This method of serialization requires that the time zone data for the required key be available on both the serializing and deserializing side, similar to the way that references to classes and functions are expected to exist in both the serializing and deserializing environments. It also means that no guarantees are made about the consistency of results when unpickling a `ZoneInfo` pickled in an environment with a different version of the time zone data.
+## Functions[¶](https://docs.python.org/3/library/zoneinfo.html#functions "Link to this heading") 
+
+zoneinfo.available_timezones()[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.available_timezones "Link to this definition")
+    
+Get a set containing all the valid keys for IANA time zones available anywhere on the time zone path. This is recalculated on every call to the function.
+This function only includes canonical zone names and does not include “special” zones such as those under the `posix/` and `right/` directories, or the `posixrules` zone.
+Caution
+This function may open a large number of files, as the best way to determine if a file on the time zone path is a valid time zone is to read the “magic string” at the beginning.
+Note
+These values are not designed to be exposed to end-users; for user facing elements, applications should use something like CLDR (the Unicode Common Locale Data Repository) to get more user-friendly strings. See also the cautionary note on [`ZoneInfo.key`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo.key "zoneinfo.ZoneInfo.key"). 
+
+zoneinfo.reset_tzpath(_to =None_)[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.reset_tzpath "Link to this definition")
+    
+Sets or resets the time zone search path ([`TZPATH`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.TZPATH "zoneinfo.TZPATH")) for the module. When called with no arguments, [`TZPATH`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.TZPATH "zoneinfo.TZPATH") is set to the default value.
+Calling `reset_tzpath` will not invalidate the [`ZoneInfo`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo "zoneinfo.ZoneInfo") cache, and so calls to the primary `ZoneInfo` constructor will only use the new `TZPATH` in the case of a cache miss.
+The `to` parameter must be a [sequence](https://docs.python.org/3/glossary.html#term-sequence) of strings or [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike "os.PathLike") and not a string, all of which must be absolute paths. [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") will be raised if something other than an absolute path is passed.
+## Globals[¶](https://docs.python.org/3/library/zoneinfo.html#globals "Link to this heading") 
+
+zoneinfo.TZPATH[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.TZPATH "Link to this definition")
+    
+A read-only sequence representing the time zone search path – when constructing a `ZoneInfo` from a key, the key is joined to each entry in the `TZPATH`, and the first file found is used.
+`TZPATH` may contain only absolute paths, never relative paths, regardless of how it is configured.
+The object that `zoneinfo.TZPATH` points to may change in response to a call to [`reset_tzpath()`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.reset_tzpath "zoneinfo.reset_tzpath"), so it is recommended to use `zoneinfo.TZPATH` rather than importing `TZPATH` from `zoneinfo` or assigning a long-lived variable to `zoneinfo.TZPATH`.
+For more information on configuring the time zone search path, see [Configuring the data sources](https://docs.python.org/3/library/zoneinfo.html#zoneinfo-data-configuration).
+## Exceptions and warnings[¶](https://docs.python.org/3/library/zoneinfo.html#exceptions-and-warnings "Link to this heading") 
+
+_exception_ zoneinfo.ZoneInfoNotFoundError[¶](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfoNotFoundError "Link to this definition")
+    
+Raised when construction of a [`ZoneInfo`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo "zoneinfo.ZoneInfo") object fails because the specified key could not be found on the system. This is a subclass of [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError").

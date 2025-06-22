@@ -1,0 +1,29 @@
+Title: Python 3.13 JIT Compilation Overview
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: This section describes the updated JIT compilation features in Python 3.13, including the introduction of a Tier 2 interpreter and the internal architecture involving a new intermediate representation (IR) called Tier 2 IR. It explains the role of optimization passes and provides instructions for enabling or disabling the JIT via the PYTHON_JIT environment variable.
+---
+
+e environment variable `PYTHON_JIT=1`.
+  * `interpreter`: Enable the Tier 2 interpreter but disable the JIT. The interpreter can be disabled by running with `PYTHON_JIT=0`.
+
+
+The internal architecture is roughly as follows:
+  * We start with specialized _Tier 1 bytecode_. See [What’s new in 3.11](https://docs.python.org/3/whatsnew/3.11.html#whatsnew311-pep659) for details.
+  * When the Tier 1 bytecode gets hot enough, it gets translated to a new purely internal intermediate representation (IR), called the _Tier 2 IR_ , and sometimes referred to as micro-ops (“uops”).
+  * The Tier 2 IR uses the same stack-based virtual machine as Tier 1, but the instruction format is better suited to translation to machine code.
+  * We have several optimization passes for Tier 2 IR, which are applied before it is interpreted or translated to machine code.
+  * There is a Tier 2 interpreter, but it is mostly intended for debugging the earlier stages of the optimization pipeline. The Tier 2 interpreter can be enabled by configuring Python with `--enable-experimental-jit=interpreter`.
+  * When the JIT is enabled, the optimized Tier 2 IR is translated to machine code, which is then executed.
+  * The machine code translation process uses a technique called _copy-and-patch_. It has no runtime dependencies, but there is a new build-time dependency on LLVM.
+
+
+See also
+[**PEP 744**](https://peps.python.org/pep-0744/)
+(JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad. Tier 2 IR by Mark Shannon and Guido van Rossum. Tier 2 optimizer by Ken Jin.)
+### Defined mutation semantics for [`locals()`](https://docs.python.org/3/library/functions.html#locals "locals")[¶](https://docs.python.org/3/whatsnew/3.13.html#defined-mutation-semantics-for-locals "Link to this heading")
+Historically, the expected result of mutating the return value of [`locals()`](https://docs.python.org/3/library/functions.html#locals "locals") has been left to individual Python implementations to define. Starting from Python 3.13, [**PEP 667**](https://peps.python.org/pep-0667/) standardises the historical behavior of CPython for most code execution scopes, but changes [optimized scopes](https://docs.python.org/3/glossary.html#term-optimized-scope) (functions, generators, coroutines, comprehensions, and generator expressions) to explicitly return independent snapshots of the currently assigned local variables, including locally referenced nonlocal variables captured in closures.
+This change to the semantics of [`locals()`](https://docs.python.org/3/library/functions.html#locals "locals") in optimized scopes also affects the default behavior of code execution functions that implicitly target `locals()` if no explicit namespace is provided (such as [`exec()`](https://docs.python.org/3/library/functions.html#exec "exec") and [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval")). In previous versions, whether or not changes could be accessed by calling `locals()` after calling the code execution function was implementation-dependent. In CPython specifically, such code would typically appear to work as desired, but could sometimes fail in optimized scopes based on other code (including debuggers and code execution tracing tools) potentially resetting the shared snapshot in that scope. Now, the code will always run against an independent snapshot of the local variables in optimized scopes, and hence the changes will never be visible in subsequent calls to `locals()`. To access the changes made in these cases, an explicit namespace reference must now be passed to the relevant function. Alternatively, it may make sense to update affected code to use a higher level code execution API that returns the resulting code execution namespace (e.g. [`runpy.run_path()`](https://docs.python.org/3/library/runpy.html#runpy.run_path "runpy.run_path") when executing Python files from disk).
+To ensure debuggers and similar tools can reliably update local variables in scopes affected by this change, [`FrameType.f_locals`](https://docs.python.org/3/reference/datamodel.html#frame.f_locals "frame.f_locals") now returns a write-through proxy to the frame’s local and locally referenced nonlocal variables in these scopes, rather than returning an inconsistently updated shared `dict` instance with undefined runtime semantics.
+See [**PEP 667**](https://peps.python.org/pep-0667/) for more details, including related C API changes and deprecations. Porting notes are also provided below for the affected [Python APIs](https://docs.python.org/3/whatsnew/3.13.html#pep667-porting-notes-py) and [C APIs](https://docs.python.org/3/whatsnew/3.13.html#pep667-porting-notes-c).
+(PEP and implementation contributed by Mark Shannon and Tian Gao in [gh-74929](https://github.com/python/cpython/issues/74929). Documentation updates provided by Guido van Rossum and Alyssa Coghlan.)
+### Support for mobile platforms[¶](https://docs.python.org/3/whatsnew/3.13.html#support-for-mobile-p

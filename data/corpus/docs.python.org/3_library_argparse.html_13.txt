@@ -1,0 +1,40 @@
+Title: Using Type Converters in argparse
+URL: https://docs.python.org/3/library/argparse.html
+Summary: The `bool()` function is not recommended as a type converter in argparse due to its simplistic conversion of strings. The `type` keyword should be used only for simple conversions to avoid complex error-handling scenarios. For more sophisticated cases like JSON or YAML parsing, it's better to handle conversions downstream after argument parsing to allow for detailed error reporting.
+---
+
+```
+
+The [`bool()`](https://docs.python.org/3/library/functions.html#bool "bool") function is not recommended as a type converter. All it does is convert empty strings to `False` and non-empty strings to `True`. This is usually not what is desired.
+In general, the `type` keyword is a convenience that should only be used for simple conversions that can only raise one of the three supported exceptions. Anything with more interesting error-handling or resource management should be done downstream after the arguments are parsed.
+For example, JSON or YAML conversions have complex error cases that require better reporting than can be given by the `type` keyword. A [`JSONDecodeError`](https://docs.python.org/3/library/json.html#json.JSONDecodeError "json.JSONDecodeError") would not be well formatted and a [`FileNotFoundError`](https://docs.python.org/3/library/exceptions.html#FileNotFoundError "FileNotFoundError") exception would not be handled at all.
+Even [`FileType`](https://docs.python.org/3/library/argparse.html#argparse.FileType "argparse.FileType") has its limitations for use with the `type` keyword. If one argument uses [`FileType`](https://docs.python.org/3/library/argparse.html#argparse.FileType "argparse.FileType") and then a subsequent argument fails, an error is reported but the file is not automatically closed. In this case, it would be better to wait until after the parser has run and then use the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with)-statement to manage the files.
+For type checkers that simply check against a fixed set of values, consider using the [choices](https://docs.python.org/3/library/argparse.html#choices) keyword instead.
+### choices[¶](https://docs.python.org/3/library/argparse.html#choices "Link to this heading")
+Some command-line arguments should be selected from a restricted set of values. These can be handled by passing a sequence object as the _choices_ keyword argument to [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"). When the command line is parsed, argument values will be checked, and an error message will be displayed if the argument was not one of the acceptable values:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='game.py')
+>>> parser.add_argument('move', choices=['rock', 'paper', 'scissors'])
+>>> parser.parse_args(['rock'])
+Namespace(move='rock')
+>>> parser.parse_args(['fire'])
+usage: game.py [-h] {rock,paper,scissors}
+game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
+'paper', 'scissors')
+
+```
+
+Note that inclusion in the _choices_ sequence is checked after any [type](https://docs.python.org/3/library/argparse.html#type) conversions have been performed, so the type of the objects in the _choices_ sequence should match the [type](https://docs.python.org/3/library/argparse.html#type) specified.
+Any sequence can be passed as the _choices_ value, so [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") objects, [`tuple`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple") objects, and custom sequences are all supported.
+Use of [`enum.Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") is not recommended because it is difficult to control its appearance in usage, help, and error messages.
+Formatted choices override the default _metavar_ which is normally derived from _dest_. This is usually what you want because the user never sees the _dest_ parameter. If this display isn’t desirable (perhaps because there are many choices), just specify an explicit [metavar](https://docs.python.org/3/library/argparse.html#metavar).
+### required[¶](https://docs.python.org/3/library/argparse.html#required "Link to this heading")
+In general, the `argparse` module assumes that flags like `-f` and `--bar` indicate _optional_ arguments, which can always be omitted at the command line. To make an option _required_ , `True` can be specified for the `required=` keyword argument to [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument"):
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', required=True)
+>>> parser.parse_args(['--foo', 'BAR'])
+Namespace(foo='BAR')
+>>> parser.parse_args([])
+usage: [-h] --foo FOO
+: error: the following arguments are required: --foo

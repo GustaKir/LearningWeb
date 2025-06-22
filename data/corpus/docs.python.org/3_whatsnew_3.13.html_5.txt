@@ -1,0 +1,46 @@
+Title: New Features in Python 3.13
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: This section discusses how to disable the new interactive shell by setting the PYTHON_BASIC_REPL environment variable. It also highlights the introduction of improved error messages, where the interpreter now uses color by default for tracebacks, with customization options available through the PYTHON_COLORS and NO_COLOR environment variables.
+---
+
+To disable the new interactive shell, set the [`PYTHON_BASIC_REPL`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHON_BASIC_REPL) environment variable. For more on interactive mode, see [Interactive Mode](https://docs.python.org/3/tutorial/appendix.html#tut-interac).
+(Contributed by Pablo Galindo Salgado, Łukasz Langa, and Lysandros Nikolaou in [gh-111201](https://github.com/python/cpython/issues/111201) based on code from the PyPy project. Windows support contributed by Dino Viehland and Anthony Shaw.)
+### Improved error messages[¶](https://docs.python.org/3/whatsnew/3.13.html#improved-error-messages "Link to this heading")
+  * The interpreter now uses color by default when displaying tracebacks in the terminal. This feature [can be controlled](https://docs.python.org/3/using/cmdline.html#using-on-controlling-color) via the new [`PYTHON_COLORS`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHON_COLORS) environment variable as well as the canonical [`NO_COLOR`](https://no-color.org/) and [`FORCE_COLOR`](https://force-color.org/) environment variables. (Contributed by Pablo Galindo Salgado in [gh-112730](https://github.com/python/cpython/issues/112730).)
+
+
+  * A common mistake is to write a script with the same name as a standard library module. When this results in errors, we now display a more helpful error message:
+```
+$ python random.py
+Traceback (most recent call last):
+ File "/home/me/random.py", line 1, in <module>
+importrandom
+ File "/home/me/random.py", line 3, in <module>
+print(random.randint(5))
+^^^^^^^^^^^^^^
+AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/me/random.py' since it has the same name as the standard library module named 'random' and prevents importing that standard library module)
+
+```
+
+Similarly, if a script has the same name as a third-party module that it attempts to import and this results in errors, we also display a more helpful error message:
+```
+$ python numpy.py
+Traceback (most recent call last):
+ File "/home/me/numpy.py", line 1, in <module>
+importnumpyasnp
+ File "/home/me/numpy.py", line 3, in <module>
+np.array([1, 2, 3])
+^^^^^^^^
+AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/me/numpy.py' if it has the same name as a library you intended to import)
+
+```
+
+(Contributed by Shantanu Jain in [gh-95754](https://github.com/python/cpython/issues/95754).)
+  * The error message now tries to suggest the correct keyword argument when an incorrect keyword argument is passed to a function.
+>>>```
+>>> "Better error messages!".split(max_split=1)
+Traceback (most recent call last):
+ File "<python-input-0>", line 1, in <module>
+"Better error messages!".split(max_split=1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?

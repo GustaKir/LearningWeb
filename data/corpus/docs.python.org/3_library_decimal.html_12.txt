@@ -1,0 +1,50 @@
+Title: Decimal Module: Rounding Function
+URL: https://docs.python.org/3/library/decimal.html
+Summary: The `round` function in the Decimal module rounds a number to the nearest integer or specified decimal places, adhering to the rounding mode of the Decimal context. It raises an OverflowError for infinity and ValueError for NaN values. When the number of digits is specified, it returns a Decimal rounded to that precision.
+---
+
+round(number, ndigits)
+    
+If _ndigits_ is not given or `None`, returns the nearest [`int`](https://docs.python.org/3/library/functions.html#int "int") to _number_ , rounding ties to even, and ignoring the rounding mode of the [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") context. Raises [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") if _number_ is an infinity or [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") if it is a (quiet or signaling) NaN.
+If _ndigits_ is an [`int`](https://docs.python.org/3/library/functions.html#int "int"), the context’s rounding mode is respected and a [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") representing _number_ rounded to the nearest multiple of `Decimal('1E-ndigits')` is returned; in this case, `round(number, ndigits)` is equivalent to `self.quantize(Decimal('1E-ndigits'))`. Returns `Decimal('NaN')` if _number_ is a quiet NaN. Raises [`InvalidOperation`](https://docs.python.org/3/library/decimal.html#decimal.InvalidOperation "decimal.InvalidOperation") if _number_ is an infinity, a signaling NaN, or if the length of the coefficient after the quantize operation would be greater than the current context’s precision. In other words, for the non-corner cases:
+  * if _ndigits_ is positive, return _number_ rounded to _ndigits_ decimal places;
+  * if _ndigits_ is zero, return _number_ rounded to the nearest integer;
+  * if _ndigits_ is negative, return _number_ rounded to the nearest multiple of `10**abs(ndigits)`.
+
+
+For example:
+>>>```
+>>> fromdecimalimport Decimal, getcontext, ROUND_DOWN
+>>> getcontext().rounding = ROUND_DOWN
+>>> round(Decimal('3.75'))   # context rounding ignored
+4
+>>> round(Decimal('3.5'))   # round-ties-to-even
+4
+>>> round(Decimal('3.75'), 0) # uses the context rounding
+Decimal('3')
+>>> round(Decimal('3.75'), 1)
+Decimal('3.7')
+>>> round(Decimal('3.75'), -1)
+Decimal('0E+1')
+
+```
+
+### Logical operands[¶](https://docs.python.org/3/library/decimal.html#logical-operands "Link to this heading")
+The [`logical_and()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.logical_and "decimal.Decimal.logical_and"), [`logical_invert()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.logical_invert "decimal.Decimal.logical_invert"), [`logical_or()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.logical_or "decimal.Decimal.logical_or"), and [`logical_xor()`](https://docs.python.org/3/library/decimal.html#decimal.Decimal.logical_xor "decimal.Decimal.logical_xor") methods expect their arguments to be _logical operands_. A _logical operand_ is a [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") instance whose exponent and sign are both zero, and whose digits are all either `0` or `1`.
+## Context objects[¶](https://docs.python.org/3/library/decimal.html#context-objects "Link to this heading")
+Contexts are environments for arithmetic operations. They govern precision, set rules for rounding, determine which signals are treated as exceptions, and limit the range for exponents.
+Each thread has its own current context which is accessed or changed using the [`getcontext()`](https://docs.python.org/3/library/decimal.html#decimal.getcontext "decimal.getcontext") and [`setcontext()`](https://docs.python.org/3/library/decimal.html#decimal.setcontext "decimal.setcontext") functions: 
+
+decimal.getcontext()[¶](https://docs.python.org/3/library/decimal.html#decimal.getcontext "Link to this definition")
+    
+Return the current context for the active thread. 
+
+decimal.setcontext(_c_)[¶](https://docs.python.org/3/library/decimal.html#decimal.setcontext "Link to this definition")
+    
+Set the current context for the active thread to _c_.
+You can also use the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement and the [`localcontext()`](https://docs.python.org/3/library/decimal.html#decimal.localcontext "decimal.localcontext") function to temporarily change the active context. 
+
+decimal.localcontext(_ctx =None_, _** kwargs_)[¶](https://docs.python.org/3/library/decimal.html#decimal.localcontext "Link to this definition")
+    
+Return a context manager that will set the current context for the active thread to a copy of _ctx_ on entry to the with-statement and restore the previous context when exiting the with-statement. If no context is specified, a copy of the current context is used. The _kwargs_ argument is used to set the attributes of the new context.
+For example, the following code sets the current decimal precision to 42 places, performs a calculation, and then automatically restores the previous context:

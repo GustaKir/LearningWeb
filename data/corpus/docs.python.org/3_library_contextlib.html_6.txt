@@ -1,0 +1,60 @@
+Title: Using Context Managers with Contextlib
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: This section demonstrates the usage of custom context managers in Python, specifically with the 'mycontext()' decorator for asynchronous functions. It also introduces 'contextlib.ExitStack', a context manager for combining multiple context managers and cleanup functions, streamlining resource management for operations like handling multiple files.
+---
+
+```
+>>> @mycontext()
+... async deffunction():
+...   print('The bit in the middle')
+...
+>>> run(function())
+Starting
+The bit in the middle
+Finishing
+>>> async deffunction():
+...   async with mycontext():
+...     print('The bit in the middle')
+...
+>>> run(function())
+Starting
+The bit in the middle
+Finishing
+
+```
+
+Added in version 3.10. 
+
+_class_ contextlib.ExitStack[¶](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack "Link to this definition")
+    
+A context manager that is designed to make it easy to programmatically combine other context managers and cleanup functions, especially those that are optional or otherwise driven by input data.
+For example, a set of files may easily be handled in a single with statement as follows:
+```
+with ExitStack() as stack:
+  files = [stack.enter_context(open(fname)) for fname in filenames]
+  # All opened files will automatically be closed at the end of
+  # the with statement, even if attempts to open files later
+  # in the list raise an exception
+
+```
+
+The [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method returns the [`ExitStack`](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack "contextlib.ExitStack") instance, and performs no additional operations.
+Each instance maintains a stack of registered callbacks that are called in reverse order when the instance is closed (either explicitly or implicitly at the end of a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement). Note that callbacks are _not_ invoked implicitly when the context stack instance is garbage collected.
+This stack model is used so that context managers that acquire their resources in their `__init__` method (such as file objects) can be handled correctly.
+Since registered callbacks are invoked in the reverse order of registration, this ends up behaving as if multiple nested [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statements had been used with the registered set of callbacks. This even extends to exception handling - if an inner callback suppresses or replaces an exception, then outer callbacks will be passed arguments based on that updated state.
+This is a relatively low level API that takes care of the details of correctly unwinding the stack of exit callbacks. It provides a suitable foundation for higher level context managers that manipulate the exit stack in application specific ways.
+Added in version 3.3. 
+
+enter_context(_cm_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.enter_context "Link to this definition")
+    
+Enters a new context manager and adds its [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method to the callback stack. The return value is the result of the context manager’s own [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") method.
+These context managers may suppress exceptions just as they normally would if used directly as part of a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement.
+Changed in version 3.11: Raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") instead of [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") if _cm_ is not a context manager. 
+
+push(_exit_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.ExitStack.push "Link to this definition")
+    
+Adds a context manager’s [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method to the callback stack.
+As `__enter__` is _not_ invoked, this method can be used to cover part of an [`__enter__()`](https://docs.python.org/3/reference/datamodel.html#object.__enter__ "object.__enter__") implementation with a context manager’s own [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method.
+If passed an object that is not a context manager, this method assumes it is a callback with the same signature as a context manager’s [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") method and adds it directly to the callback stack.
+By returning true values, these callbacks can suppress exceptions the same way context manager [`__exit__()`](https://docs.python.org/3/reference/datamodel.html#object.__exit__ "object.__exit__") methods can.
+The passed in object is returned from the function, allowing this method to be used as a function decorator.

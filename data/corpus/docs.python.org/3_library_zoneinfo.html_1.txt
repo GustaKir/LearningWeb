@@ -1,0 +1,54 @@
+Title: ZoneInfo Package Overview
+URL: https://docs.python.org/3/library/zoneinfo.html
+Summary: The ZoneInfo package is maintained by the CPython core developers for supplying time zone data via PyPI. It is not available on WebAssembly platforms. ZoneInfo provides a concrete implementation of the datetime.tzinfo abstract base class, allowing it to be utilized in date and time manipulations.
+---
+
+Package [tzdata](https://pypi.org/project/tzdata/)
+    
+First-party package maintained by the CPython core developers to supply time zone data via PyPI.
+[Availability](https://docs.python.org/3/library/intro.html#availability): not WASI.
+This module does not work or is not available on WebAssembly. See [WebAssembly platforms](https://docs.python.org/3/library/intro.html#wasm-availability) for more information.
+## Using `ZoneInfo`[¶](https://docs.python.org/3/library/zoneinfo.html#using-zoneinfo "Link to this heading")
+[`ZoneInfo`](https://docs.python.org/3/library/zoneinfo.html#zoneinfo.ZoneInfo "zoneinfo.ZoneInfo") is a concrete implementation of the [`datetime.tzinfo`](https://docs.python.org/3/library/datetime.html#datetime.tzinfo "datetime.tzinfo") abstract base class, and is intended to be attached to `tzinfo`, either via the constructor, the [`datetime.replace`](https://docs.python.org/3/library/datetime.html#datetime.datetime.replace "datetime.datetime.replace") method or [`datetime.astimezone`](https://docs.python.org/3/library/datetime.html#datetime.datetime.astimezone "datetime.datetime.astimezone"):
+>>>```
+>>> fromzoneinfoimport ZoneInfo
+>>> fromdatetimeimport datetime, timedelta
+>>> dt = datetime(2020, 10, 31, 12, tzinfo=ZoneInfo("America/Los_Angeles"))
+>>> print(dt)
+2020-10-31 12:00:00-07:00
+>>> dt.tzname()
+'PDT'
+
+```
+
+Datetimes constructed in this way are compatible with datetime arithmetic and handle daylight saving time transitions with no further intervention:
+>>>```
+>>> dt_add = dt + timedelta(days=1)
+>>> print(dt_add)
+2020-11-01 12:00:00-08:00
+>>> dt_add.tzname()
+'PST'
+
+```
+
+These time zones also support the [`fold`](https://docs.python.org/3/library/datetime.html#datetime.datetime.fold "datetime.datetime.fold") attribute introduced in [**PEP 495**](https://peps.python.org/pep-0495/). During offset transitions which induce ambiguous times (such as a daylight saving time to standard time transition), the offset from _before_ the transition is used when `fold=0`, and the offset _after_ the transition is used when `fold=1`, for example:
+>>>```
+>>> dt = datetime(2020, 11, 1, 1, tzinfo=ZoneInfo("America/Los_Angeles"))
+>>> print(dt)
+2020-11-01 01:00:00-07:00
+>>> print(dt.replace(fold=1))
+2020-11-01 01:00:00-08:00
+
+```
+
+When converting from another time zone, the fold will be set to the correct value:
+>>>```
+>>> fromdatetimeimport timezone
+>>> LOS_ANGELES = ZoneInfo("America/Los_Angeles")
+>>> dt_utc = datetime(2020, 11, 1, 8, tzinfo=timezone.utc)
+>>> # Before the PDT -> PST transition
+>>> print(dt_utc.astimezone(LOS_ANGELES))
+2020-11-01 01:00:00-07:00
+>>> # After the PDT -> PST transition
+>>> print((dt_utc + timedelta(hours=1)).astimezone(LOS_ANGELES))
+2020-11-01 01:00:00-08:00

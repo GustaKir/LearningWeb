@@ -1,0 +1,71 @@
+Title: FastAPI Release Notes - Internal Changes
+URL: https://fastapi.tiangolo.com/release-notes/
+Summary: The release notes outline various internal updates for FastAPI, including dependency upgrades, simplification of code, deletion of duplicated tests, and improvements to type hinting.
+---
+
+### Internal[¶](https://fastapi.tiangolo.com/release-notes/#internal_58 "Permanent link")
+  * ⬆ Bump dawidd6/action-download-artifact from 2.21.1 to 2.22.0. PR [#5258](https://github.com/tiangolo/fastapi/pull/5258) by [@dependabot[bot]](https://github.com/apps/dependabot).
+  * ⬆ [pre-commit.ci] pre-commit autoupdate. PR [#5196](https://github.com/tiangolo/fastapi/pull/5196) by [@pre-commit-ci[bot]](https://github.com/apps/pre-commit-ci).
+  * 🔥 Delete duplicated tests in `tests/test_tutorial/test_sql_databases/test_sql_databases.py`. PR [#5040](https://github.com/tiangolo/fastapi/pull/5040) by [@raccoonyy](https://github.com/raccoonyy).
+  * ♻ Simplify internal RegEx in `fastapi/utils.py`. PR [#5057](https://github.com/tiangolo/fastapi/pull/5057) by [@pylounge](https://github.com/pylounge).
+  * 🔧 Fix Type hint of `auto_error` which does not need to be `Optional[bool]`. PR [#4933](https://github.com/tiangolo/fastapi/pull/4933) by [@DavidKimDY](https://github.com/DavidKimDY).
+  * 🔧 Update mypy config, use `strict = true` instead of manual configs. PR [#4605](https://github.com/tiangolo/fastapi/pull/4605) by [@michaeloliverx](https://github.com/michaeloliverx).
+  * ♻ Change a `dict()` for `{}` in `fastapi/utils.py`. PR [#3138](https://github.com/tiangolo/fastapi/pull/3138) by [@ShahriyarR](https://github.com/ShahriyarR).
+  * ♻ Move internal variable for errors in `jsonable_encoder` to put related code closer. PR [#4560](https://github.com/tiangolo/fastapi/pull/4560) by [@GuilleQP](https://github.com/GuilleQP).
+  * ♻ Simplify conditional assignment in `fastapi/dependencies/utils.py`. PR [#4597](https://github.com/tiangolo/fastapi/pull/4597) by [@cikay](https://github.com/cikay).
+  * ⬆ Upgrade version pin accepted for Flake8, for internal code, to `flake8 >=3.8.3,<6.0.0`. PR [#4097](https://github.com/tiangolo/fastapi/pull/4097) by [@jamescurtin](https://github.com/jamescurtin).
+  * 🍱 Update Jina banner, fix typo. PR [#5301](https://github.com/tiangolo/fastapi/pull/5301) by [@tiangolo](https://github.com/tiangolo).
+
+
+## 0.80.0[¶](https://fastapi.tiangolo.com/release-notes/#0800 "Permanent link")
+### Breaking Changes - Fixes[¶](https://fastapi.tiangolo.com/release-notes/#breaking-changes-fixes "Permanent link")
+  * 🐛 Fix `response_model` not invalidating `None`. PR [#2725](https://github.com/tiangolo/fastapi/pull/2725) by [@hukkin](https://github.com/hukkin).
+
+
+If you are using `response_model` with some type that doesn't include `None` but the function is returning `None`, it will now raise an internal server error, because you are returning invalid data that violates the contract in `response_model`. Before this release it would allow breaking that contract returning `None`.
+For example, if you have an app like this:
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+classItem(BaseModel):
+  name: str
+  price: Optional[float] = None
+  owner_ids: Optional[List[int]] = None
+app = FastAPI()
+@app.get("/items/invalidnone", response_model=Item)
+defget_invalid_none():
+  return None
+
+```
+
+...calling the path `/items/invalidnone` will raise an error, because `None` is not a valid type for the `response_model` declared with `Item`.
+You could also be implicitly returning `None` without realizing, for example:
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+classItem(BaseModel):
+  name: str
+  price: Optional[float] = None
+  owner_ids: Optional[List[int]] = None
+app = FastAPI()
+@app.get("/items/invalidnone", response_model=Item)
+defget_invalid_none():
+  if flag:
+    return {"name": "foo"}
+  # if flag is False, at this point the function will implicitly return None
+
+```
+
+If you have _path operations_ using `response_model` that need to be allowed to return `None`, make it explicit in `response_model` using `Union[Something, None]`:
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+classItem(BaseModel):
+  name: str
+  price: Optional[float] = None
+  owner_ids: Optional[List[int]] = None
+app = FastAPI()
+@app.get("/items/invalidnone", response_model=Union[Item, None])
+defget_invalid_none():
+  return None

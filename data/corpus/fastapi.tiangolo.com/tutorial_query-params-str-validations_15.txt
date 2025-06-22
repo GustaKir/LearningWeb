@@ -1,0 +1,130 @@
+Title: Excluding Parameters from OpenAPI in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This section explains how to exclude specific query parameters from the generated OpenAPI schema in FastAPI. It demonstrates this using the `include_in_schema` parameter of the `Query`. An example illustrates how to create a route that conditionally returns the value of a hidden query parameter.
+---
+
+```
+
+The docs will show it like this:
+![](https://fastapi.tiangolo.com/img/tutorial/query-params-str-validations/image01.png)
+## Exclude parameters from OpenAPI[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#exclude-parameters-from-openapi "Permanent link")
+To exclude a query parameter from the generated OpenAPI schema (and thus, from the automatic documentation systems), set the parameter `include_in_schema` of `Query` to `False`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_38_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  hidden_query: Annotated[str | None, Query(include_in_schema=False)] = None,
+):
+  if hidden_query:
+    return {"hidden_query": hidden_query}
+  else:
+    return {"hidden_query": "Not found"}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_39_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_39_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_39_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_39_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  hidden_query: Annotated[Union[str, None], Query(include_in_schema=False)] = None,
+):
+  if hidden_query:
+    return {"hidden_query": hidden_query}
+  else:
+    return {"hidden_query": "Not found"}
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  hidden_query: Annotated[Union[str, None], Query(include_in_schema=False)] = None,
+):
+  if hidden_query:
+    return {"hidden_query": hidden_query}
+  else:
+    return {"hidden_query": "Not found"}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  hidden_query: str | None = Query(default=None, include_in_schema=False),
+):
+  if hidden_query:
+    return {"hidden_query": hidden_query}
+  else:
+    return {"hidden_query": "Not found"}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  hidden_query: Union[str, None] = Query(default=None, include_in_schema=False),
+):
+  if hidden_query:
+    return {"hidden_query": hidden_query}
+  else:
+    return {"hidden_query": "Not found"}
+
+```
+
+## Custom Validation[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#custom-validation "Permanent link")
+There could be cases where you need to do some **custom validation** that can't be done with the parameters shown above.
+In those cases, you can use a **custom validator function** that is applied after the normal validation (e.g. after validating that the value is a `str`).
+You can achieve that using [Pydantic's `AfterValidator`](https://docs.pydantic.dev/latest/concepts/validators/#field-after-validator) inside of `Annotated`.
+Tip
+Pydantic also has [`BeforeValidator`](https://docs.pydantic.dev/latest/concepts/validators/#field-before-validator) and others. 🤓
+For example, this custom validator checks that the item ID starts with `isbn-` for an ISBN book number or with `imdb-` for an IMDB movie URL ID:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_40_1)
+```
+importrandom
+fromtypingimport Annotated
+fromfastapiimport FastAPI
+frompydanticimport AfterValidator
+app = FastAPI()
+data = {
+  "isbn-9781529046137": "The Hitchhiker's Guide to the Galaxy",
+  "imdb-tt0371724": "The Hitchhiker's Guide to the Galaxy",
+  "isbn-9781439512982": "Isaac Asimov: The Complete Stories, Vol. 2",
+}
+defcheck_valid_id(id: str):
+  if not id.startswith(("isbn-", "imdb-")):
+    raise ValueError('Invalid ID format, it must start with "isbn-" or "imdb-"')
+  return id
+@app.get("/items/")
+async defread_items(
+  id: Annotated[str | None, AfterValidator(check_valid_id)] = None,
+):
+  if id:
+    item = data.get(id)
+  else:
+    id, item = random.choice(list(data.items()))
+  return {"id": id, "name": item}
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_41_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_41_2)

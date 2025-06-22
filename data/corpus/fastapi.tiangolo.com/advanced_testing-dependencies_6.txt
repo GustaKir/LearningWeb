@@ -1,0 +1,67 @@
+Title: Testing Dependencies in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/testing-dependencies/
+Summary: This document discusses how to test FastAPI applications by overriding dependencies. It demonstrates the creation of a FastAPI app with paths for items and users, utilizes the TestClient for testing, and shows how to override the `common_parameters` dependency. The provided tests verify responses when overriding dependencies.
+---
+
+```
+fromtypingimport Union
+fromfastapiimport Depends, FastAPI
+fromfastapi.testclientimport TestClient
+app = FastAPI()
+async defcommon_parameters(
+  q: Union[str, None] = None, skip: int = 0, limit: int = 100
+):
+  return {"q": q, "skip": skip, "limit": limit}
+@app.get("/items/")
+async defread_items(commons: dict = Depends(common_parameters)):
+  return {"message": "Hello Items!", "params": commons}
+@app.get("/users/")
+async defread_users(commons: dict = Depends(common_parameters)):
+  return {"message": "Hello Users!", "params": commons}
+client = TestClient(app)
+async defoverride_dependency(q: Union[str, None] = None):
+  return {"q": q, "skip": 5, "limit": 10}
+app.dependency_overrides[common_parameters] = override_dependency
+deftest_override_in_items():
+  response = client.get("/items/")
+  assert response.status_code == 200
+  assert response.json() == {
+    "message": "Hello Items!",
+    "params": {"q": None, "skip": 5, "limit": 10},
+  }
+deftest_override_in_items_with_q():
+  response = client.get("/items/?q=foo")
+  assert response.status_code == 200
+  assert response.json() == {
+    "message": "Hello Items!",
+    "params": {"q": "foo", "skip": 5, "limit": 10},
+  }
+deftest_override_in_items_with_params():
+  response = client.get("/items/?q=foo&skip=100&limit=200")
+  assert response.status_code == 200
+  assert response.json() == {
+    "message": "Hello Items!",
+    "params": {"q": "foo", "skip": 5, "limit": 10},
+  }
+
+```
+
+Tip
+You can set a dependency override for a dependency used anywhere in your **FastAPI** application.
+The original dependency could be used in a _path operation function_ , a _path operation decorator_ (when you don't use the return value), a `.include_router()` call, etc.
+FastAPI will still be able to override it.
+Then you can reset your overrides (remove them) by setting `app.dependency_overrides` to be an empty `dict`:
+```
+app.dependency_overrides = {}
+
+```
+
+Tip
+If you want to override a dependency only during some tests, you can set the override at the beginning of the test (inside the test function) and reset it at the end (at the end of the test function).
+Was this page helpful? 
+Thanks for your feedback! 
+Thanks for your feedback! 
+Back to top  [ Previous  Testing Events: startup - shutdown  ](https://fastapi.tiangolo.com/advanced/testing-events/) [ Next  Async Tests  ](https://fastapi.tiangolo.com/advanced/async-tests/)
+The FastAPI trademark is owned by [@tiangolo](https://tiangolo.com) and is registered in the US and across other regions 
+Made with [ Material for MkDocs ](https://squidfunk.github.io/mkdocs-material/)
+[ ](https://github.com/fastapi/fastapi "github.com") [ ](https://discord.gg/VQjSZaeJmf "discord.gg") [ ](https://twitter.com/fastapi "twitter.com") [ ](https://www.linkedin.com/in/tiangolo "www.linkedin.com") [ ](https://dev.to/tiangolo "dev.to") [ ](https://medium.com/@tiangolo "medium.com") [ ](https://tiangolo.com "tiangolo.com")

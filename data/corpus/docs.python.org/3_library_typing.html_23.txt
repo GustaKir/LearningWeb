@@ -1,0 +1,64 @@
+Title: Using the `runtime_checkable()` Decorator
+URL: https://docs.python.org/3/library/typing.html
+Summary: The `runtime_checkable()` decorator raises a `TypeError` when applied to non-protocol classes. It only verifies the presence of required methods or attributes without checking their type signatures. For instance, while `ssl.SSLObject` passes an `issubclass()` check against `Callable`, its `__init__` method raises a `TypeError`, preventing instantiation.
+---
+
+```
+
+This decorator raises [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") when applied to a non-protocol class.
+Note
+`runtime_checkable()` will check only the presence of the required methods or attributes, not their type signatures or types. For example, [`ssl.SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject") is a class, therefore it passes an [`issubclass()`](https://docs.python.org/3/library/functions.html#issubclass "issubclass") check against [Callable](https://docs.python.org/3/library/typing.html#annotating-callables). However, the `ssl.SSLObject.__init__` method exists only to raise a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") with a more informative message, therefore making it impossible to call (instantiate) [`ssl.SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject").
+Note
+An [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") check against a runtime-checkable protocol can be surprisingly slow compared to an `isinstance()` check against a non-protocol class. Consider using alternative idioms such as [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") calls for structural checks in performance-sensitive code.
+Added in version 3.8.
+Changed in version 3.12: The internal implementation of [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") checks against runtime-checkable protocols now uses [`inspect.getattr_static()`](https://docs.python.org/3/library/inspect.html#inspect.getattr_static "inspect.getattr_static") to look up attributes (previously, [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") was used). As a result, some objects which used to be considered instances of a runtime-checkable protocol may no longer be considered instances of that protocol on Python 3.12+, and vice versa. Most users are unlikely to be affected by this change.
+Changed in version 3.12: The members of a runtime-checkable protocol are now considered “frozen” at runtime as soon as the class has been created. Monkey-patching attributes onto a runtime-checkable protocol will still work, but will have no impact on [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") checks comparing objects to the protocol. See [“What’s new in Python 3.12”](https://docs.python.org/3/whatsnew/3.12.html#whatsnew-typing-py312) for more details. 
+
+_class_ typing.TypedDict(_dict_)[¶](https://docs.python.org/3/library/typing.html#typing.TypedDict "Link to this definition")
+    
+Special construct to add type hints to a dictionary. At runtime it is a plain [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict").
+`TypedDict` declares a dictionary type that expects all of its instances to have a certain set of keys, where each key is associated with a value of a consistent type. This expectation is not checked at runtime but is only enforced by type checkers. Usage:
+```
+classPoint2D(TypedDict):
+  x: int
+  y: int
+  label: str
+a: Point2D = {'x': 1, 'y': 2, 'label': 'good'} # OK
+b: Point2D = {'z': 3, 'label': 'bad'}      # Fails type check
+assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+
+```
+
+An alternative way to create a `TypedDict` is by using function-call syntax. The second argument must be a literal [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict"):
+```
+Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+```
+
+This functional syntax allows defining keys which are not valid [identifiers](https://docs.python.org/3/reference/lexical_analysis.html#identifiers), for example because they are keywords or contain hyphens, or when key names must not be [mangled](https://docs.python.org/3/reference/expressions.html#private-name-mangling) like regular private names:
+```
+# raises SyntaxError
+classPoint2D(TypedDict):
+  in: int # 'in' is a keyword
+  x-y: int # name with hyphens
+classDefinition(TypedDict):
+  __schema: str # mangled to `_Definition__schema`
+# OK, functional syntax
+Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
+Definition = TypedDict('Definition', {'__schema': str}) # not mangled
+
+```
+
+By default, all keys must be present in a `TypedDict`. It is possible to mark individual keys as non-required using [`NotRequired`](https://docs.python.org/3/library/typing.html#typing.NotRequired "typing.NotRequired"):
+```
+classPoint2D(TypedDict):
+  x: int
+  y: int
+  label: NotRequired[str]
+# Alternative syntax
+Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': NotRequired[str]})
+
+```
+
+This means that a `Point2D` `TypedDict` can have the `label` key omitted.
+It is also possible to mark all keys as non-required by default by specifying a totality of `False`:

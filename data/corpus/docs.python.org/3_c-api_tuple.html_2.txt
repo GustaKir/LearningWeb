@@ -1,0 +1,35 @@
+Title: PyTuple_SET_ITEM Function
+URL: https://docs.python.org/3/c-api/tuple.html
+Summary: The `PyTuple_SET_ITEM` function sets an item in a tuple at a specified position without performing error checks, intended for initializing new tuples. It performs bounds checking in debug mode. The function takes ownership of the object being inserted, unlike `PyTuple_SetItem`, which manages reference counts differently.
+---
+
+voidPyTuple_SET_ITEM([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*p, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")pos, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*o)[¶](https://docs.python.org/3/c-api/tuple.html#c.PyTuple_SET_ITEM "Link to this definition")
+    
+Like [`PyTuple_SetItem()`](https://docs.python.org/3/c-api/tuple.html#c.PyTuple_SetItem "PyTuple_SetItem"), but does no error checking, and should _only_ be used to fill in brand new tuples.
+Bounds checking is performed as an assertion if Python is built in [debug mode](https://docs.python.org/3/using/configure.html#debug-build) or [`with assertions`](https://docs.python.org/3/using/configure.html#cmdoption-with-assertions).
+Note
+This function “steals” a reference to _o_ , and, unlike [`PyTuple_SetItem()`](https://docs.python.org/3/c-api/tuple.html#c.PyTuple_SetItem "PyTuple_SetItem"), does _not_ discard a reference to any item that is being replaced; any reference in the tuple at position _pos_ will be leaked. 
+
+int_PyTuple_Resize([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")**p, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")newsize)[¶](https://docs.python.org/3/c-api/tuple.html#c._PyTuple_Resize "Link to this definition")
+    
+Can be used to resize a tuple. _newsize_ will be the new length of the tuple. Because tuples are _supposed_ to be immutable, this should only be used if there is only one reference to the object. Do _not_ use this if the tuple may already be known to some other part of the code. The tuple will always grow or shrink at the end. Think of this as destroying the old tuple and creating a new one, only more efficiently. Returns `0` on success. Client code should never assume that the resulting value of `*p` will be the same as before calling this function. If the object referenced by `*p` is replaced, the original `*p` is destroyed. On failure, returns `-1` and sets `*p` to `NULL`, and raises [`MemoryError`](https://docs.python.org/3/library/exceptions.html#MemoryError "MemoryError") or [`SystemError`](https://docs.python.org/3/library/exceptions.html#SystemError "SystemError").
+# Struct Sequence Objects[¶](https://docs.python.org/3/c-api/tuple.html#struct-sequence-objects "Link to this heading")
+Struct sequence objects are the C equivalent of [`namedtuple()`](https://docs.python.org/3/library/collections.html#collections.namedtuple "collections.namedtuple") objects, i.e. a sequence whose items can also be accessed through attributes. To create a struct sequence, you first have to create a specific struct sequence type. 
+
+[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*PyStructSequence_NewType([PyStructSequence_Desc](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_Desc "PyStructSequence_Desc")*desc)[¶](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_NewType "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a new struct sequence type from the data in _desc_ , described below. Instances of the resulting type can be created with [`PyStructSequence_New()`](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_New "PyStructSequence_New").
+Return `NULL` with an exception set on failure. 
+
+voidPyStructSequence_InitType([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type, [PyStructSequence_Desc](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_Desc "PyStructSequence_Desc")*desc)[¶](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_InitType "Link to this definition")
+    
+Initializes a struct sequence type _type_ from _desc_ in place. 
+
+intPyStructSequence_InitType2([PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")*type, [PyStructSequence_Desc](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_Desc "PyStructSequence_Desc")*desc)[¶](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_InitType2 "Link to this definition")
+    
+Like [`PyStructSequence_InitType()`](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_InitType "PyStructSequence_InitType"), but returns `0` on success and `-1` with an exception set on failure.
+Added in version 3.4. 
+
+typePyStructSequence_Desc[¶](https://docs.python.org/3/c-api/tuple.html#c.PyStructSequence_Desc "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) (including all members)._
+Contains the meta information of a struct sequence type to create.

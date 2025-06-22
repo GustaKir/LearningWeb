@@ -1,0 +1,42 @@
+Title: Changes in argparse Module and Parser Defaults
+URL: https://docs.python.org/3/library/argparse.html
+Summary: In version 3.11 of Python, calling `add_argument_group()` or `add_mutually_exclusive_group()` on a mutually exclusive group is deprecated due to previous non-functional support. This feature will be removed in future versions. Additionally, the document discusses how to set parser defaults with `ArgumentParser.set_defaults()`, hinting at the overall functionality of the `parse_args()` method.
+---
+
+```
+
+Changed in version 3.11: Calling [`add_argument_group()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group "argparse.ArgumentParser.add_argument_group") or [`add_mutually_exclusive_group()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_mutually_exclusive_group "argparse.ArgumentParser.add_mutually_exclusive_group") on a mutually exclusive group is deprecated. These features were never supported and do not always work correctly. The functions exist on the API by accident through inheritance and will be removed in the future.
+### Parser defaults[¶](https://docs.python.org/3/library/argparse.html#parser-defaults "Link to this heading") 
+
+ArgumentParser.set_defaults(_** kwargs_)[¶](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.set_defaults "Link to this definition")
+    
+Most of the time, the attributes of the object returned by [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") will be fully determined by inspecting the command-line arguments and the argument actions. [`set_defaults()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.set_defaults "argparse.ArgumentParser.set_defaults") allows some additional attributes that are determined without any inspection of the command line to be added:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('foo', type=int)
+>>> parser.set_defaults(bar=42, baz='badger')
+>>> parser.parse_args(['736'])
+Namespace(bar=42, baz='badger', foo=736)
+
+```
+
+Note that parser-level defaults always override argument-level defaults:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', default='bar')
+>>> parser.set_defaults(foo='spam')
+>>> parser.parse_args([])
+Namespace(foo='spam')
+
+```
+
+Parser-level defaults can be particularly useful when working with multiple parsers. See the [`add_subparsers()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers "argparse.ArgumentParser.add_subparsers") method for an example of this type. 
+
+ArgumentParser.get_default(_dest_)[¶](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.get_default "Link to this definition")
+    
+Get the default value for a namespace attribute, as set by either [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") or by [`set_defaults()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.set_defaults "argparse.ArgumentParser.set_defaults"):
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', default='badger')
+>>> parser.get_default('foo')
+'badger'

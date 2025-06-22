@@ -1,0 +1,60 @@
+Title: Unicode Objects and Codecs in Python
+URL: https://docs.python.org/3/c-api/unicode.html
+Summary: This document outlines the implementation of Unicode objects in Python 3.3 following PEP 393, which allows for memory-efficient handling of the full range of Unicode characters. It highlights variations in internal representations based on character range and notes the removal of the Py_UNICODE representation in Python 3.12 along with deprecated APIs as per PEP 623.
+---
+
+# Unicode Objects and Codecs[¶](https://docs.python.org/3/c-api/unicode.html#unicode-objects-and-codecs "Link to this heading")
+## Unicode Objects[¶](https://docs.python.org/3/c-api/unicode.html#unicode-objects "Link to this heading")
+Since the implementation of [**PEP 393**](https://peps.python.org/pep-0393/) in Python 3.3, Unicode objects internally use a variety of representations, in order to allow handling the complete range of Unicode characters while staying memory efficient. There are special cases for strings where all code points are below 128, 256, or 65536; otherwise, code points must be below 1114112 (which is the full Unicode range).
+UTF-8 representation is created on demand and cached in the Unicode object.
+Note
+The [`Py_UNICODE`](https://docs.python.org/3/c-api/unicode.html#c.Py_UNICODE "Py_UNICODE") representation has been removed since Python 3.12 with deprecated APIs. See [**PEP 623**](https://peps.python.org/pep-0623/) for more information.
+### Unicode Type[¶](https://docs.python.org/3/c-api/unicode.html#unicode-type "Link to this heading")
+These are the basic Unicode object types used for the Unicode implementation in Python: 
+
+typePy_UCS4[¶](https://docs.python.org/3/c-api/unicode.html#c.Py_UCS4 "Link to this definition")
+
+
+typePy_UCS2[¶](https://docs.python.org/3/c-api/unicode.html#c.Py_UCS2 "Link to this definition")
+
+
+typePy_UCS1[¶](https://docs.python.org/3/c-api/unicode.html#c.Py_UCS1 "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+These types are typedefs for unsigned integer types wide enough to contain characters of 32 bits, 16 bits and 8 bits, respectively. When dealing with single Unicode characters, use [`Py_UCS4`](https://docs.python.org/3/c-api/unicode.html#c.Py_UCS4 "Py_UCS4").
+Added in version 3.3. 
+
+typePy_UNICODE[¶](https://docs.python.org/3/c-api/unicode.html#c.Py_UNICODE "Link to this definition")
+    
+This is a typedef of `wchar_t`, which is a 16-bit type or 32-bit type depending on the platform.
+Changed in version 3.3: In previous versions, this was a 16-bit type or a 32-bit type depending on whether you selected a “narrow” or “wide” Unicode version of Python at build time.
+Deprecated since version 3.13, will be removed in version 3.15. 
+
+typePyASCIIObject[¶](https://docs.python.org/3/c-api/unicode.html#c.PyASCIIObject "Link to this definition")
+
+
+typePyCompactUnicodeObject[¶](https://docs.python.org/3/c-api/unicode.html#c.PyCompactUnicodeObject "Link to this definition")
+
+
+typePyUnicodeObject[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicodeObject "Link to this definition")
+    
+These subtypes of [`PyObject`](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject") represent a Python Unicode object. In almost all cases, they shouldn’t be used directly, since all API functions that deal with Unicode objects take and return [`PyObject`](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject") pointers.
+Added in version 3.3. 
+
+[PyTypeObject](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject")PyUnicode_Type[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_Type "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+This instance of [`PyTypeObject`](https://docs.python.org/3/c-api/type.html#c.PyTypeObject "PyTypeObject") represents the Python Unicode type. It is exposed to Python code as `str`.
+The following APIs are C macros and static inlined functions for fast checks and access to internal read-only data of Unicode objects: 
+
+intPyUnicode_Check([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*obj)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_Check "Link to this definition")
+    
+Return true if the object _obj_ is a Unicode object or an instance of a Unicode subtype. This function always succeeds. 
+
+intPyUnicode_CheckExact([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*obj)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_CheckExact "Link to this definition")
+    
+Return true if the object _obj_ is a Unicode object, but not an instance of a subtype. This function always succeeds. 
+
+intPyUnicode_READY([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*unicode)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_READY "Link to this definition")
+    
+Returns `0`. This API is kept only for backward compatibility.
+Added in version 3.3.
+Deprecated since version 3.10: This API does nothing since Python 3.12.

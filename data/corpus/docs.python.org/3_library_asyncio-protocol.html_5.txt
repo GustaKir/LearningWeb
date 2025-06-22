@@ -1,0 +1,49 @@
+Title: Asyncio Transport Methods
+URL: https://docs.python.org/3/library/asyncio-protocol.html
+Summary: The document discusses two main methods related to transport handling in the asyncio library. `WriteTransport.write_eof()` closes the write end after flushing buffered data, with possible exceptions for unsupported transports. It also covers `DatagramTransport.sendto()`, which sends data to a specified address.
+---
+
+WriteTransport.write_eof()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.WriteTransport.write_eof "Link to this definition")
+    
+Close the write end of the transport after flushing all buffered data. Data may still be received.
+This method can raise [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") if the transport (e.g. SSL) doesn’t support half-closed connections.
+### Datagram Transports[¶](https://docs.python.org/3/library/asyncio-protocol.html#datagram-transports "Link to this heading") 
+
+DatagramTransport.sendto(_data_ , _addr =None_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.DatagramTransport.sendto "Link to this definition")
+    
+Send the _data_ bytes to the remote peer given by _addr_ (a transport-dependent target address). If _addr_ is [`None`](https://docs.python.org/3/library/constants.html#None "None"), the data is sent to the target address given on transport creation.
+This method does not block; it buffers the data and arranges for it to be sent out asynchronously.
+Changed in version 3.13: This method can be called with an empty bytes object to send a zero-length datagram. The buffer size calculation used for flow control is also updated to account for the datagram header. 
+
+DatagramTransport.abort()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.DatagramTransport.abort "Link to this definition")
+    
+Close the transport immediately, without waiting for pending operations to complete. Buffered data will be lost. No more data will be received. The protocol’s [`protocol.connection_lost()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseProtocol.connection_lost "asyncio.BaseProtocol.connection_lost") method will eventually be called with [`None`](https://docs.python.org/3/library/constants.html#None "None") as its argument.
+### Subprocess Transports[¶](https://docs.python.org/3/library/asyncio-protocol.html#subprocess-transports "Link to this heading") 
+
+SubprocessTransport.get_pid()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.get_pid "Link to this definition")
+    
+Return the subprocess process id as an integer. 
+
+SubprocessTransport.get_pipe_transport(_fd_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.get_pipe_transport "Link to this definition")
+    
+Return the transport for the communication pipe corresponding to the integer file descriptor _fd_ :
+  * `0`: readable streaming transport of the standard input (_stdin_), or [`None`](https://docs.python.org/3/library/constants.html#None "None") if the subprocess was not created with `stdin=PIPE`
+  * `1`: writable streaming transport of the standard output (_stdout_), or [`None`](https://docs.python.org/3/library/constants.html#None "None") if the subprocess was not created with `stdout=PIPE`
+  * `2`: writable streaming transport of the standard error (_stderr_), or [`None`](https://docs.python.org/3/library/constants.html#None "None") if the subprocess was not created with `stderr=PIPE`
+  * other _fd_ : [`None`](https://docs.python.org/3/library/constants.html#None "None")
+
+
+
+SubprocessTransport.get_returncode()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.get_returncode "Link to this definition")
+    
+Return the subprocess return code as an integer or [`None`](https://docs.python.org/3/library/constants.html#None "None") if it hasn’t returned, which is similar to the [`subprocess.Popen.returncode`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.returncode "subprocess.Popen.returncode") attribute. 
+
+SubprocessTransport.kill()[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.kill "Link to this definition")
+    
+Kill the subprocess.
+On POSIX systems, the function sends SIGKILL to the subprocess. On Windows, this method is an alias for [`terminate()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.terminate "asyncio.SubprocessTransport.terminate").
+See also [`subprocess.Popen.kill()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.kill "subprocess.Popen.kill"). 
+
+SubprocessTransport.send_signal(_signal_)[¶](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.SubprocessTransport.send_signal "Link to this definition")
+    
+Send the _signal_ number to the subprocess, as in [`subprocess.Popen.send_signal()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen.send_signal "subprocess.Popen.send_signal").

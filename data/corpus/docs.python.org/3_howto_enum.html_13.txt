@@ -1,0 +1,129 @@
+Title: Creating Enum Members and Using OrderedEnum
+URL: https://docs.python.org/3/howto/enum.html
+Summary: This section discusses the use of the `__new__()` method for creating Enum members, emphasizing that it should not call `super().__new__()`. It introduces `OrderedEnum`, which is an ordered enumeration that retains the properties of a standard Enum and is not based on `IntEnum`.
+---
+
+```
+
+Note
+The [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") method, if defined, is used during creation of the Enum members; it is then replaced by Enum’s [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") which is used after class creation for lookup of existing members.
+Warning
+_Do not_ call `super().__new__()`, as the lookup-only `__new__` is the one that is found; instead, use the data type directly – e.g.:
+```
+obj = int.__new__(cls, value)
+
+```
+
+### OrderedEnum[¶](https://docs.python.org/3/howto/enum.html#orderedenum "Link to this heading")
+An ordered enumeration that is not based on [`IntEnum`](https://docs.python.org/3/library/enum.html#enum.IntEnum "enum.IntEnum") and so maintains the normal [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") invariants (such as not being comparable to other enumerations):
+>>>```
+>>> classOrderedEnum(Enum):
+...   def__ge__(self, other):
+...     if self.__class__ is other.__class__:
+...       return self.value >= other.value
+...     return NotImplemented
+...   def__gt__(self, other):
+...     if self.__class__ is other.__class__:
+...       return self.value > other.value
+...     return NotImplemented
+...   def__le__(self, other):
+...     if self.__class__ is other.__class__:
+...       return self.value <= other.value
+...     return NotImplemented
+...   def__lt__(self, other):
+...     if self.__class__ is other.__class__:
+...       return self.value < other.value
+...     return NotImplemented
+...
+>>> classGrade(OrderedEnum):
+...   A = 5
+...   B = 4
+...   C = 3
+...   D = 2
+...   F = 1
+...
+>>> Grade.C < Grade.A
+True
+
+```
+
+### DuplicateFreeEnum[¶](https://docs.python.org/3/howto/enum.html#duplicatefreeenum "Link to this heading")
+Raises an error if a duplicate member value is found instead of creating an alias:
+>>>```
+>>> classDuplicateFreeEnum(Enum):
+...   def__init__(self, *args):
+...     cls = self.__class__
+...     if any(self.value == e.value for e in cls):
+...       a = self.name
+...       e = cls(self.value).name
+...       raise ValueError(
+...         "aliases not allowed in DuplicateFreeEnum: %r --> %r"
+...         % (a, e))
+...
+>>> classColor(DuplicateFreeEnum):
+...   RED = 1
+...   GREEN = 2
+...   BLUE = 3
+...   GRENE = 2
+...
+Traceback (most recent call last):
+...
+ValueError: aliases not allowed in DuplicateFreeEnum: 'GRENE' --> 'GREEN'
+
+```
+
+Note
+This is a useful example for subclassing Enum to add or change other behaviors as well as disallowing aliases. If the only desired change is disallowing aliases, the [`unique()`](https://docs.python.org/3/library/enum.html#enum.unique "enum.unique") decorator can be used instead.
+### MultiValueEnum[¶](https://docs.python.org/3/howto/enum.html#multivalueenum "Link to this heading")
+Supports having more than one value per member:
+>>>```
+>>> classMultiValueEnum(Enum):
+...   def__new__(cls, value, *values):
+...     self = object.__new__(cls)
+...     self._value_ = value
+...     for v in values:
+...       self._add_value_alias_(v)
+...     return self
+...
+>>> classDType(MultiValueEnum):
+...   float32 = 'f', 8
+...   double64 = 'd', 9
+...
+>>> DType('f')
+<DType.float32: 'f'>
+>>> DType(9)
+<DType.double64: 'd'>
+
+```
+
+### Planet[¶](https://docs.python.org/3/howto/enum.html#planet "Link to this heading")
+If [`__new__()`](https://docs.python.org/3/reference/datamodel.html#object.__new__ "object.__new__") or [`__init__()`](https://docs.python.org/3/reference/datamodel.html#object.__init__ "object.__init__") is defined, the value of the enum member will be passed to those methods:
+>>>```
+>>> classPlanet(Enum):
+...   MERCURY = (3.303e+23, 2.4397e6)
+...   VENUS  = (4.869e+24, 6.0518e6)
+...   EARTH  = (5.976e+24, 6.37814e6)
+...   MARS  = (6.421e+23, 3.3972e6)
+...   JUPITER = (1.9e+27,  7.1492e7)
+...   SATURN = (5.688e+26, 6.0268e7)
+...   URANUS = (8.686e+25, 2.5559e7)
+...   NEPTUNE = (1.024e+26, 2.4746e7)
+...   def__init__(self, mass, radius):
+...     self.mass = mass    # in kilograms
+...     self.radius = radius  # in meters
+...   @property
+...   defsurface_gravity(self):
+...     # universal gravitational constant (m3 kg-1 s-2)
+...     G = 6.67300E-11
+...     return G * self.mass / (self.radius * self.radius)
+...
+>>> Planet.EARTH.value
+(5.976e+24, 6378140.0)
+>>> Planet.EARTH.surface_gravity
+9.802652743337129
+
+```
+
+### TimePeriod[¶](https://docs.python.org/3/howto/enum.html#timeperiod "Link to this heading")
+An example to show the [`_ignore_`](https://docs.python.org/3/library/enum.html#enum.Enum._ignore_ "enum.Enum._ignore_") attribute in use:
+>>>

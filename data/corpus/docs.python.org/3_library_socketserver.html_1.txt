@@ -1,0 +1,31 @@
+Title: UnixStreamServer and UnixDatagramServer Classes
+URL: https://docs.python.org/3/library/socketserver.html
+Summary: The UnixStreamServer and UnixDatagramServer classes in the socketserver module are used for handling requests over Unix domain sockets, which are not available on non-Unix platforms. These classes process requests synchronously, meaning each request must complete before the next begins, making them less suitable for long-running requests.
+---
+
+_class_ socketserver.UnixStreamServer(_server_address_ , _RequestHandlerClass_ , _bind_and_activate =True_)[¶](https://docs.python.org/3/library/socketserver.html#socketserver.UnixStreamServer "Link to this definition")
+
+
+_class_ socketserver.UnixDatagramServer(_server_address_ , _RequestHandlerClass_ , _bind_and_activate =True_)[¶](https://docs.python.org/3/library/socketserver.html#socketserver.UnixDatagramServer "Link to this definition")
+    
+These more infrequently used classes are similar to the TCP and UDP classes, but use Unix domain sockets; they’re not available on non-Unix platforms. The parameters are the same as for [`TCPServer`](https://docs.python.org/3/library/socketserver.html#socketserver.TCPServer "socketserver.TCPServer").
+These four classes process requests _synchronously_ ; each request must be completed before the next request can be started. This isn’t suitable if each request takes a long time to complete, because it requires a lot of computation, or because it returns a lot of data which the client is slow to process. The solution is to create a separate process or thread to handle each request; the [`ForkingMixIn`](https://docs.python.org/3/library/socketserver.html#socketserver.ForkingMixIn "socketserver.ForkingMixIn") and [`ThreadingMixIn`](https://docs.python.org/3/library/socketserver.html#socketserver.ThreadingMixIn "socketserver.ThreadingMixIn") mix-in classes can be used to support asynchronous behaviour.
+Creating a server requires several steps. First, you must create a request handler class by subclassing the [`BaseRequestHandler`](https://docs.python.org/3/library/socketserver.html#socketserver.BaseRequestHandler "socketserver.BaseRequestHandler") class and overriding its [`handle()`](https://docs.python.org/3/library/socketserver.html#socketserver.BaseRequestHandler.handle "socketserver.BaseRequestHandler.handle") method; this method will process incoming requests. Second, you must instantiate one of the server classes, passing it the server’s address and the request handler class. It is recommended to use the server in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement. Then call the [`handle_request()`](https://docs.python.org/3/library/socketserver.html#socketserver.BaseServer.handle_request "socketserver.BaseServer.handle_request") or [`serve_forever()`](https://docs.python.org/3/library/socketserver.html#socketserver.BaseServer.serve_forever "socketserver.BaseServer.serve_forever") method of the server object to process one or many requests. Finally, call [`server_close()`](https://docs.python.org/3/library/socketserver.html#socketserver.BaseServer.server_close "socketserver.BaseServer.server_close") to close the socket (unless you used a `with` statement).
+When inheriting from [`ThreadingMixIn`](https://docs.python.org/3/library/socketserver.html#socketserver.ThreadingMixIn "socketserver.ThreadingMixIn") for threaded connection behavior, you should explicitly declare how you want your threads to behave on an abrupt shutdown. The [`ThreadingMixIn`](https://docs.python.org/3/library/socketserver.html#socketserver.ThreadingMixIn "socketserver.ThreadingMixIn") class defines an attribute _daemon_threads_ , which indicates whether or not the server should wait for thread termination. You should set the flag explicitly if you would like threads to behave autonomously; the default is [`False`](https://docs.python.org/3/library/constants.html#False "False"), meaning that Python will not exit until all threads created by [`ThreadingMixIn`](https://docs.python.org/3/library/socketserver.html#socketserver.ThreadingMixIn "socketserver.ThreadingMixIn") have exited.
+Server classes have the same external methods and attributes, no matter what network protocol they use.
+## Server Creation Notes[¶](https://docs.python.org/3/library/socketserver.html#server-creation-notes "Link to this heading")
+There are five classes in an inheritance diagram, four of which represent synchronous servers of four types:
+```
++------------+
+| BaseServer |
++------------+
+   |
+   v
++-----------+    +------------------+
+| TCPServer |------->| UnixStreamServer |
++-----------+    +------------------+
+   |
+   v
++-----------+    +--------------------+
+| UDPServer |------->| UnixDatagramServer |
++-----------+    +--------------------+

@@ -1,0 +1,22 @@
+Title: Managing Thread State in Free-Threaded Builds
+URL: https://docs.python.org/3/howto/free-threading-extensions.html
+Summary: This section discusses the necessary functions for managing thread state in Python's free-threaded builds, emphasizing the use of `PyGILState_Ensure()`, `PyEval_SaveThread()`, and `PyEval_RestoreThread()`. It highlights the importance of these functions for maintaining proper thread state, even when the Global Interpreter Lock (GIL) is disabled.
+---
+
+cs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release")
+  * [`PyEval_SaveThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "PyEval_SaveThread") and [`PyEval_RestoreThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_RestoreThread "PyEval_RestoreThread")
+  * [`Py_BEGIN_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Py_BEGIN_ALLOW_THREADS") and [`Py_END_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_END_ALLOW_THREADS "Py_END_ALLOW_THREADS")
+
+
+These functions should still be used in the free-threaded build to manage thread state even when the [GIL](https://docs.python.org/3/glossary.html#term-GIL) is disabled. For example, if you create a thread outside of Python, you must call [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") before calling into the Python API to ensure that the thread has a valid Python thread state.
+You should continue to call [`PyEval_SaveThread()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SaveThread "PyEval_SaveThread") or [`Py_BEGIN_ALLOW_THREADS`](https://docs.python.org/3/c-api/init.html#c.Py_BEGIN_ALLOW_THREADS "Py_BEGIN_ALLOW_THREADS") around blocking operations, such as I/O or lock acquisitions, to allow other threads to run the [cyclic garbage collector](https://docs.python.org/3/glossary.html#term-garbage-collection).
+## Protecting Internal Extension State[¶](https://docs.python.org/3/howto/free-threading-extensions.html#protecting-internal-extension-state "Link to this heading")
+Your extension may have internal state that was previously protected by the GIL. You may need to add locking to protect this state. The approach will depend on your extension, but some common patterns include:
+  * **Caches** : global caches are a common source of shared state. Consider using a lock to protect the cache or disabling it in the free-threaded build if the cache is not critical for performance.
+  * **Global State** : global state may need to be protected by a lock or moved to thread local storage. C11 and C++11 provide the `thread_local` or `_Thread_local` for [thread-local storage](https://en.cppreference.com/w/c/language/storage_duration).
+
+
+## Building Extensions for the Free-Threaded Build[¶](https://docs.python.org/3/howto/free-threading-extensions.html#building-extensions-for-the-free-threaded-build "Link to this heading")
+C API extensions need to be built specifically for the free-threaded build. The wheels, shared libraries, and binaries are indicated by a `t` suffix.
+  * [pypa/manylinux](https://github.com/pypa/manylinux) supports the free-threaded build, with the `t` suffix, such as `python3.13t`.
+  * [pypa/cibuildwheel](https://github.com/pypa/cibuildwheel) supports the free-threaded build if you set [CIBW_FREE_THREADED_SUPPORT](https://cibuildwheel.pypa.io/en/stable/options/#free-threaded-support).

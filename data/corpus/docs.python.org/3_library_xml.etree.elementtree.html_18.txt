@@ -1,0 +1,43 @@
+Title: XMLParser.flush() Method
+URL: https://docs.python.org/3/library/xml.etree.elementtree.html
+Summary: The flush() method triggers parsing of any previously fed unparsed data, providing more immediate feedback, particularly with Expat versions >=2.6.0. It temporarily disables reparse deferral, which has security implications. Users are advised to consult the documentation on reparse deferral for further details.
+---
+
+flush()[¶](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser.flush "Link to this definition")
+    
+Triggers parsing of any previously fed unparsed data, which can be used to ensure more immediate feedback, in particular with Expat >=2.6.0. The implementation of [`flush()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser.flush "xml.etree.ElementTree.XMLParser.flush") temporarily disables reparse deferral with Expat (if currently enabled) and triggers a reparse. Disabling reparse deferral has security consequences; please see [`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled()`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.SetReparseDeferralEnabled "xml.parsers.expat.xmlparser.SetReparseDeferralEnabled") for details.
+Note that [`flush()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser.flush "xml.etree.ElementTree.XMLParser.flush") has been backported to some prior releases of CPython as a security fix. Check for availability of [`flush()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser.flush "xml.etree.ElementTree.XMLParser.flush") using [`hasattr()`](https://docs.python.org/3/library/functions.html#hasattr "hasattr") if used in code running across a variety of Python versions.
+Added in version 3.13.
+[`XMLParser.feed()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser.feed "xml.etree.ElementTree.XMLParser.feed") calls _target_ 's `start(tag, attrs_dict)` method for each opening tag, its `end(tag)` method for each closing tag, and data is processed by method `data(data)`. For further supported callback methods, see the [`TreeBuilder`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.TreeBuilder "xml.etree.ElementTree.TreeBuilder") class. [`XMLParser.close()`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser.close "xml.etree.ElementTree.XMLParser.close") calls _target_ 's method `close()`. [`XMLParser`](https://docs.python.org/3/library/xml.etree.elementtree.html#xml.etree.ElementTree.XMLParser "xml.etree.ElementTree.XMLParser") can be used not only for building a tree structure. This is an example of counting the maximum depth of an XML file:
+>>>```
+>>> fromxml.etree.ElementTreeimport XMLParser
+>>> classMaxDepth:           # The target object of the parser
+...   maxDepth = 0
+...   depth = 0
+...   defstart(self, tag, attrib):  # Called for each opening tag.
+...     self.depth += 1
+...     if self.depth > self.maxDepth:
+...       self.maxDepth = self.depth
+...   defend(self, tag):       # Called for each closing tag.
+...     self.depth -= 1
+...   defdata(self, data):
+...     pass      # We do not need to do anything with data.
+...   defclose(self):  # Called when all data has been parsed.
+...     return self.maxDepth
+...
+>>> target = MaxDepth()
+>>> parser = XMLParser(target=target)
+>>> exampleXml = """
+... <a>
+...  <b>
+...  </b>
+...  <b>
+...   <c>
+...    <d>
+...    </d>
+...   </c>
+...  </b>
+... </a>"""
+>>> parser.feed(exampleXml)
+>>> parser.close()
+4

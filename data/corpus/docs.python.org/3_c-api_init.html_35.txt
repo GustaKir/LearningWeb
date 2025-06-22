@@ -1,0 +1,47 @@
+Title: Thread-Specific Storage Functions in Python
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This section covers the functions `PyThread_tss_delete` and `PyThread_tss_set` for managing thread-specific storage (TSS) keys in Python's C API. `PyThread_tss_delete` destroys a TSS key, allowing it to be reinitialized while `PyThread_tss_set` is used to associate a value with a TSS key.
+---
+
+voidPyThread_tss_delete([Py_tss_t](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t")*key)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_delete "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Destroy a TSS key to forget the values associated with the key across all threads, and change the key’s initialization state to uninitialized. A destroyed key is able to be initialized again by [`PyThread_tss_create()`](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_create "PyThread_tss_create"). This function can be called repeatedly on the same key – calling it on an already destroyed key is a no-op. 
+
+intPyThread_tss_set([Py_tss_t](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t")*key, void*value)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_set "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Return a zero value to indicate successfully associating a void* value with a TSS key in the current thread. Each thread has a distinct mapping of the key to a void* value. 
+
+void*PyThread_tss_get([Py_tss_t](https://docs.python.org/3/c-api/init.html#c.Py_tss_t "Py_tss_t")*key)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_tss_get "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Return the void* value associated with a TSS key in the current thread. This returns `NULL` if no value is associated with the key in the current thread.
+### Thread Local Storage (TLS) API[¶](https://docs.python.org/3/c-api/init.html#thread-local-storage-tls-api "Link to this heading")
+Deprecated since version 3.7: This API is superseded by [Thread Specific Storage (TSS) API](https://docs.python.org/3/c-api/init.html#thread-specific-storage-api).
+Note
+This version of the API does not support platforms where the native TLS key is defined in a way that cannot be safely cast to `int`. On such platforms, [`PyThread_create_key()`](https://docs.python.org/3/c-api/init.html#c.PyThread_create_key "PyThread_create_key") will return immediately with a failure status, and the other TLS functions will all be no-ops on such platforms.
+Due to the compatibility problem noted above, this version of the API should not be used in new code. 
+
+intPyThread_create_key()[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_create_key "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._ 
+
+voidPyThread_delete_key(intkey)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_delete_key "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._ 
+
+intPyThread_set_key_value(intkey, void*value)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_set_key_value "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._ 
+
+void*PyThread_get_key_value(intkey)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_get_key_value "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._ 
+
+voidPyThread_delete_key_value(intkey)[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_delete_key_value "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._ 
+
+voidPyThread_ReInitTLS()[¶](https://docs.python.org/3/c-api/init.html#c.PyThread_ReInitTLS "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+## Synchronization Primitives[¶](https://docs.python.org/3/c-api/init.html#synchronization-primitives "Link to this heading")
+The C-API provides a basic mutual exclusion lock. 
+
+typePyMutex[¶](https://docs.python.org/3/c-api/init.html#c.PyMutex "Link to this definition")
+    
+A mutual exclusion lock. The `PyMutex` should be initialized to zero to represent the unlocked state. For example:
+```
+PyMutexmutex={0};

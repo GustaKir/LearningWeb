@@ -1,0 +1,29 @@
+Title: Changes in Frame-Related Functions in Python 3.13
+URL: https://docs.python.org/3/whatsnew/3.13.html
+Summary: This document notes the introduction of a second argument in `Py_TRASHCAN_BEGIN`, relevant to deallocation functions, and highlights the changes introduced by PEP 667 regarding the behavior of modifying dictionaries returned by `PyEval_GetLocals()` within optimized scopes. It specifies that new dictionary entries will now only be visible in subsequent calls to `PyEval_GetLocals()` within the same frame.
+---
+
+```
+
+Note that `Py_TRASHCAN_BEGIN` has a second argument which should be the deallocation function it is in. The new macros were added in Python 3.8 and the old macros were deprecated in Python 3.11. (Contributed by Irit Katriel in [gh-105111](https://github.com/python/cpython/issues/105111).)
+
+
+  * [PEP 667](https://docs.python.org/3/whatsnew/3.13.html#whatsnew313-locals-semantics) introduces several changes to frame-related functions:
+    * The effects of mutating the dictionary returned from [`PyEval_GetLocals()`](https://docs.python.org/3/c-api/reflection.html#c.PyEval_GetLocals "PyEval_GetLocals") in an [optimized scope](https://docs.python.org/3/glossary.html#term-optimized-scope) have changed. New dict entries added this way will now _only_ be visible to subsequent [`PyEval_GetLocals()`](https://docs.python.org/3/c-api/reflection.html#c.PyEval_GetLocals "PyEval_GetLocals") calls in that frame, as [`PyFrame_GetLocals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLocals "PyFrame_GetLocals"), [`locals()`](https://docs.python.org/3/library/functions.html#locals "locals"), and [`FrameType.f_locals`](https://docs.python.org/3/reference/datamodel.html#frame.f_locals "frame.f_locals") no longer access the same underlying cached dictionary. Changes made to entries for actual variable names and names added via the write-through proxy interfaces will be overwritten on subsequent calls to [`PyEval_GetLocals()`](https://docs.python.org/3/c-api/reflection.html#c.PyEval_GetLocals "PyEval_GetLocals") in that frame. The recommended code update depends on how the function was being used, so refer to the deprecation notice on the function for details.
+    * Calling [`PyFrame_GetLocals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLocals "PyFrame_GetLocals") in an [optimized scope](https://docs.python.org/3/glossary.html#term-optimized-scope) now returns a write-through proxy rather than a snapshot that gets updated at ill-specified times. If a snapshot is desired, it must be created explicitly (e.g. with [`PyDict_Copy()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_Copy "PyDict_Copy")), or by calling the new [`PyEval_GetFrameLocals()`](https://docs.python.org/3/c-api/reflection.html#c.PyEval_GetFrameLocals "PyEval_GetFrameLocals") API.
+    * `PyFrame_FastToLocals()` and `PyFrame_FastToLocalsWithError()` no longer have any effect. Calling these functions has been redundant since Python 3.11, when [`PyFrame_GetLocals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLocals "PyFrame_GetLocals") was first introduced.
+    * `PyFrame_LocalsToFast()` no longer has any effect. Calling this function is redundant now that [`PyFrame_GetLocals()`](https://docs.python.org/3/c-api/frame.html#c.PyFrame_GetLocals "PyFrame_GetLocals") returns a write-through proxy for [optimized scopes](https://docs.python.org/3/glossary.html#term-optimized-scope).
+  * Python 3.13 removed many private functions. Some of them can be replaced using these alternatives:
+    * `_PyDict_Pop()`: [`PyDict_Pop()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_Pop "PyDict_Pop") or [`PyDict_PopString()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_PopString "PyDict_PopString");
+    * `_PyDict_GetItemWithError()`: [`PyDict_GetItemRef()`](https://docs.python.org/3/c-api/dict.html#c.PyDict_GetItemRef "PyDict_GetItemRef");
+    * `_PyErr_WriteUnraisableMsg()`: [`PyErr_FormatUnraisable()`](https://docs.python.org/3/c-api/exceptions.html#c.PyErr_FormatUnraisable "PyErr_FormatUnraisable");
+    * `_PyEval_SetTrace()`: [`PyEval_SetTrace()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTrace "PyEval_SetTrace") or [`PyEval_SetTraceAllThreads()`](https://docs.python.org/3/c-api/init.html#c.PyEval_SetTraceAllThreads "PyEval_SetTraceAllThreads");
+    * `_PyList_Extend()`: [`PyList_Extend()`](https://docs.python.org/3/c-api/list.html#c.PyList_Extend "PyList_Extend");
+    * `_PyLong_AsInt()`: [`PyLong_AsInt()`](https://docs.python.org/3/c-api/long.html#c.PyLong_AsInt "PyLong_AsInt");
+    * `_PyMem_RawStrdup()`: `strdup()`;
+    * `_PyMem_Strdup()`: `strdup()`;
+    * `_PyObject_ClearManagedDict()`: [`PyObject_ClearManagedDict()`](https://docs.python.org/3/c-api/object.html#c.PyObject_ClearManagedDict "PyObject_ClearManagedDict");
+    * `_PyObject_VisitManagedDict()`: [`PyObject_VisitManagedDict()`](https://docs.python.org/3/c-api/object.html#c.PyObject_VisitManagedDict "PyObject_VisitManagedDict");
+    * `_PyThreadState_UncheckedGet()`: [`PyThreadState_GetUnchecked()`](https://docs.python.org/3/c-api/init.html#c.PyThreadState_GetUnchecked "PyThreadState_GetUnchecked");
+    * `_PyTime_AsSecondsDouble()`: [`PyTime_AsSecondsDouble()`](https://docs.python.org/3/c-api/time.html#c.PyTime_AsSecondsDouble "PyTime_AsSecondsDouble");
+    * `_PyTime_GetMonotonicClock()`: [`PyTime_Monotonic()`](https://docs.python.org/3/c-api/time.html#c.PyTime_Monotonic "PyTime_Monotonic") or [`PyTime_MonotonicRaw()`](https://docs.python.org/3/

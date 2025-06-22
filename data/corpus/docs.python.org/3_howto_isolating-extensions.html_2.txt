@@ -1,0 +1,40 @@
+Title: Managing Python Extensions in Multi-Interpreter Environments
+URL: https://docs.python.org/3/howto/isolating-extensions.html
+Summary: This section discusses the challenges of using Python extension modules in libraries that may be embedded within applications using multiple interpreters. It highlights the issues caused by using process-wide global state in extension modules, which can lead to shared data between interpreters and potential crashes. The need for per-interpreter state is emphasized, along with the difficulties that extension authors face in accommodating multiple interpreters.
+---
+
+Both cases (and combinations of them) would be most useful when embedding Python within a library. Libraries generally shouldn’t make assumptions about the application that uses them, which include assuming a process-wide “main Python interpreter”.
+Historically, Python extension modules don’t handle this use case well. Many extension modules (and even some stdlib modules) use _per-process_ global state, because C `static` variables are extremely easy to use. Thus, data that should be specific to an interpreter ends up being shared between interpreters. Unless the extension developer is careful, it is very easy to introduce edge cases that lead to crashes when a module is loaded in more than one interpreter in the same process.
+Unfortunately, _per-interpreter_ state is not easy to achieve. Extension authors tend to not keep multiple interpreters in mind when developing, and it is currently cumbersome to test the behavior.
+### Enter Per-Module State[¶](https://docs.python.org/3/howto/isolating-extensions.html#enter-per-module-state "Link to this heading")
+Instead of focusing on per-interpreter state, Python’s C API is evolving to better support the more granular _per-module_ state. This means that C-level data should be attached to a _module object_. Each interpreter creates its own module object, keeping the data separate. For testing the isolation, multiple module objects corresponding to a single extension can even be loaded in a single interpreter.
+Per-module state provides an easy way to think about lifetime and resource ownership: the extension module will initialize when a module object is created, and clean up when it’s freed. In this regard, a module is just like any other [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*; there are no “on interpreter shutdown” hooks to think—or forget—about.
+Note that there are use cases for different kinds of “globals”: per-process, per-interpreter, per-thread or per-task state. With per-module state as the default, these are still possible, but you should treat them as exceptional cases: if you need them, you should give them additional care and testing. (Note that this guide does not cover them.)
+### Isolated Module Objects[¶](https://docs.python.org/3/howto/isolating-extensions.html#isolated-module-objects "Link to this heading")
+The key point to keep in mind when developing an extension module is that several module objects can be created from a single shared library. For example:
+>>>```
+>>> importsys
+>>> importbinascii
+>>> old_binascii = binascii
+>>> del sys.modules['binascii']
+>>> importbinascii # create a new module object
+>>> old_binascii == binascii
+False
+
+```
+
+As a rule of thumb, the two modules should be completely independent. All objects and state specific to the module should be encapsulated within the module object, not shared with other module objects, and cleaned up when the module object is deallocated. Since this just is a rule of thumb, exceptions are possible (see [Managing Global State](https://docs.python.org/3/howto/isolating-extensions.html#managing-global-state)), but they will need more thought and attention to edge cases.
+While some modules could do with less stringent restrictions, isolated modules make it easier to set clear expectations and guidelines that work across a variety of use cases.
+### Surprising Edge Cases[¶](https://docs.python.org/3/howto/isolating-extensions.html#surprising-edge-cases "Link to this heading")
+Note that isolated modules do create some surprising edge cases. Most notably, each module object will typically not share its classes and exceptions with other similar modules. Continuing from the [example above](https://docs.python.org/3/howto/isolating-extensions.html#isolated-module-objects), note that `old_binascii.Error` and `binascii.Error` are separate objects. In the following code, the exception is _not_ caught:
+>>>```
+>>> old_binascii.Error == binascii.Error
+False
+>>> try:
+...   old_binascii.unhexlify(b'qwertyuiop')
+... except binascii.Error:
+...   print('boo')
+...
+Traceback (most recent call last):
+ File "<stdin>", line 2, in <module>
+binascii.Error: Non-hexadecimal digit found

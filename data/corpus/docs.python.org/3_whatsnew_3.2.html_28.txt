@@ -1,0 +1,93 @@
+Title: Python 3.2 - New Features in the dis Module
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: The dis module has been updated with two new functions, code_info() and show_code(), which enable detailed inspection of code objects. These functions provide information about functions, methods, or code strings, enhancing debugging and analysis capabilities.
+---
+
+```
+$ pydoc3.2-b
+
+```
+
+(Contributed by Ron Adam; [bpo-2001](https://bugs.python.org/issue?@action=redirect&bpo=2001).)
+### dis[¶](https://docs.python.org/3/whatsnew/3.2.html#dis "Link to this heading")
+The [`dis`](https://docs.python.org/3/library/dis.html#module-dis "dis: Disassembler for Python bytecode.") module gained two new functions for inspecting code, [`code_info()`](https://docs.python.org/3/library/dis.html#dis.code_info "dis.code_info") and [`show_code()`](https://docs.python.org/3/library/dis.html#dis.show_code "dis.show_code"). Both provide detailed code object information for the supplied function, method, source code string or code object. The former returns a string and the latter prints it:
+>>>```
+>>> importdis,random
+>>> dis.show_code(random.choice)
+Name:       choice
+Filename:     /Library/Frameworks/Python.framework/Versions/3.2/lib/python3.2/random.py
+Argument count:  2
+Kw-only arguments: 0
+Number of locals: 3
+Stack size:    11
+Flags:       OPTIMIZED, NEWLOCALS, NOFREE
+Constants:
+  0: 'Choose a random element from a non-empty sequence.'
+  1: 'Cannot choose from an empty sequence'
+Names:
+  0: _randbelow
+  1: len
+  2: ValueError
+  3: IndexError
+Variable names:
+  0: self
+  1: seq
+  2: i
+
+```
+
+In addition, the [`dis()`](https://docs.python.org/3/library/dis.html#dis.dis "dis.dis") function now accepts string arguments so that the common idiom `dis(compile(s, '', 'eval'))` can be shortened to `dis(s)`:
+>>>```
+>>> dis('3*x+1 if x%2==1 else x//2')
+ 1      0 LOAD_NAME        0 (x)
+       3 LOAD_CONST        0 (2)
+       6 BINARY_MODULO
+       7 LOAD_CONST        1 (1)
+       10 COMPARE_OP        2 (==)
+       13 POP_JUMP_IF_FALSE    28
+       16 LOAD_CONST        2 (3)
+       19 LOAD_NAME        0 (x)
+       22 BINARY_MULTIPLY
+       23 LOAD_CONST        1 (1)
+       26 BINARY_ADD
+       27 RETURN_VALUE
+    >>  28 LOAD_NAME        0 (x)
+       31 LOAD_CONST        0 (2)
+       34 BINARY_FLOOR_DIVIDE
+       35 RETURN_VALUE
+
+```
+
+Taken together, these improvements make it easier to explore how CPython is implemented and to see for yourself what the language syntax does under-the-hood.
+(Contributed by Nick Coghlan in [bpo-9147](https://bugs.python.org/issue?@action=redirect&bpo=9147).)
+### dbm[¶](https://docs.python.org/3/whatsnew/3.2.html#dbm "Link to this heading")
+All database modules now support the `get()` and `setdefault()` methods.
+(Suggested by Ray Allen in [bpo-9523](https://bugs.python.org/issue?@action=redirect&bpo=9523).)
+### ctypes[¶](https://docs.python.org/3/whatsnew/3.2.html#ctypes "Link to this heading")
+A new type, [`ctypes.c_ssize_t`](https://docs.python.org/3/library/ctypes.html#ctypes.c_ssize_t "ctypes.c_ssize_t") represents the C `ssize_t` datatype.
+### site[¶](https://docs.python.org/3/whatsnew/3.2.html#site "Link to this heading")
+The [`site`](https://docs.python.org/3/library/site.html#module-site "site: Module responsible for site-specific configuration.") module has three new functions useful for reporting on the details of a given Python installation.
+  * [`getsitepackages()`](https://docs.python.org/3/library/site.html#site.getsitepackages "site.getsitepackages") lists all global site-packages directories.
+  * [`getuserbase()`](https://docs.python.org/3/library/site.html#site.getuserbase "site.getuserbase") reports on the user’s base directory where data can be stored.
+  * [`getusersitepackages()`](https://docs.python.org/3/library/site.html#site.getusersitepackages "site.getusersitepackages") reveals the user-specific site-packages directory path.
+
+
+>>>```
+>>> importsite
+>>> site.getsitepackages()
+['/Library/Frameworks/Python.framework/Versions/3.2/lib/python3.2/site-packages',
+ '/Library/Frameworks/Python.framework/Versions/3.2/lib/site-python',
+ '/Library/Python/3.2/site-packages']
+>>> site.getuserbase()
+'/Users/raymondhettinger/Library/Python/3.2'
+>>> site.getusersitepackages()
+'/Users/raymondhettinger/Library/Python/3.2/lib/python/site-packages'
+
+```
+
+Conveniently, some of site’s functionality is accessible directly from the command-line:
+```
+$ python-msite--user-base
+/Users/raymondhettinger/.local
+$ python-msite--user-site
+/Users/raymondhettinger/.local/lib/python3.2/site-packages

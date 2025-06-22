@@ -1,0 +1,49 @@
+Title: Understanding C3 Method Resolution Order in Python
+URL: https://docs.python.org/3/howto/mro.html
+Summary: This document explains the C3 Method Resolution Order used in Python 2.3, targeting Python programmers with a pedagogical approach and various examples. It is not meant for beginners and lacks warranty. Acknowledgments are given to contributors who supported the document's development.
+---
+
+Abstract:
+    
+_This document is intended for Python programmers who want to understand the C3 Method Resolution Order used in Python 2.3. Although it is not intended for newbies, it is quite pedagogical with many worked out examples. I am not aware of other publicly available documents with the same scope, therefore it should be useful._
+Disclaimer:
+> _I donate this document to the Python Software Foundation, under the Python 2.3 license. As usual in these circumstances, I warn the reader that what follows_ should _be correct, but I don’t give any warranty. Use it at your own risk and peril!_
+Acknowledgments:
+> _All the people of the Python mailing list who sent me their support. Paul Foley who pointed out various imprecisions and made me to add the part on local precedence ordering. David Goodger for help with the formatting in reStructuredText. David Mertz for help with the editing. Finally, Guido van Rossum who enthusiastically added this document to the official Python 2.3 home-page._
+## The beginning[¶](https://docs.python.org/3/howto/mro.html#the-beginning "Link to this heading")
+> _Felix qui potuit rerum cognoscere causas_ – Virgilius
+Everything started with a post by Samuele Pedroni to the Python development mailing list [[1]](https://docs.python.org/3/howto/mro.html#id4). In his post, Samuele showed that the Python 2.2 method resolution order is not monotonic and he proposed to replace it with the C3 method resolution order. Guido agreed with his arguments and therefore now Python 2.3 uses C3. The C3 method itself has nothing to do with Python, since it was invented by people working on Dylan and it is described in a paper intended for lispers [[2]](https://docs.python.org/3/howto/mro.html#id5). The present paper gives a (hopefully) readable discussion of the C3 algorithm for Pythonistas who want to understand the reasons for the change.
+First of all, let me point out that what I am going to say only applies to the _new style classes_ introduced in Python 2.2: _classic classes_ maintain their old method resolution order, depth first and then left to right. Therefore, there is no breaking of old code for classic classes; and even if in principle there could be breaking of code for Python 2.2 new style classes, in practice the cases in which the C3 resolution order differs from the Python 2.2 method resolution order are so rare that no real breaking of code is expected. Therefore:
+> _Don’t be scared!_
+Moreover, unless you make strong use of multiple inheritance and you have non-trivial hierarchies, you don’t need to understand the C3 algorithm, and you can easily skip this paper. On the other hand, if you really want to know how multiple inheritance works, then this paper is for you. The good news is that things are not as complicated as you might expect.
+Let me begin with some basic definitions.
+  1. Given a class C in a complicated multiple inheritance hierarchy, it is a non-trivial task to specify the order in which methods are overridden, i.e. to specify the order of the ancestors of C.
+  2. The list of the ancestors of a class C, including the class itself, ordered from the nearest ancestor to the furthest, is called the class precedence list or the _linearization_ of C.
+  3. The _Method Resolution Order_ (MRO) is the set of rules that construct the linearization. In the Python literature, the idiom “the MRO of C” is also used as a synonymous for the linearization of the class C.
+  4. For instance, in the case of single inheritance hierarchy, if C is a subclass of C1, and C1 is a subclass of C2, then the linearization of C is simply the list [C, C1 , C2]. However, with multiple inheritance hierarchies, the construction of the linearization is more cumbersome, since it is more difficult to construct a linearization that respects _local precedence ordering_ and _monotonicity_.
+  5. I will discuss the local precedence ordering later, but I can give the definition of monotonicity here. A MRO is monotonic when the following is true: _if C1 precedes C2 in the linearization of C, then C1 precedes C2 in the linearization of any subclass of C_. Otherwise, the innocuous operation of deriving a new class could change the resolution order of methods, potentially introducing very subtle bugs. Examples where this happens will be shown later.
+  6. Not all classes admit a linearization. There are cases, in complicated hierarchies, where it is not possible to derive a class such that its linearization respects all the desired properties.
+
+
+Here I give an example of this situation. Consider the hierarchy
+>>>```
+>>> O = object
+>>> classX(O): pass
+>>> classY(O): pass
+>>> classA(X,Y): pass
+>>> classB(Y,X): pass
+
+```
+
+which can be represented with the following inheritance graph, where I have denoted with O the `object` class, which is the beginning of any hierarchy for new style classes:
+> ```
+ -----------
+|      |
+|  O   |
+| /  \  |
+ - X  Y /
+  | / | /
+  | / |/
+  A  B
+  \  /
+   ?

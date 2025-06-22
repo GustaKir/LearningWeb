@@ -1,0 +1,43 @@
+Title: Sequence Patterns in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section describes the use of parentheses and square brackets for sequence patterns in Python, explaining the difference between group patterns and sequence patterns. It details the rules for incorporating star subpatterns and outlines the logical flow for matching a sequence pattern against a subject value, including conditions for failure based on the type of the subject.
+---
+
+```
+
+There is no difference if parentheses or square brackets are used for sequence patterns (i.e. `(...)` vs `[...]` ).
+Note
+A single pattern enclosed in parentheses without a trailing comma (e.g. `(3 | 4)`) is a [group pattern](https://docs.python.org/3/reference/compound_stmts.html#group-patterns). While a single pattern enclosed in square brackets (e.g. `[3 | 4]`) is still a sequence pattern.
+At most one star subpattern may be in a sequence pattern. The star subpattern may occur in any position. If no star subpattern is present, the sequence pattern is a fixed-length sequence pattern; otherwise it is a variable-length sequence pattern.
+The following is the logical flow for matching a sequence pattern against a subject value:
+  1. If the subject value is not a sequence [[2]](https://docs.python.org/3/reference/compound_stmts.html#id21), the sequence pattern fails.
+  2. If the subject value is an instance of `str`, `bytes` or `bytearray` the sequence pattern fails.
+  3. The subsequent steps depend on whether the sequence pattern is fixed or variable-length.
+If the sequence pattern is fixed-length:
+    1. If the length of the subject sequence is not equal to the number of subpatterns, the sequence pattern fails
+    2. Subpatterns in the sequence pattern are matched to their corresponding items in the subject sequence from left to right. Matching stops as soon as a subpattern fails. If all subpatterns succeed in matching their corresponding item, the sequence pattern succeeds.
+Otherwise, if the sequence pattern is variable-length:
+    1. If the length of the subject sequence is less than the number of non-star subpatterns, the sequence pattern fails.
+    2. The leading non-star subpatterns are matched to their corresponding items as for fixed-length sequences.
+    3. If the previous step succeeds, the star subpattern matches a list formed of the remaining subject items, excluding the remaining items corresponding to non-star subpatterns following the star subpattern.
+    4. Remaining non-star subpatterns are matched to their corresponding subject items, as for a fixed-length sequence.
+Note
+The length of the subject sequence is obtained via [`len()`](https://docs.python.org/3/library/functions.html#len "len") (i.e. via the `__len__()` protocol). This length may be cached by the interpreter in a similar manner as [value patterns](https://docs.python.org/3/reference/compound_stmts.html#value-patterns).
+
+
+In simple terms `[P1, P2, P3,` … `, P<N>]` matches only if all the following happens:
+  * check `<subject>` is a sequence
+  * `len(subject) == <N>`
+  * `P1` matches `<subject>[0]` (note that this match can also bind names)
+  * `P2` matches `<subject>[1]` (note that this match can also bind names)
+  * … and so on for the corresponding pattern/element.
+
+
+#### 8.6.4.9. Mapping Patterns[¶](https://docs.python.org/3/reference/compound_stmts.html#mapping-patterns "Link to this heading")
+A mapping pattern contains one or more key-value patterns. The syntax is similar to the construction of a dictionary. Syntax:
+```
+**mapping_pattern**   ::= "{" [[items_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-items_pattern)] "}"
+**items_pattern**    ::= ",".[key_value_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-key_value_pattern)+ ","?
+**key_value_pattern**  ::= ([literal_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-literal_pattern) | [value_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-value_pattern)) ":" [pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-pattern)
+            | [double_star_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-double_star_pattern)
+**double_star_pattern** ::= "**" [capture_pattern](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-capture_pattern)

@@ -1,0 +1,73 @@
+Title: Python Performance Profiling with `perf`
+URL: https://docs.python.org/3/howto/perf_profiling.html
+Summary: This document provides guidance on using the Linux `perf` profiler for Python applications, including how to enable profiling support, obtain optimal results, and work without frame pointers.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Python support for the Linux `perf` profiler](https://docs.python.org/3/howto/perf_profiling.html)
+    * [How to enable `perf` profiling support](https://docs.python.org/3/howto/perf_profiling.html#how-to-enable-perf-profiling-support)
+    * [How to obtain the best results](https://docs.python.org/3/howto/perf_profiling.html#how-to-obtain-the-best-results)
+    * [How to work without frame pointers](https://docs.python.org/3/howto/perf_profiling.html#how-to-work-without-frame-pointers)
+
+
+#### Previous topic
+[Instrumenting CPython with DTrace and SystemTap](https://docs.python.org/3/howto/instrumentation.html "previous chapter")
+#### Next topic
+[Annotations Best Practices](https://docs.python.org/3/howto/annotations.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/perf_profiling.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/annotations.html "Annotations Best Practices") |
+  * [previous](https://docs.python.org/3/howto/instrumentation.html "Instrumenting CPython with DTrace and SystemTap") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Python support for the Linux `perf` profiler](https://docs.python.org/3/howto/perf_profiling.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Python support for the Linux `perf` profiler[¶](https://docs.python.org/3/howto/perf_profiling.html#python-support-for-the-linux-perf-profiler "Link to this heading") 
+
+author:
+    
+Pablo Galindo
+[The Linux perf profiler](https://perf.wiki.kernel.org) is a very powerful tool that allows you to profile and obtain information about the performance of your application. `perf` also has a very vibrant ecosystem of tools that aid with the analysis of the data that it produces.
+The main problem with using the `perf` profiler with Python applications is that `perf` only gets information about native symbols, that is, the names of functions and procedures written in C. This means that the names and file names of Python functions in your code will not appear in the output of `perf`.
+Since Python 3.12, the interpreter can run in a special mode that allows Python functions to appear in the output of the `perf` profiler. When this mode is enabled, the interpreter will interpose a small piece of code compiled on the fly before the execution of every Python function and it will teach `perf` the relationship between this piece of code and the associated Python function using [perf map files](https://docs.python.org/3/c-api/perfmaps.html).
+Note
+Support for the `perf` profiler is currently only available for Linux on select architectures. Check the output of the `configure` build step or check the output of `python -m sysconfig | grep HAVE_PERF_TRAMPOLINE` to see if your system is supported.
+For example, consider the following script:
+```
+deffoo(n):
+  result = 0
+  for _ in range(n):
+    result += 1
+  return result
+defbar(n):
+  foo(n)
+defbaz(n):
+  bar(n)
+if __name__ == "__main__":
+  baz(1000000)
+
+```
+
+We can run `perf` to sample CPU stack traces at 9999 hertz:
+```
+$ perfrecord-F9999-g-operf.datapythonmy_script.py
+
+```
+
+Then we can use `perf report` to analyze the data:

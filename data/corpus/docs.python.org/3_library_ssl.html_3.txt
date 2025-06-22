@@ -1,0 +1,58 @@
+Title: SSL Context and Verification Flags
+URL: https://docs.python.org/3/library/ssl.html
+Summary: The SSL context enables VERIFY_X509_STRICT by default, potentially rejecting certain certificates. There are modifications to the default cipher strings and support for key logging over various versions of Python, with significant changes introduced in versions 3.4, 3.6, 3.8, and 3.10.
+---
+
+```
+
+Note
+This context enables [`VERIFY_X509_STRICT`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_STRICT "ssl.VERIFY_X509_STRICT") by default, which may reject pre-[**RFC 5280**](https://datatracker.ietf.org/doc/html/rfc5280.html) or malformed certificates that the underlying OpenSSL implementation otherwise would accept. While disabling this is not recommended, you can do so using:
+```
+ctx = ssl.create_default_context()
+ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+```
+
+Added in version 3.4.
+Changed in version 3.4.4: RC4 was dropped from the default cipher string.
+Changed in version 3.6: ChaCha20/Poly1305 was added to the default cipher string.
+3DES was dropped from the default cipher string.
+Changed in version 3.8: Support for key logging to `SSLKEYLOGFILE` was added.
+Changed in version 3.10: The context now uses [`PROTOCOL_TLS_CLIENT`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS_CLIENT "ssl.PROTOCOL_TLS_CLIENT") or [`PROTOCOL_TLS_SERVER`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS_SERVER "ssl.PROTOCOL_TLS_SERVER") protocol instead of generic [`PROTOCOL_TLS`](https://docs.python.org/3/library/ssl.html#ssl.PROTOCOL_TLS "ssl.PROTOCOL_TLS").
+Changed in version 3.13: The context now uses [`VERIFY_X509_PARTIAL_CHAIN`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_PARTIAL_CHAIN "ssl.VERIFY_X509_PARTIAL_CHAIN") and [`VERIFY_X509_STRICT`](https://docs.python.org/3/library/ssl.html#ssl.VERIFY_X509_STRICT "ssl.VERIFY_X509_STRICT") in its default verify flags.
+### Exceptions[¶](https://docs.python.org/3/library/ssl.html#exceptions "Link to this heading") 
+
+_exception_ ssl.SSLError[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLError "Link to this definition")
+    
+Raised to signal an error from the underlying SSL implementation (currently provided by the OpenSSL library). This signifies some problem in the higher-level encryption and authentication layer that’s superimposed on the underlying network connection. This error is a subtype of [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError"). The error code and message of [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") instances are provided by the OpenSSL library.
+Changed in version 3.3: [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") used to be a subtype of [`socket.error`](https://docs.python.org/3/library/socket.html#socket.error "socket.error"). 
+
+library[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLError.library "Link to this definition")
+    
+A string mnemonic designating the OpenSSL submodule in which the error occurred, such as `SSL`, `PEM` or `X509`. The range of possible values depends on the OpenSSL version.
+Added in version 3.3. 
+
+reason[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLError.reason "Link to this definition")
+    
+A string mnemonic designating the reason this error occurred, for example `CERTIFICATE_VERIFY_FAILED`. The range of possible values depends on the OpenSSL version.
+Added in version 3.3. 
+
+_exception_ ssl.SSLZeroReturnError[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLZeroReturnError "Link to this definition")
+    
+A subclass of [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") raised when trying to read or write and the SSL connection has been closed cleanly. Note that this doesn’t mean that the underlying transport (read TCP) has been closed.
+Added in version 3.3. 
+
+_exception_ ssl.SSLWantReadError[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLWantReadError "Link to this definition")
+    
+A subclass of [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") raised by a [non-blocking SSL socket](https://docs.python.org/3/library/ssl.html#ssl-nonblocking) when trying to read or write data, but more data needs to be received on the underlying TCP transport before the request can be fulfilled.
+Added in version 3.3. 
+
+_exception_ ssl.SSLWantWriteError[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLWantWriteError "Link to this definition")
+    
+A subclass of [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") raised by a [non-blocking SSL socket](https://docs.python.org/3/library/ssl.html#ssl-nonblocking) when trying to read or write data, but more data needs to be sent on the underlying TCP transport before the request can be fulfilled.
+Added in version 3.3. 
+
+_exception_ ssl.SSLSyscallError[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLSyscallError "Link to this definition")
+    
+A subclass of [`SSLError`](https://docs.python.org/3/library/ssl.html#ssl.SSLError "ssl.SSLError") raised when a system error was encountered while trying to fulfill an operation on a SSL socket. Unfortunately, there is no easy way to inspect the original errno number.
+Added in version 3.3.

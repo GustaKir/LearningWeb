@@ -1,0 +1,117 @@
+Title: Advanced Dependencies in FastAPI
+URL: https://fastapi.tiangolo.com/advanced/advanced-dependencies/
+Summary: This section explains how to create parameterized dependencies in FastAPI, allowing for dynamic input without needing multiple function or class declarations. It also introduces the concept of making an instance of a class callable by implementing the `__call__` method.
+---
+
+# Advanced Dependencies[¶](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#advanced-dependencies "Permanent link")
+## Parameterized dependencies[¶](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#parameterized-dependencies "Permanent link")
+All the dependencies we have seen are a fixed function or class.
+But there could be cases where you want to be able to set parameters on the dependency, without having to declare many different functions or classes.
+Let's imagine that we want to have a dependency that checks if the query parameter `q` contains some fixed content.
+But we want to be able to parameterize that fixed content.
+## A "callable" instance[¶](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#a-callable-instance "Permanent link")
+In Python there's a way to make an instance of a class a "callable".
+Not the class itself (which is already a callable), but an instance of that class.
+To do that, we declare a method `__call__`:
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#__tabbed_1_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+classFixedContentQueryChecker:
+  def__init__(self, fixed_content: str):
+    self.fixed_content = fixed_content
+  def__call__(self, q: str = ""):
+    if q:
+      return self.fixed_content in q
+    return False
+checker = FixedContentQueryChecker("bar")
+@app.get("/query-checker/")
+async defread_query_check(fixed_content_included: Annotated[bool, Depends(checker)]):
+  return {"fixed_content_in_query": fixed_content_included}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#__tabbed_2_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#__tabbed_2_2)
+```
+fromfastapiimport Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classFixedContentQueryChecker:
+  def__init__(self, fixed_content: str):
+    self.fixed_content = fixed_content
+  def__call__(self, q: str = ""):
+    if q:
+      return self.fixed_content in q
+    return False
+checker = FixedContentQueryChecker("bar")
+@app.get("/query-checker/")
+async defread_query_check(fixed_content_included: Annotated[bool, Depends(checker)]):
+  return {"fixed_content_in_query": fixed_content_included}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+classFixedContentQueryChecker:
+  def__init__(self, fixed_content: str):
+    self.fixed_content = fixed_content
+  def__call__(self, q: str = ""):
+    if q:
+      return self.fixed_content in q
+    return False
+checker = FixedContentQueryChecker("bar")
+@app.get("/query-checker/")
+async defread_query_check(fixed_content_included: bool = Depends(checker)):
+  return {"fixed_content_in_query": fixed_content_included}
+
+```
+
+In this case, this `__call__` is what **FastAPI** will use to check for additional parameters and sub-dependencies, and this is what will be called to pass a value to the parameter in your _path operation function_ later.
+## Parameterize the instance[¶](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#parameterize-the-instance "Permanent link")
+And now, we can use `__init__` to declare the parameters of the instance that we can use to "parameterize" the dependency:
+[Python 3.9+](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#__tabbed_3_1)
+```
+fromtypingimport Annotated
+fromfastapiimport Depends, FastAPI
+app = FastAPI()
+classFixedContentQueryChecker:
+  def__init__(self, fixed_content: str):
+    self.fixed_content = fixed_content
+  def__call__(self, q: str = ""):
+    if q:
+      return self.fixed_content in q
+    return False
+checker = FixedContentQueryChecker("bar")
+@app.get("/query-checker/")
+async defread_query_check(fixed_content_included: Annotated[bool, Depends(checker)]):
+  return {"fixed_content_in_query": fixed_content_included}
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#__tabbed_4_1)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/advanced/advanced-dependencies/#__tabbed_4_2)
+```
+fromfastapiimport Depends, FastAPI
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+classFixedContentQueryChecker:
+  def__init__(self, fixed_content: str):
+    self.fixed_content = fixed_content
+  def__call__(self, q: str = ""):
+    if q:
+      return self.fixed_content in q
+    return False
+checker = FixedContentQueryChecker("bar")
+@app.get("/query-checker/")
+async defread_query_check(fixed_content_included: Annotated[bool, Depends(checker)]):
+  return {"fixed_content_in_query": fixed_content_included}
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.

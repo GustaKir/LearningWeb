@@ -1,0 +1,39 @@
+Title: Email Policy Header Functions
+URL: https://docs.python.org/3/library/email.policy.html
+Summary: This section describes functions related to email headers in Python's email policy module, including retrieving maximum header counts, parsing header sources, and parsing stored header values.
+---
+
+header_max_count(_name_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.header_max_count "Link to this definition")
+    
+Returns the value of the [`max_count`](https://docs.python.org/3/library/email.headerregistry.html#email.headerregistry.BaseHeader.max_count "email.headerregistry.BaseHeader.max_count") attribute of the specialized class used to represent the header with the given name. 
+
+header_source_parse(_sourcelines_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.header_source_parse "Link to this definition")
+    
+The name is parsed as everything up to the ‘`:`’ and returned unmodified. The value is determined by stripping leading whitespace off the remainder of the first line, joining all subsequent lines together, and stripping any trailing carriage return or linefeed characters. 
+
+header_store_parse(_name_ , _value_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.header_store_parse "Link to this definition")
+    
+The name is returned unchanged. If the input value has a `name` attribute and it matches _name_ ignoring case, the value is returned unchanged. Otherwise the _name_ and _value_ are passed to `header_factory`, and the resulting header object is returned as the value. In this case a `ValueError` is raised if the input value contains CR or LF characters. 
+
+header_fetch_parse(_name_ , _value_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.header_fetch_parse "Link to this definition")
+    
+If the value has a `name` attribute, it is returned to unmodified. Otherwise the _name_ , and the _value_ with any CR or LF characters removed, are passed to the `header_factory`, and the resulting header object is returned. Any surrogateescaped bytes get turned into the unicode unknown-character glyph. 
+
+fold(_name_ , _value_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.fold "Link to this definition")
+    
+Header folding is controlled by the [`refold_source`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.refold_source "email.policy.EmailPolicy.refold_source") policy setting. A value is considered to be a ‘source value’ if and only if it does not have a `name` attribute (having a `name` attribute means it is a header object of some sort). If a source value needs to be refolded according to the policy, it is converted into a header object by passing the _name_ and the _value_ with any CR and LF characters removed to the `header_factory`. Folding of a header object is done by calling its `fold` method with the current policy.
+Source values are split into lines using [`splitlines()`](https://docs.python.org/3/library/stdtypes.html#str.splitlines "str.splitlines"). If the value is not to be refolded, the lines are rejoined using the `linesep` from the policy and returned. The exception is lines containing non-ascii binary data. In that case the value is refolded regardless of the `refold_source` setting, which causes the binary data to be CTE encoded using the `unknown-8bit` charset. 
+
+fold_binary(_name_ , _value_)[¶](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.fold_binary "Link to this definition")
+    
+The same as [`fold()`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy.fold "email.policy.EmailPolicy.fold") if [`cte_type`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy.cte_type "email.policy.Policy.cte_type") is `7bit`, except that the returned value is bytes.
+If [`cte_type`](https://docs.python.org/3/library/email.policy.html#email.policy.Policy.cte_type "email.policy.Policy.cte_type") is `8bit`, non-ASCII binary data is converted back into bytes. Headers with binary data are not refolded, regardless of the `refold_header` setting, since there is no way to know whether the binary data consists of single byte characters or multibyte characters.
+The following instances of [`EmailPolicy`](https://docs.python.org/3/library/email.policy.html#email.policy.EmailPolicy "email.policy.EmailPolicy") provide defaults suitable for specific application domains. Note that in the future the behavior of these instances (in particular the `HTTP` instance) may be adjusted to conform even more closely to the RFCs relevant to their domains. 
+
+email.policy.default[¶](https://docs.python.org/3/library/email.policy.html#email.policy.default "Link to this definition")
+    
+An instance of `EmailPolicy` with all defaults unchanged. This policy uses the standard Python `\n` line endings rather than the RFC-correct `\r\n`. 
+
+email.policy.SMTP[¶](https://docs.python.org/3/library/email.policy.html#email.policy.SMTP "Link to this definition")
+    
+Suitable for serializing messages in conformance with the email RFCs. Like `default`, but with `linesep` set to `\r\n`, which is RFC compliant.

@@ -1,0 +1,72 @@
+Title: Memory Management in Python C API
+URL: https://docs.python.org/3/c-api/memory.html
+Summary: This document outlines the function `PyObject_Free(void *p)` used to free memory allocated through specific Python C API functions. It emphasizes that the pointer must have been previously allocated with `PyObject_Malloc`, `PyObject_Realloc`, or `PyObject_Calloc`, and warns against undefined behavior if these conditions are not met. The section also introduces default memory allocators related to Python's memory management.
+---
+
+voidPyObject_Free(void*p)[¶](https://docs.python.org/3/c-api/memory.html#c.PyObject_Free "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Frees the memory block pointed to by _p_ , which must have been returned by a previous call to [`PyObject_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Malloc "PyObject_Malloc"), [`PyObject_Realloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Realloc "PyObject_Realloc") or [`PyObject_Calloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Calloc "PyObject_Calloc"). Otherwise, or if `PyObject_Free(p)` has been called before, undefined behavior occurs.
+If _p_ is `NULL`, no operation is performed.
+## Default Memory Allocators[¶](https://docs.python.org/3/c-api/memory.html#default-memory-allocators "Link to this heading")
+Default memory allocators:
+Configuration | Name | PyMem_RawMalloc | PyMem_Malloc | PyObject_Malloc  
+---|---|---|---|---  
+Release build | `"pymalloc"` | `malloc` | `pymalloc` | `pymalloc`  
+Debug build | `"pymalloc_debug"` | `malloc` + debug | `pymalloc` + debug | `pymalloc` + debug  
+Release build, without pymalloc | `"malloc"` | `malloc` | `malloc` | `malloc`  
+Debug build, without pymalloc | `"malloc_debug"` | `malloc` + debug | `malloc` + debug | `malloc` + debug  
+Legend:
+  * Name: value for [`PYTHONMALLOC`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONMALLOC) environment variable.
+  * `malloc`: system allocators from the standard C library, C functions: `malloc()`, `calloc()`, `realloc()` and `free()`.
+  * `pymalloc`: [pymalloc memory allocator](https://docs.python.org/3/c-api/memory.html#pymalloc).
+  * `mimalloc`: [mimalloc memory allocator](https://docs.python.org/3/c-api/memory.html#mimalloc). The pymalloc allocator will be used if mimalloc support isn’t available.
+  * “+ debug”: with [debug hooks on the Python memory allocators](https://docs.python.org/3/c-api/memory.html#pymem-debug-hooks).
+  * “Debug build”: [Python build in debug mode](https://docs.python.org/3/using/configure.html#debug-build).
+
+
+## Customize Memory Allocators[¶](https://docs.python.org/3/c-api/memory.html#customize-memory-allocators "Link to this heading")
+Added in version 3.4. 
+
+typePyMemAllocatorEx[¶](https://docs.python.org/3/c-api/memory.html#c.PyMemAllocatorEx "Link to this definition")
+    
+Structure used to describe a memory block allocator. The structure has the following fields:
+Field | Meaning  
+---|---  
+`void *ctx` | user context passed as first argument  
+`void* malloc(void *ctx, size_t size)` | allocate a memory block  
+`void* calloc(void *ctx, size_t nelem, size_t elsize)` | allocate a memory block initialized with zeros  
+`void* realloc(void *ctx, void *ptr, size_t new_size)` | allocate or resize a memory block  
+`void free(void *ctx, void *ptr)` | free a memory block  
+Changed in version 3.5: The `PyMemAllocator` structure was renamed to [`PyMemAllocatorEx`](https://docs.python.org/3/c-api/memory.html#c.PyMemAllocatorEx "PyMemAllocatorEx") and a new `calloc` field was added. 
+
+typePyMemAllocatorDomain[¶](https://docs.python.org/3/c-api/memory.html#c.PyMemAllocatorDomain "Link to this definition")
+    
+Enum used to identify an allocator domain. Domains: 
+
+PYMEM_DOMAIN_RAW[¶](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_RAW "Link to this definition")
+    
+Functions:
+  * [`PyMem_RawMalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawMalloc "PyMem_RawMalloc")
+  * [`PyMem_RawRealloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawRealloc "PyMem_RawRealloc")
+  * [`PyMem_RawCalloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawCalloc "PyMem_RawCalloc")
+  * [`PyMem_RawFree()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_RawFree "PyMem_RawFree")
+
+
+
+PYMEM_DOMAIN_MEM[¶](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_MEM "Link to this definition")
+    
+Functions:
+  * [`PyMem_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Malloc "PyMem_Malloc"),
+  * [`PyMem_Realloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Realloc "PyMem_Realloc")
+  * [`PyMem_Calloc()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Calloc "PyMem_Calloc")
+  * [`PyMem_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Free "PyMem_Free")
+
+
+
+PYMEM_DOMAIN_OBJ[¶](https://docs.python.org/3/c-api/memory.html#c.PYMEM_DOMAIN_OBJ "Link to this definition")
+    
+Functions:
+  * [`PyObject_Malloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Malloc "PyObject_Malloc")
+  * [`PyObject_Realloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Realloc "PyObject_Realloc")
+  * [`PyObject_Calloc()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Calloc "PyObject_Calloc")
+  * [`PyObject_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyObject_Free "PyObject_Free")

@@ -1,0 +1,35 @@
+Title: Buffer API in Python C API
+URL: https://docs.python.org/3/c-api/buffer.html
+Summary: This section discusses the Py_buffer structure in the Python C API, detailing the len attribute which represents the size of the buffer. For contiguous arrays, it reflects the length of the memory block, while for non-contiguous arrays, it indicates the logical structure length. It also highlights the importance of obtaining the buffer with proper requests like PyBUF_SIMPLE or PyBUF_WRITABLE for valid access.
+---
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")len[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.len "Link to this definition")
+    
+`product(shape) * itemsize`. For contiguous arrays, this is the length of the underlying memory block. For non-contiguous arrays, it is the length that the logical structure would have if it were copied to a contiguous representation.
+Accessing `((char *)buf)[0] up to ((char *)buf)[len-1]` is only valid if the buffer has been obtained by a request that guarantees contiguity. In most cases such a request will be [`PyBUF_SIMPLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_SIMPLE "PyBUF_SIMPLE") or [`PyBUF_WRITABLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_WRITABLE "PyBUF_WRITABLE"). 
+
+intreadonly[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.readonly "Link to this definition")
+    
+An indicator of whether the buffer is read-only. This field is controlled by the [`PyBUF_WRITABLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_WRITABLE "PyBUF_WRITABLE") flag. 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")itemsize[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Link to this definition")
+    
+Item size in bytes of a single element. Same as the value of [`struct.calcsize()`](https://docs.python.org/3/library/struct.html#struct.calcsize "struct.calcsize") called on non-`NULL` [`format`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.format "Py_buffer.format") values.
+Important exception: If a consumer requests a buffer without the [`PyBUF_FORMAT`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_FORMAT "PyBUF_FORMAT") flag, [`format`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.format "Py_buffer.format") will be set to `NULL`, but [`itemsize`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Py_buffer.itemsize") still has the value for the original format.
+If [`shape`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.shape "Py_buffer.shape") is present, the equality `product(shape) * itemsize == len` still holds and the consumer can use [`itemsize`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Py_buffer.itemsize") to navigate the buffer.
+If [`shape`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.shape "Py_buffer.shape") is `NULL` as a result of a [`PyBUF_SIMPLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_SIMPLE "PyBUF_SIMPLE") or a [`PyBUF_WRITABLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_WRITABLE "PyBUF_WRITABLE") request, the consumer must disregard [`itemsize`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Py_buffer.itemsize") and assume `itemsize == 1`. 
+
+char*format[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.format "Link to this definition")
+    
+A _NULL_ terminated string in [`struct`](https://docs.python.org/3/library/struct.html#module-struct "struct: Interpret bytes as packed binary data.") module style syntax describing the contents of a single item. If this is `NULL`, `"B"` (unsigned bytes) is assumed.
+This field is controlled by the [`PyBUF_FORMAT`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_FORMAT "PyBUF_FORMAT") flag. 
+
+intndim[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim "Link to this definition")
+    
+The number of dimensions the memory represents as an n-dimensional array. If it is `0`, [`buf`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.buf "Py_buffer.buf") points to a single item representing a scalar. In this case, [`shape`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.shape "Py_buffer.shape"), [`strides`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.strides "Py_buffer.strides") and [`suboffsets`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.suboffsets "Py_buffer.suboffsets") MUST be `NULL`. The maximum number of dimensions is given by [`PyBUF_MAX_NDIM`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_MAX_NDIM "PyBUF_MAX_NDIM"). 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*shape[¶](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.shape "Link to this definition")
+    
+An array of [`Py_ssize_t`](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t") of length [`ndim`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim "Py_buffer.ndim") indicating the shape of the memory as an n-dimensional array. Note that `shape[0] * ... * shape[ndim-1] * itemsize` MUST be equal to [`len`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.len "Py_buffer.len").
+Shape values are restricted to `shape[n] >= 0`. The case `shape[n] == 0` requires special attention. See [complex arrays](https://docs.python.org/3/c-api/buffer.html#complex-arrays) for further information.
+The shape array is read-only for the consumer.

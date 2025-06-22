@@ -1,0 +1,106 @@
+Title: Using asynccontextmanager as a Decorator
+URL: https://docs.python.org/3/library/contextlib.html
+Summary: This section explains that when used as a decorator, `asynccontextmanager()` creates a new generator instance on each function call, allowing async context managers to support multiple invocations. It notes that this functionality was introduced in Python 3.10. Additionally, it describes `contextlib.closing()`, which returns a context manager that ensures the specified object is closed upon exiting the block.
+---
+
+```
+
+When used as a decorator, a new generator instance is implicitly created on each function call. This allows the otherwise “one-shot” context managers created by [`asynccontextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager "contextlib.asynccontextmanager") to meet the requirement that context managers support multiple invocations in order to be used as decorators.
+Changed in version 3.10: Async context managers created with [`asynccontextmanager()`](https://docs.python.org/3/library/contextlib.html#contextlib.asynccontextmanager "contextlib.asynccontextmanager") can be used as decorators. 
+
+contextlib.closing(_thing_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.closing "Link to this definition")
+    
+Return a context manager that closes _thing_ upon completion of the block. This is basically equivalent to:
+```
+fromcontextlibimport contextmanager
+@contextmanager
+defclosing(thing):
+  try:
+    yield thing
+  finally:
+    thing.close()
+
+```
+
+And lets you write code like this:
+```
+fromcontextlibimport closing
+fromurllib.requestimport urlopen
+with closing(urlopen('https://www.python.org')) as page:
+  for line in page:
+    print(line)
+
+```
+
+without needing to explicitly close `page`. Even if an error occurs, `page.close()` will be called when the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) block is exited.
+Note
+Most types managing resources support the [context manager](https://docs.python.org/3/glossary.html#term-context-manager) protocol, which closes _thing_ on leaving the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement. As such, `closing()` is most useful for third party types that don’t support context managers. This example is purely for illustration purposes, as [`urlopen()`](https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen "urllib.request.urlopen") would normally be used in a context manager. 
+
+contextlib.aclosing(_thing_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.aclosing "Link to this definition")
+    
+Return an async context manager that calls the `aclose()` method of _thing_ upon completion of the block. This is basically equivalent to:
+```
+fromcontextlibimport asynccontextmanager
+@asynccontextmanager
+async defaclosing(thing):
+  try:
+    yield thing
+  finally:
+    await thing.aclose()
+
+```
+
+Significantly, `aclosing()` supports deterministic cleanup of async generators when they happen to exit early by [`break`](https://docs.python.org/3/reference/simple_stmts.html#break) or an exception. For example:
+```
+fromcontextlibimport aclosing
+async with aclosing(my_generator()) as values:
+  async for value in values:
+    if value == 42:
+      break
+
+```
+
+This pattern ensures that the generator’s async exit code is executed in the same context as its iterations (so that exceptions and context variables work as expected, and the exit code isn’t run after the lifetime of some task it depends on).
+Added in version 3.10. 
+
+contextlib.nullcontext(_enter_result =None_)[¶](https://docs.python.org/3/library/contextlib.html#contextlib.nullcontext "Link to this definition")
+    
+Return a context manager that returns _enter_result_ from `__enter__`, but otherwise does nothing. It is intended to be used as a stand-in for an optional context manager, for example:
+```
+defmyfunction(arg, ignore_exceptions=False):
+  if ignore_exceptions:
+    # Use suppress to ignore all exceptions.
+    cm = contextlib.suppress(Exception)
+  else:
+    # Do not ignore any exceptions, cm has no effect.
+    cm = contextlib.nullcontext()
+  with cm:
+    # Do something
+
+```
+
+An example using _enter_result_ :
+```
+defprocess_file(file_or_path):
+  if isinstance(file_or_path, str):
+    # If string, open file
+    cm = open(file_or_path)
+  else:
+    # Caller is responsible for closing file
+    cm = nullcontext(file_or_path)
+  with cm as file:
+    # Perform processing on the file
+
+```
+
+It can also be used as a stand-in for [asynchronous context managers](https://docs.python.org/3/reference/datamodel.html#async-context-managers):
+```
+async defsend_http(session=None):
+  if not session:
+    # If no http session, create it with aiohttp
+    cm = aiohttp.ClientSession()
+  else:
+    # Caller is responsible for closing the session
+    cm = nullcontext(session)
+  async with cm as session:
+    # Send http requests with session

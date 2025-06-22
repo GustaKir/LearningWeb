@@ -1,0 +1,45 @@
+Title: Tutorial on Using TiDB with Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/databases/tidb
+Summary: This document provides a comprehensive tutorial that guides users through setting up and using TiDB with Streamlit, covering topics such as signing into TiDB Cloud, creating a database, managing app secrets, adding dependencies, and writing a Streamlit application.
+---
+
+1. Contents
+  2. [Introduction](https://docs.streamlit.io/develop/tutorials/databases/tidb#introduction)
+  3. [Sign in to TiDB Cloud and create a cluster](https://docs.streamlit.io/develop/tutorials/databases/tidb#sign-in-to-tidb-cloud-and-create-a-cluster)
+  4. [Create a TiDB database](https://docs.streamlit.io/develop/tutorials/databases/tidb#create-a-tidb-database)
+  5. [Add username and password to your local app secrets](https://docs.streamlit.io/develop/tutorials/databases/tidb#add-username-and-password-to-your-local-app-secrets)
+  6. [Copy your app secrets to the cloud](https://docs.streamlit.io/develop/tutorials/databases/tidb#copy-your-app-secrets-to-the-cloud)
+  7. [Add dependencies to your requirements file](https://docs.streamlit.io/develop/tutorials/databases/tidb#add-dependencies-to-your-requirements-file)
+  8. [Write your Streamlit app](https://docs.streamlit.io/develop/tutorials/databases/tidb#write-your-streamlit-app)
+  9. [Connect with PyMySQL](https://docs.streamlit.io/develop/tutorials/databases/tidb#connect-with-pymysql)
+
+
+# [](https://docs.streamlit.io/develop/tutorials/databases/tidb#connect-streamlit-to-tidb)Connect Streamlit to TiDB
+## [](https://docs.streamlit.io/develop/tutorials/databases/tidb#introduction)Introduction
+This guide explains how to securely access a **_remote_** TiDB database from Streamlit Community Cloud. It uses [st.connection](https://docs.streamlit.io/develop/api-reference/connections/st.connection) and Streamlit's [Secrets management](https://docs.streamlit.io/develop/concepts/connections/secrets-management). The below example code will **only work on Streamlit version >= 1.28**, when `st.connection` was added.
+[TiDB](https://www.pingcap.com/tidb/) is an open-source, MySQL-compatible database that supports Hybrid Transactional and Analytical Processing (HTAP) workloads. TiDB introducs a [built-in vector search](https://www.pingcap.com/ai/) to the SQL database family, enabling support for your AI applications without requiring a new database or additional technical stacks. [TiDB Cloud](https://tidb.cloud/) is a fully managed cloud database service that simplifies the deployment and management of TiDB databases for developers.
+## [](https://docs.streamlit.io/develop/tutorials/databases/tidb#sign-in-to-tidb-cloud-and-create-a-cluster)Sign in to TiDB Cloud and create a cluster
+First, head over to [TiDB Cloud](https://tidbcloud.com/free-trial) and sign up for a free account, using either Google, GitHub, Microsoft or E-mail:
+![Sign up TiDB Cloud](https://docs.streamlit.io/images/databases/tidb-1.png)
+Once you've signed in, you will already have a TiDB cluster:
+![List clusters](https://docs.streamlit.io/images/databases/tidb-2.png)
+You can create more clusters if you want to. Click the cluster name to enter cluster overview page:
+![Cluster overview](https://docs.streamlit.io/images/databases/tidb-3.png)
+Then click **Connect** to easily get the connection arguments to access the cluster. On the popup, click **Generate Password** to set the password.
+![Get connection arguments](https://docs.streamlit.io/images/databases/tidb-4.png) _priority_high_
+#### Important
+Make sure to note down the password. It won't be available on TiDB Cloud after this step.
+## [](https://docs.streamlit.io/develop/tutorials/databases/tidb#create-a-tidb-database)Create a TiDB database
+_push_pin_
+#### Note
+If you already have a database that you want to use, feel free to [skip to the next step](https://docs.streamlit.io/develop/tutorials/databases/tidb#add-username-and-password-to-your-local-app-secrets).
+Once your TiDB cluster is up and running, connect to it with the `mysql` client(or with **SQL Editor** tab on the console) and enter the following commands to create a database and a table with some example values:
+`CREATE DATABASE pets; USE pets; CREATE TABLE mytable (   name      varchar(80),   pet       varchar(80) ); INSERT INTO mytable VALUES ('Mary', 'dog'), ('John', 'cat'), ('Robert', 'bird'); `
+## [](https://docs.streamlit.io/develop/tutorials/databases/tidb#add-username-and-password-to-your-local-app-secrets)Add username and password to your local app secrets
+Your local Streamlit app will read secrets from a file `.streamlit/secrets.toml` in your app's root directory. Learn more about [Streamlit secrets management here](https://docs.streamlit.io/develop/concepts/connections/secrets-management). Create this file if it doesn't exist yet and add host, username and password of your TiDB cluster as shown below:
+`# .streamlit/secrets.toml [connections.tidb] dialect = "mysql" host = "<TiDB_cluster_host>" port = 4000 database = "pets" username = "<TiDB_cluster_user>" password = "<TiDB_cluster_password>" `
+_priority_high_
+#### Important
+When copying your app secrets to Streamlit Community Cloud, be sure to replace the values of **host** , **username** and **password** with those of your _remote_ TiDB cluster!
+Add this file to `.gitignore` and don't commit it to your GitHub repo!
+## [](https

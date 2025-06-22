@@ -1,0 +1,210 @@
+Title: WebSocket Message Reception in ASGI
+URL: https://fastapi.tiangolo.com/reference/websockets/
+Summary: This section describes the 'receive' method for handling ASGI websocket messages. It outlines valid state transitions, including conditions for connecting, receiving, and disconnecting from the websocket. The method raises errors for unexpected message types during different client states (CONNECTING, CONNECTED, DISCONNECTED).
+---
+
+```
+async defreceive(self) -> Message:
+"""
+  Receive ASGI websocket messages, ensuring valid state transitions.
+  """
+  if self.client_state == WebSocketState.CONNECTING:
+    message = await self._receive()
+    message_type = message["type"]
+    if message_type != "websocket.connect":
+      raise RuntimeError(f'Expected ASGI message "websocket.connect", but got {message_type!r}')
+    self.client_state = WebSocketState.CONNECTED
+    return message
+  elif self.client_state == WebSocketState.CONNECTED:
+    message = await self._receive()
+    message_type = message["type"]
+    if message_type not in {"websocket.receive", "websocket.disconnect"}:
+      raise RuntimeError(
+        f'Expected ASGI message "websocket.receive" or "websocket.disconnect", but got {message_type!r}'
+      )
+    if message_type == "websocket.disconnect":
+      self.client_state = WebSocketState.DISCONNECTED
+    return message
+  else:
+    raise RuntimeError('Cannot call "receive" once a disconnect message has been received.')
+
+```
+  
+---|---  
+###  send `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.send "Permanent link")
+```
+send(message)
+
+```
+
+Send ASGI websocket messages, ensuring valid state transitions.
+PARAMETER | DESCRIPTION  
+---|---  
+`message` |  **TYPE:** `Message`  
+Source code in `starlette/websockets.py`
+```
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+```
+| ```
+async defsend(self, message: Message) -> None:
+"""
+  Send ASGI websocket messages, ensuring valid state transitions.
+  """
+  if self.application_state == WebSocketState.CONNECTING:
+    message_type = message["type"]
+    if message_type not in {"websocket.accept", "websocket.close", "websocket.http.response.start"}:
+      raise RuntimeError(
+        'Expected ASGI message "websocket.accept", "websocket.close" or "websocket.http.response.start", '
+        f"but got {message_type!r}"
+      )
+    if message_type == "websocket.close":
+      self.application_state = WebSocketState.DISCONNECTED
+    elif message_type == "websocket.http.response.start":
+      self.application_state = WebSocketState.RESPONSE
+    else:
+      self.application_state = WebSocketState.CONNECTED
+    await self._send(message)
+  elif self.application_state == WebSocketState.CONNECTED:
+    message_type = message["type"]
+    if message_type not in {"websocket.send", "websocket.close"}:
+      raise RuntimeError(
+        f'Expected ASGI message "websocket.send" or "websocket.close", but got {message_type!r}'
+      )
+    if message_type == "websocket.close":
+      self.application_state = WebSocketState.DISCONNECTED
+    try:
+      await self._send(message)
+    except OSError:
+      self.application_state = WebSocketState.DISCONNECTED
+      raise WebSocketDisconnect(code=1006)
+  elif self.application_state == WebSocketState.RESPONSE:
+    message_type = message["type"]
+    if message_type != "websocket.http.response.body":
+      raise RuntimeError(f'Expected ASGI message "websocket.http.response.body", but got {message_type!r}')
+    if not message.get("more_body", False):
+      self.application_state = WebSocketState.DISCONNECTED
+    await self._send(message)
+  else:
+    raise RuntimeError('Cannot call "send" once a close message has been sent.')
+
+```
+  
+---|---  
+###  accept `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.accept "Permanent link")
+```
+accept(subprotocol=None, headers=None)
+
+```
+
+PARAMETER | DESCRIPTION  
+---|---  
+`subprotocol` |  **TYPE:** `str | None` **DEFAULT:** `None`  
+`headers` |  **TYPE:** `Iterable[tuple[bytes, bytes]] | None` **DEFAULT:** `None`  
+Source code in `starlette/websockets.py`
+```
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+```
+| ```
+async defaccept(
+  self,
+  subprotocol: str | None = None,
+  headers: typing.Iterable[tuple[bytes, bytes]] | None = None,
+) -> None:
+  headers = headers or []
+  if self.client_state == WebSocketState.CONNECTING: # pragma: no branch
+    # If we haven't yet seen the 'connect' message, then wait for it first.
+    await self.receive()
+  await self.send({"type": "websocket.accept", "subprotocol": subprotocol, "headers": headers})
+
+```
+  
+---|---  
+###  receive_text `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.receive_text "Permanent link")
+```
+receive_text()
+
+```
+
+Source code in `starlette/websockets.py`
+```
+115
+116
+117
+118
+119
+120
+```
+| ```
+async defreceive_text(self) -> str:
+  if self.application_state != WebSocketState.CONNECTED:
+    raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+  message = await self.receive()
+  self._raise_on_disconnect(message)
+  return typing.cast(str, message["text"])
+
+```
+  
+---|---  
+###  receive_bytes `async` [¶](https://fastapi.tiangolo.com/reference/websockets/#fastapi.WebSocket.receive_bytes "Permanent link")
+```
+receive_bytes()
+
+```
+
+Source code in `starlette/websockets.py`
+```
+122
+123
+124
+125
+126
+127

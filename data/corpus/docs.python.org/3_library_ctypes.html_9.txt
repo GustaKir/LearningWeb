@@ -1,0 +1,120 @@
+Title: Understanding `ctypes` Pointer Behavior
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: The `ctypes` library in Python does not support original object return (OOR) for attributes, creating new objects instead. Assigning to a pointer's contents modifies the pointed-to memory. Pointers can be indexed with integers to access and change values, but using non-zero indexes requires caution.
+---
+
+```
+
+Note that [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") does not have OOR (original object return), it constructs a new, equivalent object each time you retrieve an attribute:
+>>>```
+>>> pi.contents is i
+False
+>>> pi.contents is pi.contents
+False
+>>>
+
+```
+
+Assigning another [`c_int`](https://docs.python.org/3/library/ctypes.html#ctypes.c_int "ctypes.c_int") instance to the pointer’s contents attribute would cause the pointer to point to the memory location where this is stored:
+>>>```
+>>> i = c_int(99)
+>>> pi.contents = i
+>>> pi.contents
+c_long(99)
+>>>
+
+```
+
+Pointer instances can also be indexed with integers:
+>>>```
+>>> pi[0]
+99
+>>>
+
+```
+
+Assigning to an integer index changes the pointed to value:
+>>>```
+>>> print(i)
+c_long(99)
+>>> pi[0] = 22
+>>> print(i)
+c_long(22)
+>>>
+
+```
+
+It is also possible to use indexes different from 0, but you must know what you’re doing, just as in C: You can access or change arbitrary memory locations. Generally you only use this feature if you receive a pointer from a C function, and you _know_ that the pointer actually points to an array instead of a single item.
+Behind the scenes, the [`pointer()`](https://docs.python.org/3/library/ctypes.html#ctypes.pointer "ctypes.pointer") function does more than simply create pointer instances, it has to create pointer _types_ first. This is done with the [`POINTER()`](https://docs.python.org/3/library/ctypes.html#ctypes.POINTER "ctypes.POINTER") function, which accepts any [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") type, and returns a new type:
+>>>```
+>>> PI = POINTER(c_int)
+>>> PI
+<class 'ctypes.LP_c_long'>
+>>> PI(42)
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: expected c_long instead of int
+>>> PI(c_int(42))
+<ctypes.LP_c_long object at 0x...>
+>>>
+
+```
+
+Calling the pointer type without an argument creates a `NULL` pointer. `NULL` pointers have a `False` boolean value:
+>>>```
+>>> null_ptr = POINTER(c_int)()
+>>> print(bool(null_ptr))
+False
+>>>
+
+```
+
+[`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") checks for `NULL` when dereferencing pointers (but dereferencing invalid non-`NULL` pointers would crash Python):
+>>>```
+>>> null_ptr[0]
+Traceback (most recent call last):
+....
+ValueError: NULL pointer access
+>>>
+>>> null_ptr[0] = 1234
+Traceback (most recent call last):
+....
+ValueError: NULL pointer access
+>>>
+
+```
+
+### Type conversions[¶](https://docs.python.org/3/library/ctypes.html#type-conversions "Link to this heading")
+Usually, ctypes does strict type checking. This means, if you have `POINTER(c_int)` in the [`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes") list of a function or as the type of a member field in a structure definition, only instances of exactly the same type are accepted. There are some exceptions to this rule, where ctypes accepts other objects. For example, you can pass compatible array instances instead of pointer types. So, for `POINTER(c_int)`, ctypes accepts an array of c_int:
+>>>```
+>>> classBar(Structure):
+...   _fields_ = [("count", c_int), ("values", POINTER(c_int))]
+...
+>>> bar = Bar()
+>>> bar.values = (c_int * 3)(1, 2, 3)
+>>> bar.count = 3
+>>> for i in range(bar.count):
+...   print(bar.values[i])
+...
+1
+2
+3
+>>>
+
+```
+
+In addition, if a function argument is explicitly declared to be a pointer type (such as `POINTER(c_int)`) in [`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes"), an object of the pointed type (`c_int` in this case) can be passed to the function. ctypes will apply the required [`byref()`](https://docs.python.org/3/library/ctypes.html#ctypes.byref "ctypes.byref") conversion in this case automatically.
+To set a POINTER type field to `NULL`, you can assign `None`:
+>>>```
+>>> bar.values = None
+>>>
+
+```
+
+Sometimes you have instances of incompatible types. In C, you can cast one type into another type. [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") provides a [`cast()`](https://docs.python.org/3/library/ctypes.html#ctypes.cast "ctypes.cast") function which can be used in the same way. The `Bar` structure defined above accepts `POINTER(c_int)` pointers or [`c_int`](https://docs.python.org/3/library/ctypes.html#ctypes.c_int "ctypes.c_int") arrays for its `values` field, but not instances of other types:
+>>>```
+>>> bar.values = (c_byte * 4)()
+Traceback (most recent call last):
+ File "<stdin>", line 1, in <module>
+TypeError: incompatible types, c_byte_Array_4 instance instead of LP_c_long instance
+>>>

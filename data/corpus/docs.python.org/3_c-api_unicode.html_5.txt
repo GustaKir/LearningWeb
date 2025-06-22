@@ -1,0 +1,42 @@
+Title: Creating Unicode Objects in Python C API
+URL: https://docs.python.org/3/c-api/unicode.html
+Summary: The `PyUnicode_New` function allocates a new Unicode object with a specified size and maximum character code point. It is a non-resizable object, and in case of error, it sets an exception and returns `NULL`. This function was introduced in Python 3.3.
+---
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_New([Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")size, [Py_UCS4](https://docs.python.org/3/c-api/unicode.html#c.Py_UCS4 "Py_UCS4")maxchar)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_New "Link to this definition")
+    _Return value: New reference._
+Create a new Unicode object. _maxchar_ should be the true maximum code point to be placed in the string. As an approximation, it can be rounded up to the nearest value in the sequence 127, 255, 65535, 1114111.
+This is the recommended way to allocate a new Unicode object. Objects created using this function are not resizable.
+On error, set an exception and return `NULL`.
+Added in version 3.3. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_FromKindAndData(intkind, constvoid*buffer, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")size)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FromKindAndData "Link to this definition")
+    _Return value: New reference._
+Create a new Unicode object with the given _kind_ (possible values are [`PyUnicode_1BYTE_KIND`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_1BYTE_KIND "PyUnicode_1BYTE_KIND") etc., as returned by [`PyUnicode_KIND()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_KIND "PyUnicode_KIND")). The _buffer_ must point to an array of _size_ units of 1, 2 or 4 bytes per character, as given by the kind.
+If necessary, the input _buffer_ is copied and transformed into the canonical representation. For example, if the _buffer_ is a UCS4 string ([`PyUnicode_4BYTE_KIND`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_4BYTE_KIND "PyUnicode_4BYTE_KIND")) and it consists only of codepoints in the UCS1 range, it will be transformed into UCS1 ([`PyUnicode_1BYTE_KIND`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_1BYTE_KIND "PyUnicode_1BYTE_KIND")).
+Added in version 3.3. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_FromStringAndSize(constchar*str, [Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")size)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FromStringAndSize "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a Unicode object from the char buffer _str_. The bytes will be interpreted as being UTF-8 encoded. The buffer is copied into the new object. The return value might be a shared object, i.e. modification of the data is not allowed.
+This function raises [`SystemError`](https://docs.python.org/3/library/exceptions.html#SystemError "SystemError") when:
+  * _size_ < 0,
+  * _str_ is `NULL` and _size_ > 0
+
+
+Changed in version 3.12: _str_ == `NULL` with _size_ > 0 is not allowed anymore. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_FromString(constchar*str)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FromString "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a Unicode object from a UTF-8 encoded null-terminated char buffer _str_. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PyUnicode_FromFormat(constchar*format, ...)[¶](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_FromFormat "Link to this definition")
+    _Return value: New reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Take a C `printf()`-style _format_ string and a variable number of arguments, calculate the size of the resulting Python Unicode string and return a string with the values formatted into it. The variable arguments must be C types and must correspond exactly to the format characters in the _format_ ASCII-encoded string.
+A conversion specifier contains two or more characters and has the following components, which must occur in this order:
+  1. The `'%'` character, which marks the start of the specifier.
+  2. Conversion flags (optional), which affect the result of some conversion types.
+  3. Minimum field width (optional). If specified as an `'*'` (asterisk), the actual width is given in the next argument, which must be of type int, and the object to convert comes after the minimum field width and optional precision.
+  4. Precision (optional), given as a `'.'` (dot) followed by the precision. If specified as `'*'` (an asterisk), the actual precision is given in the next argument, which must be of type int, and the value to convert comes after the precision.
+  5. Length modifier (optional).
+  6. Conversion type.

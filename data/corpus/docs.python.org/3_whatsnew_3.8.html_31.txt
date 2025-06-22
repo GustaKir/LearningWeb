@@ -1,0 +1,43 @@
+Title: Changes in the C API in Python 3.8
+URL: https://docs.python.org/3/whatsnew/3.8.html
+Summary: Python 3.8 introduces several changes to the C API, including the addition of a new '_cf_feature_version_' field in the `PyCompilerFlags` structure, the removal of the `PyEval_ReInitThreads()` function, and modifications to how C extensions are linked on Unix.
+---
+
+### Changes in the C API[¶](https://docs.python.org/3/whatsnew/3.8.html#changes-in-the-c-api "Link to this heading")
+  * The [`PyCompilerFlags`](https://docs.python.org/3/c-api/veryhigh.html#c.PyCompilerFlags "PyCompilerFlags") structure got a new _cf_feature_version_ field. It should be initialized to `PY_MINOR_VERSION`. The field is ignored by default, and is used if and only if `PyCF_ONLY_AST` flag is set in _cf_flags_. (Contributed by Guido van Rossum in [bpo-35766](https://bugs.python.org/issue?@action=redirect&bpo=35766).)
+  * The `PyEval_ReInitThreads()` function has been removed from the C API. It should not be called explicitly: use [`PyOS_AfterFork_Child()`](https://docs.python.org/3/c-api/sys.html#c.PyOS_AfterFork_Child "PyOS_AfterFork_Child") instead. (Contributed by Victor Stinner in [bpo-36728](https://bugs.python.org/issue?@action=redirect&bpo=36728).)
+  * On Unix, C extensions are no longer linked to libpython except on Android and Cygwin. When Python is embedded, `libpython` must not be loaded with `RTLD_LOCAL`, but `RTLD_GLOBAL` instead. Previously, using `RTLD_LOCAL`, it was already not possible to load C extensions which were not linked to `libpython`, like C extensions of the standard library built by the `*shared*` section of `Modules/Setup`. (Contributed by Victor Stinner in [bpo-21536](https://bugs.python.org/issue?@action=redirect&bpo=21536).)
+  * Use of `#` variants of formats in parsing or building value (e.g. [`PyArg_ParseTuple()`](https://docs.python.org/3/c-api/arg.html#c.PyArg_ParseTuple "PyArg_ParseTuple"), [`Py_BuildValue()`](https://docs.python.org/3/c-api/arg.html#c.Py_BuildValue "Py_BuildValue"), [`PyObject_CallFunction()`](https://docs.python.org/3/c-api/call.html#c.PyObject_CallFunction "PyObject_CallFunction"), etc.) without `PY_SSIZE_T_CLEAN` defined raises `DeprecationWarning` now. It will be removed in 3.10 or 4.0. Read [Parsing arguments and building values](https://docs.python.org/3/c-api/arg.html#arg-parsing) for detail. (Contributed by Inada Naoki in [bpo-36381](https://bugs.python.org/issue?@action=redirect&bpo=36381).)
+  * Instances of heap-allocated types (such as those created with [`PyType_FromSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromSpec "PyType_FromSpec")) hold a reference to their type object. Increasing the reference count of these type objects has been moved from [`PyType_GenericAlloc()`](https://docs.python.org/3/c-api/type.html#c.PyType_GenericAlloc "PyType_GenericAlloc") to the more low-level functions, [`PyObject_Init()`](https://docs.python.org/3/c-api/allocation.html#c.PyObject_Init "PyObject_Init") and `PyObject_INIT()`. This makes types created through [`PyType_FromSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromSpec "PyType_FromSpec") behave like other classes in managed code.
+[Statically allocated types](https://docs.python.org/3/c-api/typeobj.html#static-types) are not affected.
+For the vast majority of cases, there should be no side effect. However, types that manually increase the reference count after allocating an instance (perhaps to work around the bug) may now become immortal. To avoid this, these classes need to call Py_DECREF on the type object during instance deallocation.
+To correctly port these types into 3.8, please apply the following changes:
+    * Remove [`Py_INCREF`](https://docs.python.org/3/c-api/refcounting.html#c.Py_INCREF "Py_INCREF") on the type object after allocating an instance - if any. This may happen after calling [`PyObject_New`](https://docs.python.org/3/c-api/allocation.html#c.PyObject_New "PyObject_New"), [`PyObject_NewVar`](https://docs.python.org/3/c-api/allocation.html#c.PyObject_NewVar "PyObject_NewVar"), [`PyObject_GC_New()`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_New "PyObject_GC_New"), [`PyObject_GC_NewVar()`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_NewVar "PyObject_GC_NewVar"), or any other custom allocator that uses [`PyObject_Init()`](https://docs.python.org/3/c-api/allocation.html#c.PyObject_Init "PyObject_Init") or `PyObject_INIT()`.
+Example:
+```
+staticfoo_struct*
+foo_new(PyObject*type){
+foo_struct*foo=PyObject_GC_New(foo_struct,(PyTypeObject*)type);
+if(foo==NULL)
+returnNULL;
+#if PY_VERSION_HEX < 0x03080000
+// Workaround for Python issue 35810; no longer necessary in Python 3.8
+PY_INCREF(type)
+#endif
+returnfoo;
+}
+
+```
+
+    * Ensure that all custom `tp_dealloc` functions of heap-allocated types decrease the type’s reference count.
+Example:
+```
+staticvoid
+foo_dealloc(foo_struct*instance){
+PyObject*type=Py_TYPE(instance);
+PyObject_GC_Del(instance);
+#if PY_VERSION_HEX >= 0x03080000
+// This was not needed before Python 3.8 (Python issue 35810)
+Py_DECREF(type);
+#endif
+}

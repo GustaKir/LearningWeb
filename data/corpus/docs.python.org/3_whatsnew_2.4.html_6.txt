@@ -1,0 +1,50 @@
+Title: PEP 327: Decimal Data Type
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: This section discusses Python's new `Decimal` data type introduced in PEP 327, which accurately represents certain decimal fractions that floating-point numbers cannot. It highlights the limitations of traditional floating-point representation and encourages reading the relevant PEP for detailed examples and use of the `subprocess` module.
+---
+
+```
+
+The PEP takes various examples of shell and Python code and shows how they’d be translated into Python code that uses [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management."). Reading this section of the PEP is highly recommended.
+See also 
+
+[**PEP 324**](https://peps.python.org/pep-0324/) - subprocess - New process module
+    
+Written and implemented by Peter Åstrand, with assistance from Fredrik Lundh and others.
+## PEP 327: Decimal Data Type[¶](https://docs.python.org/3/whatsnew/2.4.html#pep-327-decimal-data-type "Link to this heading")
+Python has always supported floating-point (FP) numbers, based on the underlying C double type, as a data type. However, while most programming languages provide a floating-point type, many people (even programmers) are unaware that floating-point numbers don’t represent certain decimal fractions accurately. The new `Decimal` type can represent these fractions accurately, up to a user-specified precision limit.
+### Why is Decimal needed?[¶](https://docs.python.org/3/whatsnew/2.4.html#why-is-decimal-needed "Link to this heading")
+The limitations arise from the representation used for floating-point numbers. FP numbers are made up of three components:
+  * The sign, which is positive or negative.
+  * The mantissa, which is a single-digit binary number followed by a fractional part. For example, `1.01` in base-2 notation is `1 + 0/2 + 1/4`, or 1.25 in decimal notation.
+  * The exponent, which tells where the decimal point is located in the number represented.
+
+
+For example, the number 1.25 has positive sign, a mantissa value of 1.01 (in binary), and an exponent of 0 (the decimal point doesn’t need to be shifted). The number 5 has the same sign and mantissa, but the exponent is 2 because the mantissa is multiplied by 4 (2 to the power of the exponent 2); 1.25 * 4 equals 5.
+Modern systems usually provide floating-point support that conforms to a standard called IEEE 754. C’s double type is usually implemented as a 64-bit IEEE 754 number, which uses 52 bits of space for the mantissa. This means that numbers can only be specified to 52 bits of precision. If you’re trying to represent numbers whose expansion repeats endlessly, the expansion is cut off after 52 bits. Unfortunately, most software needs to produce output in base 10, and common fractions in base 10 are often repeating decimals in binary. For example, 1.1 decimal is binary `1.0001100110011 ...`; .1 = 1/16 + 1/32 + 1/256 plus an infinite number of additional terms. IEEE 754 has to chop off that infinitely repeated decimal after 52 digits, so the representation is slightly inaccurate.
+Sometimes you can see this inaccuracy when the number is printed:
+>>>```
+>>> 1.1
+1.1000000000000001
+
+```
+
+The inaccuracy isn’t always visible when you print the number because the FP-to-decimal-string conversion is provided by the C library, and most C libraries try to produce sensible output. Even if it’s not displayed, however, the inaccuracy is still there and subsequent operations can magnify the error.
+For many applications this doesn’t matter. If I’m plotting points and displaying them on my monitor, the difference between 1.1 and 1.1000000000000001 is too small to be visible. Reports often limit output to a certain number of decimal places, and if you round the number to two or three or even eight decimal places, the error is never apparent. However, for applications where it does matter, it’s a lot of work to implement your own custom arithmetic routines.
+Hence, the `Decimal` type was created.
+### The `Decimal` type[¶](https://docs.python.org/3/whatsnew/2.4.html#the-decimal-type "Link to this heading")
+A new module, [`decimal`](https://docs.python.org/3/library/decimal.html#module-decimal "decimal: Implementation of the General Decimal Arithmetic Specification."), was added to Python’s standard library. It contains two classes, `Decimal` and `Context`. `Decimal` instances represent numbers, and `Context` instances are used to wrap up various settings such as the precision and default rounding mode.
+`Decimal` instances are immutable, like regular Python integers and FP numbers; once it’s been created, you can’t change the value an instance represents. `Decimal` instances can be created from integers or strings:
+>>>```
+>>> importdecimal
+>>> decimal.Decimal(1972)
+Decimal("1972")
+>>> decimal.Decimal("1.1")
+Decimal("1.1")
+
+```
+
+You can also provide tuples containing the sign, the mantissa represented as a tuple of decimal digits, and the exponent:
+>>>```
+>>> decimal.Decimal((1, (1, 4, 7, 5), -2))
+Decimal("-14.75")

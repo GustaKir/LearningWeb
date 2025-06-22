@@ -1,0 +1,146 @@
+Title: Using Regular Expressions in Query Parameters
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This section explains how to define a regular expression pattern for query parameters in FastAPI. It provides a code example showing how to enforce validation on a string query parameter, including specifying minimum and maximum lengths along with a specific pattern that must be matched.
+---
+
+```
+
+## Add regular expressions[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#add-regular-expressions "Permanent link")
+You can define a regular expression `pattern` that the parameter should match:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_13_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[
+    str | None, Query(min_length=3, max_length=50, pattern="^fixedquery$")
+  ] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_14_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_14_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_14_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_14_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[
+    Union[str, None], Query(min_length=3, max_length=50, pattern="^fixedquery$")
+  ] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[
+    Union[str, None], Query(min_length=3, max_length=50, pattern="^fixedquery$")
+  ] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: str | None = Query(
+    default=None, min_length=3, max_length=50, pattern="^fixedquery$"
+  ),
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Union[str, None] = Query(
+    default=None, min_length=3, max_length=50, pattern="^fixedquery$"
+  ),
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+This specific regular expression pattern checks that the received parameter value:
+  * `^`: starts with the following characters, doesn't have characters before.
+  * `fixedquery`: has the exact value `fixedquery`.
+  * `$`: ends there, doesn't have any more characters after `fixedquery`.
+
+
+If you feel lost with all these **"regular expression"** ideas, don't worry. They are a hard topic for many people. You can still do a lot of stuff without needing regular expressions yet.
+Now you know that whenever you need them you can use them in **FastAPI**.
+### Pydantic v1 `regex` instead of `pattern`[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#pydantic-v1-regex-instead-of-pattern "Permanent link")
+Before Pydantic version 2 and before FastAPI 0.100.0, the parameter was called `regex` instead of `pattern`, but it's now deprecated.
+You could still see some code using it:
+[Pydantic v1](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_15_1)
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_16_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(
+  q: Annotated[
+    str | None, Query(min_length=3, max_length=50, regex="^fixedquery$")
+  ] = None,
+):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+But know that this is deprecated and it should be updated to use the new parameter `pattern`. 🤓
+## Default values[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#default-values "Permanent link")
+You can, of course, use default values other than `None`.
+Let's say that you want to declare the `q` query parameter to have a `min_length` of `3`, and to have a default value of `"fixedquery"`:
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_17_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Query
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Annotated[str, Query(min_length=3)] = "fixedquery"):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results

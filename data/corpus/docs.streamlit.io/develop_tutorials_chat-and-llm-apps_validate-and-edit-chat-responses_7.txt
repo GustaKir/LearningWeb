@@ -1,0 +1,44 @@
+Title: Validating and Accepting Chat Responses in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses
+Summary: This section outlines how to implement a conditional block for accepting chat responses in a Streamlit app. It describes the process of saving the accepted message into chat history, clearing pending states, and updating the app stage. Additionally, it covers the functionality of a 'Re-validate' button to clear validation information and switch back to the validation stage.
+---
+
+a conditional block, and display a primary-type button labeled "Accept." Within the conditional block, save the pending message into the chat history, and clear the pending and validation information from Session State:
+` if cols[0].button("Accept", type="primary"):         st.session_state.history.append( {"role": "assistant", "content": st.session_state.pending} )         st.session_state.pending = None         st.session_state.validation = {} `
+  17. Update the stage to `"user"`, and rerun the app:
+`        st.session_state.stage = "user"         st.rerun() `
+If the user clicks the "**Accept** " button, the app will rerun and execute this block. At the end of this block, the app will rerun again and return to the `"user"` stage.
+  18. In the second column, start a conditional block, and display a button labeled "Re-validate:"
+` if cols[1].button("Re-validate"): `
+  19. Within the conditional block, clear the validation information from Session State, update the stage to `"validate"`, and rerun the app:
+`        st.session_state.validation = {}         st.session_state.stage = "validate"         st.rerun() `
+If the user clicks the "**Re-validate** " button, the app will rerun and execute this conditional block. At the end of this block, the app will rerun again and enter the `"validate"` stage.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#define-the-rewrite-stage)Define the `"rewrite"` stage
+When `st.session_state.stage` is `"rewrite"`, the user can freely edit the response in a text area.
+  1. Start a conditional block for the `"rewrite"` stage:
+`elif st.session_state.stage == "rewrite": `
+  2. For visual consistency, display a disabled chat input:
+`  st.chat_input("Accept, correct, or rewrite the answer above.", disabled=True) `
+  3. To let the user edit the pending response, in a chat message container, display a text area input:
+` with st.chat_message("assistant"):     new = st.text_area("Rewrite the answer", value=st.session_state.pending) `
+`value=st.session_state.pending` prefills the text area input with the pending response. The user can edit it or replace the text entirely.
+  4. Start a conditional block, and display a primary-type button labeled "Update." Disable the button if text area input is empty:
+` if st.button( "Update", type="primary", disabled=new is None or new.strip(". ") == "" ): `
+  5. Within the conditional block, add the new response to the chat history, and clear the pending and validation information from Session State:
+`      st.session_state.history.append({"role": "assistant", "content": new})       st.session_state.pending = None       st.session_state.validation = {} `
+  6. Update the stage to `"user"`, and rerun the app:
+`      st.session_state.stage = "user"       st.rerun() `
+If the user clicks the "**Update** " button, the app will rerun and execute this block. At the end of this block, the app will rerun again and return to the `"user"` stage.
+  7. Save your file and go to your browser to try your new app.
+
+
+## [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses#improve-the-example)Improve the example
+Now that you have a working app, you can iteratively improve it. Because there are some common elements between stages, you might want to introduce additional functions to reduce duplicate code. You can use callbacks with the buttons so the app doesn't rerun twice in a row. Alternatively, you can handle more edge cases.
+The example includes some protection against saving an empty response, but it isn't comprehensive. If every sentence in a response is marked as an error, a user can remove each of them in the `"correct"` stage and accept the empty result. If the response is empty in the `"correct"` stage, consider disabling the "**Accept** " button or changing it to "**Rewrite**."
+To see another edge case, try this in the running example:
+  1. Submit a prompt.
+  2. Select "**Rewrite answer**."
+  3. In the text area, highlight all text, and press `Delete`. Do not click or tab outside of the text area.
+  4. Immediately click the "**Update** " button.

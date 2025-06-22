@@ -1,0 +1,22 @@
+Title: Global Interpreter Lock and Thread State Management
+URL: https://docs.python.org/3/c-api/init.html
+Summary: This section explains the management of the global interpreter lock (GIL) in Python, emphasizing the importance of retrieving the current thread state before releasing the lock. It highlights common scenarios for releasing the GIL, such as system I/O and long-running computations that do not require Python object access.
+---
+
+```
+
+Here is how these functions work: the global interpreter lock is used to protect the pointer to the current thread state. When releasing the lock and saving the thread state, the current thread state pointer must be retrieved before the lock is released (since another thread could immediately acquire the lock and store its own thread state in the global variable). Conversely, when acquiring the lock and restoring the thread state, the lock must be acquired before storing the thread state pointer.
+Note
+Calling system I/O functions is the most common use case for releasing the GIL, but it can also be useful before calling long-running computations which don’t need access to Python objects, such as compression or cryptographic functions operating over memory buffers. For example, the standard [`zlib`](https://docs.python.org/3/library/zlib.html#module-zlib "zlib: Low-level interface to compression and decompression routines compatible with gzip.") and [`hashlib`](https://docs.python.org/3/library/hashlib.html#module-hashlib "hashlib: Secure hash and message digest algorithms.") modules release the GIL when compressing or hashing data.
+### Non-Python created threads[¶](https://docs.python.org/3/c-api/init.html#non-python-created-threads "Link to this heading")
+When threads are created using the dedicated Python APIs (such as the [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module), a thread state is automatically associated to them and the code showed above is therefore correct. However, when threads are created from C (for example by a third-party library with its own thread management), they don’t hold the GIL, nor is there a thread state structure for them.
+If you need to call Python code from these threads (often this will be part of a callback API provided by the aforementioned third-party library), you must first register these threads with the interpreter by creating a thread state data structure, then acquiring the GIL, and finally storing their thread state pointer, before you can start using the Python/C API. When you are done, you should reset the thread state pointer, release the GIL, and finally free the thread state data structure.
+The [`PyGILState_Ensure()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Ensure "PyGILState_Ensure") and [`PyGILState_Release()`](https://docs.python.org/3/c-api/init.html#c.PyGILState_Release "PyGILState_Release") functions do all of the above automatically. The typical idiom for calling into Python from a C thread is:
+```
+PyGILState_STATEgstate;
+gstate=PyGILState_Ensure();
+/* Perform Python actions here. */
+result=CallSomeFunction();
+/* evaluate result or handle exception */
+/* Release the thread. No Python API allowed beyond this point. */
+PyGILState_Release(gstate);

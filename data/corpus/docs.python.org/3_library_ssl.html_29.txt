@@ -1,0 +1,33 @@
+Title: SSL Library - Certificates Overview
+URL: https://docs.python.org/3/library/ssl.html
+Summary: This section discusses the SSL library's handling of certificates, which are fundamental to public-key/private-key encryption systems. It explains the roles of public and private keys, emphasizing their relationship in securing communications. Additionally, it notes that a `NotImplementedError` may be raised if `HAS_PSK` is `False`, a feature introduced in version 3.13.
+---
+
+```
+
+This method will raise [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") if [`HAS_PSK`](https://docs.python.org/3/library/ssl.html#ssl.HAS_PSK "ssl.HAS_PSK") is `False`.
+Added in version 3.13.
+## Certificates[¶](https://docs.python.org/3/library/ssl.html#certificates "Link to this heading")
+Certificates in general are part of a public-key / private-key system. In this system, each _principal_ , (which may be a machine, or a person, or an organization) is assigned a unique two-part encryption key. One part of the key is public, and is called the _public key_ ; the other part is kept secret, and is called the _private key_. The two parts are related, in that if you encrypt a message with one of the parts, you can decrypt it with the other part, and **only** with the other part.
+A certificate contains information about two principals. It contains the name of a _subject_ , and the subject’s public key. It also contains a statement by a second principal, the _issuer_ , that the subject is who they claim to be, and that this is indeed the subject’s public key. The issuer’s statement is signed with the issuer’s private key, which only the issuer knows. However, anyone can verify the issuer’s statement by finding the issuer’s public key, decrypting the statement with it, and comparing it to the other information in the certificate. The certificate also contains information about the time period over which it is valid. This is expressed as two fields, called “notBefore” and “notAfter”.
+In the Python use of certificates, a client or server can use a certificate to prove who they are. The other side of a network connection can also be required to produce a certificate, and that certificate can be validated to the satisfaction of the client or server that requires such validation. The connection attempt can be set to raise an exception if the validation fails. Validation is done automatically, by the underlying OpenSSL framework; the application need not concern itself with its mechanics. But the application does usually need to provide sets of certificates to allow this process to take place.
+Python uses files to contain certificates. They should be formatted as “PEM” (see [**RFC 1422**](https://datatracker.ietf.org/doc/html/rfc1422.html)), which is a base-64 encoded form wrapped with a header line and a footer line:
+```
+-----BEGIN CERTIFICATE-----
+... (certificate in base64 PEM encoding) ...
+-----END CERTIFICATE-----
+
+```
+
+### Certificate chains[¶](https://docs.python.org/3/library/ssl.html#certificate-chains "Link to this heading")
+The Python files which contain certificates can contain a sequence of certificates, sometimes called a _certificate chain_. This chain should start with the specific certificate for the principal who “is” the client or server, and then the certificate for the issuer of that certificate, and then the certificate for the issuer of _that_ certificate, and so on up the chain till you get to a certificate which is _self-signed_ , that is, a certificate which has the same subject and issuer, sometimes called a _root certificate_. The certificates should just be concatenated together in the certificate file. For example, suppose we had a three certificate chain, from our server certificate to the certificate of the certification authority that signed our server certificate, to the root certificate of the agency which issued the certification authority’s certificate:
+```
+-----BEGIN CERTIFICATE-----
+... (certificate for your server)...
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+... (the certificate for the CA)...
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+... (the root certificate for the CA's issuer)...
+-----END CERTIFICATE-----

@@ -1,0 +1,89 @@
+Title: Function Prototypes in ctypes
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: This section describes how to create function prototypes using `ctypes.CFUNCTYPE` and `ctypes.WINFUNCTYPE`, which facilitate invoking standard C functions in Python. It highlights that these prototypes release the Global Interpreter Lock (GIL) during calls and explains the use of parameters like `_use_errno_` and `_use_last_error_` for managing system errno and Windows error codes.
+---
+
+ctypes.CFUNCTYPE(_restype_ , _* argtypes_, _use_errno =False_, _use_last_error =False_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.CFUNCTYPE "Link to this definition")
+    
+The returned function prototype creates functions that use the standard C calling convention. The function will release the GIL during the call. If _use_errno_ is set to true, the ctypes private copy of the system [`errno`](https://docs.python.org/3/library/errno.html#module-errno "errno: Standard errno system symbols.") variable is exchanged with the real [`errno`](https://docs.python.org/3/library/errno.html#module-errno "errno: Standard errno system symbols.") value before and after the call; _use_last_error_ does the same for the Windows error code. 
+
+ctypes.WINFUNCTYPE(_restype_ , _* argtypes_, _use_errno =False_, _use_last_error =False_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.WINFUNCTYPE "Link to this definition")
+    
+The returned function prototype creates functions that use the `stdcall` calling convention. The function will release the GIL during the call. _use_errno_ and _use_last_error_ have the same meaning as above.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Windows 
+
+ctypes.PYFUNCTYPE(_restype_ , _* argtypes_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes.PYFUNCTYPE "Link to this definition")
+    
+The returned function prototype creates functions that use the Python calling convention. The function will _not_ release the GIL during the call.
+Function prototypes created by these factory functions can be instantiated in different ways, depending on the type and number of the parameters in the call: 
+
+prototype(_address_)
+    
+Returns a foreign function at the specified address which must be an integer. 
+
+prototype(_callable_)
+    
+Create a C callable function (a callback function) from a Python _callable_. 
+
+prototype(_func_spec_[, _paramflags_])
+    
+Returns a foreign function exported by a shared library. _func_spec_ must be a 2-tuple `(name_or_ordinal, library)`. The first item is the name of the exported function as string, or the ordinal of the exported function as small integer. The second item is the shared library instance. 
+
+prototype(_vtbl_index_ , _name_[, _paramflags_[, _iid_]])
+    
+Returns a foreign function that will call a COM method. _vtbl_index_ is the index into the virtual function table, a small non-negative integer. _name_ is name of the COM method. _iid_ is an optional pointer to the interface identifier which is used in extended error reporting.
+COM methods use a special calling convention: They require a pointer to the COM interface as first argument, in addition to those parameters that are specified in the `argtypes` tuple.
+The optional _paramflags_ parameter creates foreign function wrappers with much more functionality than the features described above.
+_paramflags_ must be a tuple of the same length as [`argtypes`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.argtypes "ctypes._CFuncPtr.argtypes").
+Each item in this tuple contains further information about a parameter, it must be a tuple containing one, two, or three items.
+The first item is an integer containing a combination of direction flags for the parameter:
+> 
+
+1
+    
+> Specifies an input parameter to the function. 
+
+2
+    
+> Output parameter. The foreign function fills in a value. 
+
+4
+    
+> Input parameter which defaults to the integer zero.
+The optional second item is the parameter name as string. If this is specified, the foreign function can be called with named parameters.
+The optional third item is the default value for this parameter.
+The following example demonstrates how to wrap the Windows `MessageBoxW` function so that it supports default parameters and named arguments. The C declaration from the windows header file is this:
+```
+WINUSERAPI int WINAPI
+MessageBoxW(
+  HWND hWnd,
+  LPCWSTR lpText,
+  LPCWSTR lpCaption,
+  UINT uType);
+
+```
+
+Here is the wrapping with [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python."):
+>>>```
+>>> fromctypesimport c_int, WINFUNCTYPE, windll
+>>> fromctypes.wintypesimport HWND, LPCWSTR, UINT
+>>> prototype = WINFUNCTYPE(c_int, HWND, LPCWSTR, LPCWSTR, UINT)
+>>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", "Hello from ctypes"), (1, "flags", 0)
+>>> MessageBox = prototype(("MessageBoxW", windll.user32), paramflags)
+
+```
+
+The `MessageBox` foreign function can now be called in these ways:
+>>>```
+>>> MessageBox()
+>>> MessageBox(text="Spam, spam, spam")
+>>> MessageBox(flags=2, text="foo bar")
+
+```
+
+A second example demonstrates output parameters. The win32 `GetWindowRect` function retrieves the dimensions of a specified window by copying them into `RECT` structure that the caller has to supply. Here is the C declaration:
+```
+WINUSERAPI BOOL WINAPI
+GetWindowRect(
+   HWND hWnd,
+   LPRECT lpRect);

@@ -1,0 +1,48 @@
+Title: os.write() Function
+URL: https://docs.python.org/3/library/os.html
+Summary: The os.write() function writes a bytestring to a specified file descriptor, returning the number of bytes written. It is intended for low-level I/O operations and should be used with file descriptors obtained from os.open() or pipe(). For file objects created with the built-in open() or related functions, use their write() method instead.
+---
+
+os.write(_fd_ , _str_ , _/_)[¶](https://docs.python.org/3/library/os.html#os.write "Link to this definition")
+    
+Write the bytestring in _str_ to file descriptor _fd_.
+Return the number of bytes actually written.
+Note
+This function is intended for low-level I/O and must be applied to a file descriptor as returned by [`os.open()`](https://docs.python.org/3/library/os.html#os.open "os.open") or [`pipe()`](https://docs.python.org/3/library/os.html#os.pipe "os.pipe"). To write a “file object” returned by the built-in function [`open()`](https://docs.python.org/3/library/functions.html#open "open") or by [`popen()`](https://docs.python.org/3/library/os.html#os.popen "os.popen") or [`fdopen()`](https://docs.python.org/3/library/os.html#os.fdopen "os.fdopen"), or [`sys.stdout`](https://docs.python.org/3/library/sys.html#sys.stdout "sys.stdout") or [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr"), use its `write()` method.
+Changed in version 3.5: If the system call is interrupted and the signal handler does not raise an exception, the function now retries the system call instead of raising an [`InterruptedError`](https://docs.python.org/3/library/exceptions.html#InterruptedError "InterruptedError") exception (see [**PEP 475**](https://peps.python.org/pep-0475/) for the rationale). 
+
+os.writev(_fd_ , _buffers_ , _/_)[¶](https://docs.python.org/3/library/os.html#os.writev "Link to this definition")
+    
+Write the contents of _buffers_ to file descriptor _fd_. _buffers_ must be a sequence of [bytes-like objects](https://docs.python.org/3/glossary.html#term-bytes-like-object). Buffers are processed in array order. Entire contents of the first buffer is written before proceeding to the second, and so on.
+Returns the total number of bytes actually written.
+The operating system may set a limit ([`sysconf()`](https://docs.python.org/3/library/os.html#os.sysconf "os.sysconf") value `'SC_IOV_MAX'`) on the number of buffers that can be used.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+Added in version 3.3.
+### Querying the size of a terminal[¶](https://docs.python.org/3/library/os.html#querying-the-size-of-a-terminal "Link to this heading")
+Added in version 3.3. 
+
+os.get_terminal_size(_fd =STDOUT_FILENO_, _/_)[¶](https://docs.python.org/3/library/os.html#os.get_terminal_size "Link to this definition")
+    
+Return the size of the terminal window as `(columns, lines)`, tuple of type [`terminal_size`](https://docs.python.org/3/library/os.html#os.terminal_size "os.terminal_size").
+The optional argument `fd` (default `STDOUT_FILENO`, or standard output) specifies which file descriptor should be queried.
+If the file descriptor is not connected to a terminal, an [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError "OSError") is raised.
+[`shutil.get_terminal_size()`](https://docs.python.org/3/library/shutil.html#shutil.get_terminal_size "shutil.get_terminal_size") is the high-level function which should normally be used, `os.get_terminal_size` is the low-level implementation.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, Windows. 
+
+_class_ os.terminal_size[¶](https://docs.python.org/3/library/os.html#os.terminal_size "Link to this definition")
+    
+A subclass of tuple, holding `(columns, lines)` of the terminal window size. 
+
+columns[¶](https://docs.python.org/3/library/os.html#os.terminal_size.columns "Link to this definition")
+    
+Width of the terminal window in characters. 
+
+lines[¶](https://docs.python.org/3/library/os.html#os.terminal_size.lines "Link to this definition")
+    
+Height of the terminal window in characters.
+### Inheritance of File Descriptors[¶](https://docs.python.org/3/library/os.html#inheritance-of-file-descriptors "Link to this heading")
+Added in version 3.4.
+A file descriptor has an “inheritable” flag which indicates if the file descriptor can be inherited by child processes. Since Python 3.4, file descriptors created by Python are non-inheritable by default.
+On UNIX, non-inheritable file descriptors are closed in child processes at the execution of a new program, other file descriptors are inherited.
+On Windows, non-inheritable handles and file descriptors are closed in child processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout and stderr), which are always inherited. Using [`spawn*`](https://docs.python.org/3/library/os.html#os.spawnl "os.spawnl") functions, all inheritable handles and all inheritable file descriptors are inherited. Using the [`subprocess`](https://docs.python.org/3/library/subprocess.html#module-subprocess "subprocess: Subprocess management.") module, all file descriptors except standard streams are closed, and inheritable handles are only inherited if the _close_fds_ parameter is `False`.
+On WebAssembly platforms, the file descriptor cannot be modified.

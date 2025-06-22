@@ -1,0 +1,66 @@
+Title: Streamlit Session State API Reference
+URL: https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state
+Summary: This document provides an overview of the Session State API in Streamlit, detailing how to initialize values, read and update state, delete items, associate sessions with widget states, and use callbacks for updates. It also covers the use of forms and the concept of serializable session state.
+---
+
+1. Contents
+  2. [Initialize values in Session State](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#initialize-values-in-session-state)
+  3. [Reads and updates](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#reads-and-updates)
+  4. [Delete items](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#delete-items)
+  5. [Session State and Widget State association](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#session-state-and-widget-state-association)
+  6. [Use Callbacks to update Session State](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#use-callbacks-to-update-session-state)
+  7. [Forms and Callbacks](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#forms-and-callbacks)
+  8. [Serializable Session State](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#serializable-session-state)
+  9. [Caveats and limitations](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#caveats-and-limitations)
+
+
+# [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#session-state)Session State
+Session State is a way to share variables between reruns, for each user session. In addition to the ability to store and persist state, Streamlit also exposes the ability to manipulate state using Callbacks. Session state also persists across apps inside a [multipage app](https://docs.streamlit.io/develop/concepts/multipage-apps).
+Check out this Session State basics tutorial video by Streamlit Developer Advocate Dr. Marisa Smith to get started:
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#initialize-values-in-session-state)Initialize values in Session State
+The Session State API follows a field-based API, which is very similar to Python dictionaries:
+`# Initialization if 'key' not in st.session_state:   st.session_state['key'] = 'value' # Session State also supports attribute based syntax if 'key' not in st.session_state:   st.session_state.key = 'value' `
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#reads-and-updates)Reads and updates
+Read the value of an item in Session State and display it by passing to `st.write` :
+`# Read st.write(st.session_state.key) # Outputs: value `
+Update an item in Session State by assigning it a value:
+`st.session_state.key = 'value2' # Attribute API st.session_state['key'] = 'value2' # Dictionary like API `
+Curious about what is in Session State? Use `st.write` or magic:
+`st.write(st.session_state) # With magic: st.session_state `
+Streamlit throws a handy exception if an uninitialized variable is accessed:
+`st.write(st.session_state['value']) # Throws an exception! `
+![state-uninitialized-exception](https://docs.streamlit.io/images/state_uninitialized_exception.png)
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#delete-items)Delete items
+Delete items in Session State using the syntax to delete items in any Python dictionary:
+`# Delete a single key-value pair del st.session_state[key] # Delete all the items in Session state for key in st.session_state.keys(): del st.session_state[key] `
+Session State can also be cleared by going to Settings → Clear Cache, followed by Rerunning the app.
+![state-clear-cache](https://docs.streamlit.io/images/clear_cache.png)
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#session-state-and-widget-state-association)Session State and Widget State association
+Every widget with a key is automatically added to Session State:
+`st.text_input("Your name", key="name") # This exists now: st.session_state.name `
+### [](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.session_state#use-callbacks-to-update-session-state)Use Callbacks to update Session State
+A callback is a python function which gets called when an input widget changes.
+**Order of execution** : When updating Session state in response to **events** , a callback function gets executed first, and then the app is executed from top to bottom.
+Callbacks can be used with widgets using the parameters `on_change` (or `on_click`), `args`, and `kwargs`:
+**Parameters**
+  * **on_change** or **on_click** - The function name to be used as a callback
+  * **args** (_tuple_) - List of arguments to be passed to the callback function
+  * **kwargs** (_dict_) - Named arguments to be passed to the callback function
+
+
+Widgets which support the `on_change` event:
+  * `st.checkbox`
+  * `st.color_picker`
+  * `st.date_input`
+  * `st.data_editor`
+  * `st.file_uploader`
+  * `st.multiselect`
+  * `st.number_input`
+  * `st.radio`
+  * `st.select_slider`
+  * `st.selectbox`
+  * `st.slider`
+  * `st.text_area`
+  * `st.text_input`
+  * `st.time_input`
+  * `st.toggle`

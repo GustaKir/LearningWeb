@@ -1,0 +1,66 @@
+Title: PyBUF_FORMAT and Buffer Flags
+URL: https://docs.python.org/3/c-api/buffer.html
+Summary: This section explains the usage of the PyBUF_FORMAT flag in the buffer interface. It specifies that if PyBUF_FORMAT is set, the format field must be correctly filled or be NULL. Additionally, it mentions how PyBUF_WRITABLE can be combined with other flags to request a writable buffer.
+---
+
+PyBUF_FORMAT[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_FORMAT "Link to this definition")
+    
+> Controls the [`format`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.format "Py_buffer.format") field. If set, this field MUST be filled in correctly. Otherwise, this field MUST be `NULL`.
+[`PyBUF_WRITABLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_WRITABLE "PyBUF_WRITABLE") can be |’d to any of the flags in the next section. Since [`PyBUF_SIMPLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_SIMPLE "PyBUF_SIMPLE") is defined as 0, [`PyBUF_WRITABLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_WRITABLE "PyBUF_WRITABLE") can be used as a stand-alone flag to request a simple writable buffer.
+[`PyBUF_FORMAT`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_FORMAT "PyBUF_FORMAT") must be |’d to any of the flags except [`PyBUF_SIMPLE`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_SIMPLE "PyBUF_SIMPLE"), because the latter already implies format `B` (unsigned bytes). `PyBUF_FORMAT` cannot be used on its own.
+### shape, strides, suboffsets[¶](https://docs.python.org/3/c-api/buffer.html#shape-strides-suboffsets "Link to this heading")
+The flags that control the logical structure of the memory are listed in decreasing order of complexity. Note that each flag contains all bits of the flags below it.
+Request | shape | strides | suboffsets  
+---|---|---|--- 
+
+PyBUF_INDIRECT[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_INDIRECT "Link to this definition")
+| yes | yes | if needed 
+
+PyBUF_STRIDES[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_STRIDES "Link to this definition")
+| yes | yes | NULL 
+
+PyBUF_ND[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_ND "Link to this definition")
+| yes | NULL | NULL 
+
+PyBUF_SIMPLE[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_SIMPLE "Link to this definition")
+| NULL | NULL | NULL  
+### contiguity requests[¶](https://docs.python.org/3/c-api/buffer.html#contiguity-requests "Link to this heading")
+C or Fortran [contiguity](https://docs.python.org/3/glossary.html#term-contiguous) can be explicitly requested, with and without stride information. Without stride information, the buffer must be C-contiguous.
+Request | shape | strides | suboffsets | contig  
+---|---|---|---|--- 
+
+PyBUF_C_CONTIGUOUS[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_C_CONTIGUOUS "Link to this definition")
+| yes | yes | NULL | C 
+
+PyBUF_F_CONTIGUOUS[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_F_CONTIGUOUS "Link to this definition")
+| yes | yes | NULL | F 
+
+PyBUF_ANY_CONTIGUOUS[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_ANY_CONTIGUOUS "Link to this definition")
+| yes | yes | NULL | C or F  
+[`PyBUF_ND`](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_ND "PyBUF_ND") | yes | NULL | NULL | C  
+### compound requests[¶](https://docs.python.org/3/c-api/buffer.html#compound-requests "Link to this heading")
+All possible requests are fully defined by some combination of the flags in the previous section. For convenience, the buffer protocol provides frequently used combinations as single flags.
+In the following table _U_ stands for undefined contiguity. The consumer would have to call [`PyBuffer_IsContiguous()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_IsContiguous "PyBuffer_IsContiguous") to determine contiguity.
+Request | shape | strides | suboffsets | contig | readonly | format  
+---|---|---|---|---|---|--- 
+
+PyBUF_FULL[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_FULL "Link to this definition")
+| yes | yes | if needed | U | 0 | yes 
+
+PyBUF_FULL_RO[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_FULL_RO "Link to this definition")
+| yes | yes | if needed | U | 1 or 0 | yes 
+
+PyBUF_RECORDS[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_RECORDS "Link to this definition")
+| yes | yes | NULL | U | 0 | yes 
+
+PyBUF_RECORDS_RO[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_RECORDS_RO "Link to this definition")
+| yes | yes | NULL | U | 1 or 0 | yes 
+
+PyBUF_STRIDED[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_STRIDED "Link to this definition")
+| yes | yes | NULL | U | 0 | NULL 
+
+PyBUF_STRIDED_RO[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_STRIDED_RO "Link to this definition")
+| yes | yes | NULL | U | 1 or 0 | NULL 
+
+PyBUF_CONTIG[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_CONTIG "Link to this definition")
+| yes | NULL | NULL | C | 0 | NULL

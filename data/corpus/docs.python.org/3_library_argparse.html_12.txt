@@ -1,0 +1,64 @@
+Title: Using 'argparse' to Handle Command-Line Arguments
+URL: https://docs.python.org/3/library/argparse.html
+Summary: This chunk demonstrates the usage of the argparse library in Python to parse command-line arguments, highlighting the behavior of default values for optional and required arguments. It shows how default values apply when arguments are not provided and explains the effect of using `argparse.SUPPRESS` to omit attributes.
+---
+
+```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--length', default='10', type=int)
+>>> parser.add_argument('--width', default=10.5, type=int)
+>>> parser.parse_args()
+Namespace(length=10, width=10.5)
+
+```
+
+For positional arguments with [nargs](https://docs.python.org/3/library/argparse.html#nargs) equal to `?` or `*`, the `default` value is used when no command-line argument was present:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('foo', nargs='?', default=42)
+>>> parser.parse_args(['a'])
+Namespace(foo='a')
+>>> parser.parse_args([])
+Namespace(foo=42)
+
+```
+
+For [required](https://docs.python.org/3/library/argparse.html#required) arguments, the `default` value is ignored. For example, this applies to positional arguments with [nargs](https://docs.python.org/3/library/argparse.html#nargs) values other than `?` or `*`, or optional arguments marked as `required=True`.
+Providing `default=argparse.SUPPRESS` causes no attribute to be added if the command-line argument was not present:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', default=argparse.SUPPRESS)
+>>> parser.parse_args([])
+Namespace()
+>>> parser.parse_args(['--foo', '1'])
+Namespace(foo='1')
+
+```
+
+### type[¶](https://docs.python.org/3/library/argparse.html#type "Link to this heading")
+By default, the parser reads command-line arguments in as simple strings. However, quite often the command-line string should instead be interpreted as another type, such as a [`float`](https://docs.python.org/3/library/functions.html#float "float") or [`int`](https://docs.python.org/3/library/functions.html#int "int"). The `type` keyword for [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") allows any necessary type-checking and type conversions to be performed.
+If the [type](https://docs.python.org/3/library/argparse.html#type) keyword is used with the [default](https://docs.python.org/3/library/argparse.html#default) keyword, the type converter is only applied if the default is a string.
+The argument to `type` can be a callable that accepts a single string or the name of a registered type (see [`register()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.register "argparse.ArgumentParser.register")) If the function raises [`ArgumentTypeError`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentTypeError "argparse.ArgumentTypeError"), [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError"), or [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"), the exception is caught and a nicely formatted error message is displayed. Other exception types are not handled.
+Common built-in types and functions can be used as type converters:
+```
+importargparse
+importpathlib
+parser = argparse.ArgumentParser()
+parser.add_argument('count', type=int)
+parser.add_argument('distance', type=float)
+parser.add_argument('street', type=ascii)
+parser.add_argument('code_point', type=ord)
+parser.add_argument('dest_file', type=argparse.FileType('w', encoding='latin-1'))
+parser.add_argument('datapath', type=pathlib.Path)
+
+```
+
+User defined functions can be used as well:
+>>>```
+>>> defhyphenated(string):
+...   return '-'.join([word[:4] for word in string.casefold().split()])
+...
+>>> parser = argparse.ArgumentParser()
+>>> _ = parser.add_argument('short_title', type=hyphenated)
+>>> parser.parse_args(['"The Tale of Two Cities"'])
+Namespace(short_title='"the-tale-of-two-citi')

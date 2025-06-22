@@ -1,0 +1,77 @@
+Title: Command-Line Argument Actions in argparse
+URL: https://docs.python.org/3/library/argparse.html
+Summary: The `action` keyword in `ArgumentParser` allows customization of how command-line arguments are processed. Common actions include 'store', which saves the argument value, and 'store_const', which saves a constant value. Various actions enhance the flexibility of argument handling.
+---
+
+```
+
+### action[¶](https://docs.python.org/3/library/argparse.html#action "Link to this heading")
+[`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") objects associate command-line arguments with actions. These actions can do just about anything with the command-line arguments associated with them, though most actions simply add an attribute to the object returned by [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args"). The `action` keyword argument specifies how the command-line arguments should be handled. The supplied actions are:
+  * `'store'` - This just stores the argument’s value. This is the default action.
+  * `'store_const'` - This stores the value specified by the [const](https://docs.python.org/3/library/argparse.html#const) keyword argument; note that the [const](https://docs.python.org/3/library/argparse.html#const) keyword argument defaults to `None`. The `'store_const'` action is most commonly used with optional arguments that specify some sort of flag. For example:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', action='store_const', const=42)
+>>> parser.parse_args(['--foo'])
+Namespace(foo=42)
+
+```
+
+  * `'store_true'` and `'store_false'` - These are special cases of `'store_const'` used for storing the values `True` and `False` respectively. In addition, they create default values of `False` and `True` respectively:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', action='store_true')
+>>> parser.add_argument('--bar', action='store_false')
+>>> parser.add_argument('--baz', action='store_false')
+>>> parser.parse_args('--foo --bar'.split())
+Namespace(foo=True, bar=False, baz=True)
+
+```
+
+  * `'append'` - This stores a list, and appends each argument value to the list. It is useful to allow an option to be specified multiple times. If the default value is non-empty, the default elements will be present in the parsed value for the option, with any values from the command line appended after those default values. Example usage:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo', action='append')
+>>> parser.parse_args('--foo 1 --foo 2'.split())
+Namespace(foo=['1', '2'])
+
+```
+
+  * `'append_const'` - This stores a list, and appends the value specified by the [const](https://docs.python.org/3/library/argparse.html#const) keyword argument to the list; note that the [const](https://docs.python.org/3/library/argparse.html#const) keyword argument defaults to `None`. The `'append_const'` action is typically useful when multiple arguments need to store constants to the same list. For example:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--str', dest='types', action='append_const', const=str)
+>>> parser.add_argument('--int', dest='types', action='append_const', const=int)
+>>> parser.parse_args('--str --int'.split())
+Namespace(types=[<class 'str'>, <class 'int'>])
+
+```
+
+  * `'extend'` - This stores a list and appends each item from the multi-value argument list to it. The `'extend'` action is typically used with the [nargs](https://docs.python.org/3/library/argparse.html#nargs) keyword argument value `'+'` or `'*'`. Note that when [nargs](https://docs.python.org/3/library/argparse.html#nargs) is `None` (the default) or `'?'`, each character of the argument string will be appended to the list. Example usage:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
+>>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
+Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+
+```
+
+Added in version 3.8.
+  * `'count'` - This counts the number of times a keyword argument occurs. For example, this is useful for increasing verbosity levels:
+>>>```
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--verbose', '-v', action='count', default=0)
+>>> parser.parse_args(['-vvv'])
+Namespace(verbose=3)
+
+```
+
+Note, the _default_ will be `None` unless explicitly set to _0_.
+  * `'help'` - This prints a complete help message for all the options in the current parser and then exits. By default a help action is automatically added to the parser. See [`ArgumentParser`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser "argparse.ArgumentParser") for details of how the output is created.
+  * `'version'` - This expects a `version=` keyword argument in the [`add_argument()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument "argparse.ArgumentParser.add_argument") call, and prints version information and exits when invoked:
+>>>```
+>>> importargparse
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('--version', action='version', version='%(prog)s 2.0')
+>>> parser.parse_args(['--version'])
+PROG 2.0

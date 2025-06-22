@@ -1,0 +1,112 @@
+Title: Working with SQL Databases in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/sql-databases/
+Summary: This section of the FastAPI documentation illustrates how to define SQL database models using SQLModel. It includes class definitions for hero entities (HeroBase, Hero, HeroPublic, HeroCreate, HeroUpdate) and demonstrates the setup of an SQLite database, session management, and table creation within the FastAPI application context.
+---
+
+```
+fromtypingimport List, Union
+fromfastapiimport Depends, FastAPI, HTTPException, Query
+fromsqlmodelimport Field, Session, SQLModel, create_engine, select
+classHeroBase(SQLModel):
+  name: str = Field(index=True)
+  age: Union[int, None] = Field(default=None, index=True)
+classHero(HeroBase, table=True):
+  id: Union[int, None] = Field(default=None, primary_key=True)
+  secret_name: str
+classHeroPublic(HeroBase):
+  id: int
+classHeroCreate(HeroBase):
+  secret_name: str
+classHeroUpdate(HeroBase):
+  name: Union[str, None] = None
+  age: Union[int, None] = None
+  secret_name: Union[str, None] = None
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, connect_args=connect_args)
+defcreate_db_and_tables():
+  SQLModel.metadata.create_all(engine)
+defget_session():
+  with Session(engine) as session:
+    yield session
+app = FastAPI()
+@app.on_event("startup")
+defon_startup():
+  create_db_and_tables()
+@app.post("/heroes/", response_model=HeroPublic)
+defcreate_hero(hero: HeroCreate, session: Session = Depends(get_session)):
+  db_hero = Hero.model_validate(hero)
+  session.add(db_hero)
+  session.commit()
+  session.refresh(db_hero)
+  return db_hero
+@app.get("/heroes/", response_model=List[HeroPublic])
+defread_heroes(
+  session: Session = Depends(get_session),
+  offset: int = 0,
+  limit: int = Query(default=100, le=100),
+):
+  heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+  return heroes
+@app.get("/heroes/{hero_id}", response_model=HeroPublic)
+defread_hero(hero_id: int, session: Session = Depends(get_session)):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  return hero
+@app.patch("/heroes/{hero_id}", response_model=HeroPublic)
+defupdate_hero(
+  hero_id: int, hero: HeroUpdate, session: Session = Depends(get_session)
+):
+  hero_db = session.get(Hero, hero_id)
+  if not hero_db:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  hero_data = hero.model_dump(exclude_unset=True)
+  hero_db.sqlmodel_update(hero_data)
+  session.add(hero_db)
+  session.commit()
+  session.refresh(hero_db)
+  return hero_db
+@app.delete("/heroes/{hero_id}")
+defdelete_hero(hero_id: int, session: Session = Depends(get_session)):
+  hero = session.get(Hero, hero_id)
+  if not hero:
+    raise HTTPException(status_code=404, detail="Hero not found")
+  session.delete(hero)
+  session.commit()
+  return {"ok": True}
+
+```
+
+#### `HeroPublic` - the public _data model_[¶](https://fastapi.tiangolo.com/tutorial/sql-databases/#heropublic-the-public-data-model "Permanent link")
+Next, we create a `HeroPublic` model, this is the one that will be **returned** to the clients of the API.
+It has the same fields as `HeroBase`, so it won't include `secret_name`.
+Finally, the identity of our heroes is protected! 🥷
+It also re-declares `id: int`. By doing this, we are making a **contract** with the API clients, so that they can always expect the `id` to be there and to be an `int` (it will never be `None`).
+Tip
+Having the return model ensure that a value is always available and always `int` (not `None`) is very useful for the API clients, they can write much simpler code having this certainty.
+Also, **automatically generated clients** will have simpler interfaces, so that the developers communicating with your API can have a much better time working with your API. 😎
+All the fields in `HeroPublic` are the same as in `HeroBase`, with `id` declared as `int` (not `None`):
+  * `id`
+  * `name`
+  * `age`
+
+
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/sql-databases/#__tabbed_34_1)
+```
+# Code above omitted 👆
+classHeroBase(SQLModel):
+  name: str = Field(index=True)
+  age: int | None = Field(default=None, index=True)
+classHero(HeroBase, table=True):
+  id: int | None = Field(default=None, primary_key=True)
+  secret_name: str
+classHeroPublic(HeroBase):
+  id: int
+# Code below omitted 👇
+
+```
+
+👀 Full file preview
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/sql-databases/#__tabbed_35_1)

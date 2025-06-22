@@ -1,0 +1,124 @@
+Title: Defining Generators in Python
+URL: https://docs.python.org/3/library/typing.html
+Summary: This section discusses how to define generators in Python with type annotations. It shows examples of a function called `infinite_stream`, which yields integer values. The annotations can specify types explicitly using `Generator[int, None, None]`, or simply as `Iterator[int]`. It also notes that async generators are defined similarly but without the `ReturnType` argument.
+---
+
+```
+definfinite_stream(start: int) -> Generator[int]:
+  while True:
+    yield start
+    start += 1
+
+```
+
+It is also possible to set these types explicitly:
+```
+definfinite_stream(start: int) -> Generator[int, None, None]:
+  while True:
+    yield start
+    start += 1
+
+```
+
+Simple generators that only ever yield values can also be annotated as having a return type of either [`Iterable[YieldType]`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable "collections.abc.Iterable") or [`Iterator[YieldType]`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator "collections.abc.Iterator"):
+```
+definfinite_stream(start: int) -> Iterator[int]:
+  while True:
+    yield start
+    start += 1
+
+```
+
+Async generators are handled in a similar fashion, but don’t expect a `ReturnType` type argument ([`AsyncGenerator[YieldType, SendType]`](https://docs.python.org/3/library/collections.abc.html#collections.abc.AsyncGenerator "collections.abc.AsyncGenerator")). The `SendType` argument defaults to `None`, so the following definitions are equivalent:
+```
+async definfinite_stream(start: int) -> AsyncGenerator[int]:
+  while True:
+    yield start
+    start = await increment(start)
+async definfinite_stream(start: int) -> AsyncGenerator[int, None]:
+  while True:
+    yield start
+    start = await increment(start)
+
+```
+
+As in the synchronous case, [`AsyncIterable[YieldType]`](https://docs.python.org/3/library/collections.abc.html#collections.abc.AsyncIterable "collections.abc.AsyncIterable") and [`AsyncIterator[YieldType]`](https://docs.python.org/3/library/collections.abc.html#collections.abc.AsyncIterator "collections.abc.AsyncIterator") are available as well:
+```
+async definfinite_stream(start: int) -> AsyncIterator[int]:
+  while True:
+    yield start
+    start = await increment(start)
+
+```
+
+Coroutines can be annotated using [`Coroutine[YieldType, SendType, ReturnType]`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Coroutine "collections.abc.Coroutine"). Generic arguments correspond to those of [`Generator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Generator "collections.abc.Generator"), for example:
+```
+fromcollections.abcimport Coroutine
+c: Coroutine[list[str], str, int] # Some coroutine defined elsewhere
+x = c.send('hi')          # Inferred type of 'x' is list[str]
+async defbar() -> None:
+  y = await c          # Inferred type of 'y' is int
+
+```
+
+## User-defined generic types[¶](https://docs.python.org/3/library/typing.html#user-defined-generic-types "Link to this heading")
+A user-defined class can be defined as a generic class.
+```
+fromloggingimport Logger
+classLoggedVar[T]:
+  def__init__(self, value: T, name: str, logger: Logger) -> None:
+    self.name = name
+    self.logger = logger
+    self.value = value
+  defset(self, new: T) -> None:
+    self.log('Set ' + repr(self.value))
+    self.value = new
+  defget(self) -> T:
+    self.log('Get ' + repr(self.value))
+    return self.value
+  deflog(self, message: str) -> None:
+    self.logger.info('%s: %s', self.name, message)
+
+```
+
+This syntax indicates that the class `LoggedVar` is parameterised around a single [type variable](https://docs.python.org/3/library/typing.html#typevar) `T` . This also makes `T` valid as a type within the class body.
+Generic classes implicitly inherit from [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic"). For compatibility with Python 3.11 and lower, it is also possible to inherit explicitly from [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic") to indicate a generic class:
+```
+fromtypingimport TypeVar, Generic
+T = TypeVar('T')
+classLoggedVar(Generic[T]):
+  ...
+
+```
+
+Generic classes have [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__") methods, meaning they can be parameterised at runtime (e.g. `LoggedVar[int]` below):
+```
+fromcollections.abcimport Iterable
+defzero_all_vars(vars: Iterable[LoggedVar[int]]) -> None:
+  for var in vars:
+    var.set(0)
+
+```
+
+A generic type can have any number of type variables. All varieties of [`TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") are permissible as parameters for a generic type:
+```
+fromtypingimport TypeVar, Generic, Sequence
+classWeirdTrio[T, B: Sequence[bytes], S: (int, str)]:
+  ...
+OldT = TypeVar('OldT', contravariant=True)
+OldB = TypeVar('OldB', bound=Sequence[bytes], covariant=True)
+OldS = TypeVar('OldS', int, str)
+classOldWeirdTrio(Generic[OldT, OldB, OldS]):
+  ...
+
+```
+
+Each type variable argument to [`Generic`](https://docs.python.org/3/library/typing.html#typing.Generic "typing.Generic") must be distinct. This is thus invalid:
+```
+fromtypingimport TypeVar, Generic
+...
+classPair[M, M]: # SyntaxError
+  ...
+T = TypeVar('T')
+classPair(Generic[T, T]):  # INVALID
+  ...

@@ -1,0 +1,37 @@
+Title: Logging Configuration Warning and Changes
+URL: https://docs.python.org/3/library/logging.config.html
+Summary: This section warns that certain key values in logging configuration should not be dictionaries or references, as they will be passed to the callable directly. The special key '()' indicates a callable, and in Python 3.11, the 'filters' member for handlers and loggers can accept filter instances alongside ids. Additionally, the key '.' allows setting attributes on user-defined objects through a mapping.
+---
+
+```
+
+Warning
+The values for keys such as `bar`, `spam` and `answer` in the above example should not be configuration dictionaries or references such as `cfg://foo` or `ext://bar`, because they will not be processed by the configuration machinery, but passed to the callable as-is.
+The key `'()'` has been used as the special key because it is not a valid keyword parameter name, and so will not clash with the names of the keyword arguments used in the call. The `'()'` also serves as a mnemonic that the corresponding value is a callable.
+Changed in version 3.11: The `filters` member of `handlers` and `loggers` can take filter instances in addition to ids.
+You can also specify a special key `'.'` whose value is a dictionary is a mapping of attribute names to values. If found, the specified attributes will be set on the user-defined object before it is returned. Thus, with the following configuration:
+```
+{
+ '()' : 'my.package.customFormatterFactory',
+ 'bar' : 'baz',
+ 'spam' : 99.9,
+ 'answer' : 42,
+ '.' {
+  'foo': 'bar',
+  'baz': 'bozz'
+ }
+}
+
+```
+
+the returned formatter will have attribute `foo` set to `'bar'` and attribute `baz` set to `'bozz'`.
+Warning
+The values for attributes such as `foo` and `baz` in the above example should not be configuration dictionaries or references such as `cfg://foo` or `ext://bar`, because they will not be processed by the configuration machinery, but set as attribute values as-is.
+### Handler configuration order[¶](https://docs.python.org/3/library/logging.config.html#handler-configuration-order "Link to this heading")
+Handlers are configured in alphabetical order of their keys, and a configured handler replaces the configuration dictionary in (a working copy of) the `handlers` dictionary in the schema. If you use a construct such as `cfg://handlers.foo`, then initially `handlers['foo']` points to the configuration dictionary for the handler named `foo`, and later (once that handler has been configured) it points to the configured handler instance. Thus, `cfg://handlers.foo` could resolve to either a dictionary or a handler instance. In general, it is wise to name handlers in a way such that dependent handlers are configured _after_ any handlers they depend on; that allows something like `cfg://handlers.foo` to be used in configuring a handler that depends on handler `foo`. If that dependent handler were named `bar`, problems would result, because the configuration of `bar` would be attempted before that of `foo`, and `foo` would not yet have been configured. However, if the dependent handler were named `foobar`, it would be configured after `foo`, with the result that `cfg://handlers.foo` would resolve to configured handler `foo`, and not its configuration dictionary.
+### Access to external objects[¶](https://docs.python.org/3/library/logging.config.html#access-to-external-objects "Link to this heading")
+There are times where a configuration needs to refer to objects external to the configuration, for example `sys.stderr`. If the configuration dict is constructed using Python code, this is straightforward, but a problem arises when the configuration is provided via a text file (e.g. JSON, YAML). In a text file, there is no standard way to distinguish `sys.stderr` from the literal string `'sys.stderr'`. To facilitate this distinction, the configuration system looks for certain special prefixes in string values and treat them specially. For example, if the literal string `'ext://sys.stderr'` is provided as a value in the configuration, then the `ext://` will be stripped off and the remainder of the value processed using normal import mechanisms.
+The handling of such prefixes is done in a way analogous to protocol handling: there is a generic mechanism to look for prefixes which match the regular expression `^(?P<prefix>[a-z]+)://(?P<suffix>.*)$` whereby, if the `prefix` is recognised, the `suffix` is processed in a prefix-dependent manner and the result of the processing replaces the string value. If the prefix is not recognised, then the string value will be left as-is.
+### Access to internal objects[¶](https://docs.python.org/3/library/logging.config.html#access-to-internal-objects "Link to this heading")
+As well as external objects, there is sometimes also a need to refer to objects in the configuration. This will be done implicitly by the configuration system for things that it knows about. For example, the string value `'DEBUG'` for a `level` in a logger or handler will automatically be converted to the value `logging.DEBUG`, and the `handlers`, `filters` and `formatter` entries will take an object id and resolve to the appropriate destination object.
+However, a more generic mechanism is needed for user-defined objects which are not known to the [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.") module. For example, consider [`logging.handlers.MemoryHandler`](https://docs.python.org/3/library/lo

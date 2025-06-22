@@ -1,0 +1,47 @@
+Title: ctypes Library: Managing Shared Libraries and Memory
+URL: https://docs.python.org/3/library/ctypes.html
+Summary: This section discusses the `in_dll` method for accessing ctypes type instances exported by shared libraries, and explains common instance variables like `_b_base_`, which indicates the owning memory block for ctypes data instances, and `_b_needsfree_`, which indicates whether the memory block should be freed by the instance.
+---
+
+in_dll(_library_ , _name_)[¶](https://docs.python.org/3/library/ctypes.html#ctypes._CData.in_dll "Link to this definition")
+    
+This method returns a ctypes type instance exported by a shared library. _name_ is the name of the symbol that exports the data, _library_ is the loaded shared library.
+Common instance variables of ctypes data types: 
+
+_b_base_[¶](https://docs.python.org/3/library/ctypes.html#ctypes._CData._b_base_ "Link to this definition")
+    
+Sometimes ctypes data instances do not own the memory block they contain, instead they share part of the memory block of a base object. The [`_b_base_`](https://docs.python.org/3/library/ctypes.html#ctypes._CData._b_base_ "ctypes._CData._b_base_") read-only member is the root ctypes object that owns the memory block. 
+
+_b_needsfree_[¶](https://docs.python.org/3/library/ctypes.html#ctypes._CData._b_needsfree_ "Link to this definition")
+    
+This read-only variable is true when the ctypes data instance has allocated the memory block itself, false otherwise. 
+
+_objects[¶](https://docs.python.org/3/library/ctypes.html#ctypes._CData._objects "Link to this definition")
+    
+This member is either `None` or a dictionary containing Python objects that need to be kept alive so that the memory block contents is kept valid. This object is only exposed for debugging; never modify the contents of this dictionary.
+### Fundamental data types[¶](https://docs.python.org/3/library/ctypes.html#ctypes-fundamental-data-types-2 "Link to this heading") 
+
+_class_ ctypes._SimpleCData[¶](https://docs.python.org/3/library/ctypes.html#ctypes._SimpleCData "Link to this definition")
+    
+This non-public class is the base class of all fundamental ctypes data types. It is mentioned here because it contains the common attributes of the fundamental ctypes data types. [`_SimpleCData`](https://docs.python.org/3/library/ctypes.html#ctypes._SimpleCData "ctypes._SimpleCData") is a subclass of [`_CData`](https://docs.python.org/3/library/ctypes.html#ctypes._CData "ctypes._CData"), so it inherits their methods and attributes. ctypes data types that are not and do not contain pointers can now be pickled.
+Instances have a single attribute: 
+
+value[¶](https://docs.python.org/3/library/ctypes.html#ctypes._SimpleCData.value "Link to this definition")
+    
+This attribute contains the actual value of the instance. For integer and pointer types, it is an integer, for character types, it is a single character bytes object or string, for character pointer types it is a Python bytes object or string.
+When the `value` attribute is retrieved from a ctypes instance, usually a new object is returned each time. [`ctypes`](https://docs.python.org/3/library/ctypes.html#module-ctypes "ctypes: A foreign function library for Python.") does _not_ implement original object return, always a new object is constructed. The same is true for all other ctypes object instances.
+Fundamental data types, when returned as foreign function call results, or, for example, by retrieving structure field members or array items, are transparently converted to native Python types. In other words, if a foreign function has a [`restype`](https://docs.python.org/3/library/ctypes.html#ctypes._CFuncPtr.restype "ctypes._CFuncPtr.restype") of [`c_char_p`](https://docs.python.org/3/library/ctypes.html#ctypes.c_char_p "ctypes.c_char_p"), you will always receive a Python bytes object, _not_ a [`c_char_p`](https://docs.python.org/3/library/ctypes.html#ctypes.c_char_p "ctypes.c_char_p") instance.
+Subclasses of fundamental data types do _not_ inherit this behavior. So, if a foreign functions `restype` is a subclass of [`c_void_p`](https://docs.python.org/3/library/ctypes.html#ctypes.c_void_p "ctypes.c_void_p"), you will receive an instance of this subclass from the function call. Of course, you can get the value of the pointer by accessing the `value` attribute.
+These are the fundamental ctypes data types: 
+
+_class_ ctypes.c_byte[¶](https://docs.python.org/3/library/ctypes.html#ctypes.c_byte "Link to this definition")
+    
+Represents the C signedchar datatype, and interprets the value as small integer. The constructor accepts an optional integer initializer; no overflow checking is done. 
+
+_class_ ctypes.c_char[¶](https://docs.python.org/3/library/ctypes.html#ctypes.c_char "Link to this definition")
+    
+Represents the C char datatype, and interprets the value as a single character. The constructor accepts an optional string initializer, the length of the string must be exactly one character. 
+
+_class_ ctypes.c_char_p[¶](https://docs.python.org/3/library/ctypes.html#ctypes.c_char_p "Link to this definition")
+    
+Represents the C char* datatype when it points to a zero-terminated string. For a general character pointer that may also point to binary data, `POINTER(c_char)` must be used. The constructor accepts an integer address, or a bytes object.

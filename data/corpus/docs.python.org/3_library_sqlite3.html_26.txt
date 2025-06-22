@@ -1,0 +1,107 @@
+Title: Registering Adapter Callables in SQLite3
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: This section explains how to register adapter functions that convert Python objects to SQLite-compatible types using `register_adapter()`. An example shows how to create a `Point` class and an associated adapter function to store its instances in an SQLite database.
+---
+
+```
+
+#### How to register adapter callables[¶](https://docs.python.org/3/library/sqlite3.html#how-to-register-adapter-callables "Link to this heading")
+The other possibility is to create a function that converts the Python object to an SQLite-compatible type. This function can then be registered using [`register_adapter()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.register_adapter "sqlite3.register_adapter").
+```
+classPoint:
+  def__init__(self, x, y):
+    self.x, self.y = x, y
+defadapt_point(point):
+  return f"{point.x};{point.y}"
+sqlite3.register_adapter(Point, adapt_point)
+con = sqlite3.connect(":memory:")
+cur = con.cursor()
+cur.execute("SELECT ?", (Point(1.0, 2.5),))
+print(cur.fetchone()[0])
+con.close()
+
+```
+
+### How to convert SQLite values to custom Python types[¶](https://docs.python.org/3/library/sqlite3.html#how-to-convert-sqlite-values-to-custom-python-types "Link to this heading")
+Writing an adapter lets you convert _from_ custom Python types _to_ SQLite values. To be able to convert _from_ SQLite values _to_ custom Python types, we use _converters_.
+Let’s go back to the `Point` class. We stored the x and y coordinates separated via semicolons as strings in SQLite.
+First, we’ll define a converter function that accepts the string as a parameter and constructs a `Point` object from it.
+Note
+Converter functions are **always** passed a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object, no matter the underlying SQLite data type.
+```
+defconvert_point(s):
+  x, y = map(float, s.split(b";"))
+  return Point(x, y)
+
+```
+
+We now need to tell `sqlite3` when it should convert a given SQLite value. This is done when connecting to a database, using the _detect_types_ parameter of [`connect()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.connect "sqlite3.connect"). There are three options:
+  * Implicit: set _detect_types_ to [`PARSE_DECLTYPES`](https://docs.python.org/3/library/sqlite3.html#sqlite3.PARSE_DECLTYPES "sqlite3.PARSE_DECLTYPES")
+  * Explicit: set _detect_types_ to [`PARSE_COLNAMES`](https://docs.python.org/3/library/sqlite3.html#sqlite3.PARSE_COLNAMES "sqlite3.PARSE_COLNAMES")
+  * Both: set _detect_types_ to `sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES`. Column names take precedence over declared types.
+
+
+The following example illustrates the implicit and explicit approaches:
+```
+classPoint:
+  def__init__(self, x, y):
+    self.x, self.y = x, y
+  def__repr__(self):
+    return f"Point({self.x}, {self.y})"
+defadapt_point(point):
+  return f"{point.x};{point.y}"
+defconvert_point(s):
+  x, y = list(map(float, s.split(b";")))
+  return Point(x, y)
+# Register the adapter and converter
+sqlite3.register_adapter(Point, adapt_point)
+sqlite3.register_converter("point", convert_point)
+# 1) Parse using declared types
+p = Point(4.0, -3.2)
+con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES)
+cur = con.execute("CREATE TABLE test(p point)")
+cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
+cur.execute("SELECT p FROM test")
+print("with declared types:", cur.fetchone()[0])
+cur.close()
+con.close()
+# 2) Parse using column names
+con = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_COLNAMES)
+cur = con.execute("CREATE TABLE test(p)")
+cur.execute("INSERT INTO test(p) VALUES(?)", (p,))
+cur.execute('SELECT p AS "p [point]" FROM test')
+print("with column names:", cur.fetchone()[0])
+cur.close()
+con.close()
+
+```
+
+### Adapter and converter recipes[¶](https://docs.python.org/3/library/sqlite3.html#adapter-and-converter-recipes "Link to this heading")
+This section shows recipes for common adapters and converters.
+```
+importdatetime
+importsqlite3
+defadapt_date_iso(val):
+"""Adapt datetime.date to ISO 8601 date."""
+  return val.isoformat()
+defadapt_datetime_iso(val):
+"""Adapt datetime.datetime to timezone-naive ISO 8601 date."""
+  return val.isoformat()
+defadapt_datetime_epoch(val):
+"""Adapt datetime.datetime to Unix timestamp."""
+  return int(val.timestamp())
+sqlite3.register_adapter(datetime.date, adapt_date_iso)
+sqlite3.register_adapter(datetime.datetime, adapt_datetime_iso)
+sqlite3.register_adapter(datetime.datetime, adapt_datetime_epoch)
+defconvert_date(val):
+"""Convert ISO 8601 date to datetime.date object."""
+  return datetime.date.fromisoformat(val.decode())
+defconvert_datetime(val):
+"""Convert ISO 8601 datetime to datetime.datetime object."""
+  return datetime.datetime.fromisoformat(val.decode())
+defconvert_timestamp(val):
+"""Convert Unix epoch timestamp to datetime.datetime object."""
+  return datetime.datetime.fromtimestamp(int(val))
+sqlite3.register_converter("date", convert_date)
+sqlite3.register_converter("datetime", convert_datetime)
+sqlite3.register_converter("timestamp", convert_timestamp)

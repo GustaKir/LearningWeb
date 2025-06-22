@@ -1,0 +1,26 @@
+Title: Reloading Modules in Python
+URL: https://docs.python.org/3/library/importlib.html
+Summary: It is generally discouraged to reload built-in or dynamically loaded modules such as `sys`, `__main__`, and `builtins`, as they may not support multiple initializations and could fail unpredictably. Modules that rely on `from ... import ...` might also have issues when reloaded.
+---
+
+```
+
+It is generally not very useful to reload built-in or dynamically loaded modules. Reloading [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions."), [`__main__`](https://docs.python.org/3/library/__main__.html#module-__main__ "__main__: The environment where top-level code is run. Covers command-line interfaces, import-time behavior, and ``__name__ == '__main__'``."), [`builtins`](https://docs.python.org/3/library/builtins.html#module-builtins "builtins: The module that provides the built-in namespace.") and other key modules is not recommended. In many cases extension modules are not designed to be initialized more than once, and may fail in arbitrary ways when reloaded.
+If a module imports objects from another module using [`from`](https://docs.python.org/3/reference/simple_stmts.html#from) … [`import`](https://docs.python.org/3/reference/simple_stmts.html#import) …, calling [`reload()`](https://docs.python.org/3/library/importlib.html#importlib.reload "importlib.reload") for the other module does not redefine the objects imported from it — one way around this is to re-execute the `from` statement, another is to use `import` and qualified names (_module.name_) instead.
+If a module instantiates instances of a class, reloading the module that defines the class does not affect the method definitions of the instances — they continue to use the old class definition. The same is true for derived classes.
+Added in version 3.4.
+Changed in version 3.7: [`ModuleNotFoundError`](https://docs.python.org/3/library/exceptions.html#ModuleNotFoundError "ModuleNotFoundError") is raised when the module being reloaded lacks a [`ModuleSpec`](https://docs.python.org/3/library/importlib.html#importlib.machinery.ModuleSpec "importlib.machinery.ModuleSpec").
+## [`importlib.abc`](https://docs.python.org/3/library/importlib.html#module-importlib.abc "importlib.abc: Abstract base classes related to import") – Abstract base classes related to import[¶](https://docs.python.org/3/library/importlib.html#module-importlib.abc "Link to this heading")
+**Source code:** [Lib/importlib/abc.py](https://github.com/python/cpython/tree/3.13/Lib/importlib/abc.py)
+The [`importlib.abc`](https://docs.python.org/3/library/importlib.html#module-importlib.abc "importlib.abc: Abstract base classes related to import") module contains all of the core abstract base classes used by [`import`](https://docs.python.org/3/reference/simple_stmts.html#import). Some subclasses of the core abstract base classes are also provided to help in implementing the core ABCs.
+ABC hierarchy:
+```
+object
+ +-- MetaPathFinder
+ +-- PathEntryFinder
+ +-- Loader
+   +-- ResourceLoader --------+
+   +-- InspectLoader     |
+      +-- ExecutionLoader --+
+                 +-- FileLoader
+                 +-- SourceLoader

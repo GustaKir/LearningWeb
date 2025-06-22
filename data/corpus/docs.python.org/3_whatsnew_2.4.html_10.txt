@@ -1,0 +1,76 @@
+Title: Enhancements to List Sorting in Python 2.4
+URL: https://docs.python.org/3/whatsnew/2.4.html
+Summary: Python 2.4 introduced three optional keyword parameters to the list `sort()` method: `_cmp_`, `_key_`, and `_reverse_`. The `_cmp_` parameter accepts a comparison function, while `_key_` allows for custom sorting criteria through a single-parameter function that returns comparison keys. An example illustrates how to perform case-insensitive sorting using the `_key_` parameter.
+---
+
+```
+
+  * Three keyword parameters, _cmp_ , _key_ , and _reverse_ , were added to the `sort()` method of lists. These parameters make some common usages of `sort()` simpler. All of these parameters are optional.
+For the _cmp_ parameter, the value should be a comparison function that takes two parameters and returns -1, 0, or +1 depending on how the parameters compare. This function will then be used to sort the list. Previously this was the only parameter that could be provided to `sort()`.
+_key_ should be a single-parameter function that takes a list element and returns a comparison key for the element. The list is then sorted using the comparison keys. The following example sorts a list case-insensitively:
+>>>```
+>>> L = ['A', 'b', 'c', 'D']
+>>> L.sort()         # Case-sensitive sort
+>>> L
+['A', 'D', 'b', 'c']
+>>> # Using 'key' parameter to sort list
+>>> L.sort(key=lambda x: x.lower())
+>>> L
+['A', 'b', 'c', 'D']
+>>> # Old-fashioned way
+>>> L.sort(cmp=lambda x,y: cmp(x.lower(), y.lower()))
+>>> L
+['A', 'b', 'c', 'D']
+
+```
+
+The last example, which uses the _cmp_ parameter, is the old way to perform a case-insensitive sort. It works but is slower than using a _key_ parameter. Using _key_ calls `lower()` method once for each element in the list while using _cmp_ will call it twice for each comparison, so using _key_ saves on invocations of the `lower()` method.
+For simple key functions and comparison functions, it is often possible to avoid a [`lambda`](https://docs.python.org/3/reference/expressions.html#lambda) expression by using an unbound method instead. For example, the above case-insensitive sort is best written as:
+>>>```
+>>> L.sort(key=str.lower)
+>>> L
+['A', 'b', 'c', 'D']
+
+```
+
+Finally, the _reverse_ parameter takes a Boolean value. If the value is true, the list will be sorted into reverse order. Instead of `L.sort(); L.reverse()`, you can now write `L.sort(reverse=True)`.
+The results of sorting are now guaranteed to be stable. This means that two entries with equal keys will be returned in the same order as they were input. For example, you can sort a list of people by name, and then sort the list by age, resulting in a list sorted by age where people with the same age are in name-sorted order.
+(All changes to `sort()` contributed by Raymond Hettinger.)
+  * There is a new built-in function `sorted(iterable)` that works like the in-place [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") method but can be used in expressions. The differences are:
+  * the input may be any iterable;
+  * a newly formed copy is sorted, leaving the original intact; and
+  * the expression returns the new sorted copy
+>>>```
+>>> L = [9,7,8,3,2,4,1,6,5]
+>>> [10+i for i in sorted(L)]    # usable in a list comprehension
+[11, 12, 13, 14, 15, 16, 17, 18, 19]
+>>> L                # original is left unchanged
+[9,7,8,3,2,4,1,6,5]
+>>> sorted('Monty Python')     # any iterable may be an input
+[' ', 'M', 'P', 'h', 'n', 'n', 'o', 'o', 't', 't', 'y', 'y']
+>>> # List the contents of a dict sorted by key values
+>>> colormap = dict(red=1, blue=2, green=3, black=4, yellow=5)
+>>> for k, v in sorted(colormap.iteritems()):
+...   print k, v
+...
+black 4
+blue 2
+green 3
+red 1
+yellow 5
+
+```
+
+(Contributed by Raymond Hettinger.)
+  * Integer operations will no longer trigger an `OverflowWarning`. The `OverflowWarning` warning will disappear in Python 2.5.
+  * The interpreter gained a new switch, [`-m`](https://docs.python.org/3/using/cmdline.html#cmdoption-m), that takes a name, searches for the corresponding module on `sys.path`, and runs the module as a script. For example, you can now run the Python profiler with `python -m profile`. (Contributed by Nick Coghlan.)
+  * The `eval(expr, globals, locals)` and `execfile(filename, globals, locals)` functions and the `exec` statement now accept any mapping type for the _locals_ parameter. Previously this had to be a regular Python dictionary. (Contributed by Raymond Hettinger.)
+  * The [`zip()`](https://docs.python.org/3/library/functions.html#zip "zip") built-in function and `itertools.izip()` now return an empty list if called with no arguments. Previously they raised a [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") exception. This makes them more suitable for use with variable length argument lists:
+>>>```
+>>> deftranspose(array):
+...   return zip(*array)
+...
+>>> transpose([(1,2,3), (4,5,6)])
+[(1, 4), (2, 5), (3, 6)]
+>>> transpose([])
+[]

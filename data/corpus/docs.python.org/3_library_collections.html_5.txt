@@ -1,0 +1,54 @@
+Title: Mathematical Operations on Counter Objects
+URL: https://docs.python.org/3/library/collections.html
+Summary: This section details various mathematical operations available for `Counter` objects in Python's collections module, including addition, subtraction, intersection, and union. These operations combine the counts of corresponding elements, with the result excluding any counts that are zero or less.
+---
+
+```
+
+Several mathematical operations are provided for combining [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") objects to produce multisets (counters that have counts greater than zero). Addition and subtraction combine counters by adding or subtracting the counts of corresponding elements. Intersection and union return the minimum and maximum of corresponding counts. Equality and inclusion compare corresponding counts. Each operation can accept inputs with signed counts, but the output will exclude results with counts of zero or less.
+>>>```
+>>> c = Counter(a=3, b=1)
+>>> d = Counter(a=1, b=2)
+>>> c + d            # add two counters together: c[x] + d[x]
+Counter({'a': 4, 'b': 3})
+>>> c - d            # subtract (keeping only positive counts)
+Counter({'a': 2})
+>>> c & d            # intersection: min(c[x], d[x])
+Counter({'a': 1, 'b': 1})
+>>> c | d            # union: max(c[x], d[x])
+Counter({'a': 3, 'b': 2})
+>>> c == d           # equality: c[x] == d[x]
+False
+>>> c <= d           # inclusion: c[x] <= d[x]
+False
+
+```
+
+Unary addition and subtraction are shortcuts for adding an empty counter or subtracting from an empty counter.
+>>>```
+>>> c = Counter(a=2, b=-4)
+>>> +c
+Counter({'a': 2})
+>>> -c
+Counter({'b': 4})
+
+```
+
+Added in version 3.3: Added support for unary plus, unary minus, and in-place multiset operations.
+Note
+Counters were primarily designed to work with positive integers to represent running counts; however, care was taken to not unnecessarily preclude use cases needing other types or negative values. To help with those use cases, this section documents the minimum range and type restrictions.
+  * The [`Counter`](https://docs.python.org/3/library/collections.html#collections.Counter "collections.Counter") class itself is a dictionary subclass with no restrictions on its keys and values. The values are intended to be numbers representing counts, but you _could_ store anything in the value field.
+  * The [`most_common()`](https://docs.python.org/3/library/collections.html#collections.Counter.most_common "collections.Counter.most_common") method requires only that the values be orderable.
+  * For in-place operations such as `c[key] += 1`, the value type need only support addition and subtraction. So fractions, floats, and decimals would work and negative values are supported. The same is also true for [`update()`](https://docs.python.org/3/library/collections.html#collections.Counter.update "collections.Counter.update") and [`subtract()`](https://docs.python.org/3/library/collections.html#collections.Counter.subtract "collections.Counter.subtract") which allow negative and zero values for both inputs and outputs.
+  * The multiset methods are designed only for use cases with positive values. The inputs may be negative or zero, but only outputs with positive values are created. There are no type restrictions, but the value type needs to support addition, subtraction, and comparison.
+  * The [`elements()`](https://docs.python.org/3/library/collections.html#collections.Counter.elements "collections.Counter.elements") method requires integer counts. It ignores zero and negative counts.
+
+
+See also
+  * [Bag class](https://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html) in Smalltalk.
+  * Wikipedia entry for [Multisets](https://en.wikipedia.org/wiki/Multiset).
+  * [C++ multisets](http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm) tutorial with examples.
+  * For mathematical operations on multisets and their use cases, see _Knuth, Donald. The Art of Computer Programming Volume II, Section 4.6.3, Exercise 19_.
+  * To enumerate all distinct multisets of a given size over a given set of elements, see [`itertools.combinations_with_replacement()`](https://docs.python.org/3/library/itertools.html#itertools.combinations_with_replacement "itertools.combinations_with_replacement"):
+```
+map(Counter, combinations_with_replacement('ABC', 2)) # --> AA AB AC BB BC CC

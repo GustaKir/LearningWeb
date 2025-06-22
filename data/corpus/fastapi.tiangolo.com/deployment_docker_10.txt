@@ -1,0 +1,45 @@
+Title: FastAPI Deployment Concepts with Docker
+URL: https://fastapi.tiangolo.com/deployment/docker/
+Summary: This section discusses how to deploy a FastAPI application using Docker, highlighting key deployment concepts relevant to containerization such as HTTPS, startup processes, restarts, replication, memory management, and preliminary steps before application launch.
+---
+
+```
+
+When you pass the file to `fastapi run` it will detect automatically that it is a single file and not part of a package and will know how to import it and serve your FastAPI app. 😎
+## Deployment Concepts[¶](https://fastapi.tiangolo.com/deployment/docker/#deployment-concepts "Permanent link")
+Let's talk again about some of the same [Deployment Concepts](https://fastapi.tiangolo.com/deployment/concepts/) in terms of containers.
+Containers are mainly a tool to simplify the process of **building and deploying** an application, but they don't enforce a particular approach to handle these **deployment concepts** , and there are several possible strategies.
+The **good news** is that with each different strategy there's a way to cover all of the deployment concepts. 🎉
+Let's review these **deployment concepts** in terms of containers:
+  * HTTPS
+  * Running on startup
+  * Restarts
+  * Replication (the number of processes running)
+  * Memory
+  * Previous steps before starting
+
+
+## HTTPS[¶](https://fastapi.tiangolo.com/deployment/docker/#https "Permanent link")
+If we focus just on the **container image** for a FastAPI application (and later the running **container**), HTTPS normally would be handled **externally** by another tool.
+It could be another container, for example with [Traefik](https://traefik.io/), handling **HTTPS** and **automatic** acquisition of **certificates**.
+Tip
+Traefik has integrations with Docker, Kubernetes, and others, so it's very easy to set up and configure HTTPS for your containers with it.
+Alternatively, HTTPS could be handled by a cloud provider as one of their services (while still running the application in a container).
+## Running on Startup and Restarts[¶](https://fastapi.tiangolo.com/deployment/docker/#running-on-startup-and-restarts "Permanent link")
+There is normally another tool in charge of **starting and running** your container.
+It could be **Docker** directly, **Docker Compose** , **Kubernetes** , a **cloud service** , etc.
+In most (or all) cases, there's a simple option to enable running the container on startup and enabling restarts on failures. For example, in Docker, it's the command line option `--restart`.
+Without using containers, making applications run on startup and with restarts can be cumbersome and difficult. But when **working with containers** in most cases that functionality is included by default. ✨
+## Replication - Number of Processes[¶](https://fastapi.tiangolo.com/deployment/docker/#replication-number-of-processes "Permanent link")
+If you have a cluster of machines with **Kubernetes** , Docker Swarm Mode, Nomad, or another similar complex system to manage distributed containers on multiple machines, then you will probably want to **handle replication** at the **cluster level** instead of using a **process manager** (like Uvicorn with workers) in each container.
+One of those distributed container management systems like Kubernetes normally has some integrated way of handling **replication of containers** while still supporting **load balancing** for the incoming requests. All at the **cluster level**.
+In those cases, you would probably want to build a **Docker image from scratch** as [explained above](https://fastapi.tiangolo.com/deployment/docker/#dockerfile), installing your dependencies, and running **a single Uvicorn process** instead of using multiple Uvicorn workers.
+### Load Balancer[¶](https://fastapi.tiangolo.com/deployment/docker/#load-balancer "Permanent link")
+When using containers, you would normally have some component **listening on the main port**. It could possibly be another container that is also a **TLS Termination Proxy** to handle **HTTPS** or some similar tool.
+As this component would take the **load** of requests and distribute that among the workers in a (hopefully) **balanced** way, it is also commonly called a **Load Balancer**.
+Tip
+The same **TLS Termination Proxy** component used for HTTPS would probably also be a **Load Balancer**.
+And when working with containers, the same system you use to start and manage them would already have internal tools to transmit the **network communication** (e.g. HTTP requests) from that **load balancer** (that could also be a **TLS Termination Proxy**) to the container(s) with your app.
+### One Load Balancer - Multiple Worker Containers[¶](https://fastapi.tiangolo.com/deployment/docker/#one-load-balancer-multiple-worker-containers "Permanent link")
+When working with **Kubernetes** or similar distributed container management systems, using their internal networking mechanisms would allow the single **load balancer** that is listening on the main **port** to transmit communication (requests) to possibly **multiple containers** running your app.
+Each of these containers running your app would normally have **just one process** (e.g. a Uvicorn process running your FastAPI application). They would all be **identical containers** , running the same thing, but each with its own process, memory, etc.

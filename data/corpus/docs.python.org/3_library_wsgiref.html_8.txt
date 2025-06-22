@@ -1,0 +1,30 @@
+Title: BaseCGIHandler Class in wsgiref Module
+URL: https://docs.python.org/3/library/wsgiref.html
+Summary: The BaseCGIHandler class in the wsgiref module allows for explicit specification of the CGI environment and I/O streams, in contrast to the CGIHandler which relies on the sys and os modules. It includes parameters to define multithreading and multiprocessing capabilities for WSGI applications.
+---
+
+_class_ wsgiref.handlers.BaseCGIHandler(_stdin_ , _stdout_ , _stderr_ , _environ_ , _multithread =True_, _multiprocess =False_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseCGIHandler "Link to this definition")
+    
+Similar to [`CGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.CGIHandler "wsgiref.handlers.CGIHandler"), but instead of using the [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") and [`os`](https://docs.python.org/3/library/os.html#module-os "os: Miscellaneous operating system interfaces.") modules, the CGI environment and I/O streams are specified explicitly. The _multithread_ and _multiprocess_ values are used to set the `wsgi.multithread` and `wsgi.multiprocess` flags for any applications run by the handler instance.
+This class is a subclass of [`SimpleHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.SimpleHandler "wsgiref.handlers.SimpleHandler") intended for use with software other than HTTP “origin servers”. If you are writing a gateway protocol implementation (such as CGI, FastCGI, SCGI, etc.) that uses a `Status:` header to send an HTTP status, you probably want to subclass this instead of [`SimpleHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.SimpleHandler "wsgiref.handlers.SimpleHandler"). 
+
+_class_ wsgiref.handlers.SimpleHandler(_stdin_ , _stdout_ , _stderr_ , _environ_ , _multithread =True_, _multiprocess =False_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.SimpleHandler "Link to this definition")
+    
+Similar to [`BaseCGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseCGIHandler "wsgiref.handlers.BaseCGIHandler"), but designed for use with HTTP origin servers. If you are writing an HTTP server implementation, you will probably want to subclass this instead of [`BaseCGIHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseCGIHandler "wsgiref.handlers.BaseCGIHandler").
+This class is a subclass of [`BaseHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler "wsgiref.handlers.BaseHandler"). It overrides the `__init__()`, [`get_stdin()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.get_stdin "wsgiref.handlers.BaseHandler.get_stdin"), [`get_stderr()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.get_stderr "wsgiref.handlers.BaseHandler.get_stderr"), [`add_cgi_vars()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.add_cgi_vars "wsgiref.handlers.BaseHandler.add_cgi_vars"), [`_write()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler._write "wsgiref.handlers.BaseHandler._write"), and [`_flush()`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler._flush "wsgiref.handlers.BaseHandler._flush") methods to support explicitly setting the environment and streams via the constructor. The supplied environment and streams are stored in the `stdin`, `stdout`, `stderr`, and `environ` attributes.
+The [`write()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.write "io.BufferedIOBase.write") method of _stdout_ should write each chunk in full, like [`io.BufferedIOBase`](https://docs.python.org/3/library/io.html#io.BufferedIOBase "io.BufferedIOBase"). 
+
+_class_ wsgiref.handlers.BaseHandler[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler "Link to this definition")
+    
+This is an abstract base class for running WSGI applications. Each instance will handle a single HTTP request, although in principle you could create a subclass that was reusable for multiple requests.
+[`BaseHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler "wsgiref.handlers.BaseHandler") instances have only one method intended for external use: 
+
+run(_app_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler.run "Link to this definition")
+    
+Run the specified WSGI application, _app_.
+All of the other [`BaseHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler "wsgiref.handlers.BaseHandler") methods are invoked by this method in the process of running the application, and thus exist primarily to allow customizing the process.
+The following methods MUST be overridden in a subclass: 
+
+_write(_data_)[¶](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler._write "Link to this definition")
+    
+Buffer the bytes _data_ for transmission to the client. It’s okay if this method actually transmits the data; [`BaseHandler`](https://docs.python.org/3/library/wsgiref.html#wsgiref.handlers.BaseHandler "wsgiref.handlers.BaseHandler") just separates write and flush operations for greater efficiency when the underlying system actually has such a distinction.

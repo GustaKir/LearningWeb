@@ -1,0 +1,18 @@
+Title: Initialization of Python Interpreter and Extension Modules
+URL: https://docs.python.org/3/c-api/init.html
+Summary: During the initialization of the Python interpreter, configuration values are converted into `PyInterpreterState` values without modification. Extension modules are shared between interpreters, with multi-phase initialized modules creating separate objects for each interpreter while sharing C-level static and global variables, unlike single-phase initialized modules.
+---
+
+```
+
+Note that the config is used only briefly and does not get modified. During initialization the config’s values are converted into various [`PyInterpreterState`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState") values. A read-only copy of the config may be stored internally on the [`PyInterpreterState`](https://docs.python.org/3/c-api/init.html#c.PyInterpreterState "PyInterpreterState").
+Extension modules are shared between (sub-)interpreters as follows:
+  * For modules using multi-phase initialization, e.g. [`PyModule_FromDefAndSpec()`](https://docs.python.org/3/c-api/module.html#c.PyModule_FromDefAndSpec "PyModule_FromDefAndSpec"), a separate module object is created and initialized for each interpreter. Only C-level static and global variables are shared between these module objects.
+  * For modules using single-phase initialization, e.g. [`PyModule_Create()`](https://docs.python.org/3/c-api/module.html#c.PyModule_Create "PyModule_Create"), the first time a particular extension is imported, it is initialized normally, and a (shallow) copy of its module’s dictionary is squirreled away. When the same extension is imported by another (sub-)interpreter, a new module is initialized and filled with the contents of this copy; the extension’s `init` function is not called. Objects in the module’s dictionary thus end up shared across (sub-)interpreters, which might cause unwanted behavior (see [Bugs and caveats](https://docs.python.org/3/c-api/init.html#bugs-and-caveats) below).
+Note that this is different from what happens when an extension is imported after the interpreter has been completely re-initialized by calling [`Py_FinalizeEx()`](https://docs.python.org/3/c-api/init.html#c.Py_FinalizeEx "Py_FinalizeEx") and [`Py_Initialize()`](https://docs.python.org/3/c-api/init.html#c.Py_Initialize "Py_Initialize"); in that case, the extension’s `initmodule` function _is_ called again. As with multi-phase initialization, this means that only C-level static and global variables are shared between these modules.
+
+
+
+[PyThreadState](https://docs.python.org/3/c-api/init.html#c.PyThreadState "PyThreadState")*Py_NewInterpreter(void)[¶](https://docs.python.org/3/c-api/init.html#c.Py_NewInterpreter "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Create a new sub-interpreter. This is essentially just a wrapper around [`Py_NewInterpreterFromConfig()`](https://docs.python.org/3/c-api/init.html#c.Py_NewInterpreterFromConfig "Py_NewInterpreterFromConfig") with a config that preserves the existing behavior. The result is an unisolated sub-interpreter that shares the main interpreter’s GIL, allows fork/exec, allows daemon threads, and allows single-phase init modules.

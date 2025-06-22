@@ -1,0 +1,126 @@
+Title: Path Params and Numeric Validations in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/
+Summary: This section discusses the usage of `Annotated` in FastAPI, introduced in version 0.95.0, which allows for declaring metadata for path parameters. It highlights the importance of upgrading to at least version 0.95.1 to utilize this feature and provides an example of declaring a title for a path parameter.
+---
+
+```
+
+Info
+FastAPI added support for `Annotated` (and started recommending it) in version 0.95.0.
+If you have an older version, you would get errors when trying to use `Annotated`.
+Make sure you [Upgrade the FastAPI version](https://fastapi.tiangolo.com/deployment/versions/#upgrading-the-fastapi-versions) to at least 0.95.1 before using `Annotated`.
+## Declare metadata[¶](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#declare-metadata "Permanent link")
+You can declare all the same parameters as for `Query`.
+For example, to declare a `title` metadata value for the path parameter `item_id` you can type:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_3_1)
+```
+fromtypingimport Annotated
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: Annotated[int, Path(title="The ID of the item to get")],
+  q: Annotated[str | None, Query(alias="item-query")] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.9+](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_4_1)[Python 3.8+](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_4_2)[Python 3.10+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_4_3)[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_4_4)
+```
+fromtypingimport Annotated, Union
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: Annotated[int, Path(title="The ID of the item to get")],
+  q: Annotated[Union[str, None], Query(alias="item-query")] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Path, Query
+fromtyping_extensionsimport Annotated
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: Annotated[int, Path(title="The ID of the item to get")],
+  q: Annotated[Union[str, None], Query(alias="item-query")] = None,
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: int = Path(title="The ID of the item to get"),
+  q: str | None = Query(default=None, alias="item-query"),
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Tip
+Prefer to use the `Annotated` version if possible.
+```
+fromtypingimport Union
+fromfastapiimport FastAPI, Path, Query
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(
+  item_id: int = Path(title="The ID of the item to get"),
+  q: Union[str, None] = Query(default=None, alias="item-query"),
+):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+Note
+A path parameter is always required as it has to be part of the path. Even if you declared it with `None` or set a default value, it would not affect anything, it would still be always required.
+## Order the parameters as you need[¶](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#order-the-parameters-as-you-need "Permanent link")
+Tip
+This is probably not as important or necessary if you use `Annotated`.
+Let's say that you want to declare the query parameter `q` as a required `str`.
+And you don't need to declare anything else for that parameter, so you don't really need to use `Query`.
+But you still need to use `Path` for the `item_id` path parameter. And you don't want to use `Annotated` for some reason.
+Python will complain if you put a value with a "default" before a value that doesn't have a "default".
+But you can re-order them, and have the value without a default (the query parameter `q`) first.
+It doesn't matter for **FastAPI**. It will detect the parameters by their names, types and default declarations (`Query`, `Path`, etc), it doesn't care about the order.
+So, you can declare your function as:
+[Python 3.8 non-Annotated](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_5_1)
+Tip
+Prefer to use the `Annotated` version if possible.
+[Python 3.8+ - non-Annotated](https://fastapi.tiangolo.com/tutorial/path-params-numeric-validations/#__tabbed_6_1)
+```
+fromfastapiimport FastAPI, Path
+app = FastAPI()
+@app.get("/items/{item_id}")
+async defread_items(q: str, item_id: int = Path(title="The ID of the item to get")):
+  results = {"item_id": item_id}
+  if q:
+    results.update({"q": q})
+  return results

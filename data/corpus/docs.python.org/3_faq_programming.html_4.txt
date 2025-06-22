@@ -1,0 +1,74 @@
+Title: Python Programming FAQs: Tools for Bug Finding and Creating Stand-alone Binaries
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This document discusses tools for bug detection and static analysis in Python, including Pylint, Pyflakes, Mypy, Pyre, and Pytype. It also addresses the creation of stand-alone binaries from Python scripts, emphasizing that compilation to C is unnecessary for this purpose.
+---
+
+### [Are there tools to help find bugs or perform static analysis?](https://docs.python.org/3/faq/programming.html#id5)[¶](https://docs.python.org/3/faq/programming.html#are-there-tools-to-help-find-bugs-or-perform-static-analysis "Link to this heading")
+Yes.
+[Pylint](https://pylint.pycqa.org/en/latest/index.html) and [Pyflakes](https://github.com/PyCQA/pyflakes) do basic checking that will help you catch bugs sooner.
+Static type checkers such as [Mypy](https://mypy-lang.org/), [Pyre](https://pyre-check.org/), and [Pytype](https://github.com/google/pytype) can check type hints in Python source code.
+### [How can I create a stand-alone binary from a Python script?](https://docs.python.org/3/faq/programming.html#id6)[¶](https://docs.python.org/3/faq/programming.html#how-can-i-create-a-stand-alone-binary-from-a-python-script "Link to this heading")
+You don’t need the ability to compile Python to C code if all you want is a stand-alone program that users can download and run without having to install the Python distribution first. There are a number of tools that determine the set of modules required by a program and bind these modules together with a Python binary to produce a single executable.
+One is to use the freeze tool, which is included in the Python source tree as [Tools/freeze](https://github.com/python/cpython/tree/main/Tools/freeze). It converts Python byte code to C arrays; with a C compiler you can embed all your modules into a new program, which is then linked with the standard Python modules.
+It works by scanning your source recursively for import statements (in both forms) and looking for the modules in the standard Python path as well as in the source directory (for built-in modules). It then turns the bytecode for modules written in Python into C code (array initializers that can be turned into code objects using the marshal module) and creates a custom-made config file that only contains those built-in modules which are actually used in the program. It then compiles the generated C code and links it with the rest of the Python interpreter to form a self-contained binary which acts exactly like your script.
+The following packages can help with the creation of console and GUI executables:
+  * [Nuitka](https://nuitka.net/) (Cross-platform)
+  * [PyInstaller](https://pyinstaller.org/) (Cross-platform)
+  * [PyOxidizer](https://pyoxidizer.readthedocs.io/en/stable/) (Cross-platform)
+  * [cx_Freeze](https://marcelotduarte.github.io/cx_Freeze/) (Cross-platform)
+  * [py2app](https://github.com/ronaldoussoren/py2app) (macOS only)
+  * [py2exe](https://www.py2exe.org/) (Windows only)
+
+
+### [Are there coding standards or a style guide for Python programs?](https://docs.python.org/3/faq/programming.html#id7)[¶](https://docs.python.org/3/faq/programming.html#are-there-coding-standards-or-a-style-guide-for-python-programs "Link to this heading")
+Yes. The coding style required for standard library modules is documented as [**PEP 8**](https://peps.python.org/pep-0008/).
+## [Core Language](https://docs.python.org/3/faq/programming.html#id8)[¶](https://docs.python.org/3/faq/programming.html#core-language "Link to this heading")
+### [Why am I getting an UnboundLocalError when the variable has a value?](https://docs.python.org/3/faq/programming.html#id9)[¶](https://docs.python.org/3/faq/programming.html#why-am-i-getting-an-unboundlocalerror-when-the-variable-has-a-value "Link to this heading")
+It can be a surprise to get the [`UnboundLocalError`](https://docs.python.org/3/library/exceptions.html#UnboundLocalError "UnboundLocalError") in previously working code when it is modified by adding an assignment statement somewhere in the body of a function.
+This code:
+>>>```
+>>> x = 10
+>>> defbar():
+...   print(x)
+...
+>>> bar()
+10
+
+```
+
+works, but this code:
+>>>```
+>>> x = 10
+>>> deffoo():
+...   print(x)
+...   x += 1
+
+```
+
+results in an `UnboundLocalError`:
+>>>```
+>>> foo()
+Traceback (most recent call last):
+...
+UnboundLocalError: local variable 'x' referenced before assignment
+
+```
+
+This is because when you make an assignment to a variable in a scope, that variable becomes local to that scope and shadows any similarly named variable in the outer scope. Since the last statement in foo assigns a new value to `x`, the compiler recognizes it as a local variable. Consequently when the earlier `print(x)` attempts to print the uninitialized local variable and an error results.
+In the example above you can access the outer scope variable by declaring it global:
+>>>```
+>>> x = 10
+>>> deffoobar():
+...   global x
+...   print(x)
+...   x += 1
+...
+>>> foobar()
+10
+
+```
+
+This explicit declaration is required in order to remind you that (unlike the superficially analogous situation with class and instance variables) you are actually modifying the value of the variable in the outer scope:
+>>>```
+>>> print(x)
+11

@@ -1,0 +1,73 @@
+Title: Iterators and Generators in Python
+URL: https://docs.python.org/3/tutorial/classes.html
+Summary: This section introduces the concept of iterators with a sample implementation of a class called 'Reverse' that allows iteration over a sequence backwards. It also highlights generators, which are a simpler way to create iterators using the 'yield' statement.
+---
+
+```
+classReverse:
+"""Iterator for looping over a sequence backwards."""
+  def__init__(self, data):
+    self.data = data
+    self.index = len(data)
+  def__iter__(self):
+    return self
+  def__next__(self):
+    if self.index == 0:
+      raise StopIteration
+    self.index = self.index - 1
+    return self.data[self.index]
+
+```
+
+>>>```
+>>> rev = Reverse('spam')
+>>> iter(rev)
+<__main__.Reverse object at 0x00A1DB50>
+>>> for char in rev:
+...   print(char)
+...
+m
+a
+p
+s
+
+```
+
+## 9.9. Generators[¶](https://docs.python.org/3/tutorial/classes.html#generators "Link to this heading")
+[Generators](https://docs.python.org/3/glossary.html#term-generator) are a simple and powerful tool for creating iterators. They are written like regular functions but use the [`yield`](https://docs.python.org/3/reference/simple_stmts.html#yield) statement whenever they want to return data. Each time [`next()`](https://docs.python.org/3/library/functions.html#next "next") is called on it, the generator resumes where it left off (it remembers all the data values and which statement was last executed). An example shows that generators can be trivially easy to create:
+```
+defreverse(data):
+  for index in range(len(data)-1, -1, -1):
+    yield data[index]
+
+```
+
+>>>```
+>>> for char in reverse('golf'):
+...   print(char)
+...
+f
+l
+o
+g
+
+```
+
+Anything that can be done with generators can also be done with class-based iterators as described in the previous section. What makes generators so compact is that the [`__iter__()`](https://docs.python.org/3/library/stdtypes.html#iterator.__iter__ "iterator.__iter__") and [`__next__()`](https://docs.python.org/3/reference/expressions.html#generator.__next__ "generator.__next__") methods are created automatically.
+Another key feature is that the local variables and execution state are automatically saved between calls. This made the function easier to write and much more clear than an approach using instance variables like `self.index` and `self.data`.
+In addition to automatic method creation and saving program state, when generators terminate, they automatically raise [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"). In combination, these features make it easy to create iterators with no more effort than writing a regular function.
+## 9.10. Generator Expressions[¶](https://docs.python.org/3/tutorial/classes.html#generator-expressions "Link to this heading")
+Some simple generators can be coded succinctly as expressions using a syntax similar to list comprehensions but with parentheses instead of square brackets. These expressions are designed for situations where the generator is used right away by an enclosing function. Generator expressions are more compact but less versatile than full generator definitions and tend to be more memory friendly than equivalent list comprehensions.
+Examples:
+>>>```
+>>> sum(i*i for i in range(10))         # sum of squares
+285
+>>> xvec = [10, 20, 30]
+>>> yvec = [7, 5, 3]
+>>> sum(x*y for x,y in zip(xvec, yvec))     # dot product
+260
+>>> unique_words = set(word for line in page for word in line.split())
+>>> valedictorian = max((student.gpa, student.name) for student in graduates)
+>>> data = 'golf'
+>>> list(data[i] for i in range(len(data)-1, -1, -1))
+['f', 'l', 'o', 'g']

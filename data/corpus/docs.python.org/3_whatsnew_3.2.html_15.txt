@@ -1,0 +1,63 @@
+Title: Expanded Date Ranges in Python 3.2
+URL: https://docs.python.org/3/whatsnew/3.2.html
+Summary: Python 3.2 introduces significantly expanded date ranges for several time-related functions. When `time.accept2dyear` is set to false, `time.asctime()` can accept any year fitting in a C int, while `time.mktime()` and `time.strftime()` can handle the full range supported by the OS functions.
+---
+
+```
+
+Several functions now have significantly expanded date ranges. When `time.accept2dyear` is false, the [`time.asctime()`](https://docs.python.org/3/library/time.html#time.asctime "time.asctime") function will accept any year that fits in a C int, while the [`time.mktime()`](https://docs.python.org/3/library/time.html#time.mktime "time.mktime") and [`time.strftime()`](https://docs.python.org/3/library/time.html#time.strftime "time.strftime") functions will accept the full range supported by the corresponding operating system functions.
+
+
+(Contributed by Alexander Belopolsky and Victor Stinner in [bpo-1289118](https://bugs.python.org/issue?@action=redirect&bpo=1289118), [bpo-5094](https://bugs.python.org/issue?@action=redirect&bpo=5094), [bpo-6641](https://bugs.python.org/issue?@action=redirect&bpo=6641), [bpo-2706](https://bugs.python.org/issue?@action=redirect&bpo=2706), [bpo-1777412](https://bugs.python.org/issue?@action=redirect&bpo=1777412), [bpo-8013](https://bugs.python.org/issue?@action=redirect&bpo=8013), and [bpo-10827](https://bugs.python.org/issue?@action=redirect&bpo=10827).)
+### math[¶](https://docs.python.org/3/whatsnew/3.2.html#math "Link to this heading")
+The [`math`](https://docs.python.org/3/library/math.html#module-math "math: Mathematical functions \(sin\(\) etc.\).") module has been updated with six new functions inspired by the C99 standard.
+The [`isfinite()`](https://docs.python.org/3/library/math.html#math.isfinite "math.isfinite") function provides a reliable and fast way to detect special values. It returns `True` for regular numbers and `False` for _Nan_ or _Infinity_ :
+>>>```
+>>> frommathimport isfinite
+>>> [isfinite(x) for x in (123, 4.56, float('Nan'), float('Inf'))]
+[True, True, False, False]
+
+```
+
+The [`expm1()`](https://docs.python.org/3/library/math.html#math.expm1 "math.expm1") function computes `e**x-1` for small values of _x_ without incurring the loss of precision that usually accompanies the subtraction of nearly equal quantities:
+>>>```
+>>> frommathimport expm1
+>>> expm1(0.013671875)  # more accurate way to compute e**x-1 for a small x
+0.013765762467652909
+
+```
+
+The [`erf()`](https://docs.python.org/3/library/math.html#math.erf "math.erf") function computes a probability integral or [Gaussian error function](https://en.wikipedia.org/wiki/Error_function). The complementary error function, [`erfc()`](https://docs.python.org/3/library/math.html#math.erfc "math.erfc"), is `1 - erf(x)`:
+>>>```
+>>> frommathimport erf, erfc, sqrt
+>>> erf(1.0/sqrt(2.0))  # portion of normal distribution within 1 standard deviation
+0.682689492137086
+>>> erfc(1.0/sqrt(2.0)) # portion of normal distribution outside 1 standard deviation
+0.31731050786291404
+>>> erf(1.0/sqrt(2.0)) + erfc(1.0/sqrt(2.0))
+1.0
+
+```
+
+The [`gamma()`](https://docs.python.org/3/library/math.html#math.gamma "math.gamma") function is a continuous extension of the factorial function. See <https://en.wikipedia.org/wiki/Gamma_function> for details. Because the function is related to factorials, it grows large even for small values of _x_ , so there is also a [`lgamma()`](https://docs.python.org/3/library/math.html#math.lgamma "math.lgamma") function for computing the natural logarithm of the gamma function:
+>>>```
+>>> frommathimport gamma, lgamma
+>>> gamma(7.0)      # six factorial
+720.0
+>>> lgamma(801.0)    # log(800 factorial)
+4551.950730698041
+
+```
+
+(Contributed by Mark Dickinson.)
+### abc[¶](https://docs.python.org/3/whatsnew/3.2.html#abc "Link to this heading")
+The [`abc`](https://docs.python.org/3/library/abc.html#module-abc "abc: Abstract base classes according to :pep:`3119`.") module now supports [`abstractclassmethod()`](https://docs.python.org/3/library/abc.html#abc.abstractclassmethod "abc.abstractclassmethod") and [`abstractstaticmethod()`](https://docs.python.org/3/library/abc.html#abc.abstractstaticmethod "abc.abstractstaticmethod").
+These tools make it possible to define an [abstract base class](https://docs.python.org/3/glossary.html#term-abstract-base-class) that requires a particular [`classmethod()`](https://docs.python.org/3/library/functions.html#classmethod "classmethod") or [`staticmethod()`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod") to be implemented:
+```
+classTemperature(metaclass=abc.ABCMeta):
+  @abc.abstractclassmethod
+  deffrom_fahrenheit(cls, t):
+    ...
+  @abc.abstractclassmethod
+  deffrom_celsius(cls, t):
+    ...

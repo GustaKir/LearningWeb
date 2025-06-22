@@ -1,0 +1,73 @@
+Title: Compound Statements in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This document details the changes and specifications for Python's compound statements, including the 'with' and 'match' statements. Notable changes include the addition of multiple context expressions in version 3.1 and support for line-breaking parentheses in version 3.10. The 'match' statement, introduced in version 3.10, is designed for pattern matching.
+---
+
+```
+
+Changed in version 3.1: Support for multiple context expressions.
+Changed in version 3.10: Support for using grouping parentheses to break the statement in multiple lines.
+See also 
+
+[**PEP 343**](https://peps.python.org/pep-0343/) - The “with” statement
+    
+The specification, background, and examples for the Python [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement.
+## 8.6. The `match` statement[¶](https://docs.python.org/3/reference/compound_stmts.html#the-match-statement "Link to this heading")
+Added in version 3.10.
+The match statement is used for pattern matching. Syntax:
+```
+**match_stmt**  ::= 'match' [subject_expr](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-subject_expr) ":" NEWLINE INDENT [case_block](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-case_block)+ DEDENT
+**subject_expr** ::= star_named_expression "," star_named_expressions?
+         | named_expression
+**case_block**  ::= 'case' [patterns](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-patterns) [[guard](https://docs.python.org/3/reference/compound_stmts.html#grammar-token-python-grammar-guard)] ":" block
+
+```
+
+Note
+This section uses single quotes to denote [soft keywords](https://docs.python.org/3/reference/lexical_analysis.html#soft-keywords).
+Pattern matching takes a pattern as input (following `case`) and a subject value (following `match`). The pattern (which may contain subpatterns) is matched against the subject value. The outcomes are:
+  * A match success or failure (also termed a pattern success or failure).
+  * Possible binding of matched values to a name. The prerequisites for this are further discussed below.
+
+
+The `match` and `case` keywords are [soft keywords](https://docs.python.org/3/reference/lexical_analysis.html#soft-keywords).
+See also
+  * [**PEP 634**](https://peps.python.org/pep-0634/) – Structural Pattern Matching: Specification
+  * [**PEP 636**](https://peps.python.org/pep-0636/) – Structural Pattern Matching: Tutorial
+
+
+### 8.6.1. Overview[¶](https://docs.python.org/3/reference/compound_stmts.html#overview "Link to this heading")
+Here’s an overview of the logical flow of a match statement:
+  1. The subject expression `subject_expr` is evaluated and a resulting subject value obtained. If the subject expression contains a comma, a tuple is constructed using [the standard rules](https://docs.python.org/3/library/stdtypes.html#typesseq-tuple).
+  2. Each pattern in a `case_block` is attempted to match with the subject value. The specific rules for success or failure are described below. The match attempt can also bind some or all of the standalone names within the pattern. The precise pattern binding rules vary per pattern type and are specified below. **Name bindings made during a successful pattern match outlive the executed block and can be used after the match statement**.
+Note
+During failed pattern matches, some subpatterns may succeed. Do not rely on bindings being made for a failed match. Conversely, do not rely on variables remaining unchanged after a failed match. The exact behavior is dependent on implementation and may vary. This is an intentional decision made to allow different implementations to add optimizations.
+  3. If the pattern succeeds, the corresponding guard (if present) is evaluated. In this case all name bindings are guaranteed to have happened.
+     * If the guard evaluates as true or is missing, the `block` inside `case_block` is executed.
+     * Otherwise, the next `case_block` is attempted as described above.
+     * If there are no further case blocks, the match statement is completed.
+
+
+Note
+Users should generally never rely on a pattern being evaluated. Depending on implementation, the interpreter may cache values or use other optimizations which skip repeated evaluations.
+A sample match statement:
+>>>```
+>>> flag = False
+>>> match (100, 200):
+...   case (100, 300): # Mismatch: 200 != 300
+...     print('Case 1')
+...   case (100, 200) if flag: # Successful match, but guard fails
+...     print('Case 2')
+...   case (100, y): # Matches and binds y to 200
+...     print(f'Case 3, y: {y}')
+...   case_: # Pattern not attempted
+...     print('Case 4, I match anything!')
+...
+Case 3, y: 200
+
+```
+
+In this case, `if flag` is a guard. Read more about that in the next section.
+### 8.6.2. Guards[¶](https://docs.python.org/3/reference/compound_stmts.html#guards "Link to this heading")
+```
+**guard** ::= "if" named_expression

@@ -1,0 +1,71 @@
+Title: Using os.walk to Analyze Directory Sizes
+URL: https://docs.python.org/3/library/os.html
+Summary: This section demonstrates the use of the `os.walk` function to calculate and display the total size of non-directory files in specified directories, while excluding `__pycache__` subdirectories. Additionally, it introduces the concept of walking a directory tree in a bottom-up manner for deleting directories safely.
+---
+
+os.html#os.walk "os.walk") never changes the current directory, and assumes that its caller doesn’t either.
+This example displays the number of bytes taken by non-directory files in each directory under the starting directory, except that it doesn’t look under any `__pycache__` subdirectory:
+```
+importos
+fromos.pathimport join, getsize
+for root, dirs, files in os.walk('python/Lib/xml'):
+  print(root, "consumes", end=" ")
+  print(sum(getsize(join(root, name)) for name in files), end=" ")
+  print("bytes in", len(files), "non-directory files")
+  if '__pycache__' in dirs:
+    dirs.remove('__pycache__') # don't visit __pycache__ directories
+
+```
+
+In the next example (simple implementation of [`shutil.rmtree()`](https://docs.python.org/3/library/shutil.html#shutil.rmtree "shutil.rmtree")), walking the tree bottom-up is essential, [`rmdir()`](https://docs.python.org/3/library/os.html#os.rmdir "os.rmdir") doesn’t allow deleting a directory before the directory is empty:
+```
+# Delete everything reachable from the directory named in "top",
+# assuming there are no symbolic links.
+# CAUTION: This is dangerous! For example, if top == '/', it
+# could delete all your disk files.
+importos
+for root, dirs, files in os.walk(top, topdown=False):
+  for name in files:
+    os.remove(os.path.join(root, name))
+  for name in dirs:
+    os.rmdir(os.path.join(root, name))
+os.rmdir(top)
+
+```
+
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `os.walk` with arguments `top`, `topdown`, `onerror`, `followlinks`.
+Changed in version 3.5: This function now calls [`os.scandir()`](https://docs.python.org/3/library/os.html#os.scandir "os.scandir") instead of [`os.listdir()`](https://docs.python.org/3/library/os.html#os.listdir "os.listdir"), making it faster by reducing the number of calls to [`os.stat()`](https://docs.python.org/3/library/os.html#os.stat "os.stat").
+Changed in version 3.6: Accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object). 
+
+os.fwalk(_top ='.'_, _topdown =True_, _onerror =None_, _*_ , _follow_symlinks =False_, _dir_fd =None_)[¶](https://docs.python.org/3/library/os.html#os.fwalk "Link to this definition")
+    
+This behaves exactly like [`walk()`](https://docs.python.org/3/library/os.html#os.walk "os.walk"), except that it yields a 4-tuple `(dirpath, dirnames, filenames, dirfd)`, and it supports `dir_fd`.
+_dirpath_ , _dirnames_ and _filenames_ are identical to [`walk()`](https://docs.python.org/3/library/os.html#os.walk "os.walk") output, and _dirfd_ is a file descriptor referring to the directory _dirpath_.
+This function always supports [paths relative to directory descriptors](https://docs.python.org/3/library/os.html#dir-fd) and [not following symlinks](https://docs.python.org/3/library/os.html#follow-symlinks). Note however that, unlike other functions, the [`fwalk()`](https://docs.python.org/3/library/os.html#os.fwalk "os.fwalk") default value for _follow_symlinks_ is `False`.
+Note
+Since [`fwalk()`](https://docs.python.org/3/library/os.html#os.fwalk "os.fwalk") yields file descriptors, those are only valid until the next iteration step, so you should duplicate them (e.g. with [`dup()`](https://docs.python.org/3/library/os.html#os.dup "os.dup")) if you want to keep them longer.
+This example displays the number of bytes taken by non-directory files in each directory under the starting directory, except that it doesn’t look under any `__pycache__` subdirectory:
+```
+importos
+for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
+  print(root, "consumes", end="")
+  print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
+     end="")
+  print("bytes in", len(files), "non-directory files")
+  if '__pycache__' in dirs:
+    dirs.remove('__pycache__') # don't visit __pycache__ directories
+
+```
+
+In the next example, walking the tree bottom-up is essential: [`rmdir()`](https://docs.python.org/3/library/os.html#os.rmdir "os.rmdir") doesn’t allow deleting a directory before the directory is empty:
+```
+# Delete everything reachable from the directory named in "top",
+# assuming there are no symbolic links.
+# CAUTION: This is dangerous! For example, if top == '/', it
+# could delete all your disk files.
+importos
+for root, dirs, files, rootfd in os.fwalk(top, topdown=False):
+  for name in files:
+    os.unlink(name, dir_fd=rootfd)
+  for name in dirs:
+    os.rmdir(name, dir_fd=rootfd)

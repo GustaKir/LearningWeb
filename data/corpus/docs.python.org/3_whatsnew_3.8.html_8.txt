@@ -1,0 +1,60 @@
+Title: Improvements to the 'ast' Module in Python 3.8
+URL: https://docs.python.org/3/whatsnew/3.8.html
+Summary: The 'ast' module in Python 3.8 introduces new attributes `end_lineno` and `end_col_offset` for nodes, providing precise end location details. Additionally, a new function `ast.get_source_segment()` is available to retrieve source code for specific AST nodes. The `ast.parse()` function now supports new flags, including `type_comments=True`, enhancing its functionality.
+---
+
+```
+
+(Contributed by Barry Warsaw and Jason R. Coombs in [bpo-34632](https://bugs.python.org/issue?@action=redirect&bpo=34632).)
+
+
+## Improved Modules[¶](https://docs.python.org/3/whatsnew/3.8.html#improved-modules "Link to this heading")
+### ast[¶](https://docs.python.org/3/whatsnew/3.8.html#ast "Link to this heading")
+AST nodes now have `end_lineno` and `end_col_offset` attributes, which give the precise location of the end of the node. (This only applies to nodes that have `lineno` and `col_offset` attributes.)
+New function [`ast.get_source_segment()`](https://docs.python.org/3/library/ast.html#ast.get_source_segment "ast.get_source_segment") returns the source code for a specific AST node.
+(Contributed by Ivan Levkivskyi in [bpo-33416](https://bugs.python.org/issue?@action=redirect&bpo=33416).)
+The [`ast.parse()`](https://docs.python.org/3/library/ast.html#ast.parse "ast.parse") function has some new flags:
+  * `type_comments=True` causes it to return the text of [**PEP 484**](https://peps.python.org/pep-0484/) and [**PEP 526**](https://peps.python.org/pep-0526/) type comments associated with certain AST nodes;
+  * `mode='func_type'` can be used to parse [**PEP 484**](https://peps.python.org/pep-0484/) “signature type comments” (returned for function definition AST nodes);
+  * `feature_version=(3, N)` allows specifying an earlier Python 3 version. For example, `feature_version=(3, 4)` will treat [`async`](https://docs.python.org/3/reference/compound_stmts.html#async) and [`await`](https://docs.python.org/3/reference/expressions.html#await) as non-reserved words.
+
+
+(Contributed by Guido van Rossum in [bpo-35766](https://bugs.python.org/issue?@action=redirect&bpo=35766).)
+### asyncio[¶](https://docs.python.org/3/whatsnew/3.8.html#asyncio "Link to this heading")
+[`asyncio.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run") has graduated from the provisional to stable API. This function can be used to execute a [coroutine](https://docs.python.org/3/glossary.html#term-coroutine) and return the result while automatically managing the event loop. For example:
+```
+importasyncio
+async defmain():
+  await asyncio.sleep(0)
+  return 42
+asyncio.run(main())
+
+```
+
+This is _roughly_ equivalent to:
+```
+importasyncio
+async defmain():
+  await asyncio.sleep(0)
+  return 42
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+try:
+  loop.run_until_complete(main())
+finally:
+  asyncio.set_event_loop(None)
+  loop.close()
+
+```
+
+The actual implementation is significantly more complex. Thus, [`asyncio.run()`](https://docs.python.org/3/library/asyncio-runner.html#asyncio.run "asyncio.run") should be the preferred way of running asyncio programs.
+(Contributed by Yury Selivanov in [bpo-32314](https://bugs.python.org/issue?@action=redirect&bpo=32314).)
+Running `python -m asyncio` launches a natively async REPL. This allows rapid experimentation with code that has a top-level [`await`](https://docs.python.org/3/reference/expressions.html#await). There is no longer a need to directly call `asyncio.run()` which would spawn a new event loop on every invocation:
+```
+$ python -m asyncio
+asyncio REPL 3.8.0
+Use "await" directly instead of "asyncio.run()".
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import asyncio
+>>> await asyncio.sleep(10, result='hello')
+hello

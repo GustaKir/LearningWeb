@@ -1,0 +1,129 @@
+Title: FastAPI Tutorial: Body Management
+URL: https://fastapi.tiangolo.com/tutorial/body/
+Summary: This document outlines the process for managing request bodies in FastAPI using Pydantic's `BaseModel`. It covers creating data models, declaring parameters, and utilizing model support for automatic documentation, editor integration, and combining request body with path and query parameters.
+---
+
+Table of contents 
+  * [ Import Pydantic's `BaseModel` ](https://fastapi.tiangolo.com/tutorial/body/#import-pydantics-basemodel)
+  * [ Create your data model  ](https://fastapi.tiangolo.com/tutorial/body/#create-your-data-model)
+  * [ Declare it as a parameter  ](https://fastapi.tiangolo.com/tutorial/body/#declare-it-as-a-parameter)
+  * [ Results  ](https://fastapi.tiangolo.com/tutorial/body/#results)
+  * [ Automatic docs  ](https://fastapi.tiangolo.com/tutorial/body/#automatic-docs)
+  * [ Editor support  ](https://fastapi.tiangolo.com/tutorial/body/#editor-support)
+  * [ Use the model  ](https://fastapi.tiangolo.com/tutorial/body/#use-the-model)
+  * [ Request body + path parameters  ](https://fastapi.tiangolo.com/tutorial/body/#request-body-path-parameters)
+  * [ Request body + path + query parameters  ](https://fastapi.tiangolo.com/tutorial/body/#request-body-path-query-parameters)
+  * [ Without Pydantic  ](https://fastapi.tiangolo.com/tutorial/body/#without-pydantic)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+
+
+# Request Body[¶](https://fastapi.tiangolo.com/tutorial/body/#request-body "Permanent link")
+When you need to send data from a client (let's say, a browser) to your API, you send it as a **request body**.
+A **request** body is data sent by the client to your API. A **response** body is the data your API sends to the client.
+Your API almost always has to send a **response** body. But clients don't necessarily need to send **request bodies** all the time, sometimes they only request a path, maybe with some query parameters, but don't send a body.
+To declare a **request** body, you use [Pydantic](https://docs.pydantic.dev/) models with all their power and benefits.
+Info
+To send data, you should use one of: `POST` (the more common), `PUT`, `DELETE` or `PATCH`.
+Sending a body with a `GET` request has an undefined behavior in the specifications, nevertheless, it is supported by FastAPI, only for very complex/extreme use cases.
+As it is discouraged, the interactive docs with Swagger UI won't show the documentation for the body when using `GET`, and proxies in the middle might not support it.
+## Import Pydantic's `BaseModel`[¶](https://fastapi.tiangolo.com/tutorial/body/#import-pydantics-basemodel "Permanent link")
+First, you need to import `BaseModel` from `pydantic`:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+app = FastAPI()
+@app.post("/items/")
+async defcreate_item(item: Item):
+  return item
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body/#__tabbed_2_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+app = FastAPI()
+@app.post("/items/")
+async defcreate_item(item: Item):
+  return item
+
+```
+
+## Create your data model[¶](https://fastapi.tiangolo.com/tutorial/body/#create-your-data-model "Permanent link")
+Then you declare your data model as a class that inherits from `BaseModel`.
+Use standard Python types for all the attributes:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body/#__tabbed_3_1)
+```
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+classItem(BaseModel):
+  name: str
+  description: str | None = None
+  price: float
+  tax: float | None = None
+app = FastAPI()
+@app.post("/items/")
+async defcreate_item(item: Item):
+  return item
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/body/#__tabbed_4_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+frompydanticimport BaseModel
+classItem(BaseModel):
+  name: str
+  description: Union[str, None] = None
+  price: float
+  tax: Union[float, None] = None
+app = FastAPI()
+@app.post("/items/")
+async defcreate_item(item: Item):
+  return item
+
+```
+
+The same as when declaring query parameters, when a model attribute has a default value, it is not required. Otherwise, it is required. Use `None` to make it just optional.
+For example, this model above declares a JSON "`object`" (or Python `dict`) like:
+```
+{
+"name":"Foo",
+"description":"An optional description",
+"price":45.2,
+"tax":3.5
+}
+
+```
+
+...as `description` and `tax` are optional (with a default value of `None`), this JSON "`object`" would also be valid:
+```
+{
+"name":"Foo",
+"price":45.2
+}
+
+```
+
+## Declare it as a parameter[¶](https://fastapi.tiangolo.com/tutorial/body/#declare-it-as-a-parameter "Permanent link")
+To add it to your _path operation_ , declare it the same way you declared path and query parameters:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/body/#__tabbed_5_1)

@@ -1,0 +1,55 @@
+Title: Multiprocessing Pipe Example
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: This chunk demonstrates the use of the `Pipe` class from the `multiprocessing` module in Python. It shows how to send and receive data using pipes, including sending lists and byte arrays. A warning is provided about the security implications of the `recv()` method, which automatically unpickles data received, emphasizing the need for trust in the communicating processes.
+---
+
+```
+>>> frommultiprocessingimport Pipe
+>>> a, b = Pipe()
+>>> a.send([1, 'hello', None])
+>>> b.recv()
+[1, 'hello', None]
+>>> b.send_bytes(b'thank you')
+>>> a.recv_bytes()
+b'thank you'
+>>> importarray
+>>> arr1 = array.array('i', range(5))
+>>> arr2 = array.array('i', [0] * 10)
+>>> a.send_bytes(arr1)
+>>> count = b.recv_bytes_into(arr2)
+>>> assert count == len(arr1) * arr1.itemsize
+>>> arr2
+array('i', [0, 1, 2, 3, 4, 0, 0, 0, 0, 0])
+
+```
+
+Warning
+The [`Connection.recv()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.recv "multiprocessing.connection.Connection.recv") method automatically unpickles the data it receives, which can be a security risk unless you can trust the process which sent the message.
+Therefore, unless the connection object was produced using `Pipe()` you should only use the [`recv()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.recv "multiprocessing.connection.Connection.recv") and [`send()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.connection.Connection.send "multiprocessing.connection.Connection.send") methods after performing some sort of authentication. See [Authentication keys](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-auth-keys).
+Warning
+If a process is killed while it is trying to read or write to a pipe then the data in the pipe is likely to become corrupted, because it may become impossible to be sure where the message boundaries lie.
+### Synchronization primitives[¶](https://docs.python.org/3/library/multiprocessing.html#synchronization-primitives "Link to this heading")
+Generally synchronization primitives are not as necessary in a multiprocess program as they are in a multithreaded program. See the documentation for [`threading`](https://docs.python.org/3/library/threading.html#module-threading "threading: Thread-based parallelism.") module.
+Note that one can also create synchronization primitives by using a manager object – see [Managers](https://docs.python.org/3/library/multiprocessing.html#multiprocessing-managers). 
+
+_class_ multiprocessing.Barrier(_parties_[, _action_[, _timeout_]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Barrier "Link to this definition")
+    
+A barrier object: a clone of [`threading.Barrier`](https://docs.python.org/3/library/threading.html#threading.Barrier "threading.Barrier").
+Added in version 3.3. 
+
+_class_ multiprocessing.BoundedSemaphore([_value_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.BoundedSemaphore "Link to this definition")
+    
+A bounded semaphore object: a close analog of [`threading.BoundedSemaphore`](https://docs.python.org/3/library/threading.html#threading.BoundedSemaphore "threading.BoundedSemaphore").
+A solitary difference from its close analog exists: its `acquire` method’s first argument is named _block_ , as is consistent with [`Lock.acquire()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Lock.acquire "multiprocessing.Lock.acquire").
+Note
+On macOS, this is indistinguishable from [`Semaphore`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Semaphore "multiprocessing.Semaphore") because `sem_getvalue()` is not implemented on that platform. 
+
+_class_ multiprocessing.Condition([_lock_])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Condition "Link to this definition")
+    
+A condition variable: an alias for [`threading.Condition`](https://docs.python.org/3/library/threading.html#threading.Condition "threading.Condition").
+If _lock_ is specified then it should be a [`Lock`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Lock "multiprocessing.Lock") or [`RLock`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.RLock "multiprocessing.RLock") object from [`multiprocessing`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing "multiprocessing: Process-based parallelism.").
+Changed in version 3.3: The [`wait_for()`](https://docs.python.org/3/library/threading.html#threading.Condition.wait_for "threading.Condition.wait_for") method was added. 
+
+_class_ multiprocessing.Event[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Event "Link to this definition")
+    
+A clone of [`threading.Event`](https://docs.python.org/3/library/threading.html#threading.Event "threading.Event").

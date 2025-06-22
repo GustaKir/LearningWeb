@@ -1,0 +1,44 @@
+Title: functools.update_wrapper Function
+URL: https://docs.python.org/3/library/functools.html
+Summary: The `functools.update_wrapper` function updates a wrapper function to appear like the original wrapped function. It allows optional arguments to specify which attributes to assign and update between the wrapper and the original function, utilizing default constants for assignments.
+---
+
+```
+
+The same pattern can be used for other similar decorators: [`@staticmethod`](https://docs.python.org/3/library/functions.html#staticmethod "staticmethod"), [`@abstractmethod`](https://docs.python.org/3/library/abc.html#abc.abstractmethod "abc.abstractmethod"), and others.
+Added in version 3.8. 
+
+functools.update_wrapper(_wrapper_ , _wrapped_ , _assigned =WRAPPER_ASSIGNMENTS_, _updated =WRAPPER_UPDATES_)[¶](https://docs.python.org/3/library/functools.html#functools.update_wrapper "Link to this definition")
+    
+Update a _wrapper_ function to look like the _wrapped_ function. The optional arguments are tuples to specify which attributes of the original function are assigned directly to the matching attributes on the wrapper function and which attributes of the wrapper function are updated with the corresponding attributes from the original function. The default values for these arguments are the module level constants `WRAPPER_ASSIGNMENTS` (which assigns to the wrapper function’s [`__module__`](https://docs.python.org/3/reference/datamodel.html#function.__module__ "function.__module__"), [`__name__`](https://docs.python.org/3/reference/datamodel.html#function.__name__ "function.__name__"), [`__qualname__`](https://docs.python.org/3/reference/datamodel.html#function.__qualname__ "function.__qualname__"), [`__annotations__`](https://docs.python.org/3/reference/datamodel.html#function.__annotations__ "function.__annotations__"), [`__type_params__`](https://docs.python.org/3/reference/datamodel.html#function.__type_params__ "function.__type_params__"), and [`__doc__`](https://docs.python.org/3/reference/datamodel.html#function.__doc__ "function.__doc__"), the documentation string) and `WRAPPER_UPDATES` (which updates the wrapper function’s [`__dict__`](https://docs.python.org/3/reference/datamodel.html#function.__dict__ "function.__dict__"), i.e. the instance dictionary).
+To allow access to the original function for introspection and other purposes (e.g. bypassing a caching decorator such as [`lru_cache()`](https://docs.python.org/3/library/functools.html#functools.lru_cache "functools.lru_cache")), this function automatically adds a `__wrapped__` attribute to the wrapper that refers to the function being wrapped.
+The main intended use for this function is in [decorator](https://docs.python.org/3/glossary.html#term-decorator) functions which wrap the decorated function and return the wrapper. If the wrapper function is not updated, the metadata of the returned function will reflect the wrapper definition rather than the original function definition, which is typically less than helpful.
+[`update_wrapper()`](https://docs.python.org/3/library/functools.html#functools.update_wrapper "functools.update_wrapper") may be used with callables other than functions. Any attributes named in _assigned_ or _updated_ that are missing from the object being wrapped are ignored (i.e. this function will not attempt to set them on the wrapper function). [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") is still raised if the wrapper function itself is missing any attributes named in _updated_.
+Changed in version 3.2: The `__wrapped__` attribute is now automatically added. The [`__annotations__`](https://docs.python.org/3/reference/datamodel.html#function.__annotations__ "function.__annotations__") attribute is now copied by default. Missing attributes no longer trigger an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError").
+Changed in version 3.4: The `__wrapped__` attribute now always refers to the wrapped function, even if that function defined a `__wrapped__` attribute. (see [bpo-17482](https://bugs.python.org/issue?@action=redirect&bpo=17482))
+Changed in version 3.12: The [`__type_params__`](https://docs.python.org/3/reference/datamodel.html#function.__type_params__ "function.__type_params__") attribute is now copied by default. 
+
+@functools.wraps(_wrapped_ , _assigned =WRAPPER_ASSIGNMENTS_, _updated =WRAPPER_UPDATES_)[¶](https://docs.python.org/3/library/functools.html#functools.wraps "Link to this definition")
+    
+This is a convenience function for invoking [`update_wrapper()`](https://docs.python.org/3/library/functools.html#functools.update_wrapper "functools.update_wrapper") as a function decorator when defining a wrapper function. It is equivalent to `partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)`. For example:
+>>>```
+>>> fromfunctoolsimport wraps
+>>> defmy_decorator(f):
+...   @wraps(f)
+...   defwrapper(*args, **kwds):
+...     print('Calling decorated function')
+...     return f(*args, **kwds)
+...   return wrapper
+...
+>>> @my_decorator
+... defexample():
+... """Docstring"""
+...   print('Called example function')
+...
+>>> example()
+Calling decorated function
+Called example function
+>>> example.__name__
+'example'
+>>> example.__doc__
+'Docstring'

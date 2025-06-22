@@ -1,0 +1,53 @@
+Title: New Features in Python 3.5
+URL: https://docs.python.org/3/whatsnew/3.5.html
+Summary: Python 3.5 introduces several enhancements, including an updated `MIMEText` constructor that accepts a `Charset` instance, and a new `_start_` parameter for the `Enum` callable to specify the initial value of enum members. These changes were contributed by Claude Paroz, Berker Peksag, and Ethan Furman.
+---
+
+e.text.MIMEText") constructor now accepts a [`charset.Charset`](https://docs.python.org/3/library/email.charset.html#email.charset.Charset "email.charset.Charset") instance. (Contributed by Claude Paroz and Berker Peksag in [bpo-16324](https://bugs.python.org/issue?@action=redirect&bpo=16324).)
+### enum[¶](https://docs.python.org/3/whatsnew/3.5.html#enum "Link to this heading")
+The [`Enum`](https://docs.python.org/3/library/enum.html#enum.Enum "enum.Enum") callable has a new parameter _start_ to specify the initial number of enum values if only _names_ are provided:
+>>>```
+>>> Animal = enum.Enum('Animal', 'cat dog', start=10)
+>>> Animal.cat
+<Animal.cat: 10>
+>>> Animal.dog
+<Animal.dog: 11>
+
+```
+
+(Contributed by Ethan Furman in [bpo-21706](https://bugs.python.org/issue?@action=redirect&bpo=21706).)
+### faulthandler[¶](https://docs.python.org/3/whatsnew/3.5.html#faulthandler "Link to this heading")
+The [`enable()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.enable "faulthandler.enable"), [`register()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.register "faulthandler.register"), [`dump_traceback()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.dump_traceback "faulthandler.dump_traceback") and [`dump_traceback_later()`](https://docs.python.org/3/library/faulthandler.html#faulthandler.dump_traceback_later "faulthandler.dump_traceback_later") functions now accept file descriptors in addition to file-like objects. (Contributed by Wei Wu in [bpo-23566](https://bugs.python.org/issue?@action=redirect&bpo=23566).)
+### functools[¶](https://docs.python.org/3/whatsnew/3.5.html#functools "Link to this heading")
+Most of the [`lru_cache()`](https://docs.python.org/3/library/functools.html#functools.lru_cache "functools.lru_cache") machinery is now implemented in C, making it significantly faster. (Contributed by Matt Joiner, Alexey Kachayev, and Serhiy Storchaka in [bpo-14373](https://bugs.python.org/issue?@action=redirect&bpo=14373).)
+### glob[¶](https://docs.python.org/3/whatsnew/3.5.html#glob "Link to this heading")
+The [`iglob()`](https://docs.python.org/3/library/glob.html#glob.iglob "glob.iglob") and [`glob()`](https://docs.python.org/3/library/glob.html#glob.glob "glob.glob") functions now support recursive search in subdirectories, using the `"**"` pattern. (Contributed by Serhiy Storchaka in [bpo-13968](https://bugs.python.org/issue?@action=redirect&bpo=13968).)
+### gzip[¶](https://docs.python.org/3/whatsnew/3.5.html#gzip "Link to this heading")
+The _mode_ argument of the [`GzipFile`](https://docs.python.org/3/library/gzip.html#gzip.GzipFile "gzip.GzipFile") constructor now accepts `"x"` to request exclusive creation. (Contributed by Tim Heaney in [bpo-19222](https://bugs.python.org/issue?@action=redirect&bpo=19222).)
+### heapq[¶](https://docs.python.org/3/whatsnew/3.5.html#heapq "Link to this heading")
+Element comparison in [`merge()`](https://docs.python.org/3/library/heapq.html#heapq.merge "heapq.merge") can now be customized by passing a [key function](https://docs.python.org/3/glossary.html#term-key-function) in a new optional _key_ keyword argument, and a new optional _reverse_ keyword argument can be used to reverse element comparison:
+>>>```
+>>> importheapq
+>>> a = ['9', '777', '55555']
+>>> b = ['88', '6666']
+>>> list(heapq.merge(a, b, key=len))
+['9', '88', '777', '6666', '55555']
+>>> list(heapq.merge(reversed(a), reversed(b), key=len, reverse=True))
+['55555', '6666', '777', '88', '9']
+
+```
+
+(Contributed by Raymond Hettinger in [bpo-13742](https://bugs.python.org/issue?@action=redirect&bpo=13742).)
+### http[¶](https://docs.python.org/3/whatsnew/3.5.html#http "Link to this heading")
+A new [`HTTPStatus`](https://docs.python.org/3/library/http.html#http.HTTPStatus "http.HTTPStatus") enum that defines a set of HTTP status codes, reason phrases and long descriptions written in English. (Contributed by Demian Brecht in [bpo-21793](https://bugs.python.org/issue?@action=redirect&bpo=21793).)
+### http.client[¶](https://docs.python.org/3/whatsnew/3.5.html#http-client "Link to this heading")
+[`HTTPConnection.getresponse()`](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.getresponse "http.client.HTTPConnection.getresponse") now raises a [`RemoteDisconnected`](https://docs.python.org/3/library/http.client.html#http.client.RemoteDisconnected "http.client.RemoteDisconnected") exception when a remote server connection is closed unexpectedly. Additionally, if a [`ConnectionError`](https://docs.python.org/3/library/exceptions.html#ConnectionError "ConnectionError") (of which `RemoteDisconnected` is a subclass) is raised, the client socket is now closed automatically, and will reconnect on the next request:
+```
+importhttp.client
+conn = http.client.HTTPConnection('www.python.org')
+for retries in range(3):
+  try:
+    conn.request('GET', '/')
+    resp = conn.getresponse()
+  except http.client.RemoteDisconnected:
+    pass

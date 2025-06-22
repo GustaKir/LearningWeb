@@ -1,0 +1,61 @@
+Title: sqlite3.Blob Class Documentation
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: The `Blob` class in SQLite allows for file-like operations on BLOB data in SQLite databases, introduced in version 3.11. Users can get the size of a blob using `len(blob)`, access data via indices and slices, and use it as a context manager for automatic resource management.
+---
+
+_class_ sqlite3.Blob[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob "Link to this definition")
+    
+Added in version 3.11.
+A [`Blob`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob "sqlite3.Blob") instance is a [file-like object](https://docs.python.org/3/glossary.html#term-file-like-object) that can read and write data in an SQLite BLOB. Call [`len(blob)`](https://docs.python.org/3/library/functions.html#len "len") to get the size (number of bytes) of the blob. Use indices and [slices](https://docs.python.org/3/glossary.html#term-slice) for direct access to the blob data.
+Use the [`Blob`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob "sqlite3.Blob") as a [context manager](https://docs.python.org/3/glossary.html#term-context-manager) to ensure that the blob handle is closed after use.
+```
+con = sqlite3.connect(":memory:")
+con.execute("CREATE TABLE test(blob_col blob)")
+con.execute("INSERT INTO test(blob_col) VALUES(zeroblob(13))")
+# Write to our blob, using two write operations:
+with con.blobopen("test", "blob_col", 1) as blob:
+  blob.write(b"hello, ")
+  blob.write(b"world.")
+  # Modify the first and last bytes of our blob
+  blob[0] = ord("H")
+  blob[-1] = ord("!")
+# Read the contents of our blob
+with con.blobopen("test", "blob_col", 1) as blob:
+  greeting = blob.read()
+print(greeting) # outputs "b'Hello, world!'"
+con.close()
+
+```
+
+
+close()[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob.close "Link to this definition")
+    
+Close the blob.
+The blob will be unusable from this point onward. An [`Error`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Error "sqlite3.Error") (or subclass) exception will be raised if any further operation is attempted with the blob. 
+
+read(_length =-1_, _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob.read "Link to this definition")
+    
+Read _length_ bytes of data from the blob at the current offset position. If the end of the blob is reached, the data up to EOF will be returned. When _length_ is not specified, or is negative, [`read()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob.read "sqlite3.Blob.read") will read until the end of the blob. 
+
+write(_data_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob.write "Link to this definition")
+    
+Write _data_ to the blob at the current offset. This function cannot change the blob length. Writing beyond the end of the blob will raise [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"). 
+
+tell()[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob.tell "Link to this definition")
+    
+Return the current access position of the blob. 
+
+seek(_offset_ , _origin =os.SEEK_SET_, _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Blob.seek "Link to this definition")
+    
+Set the current access position of the blob to _offset_. The _origin_ argument defaults to [`os.SEEK_SET`](https://docs.python.org/3/library/os.html#os.SEEK_SET "os.SEEK_SET") (absolute blob positioning). Other values for _origin_ are [`os.SEEK_CUR`](https://docs.python.org/3/library/os.html#os.SEEK_CUR "os.SEEK_CUR") (seek relative to the current position) and [`os.SEEK_END`](https://docs.python.org/3/library/os.html#os.SEEK_END "os.SEEK_END") (seek relative to the blob’s end).
+### PrepareProtocol objects[¶](https://docs.python.org/3/library/sqlite3.html#prepareprotocol-objects "Link to this heading") 
+
+_class_ sqlite3.PrepareProtocol[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.PrepareProtocol "Link to this definition")
+    
+The PrepareProtocol type’s single purpose is to act as a [**PEP 246**](https://peps.python.org/pep-0246/) style adaption protocol for objects that can [adapt themselves](https://docs.python.org/3/library/sqlite3.html#sqlite3-conform) to [native SQLite types](https://docs.python.org/3/library/sqlite3.html#sqlite3-types).
+### Exceptions[¶](https://docs.python.org/3/library/sqlite3.html#exceptions "Link to this heading")
+The exception hierarchy is defined by the DB-API 2.0 ([**PEP 249**](https://peps.python.org/pep-0249/)). 
+
+_exception_ sqlite3.Warning[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.Warning "Link to this definition")
+    
+This exception is not currently raised by the `sqlite3` module, but may be raised by applications using `sqlite3`, for example if a user-defined function truncates data while inserting. `Warning` is a subclass of [`Exception`](https://docs.python.org/3/library/exceptions.html#Exception "Exception").

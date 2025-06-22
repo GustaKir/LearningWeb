@@ -1,0 +1,30 @@
+Title: Adding Chat Input in Streamlit
+URL: https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/chat-response-feedback
+Summary: This section explains how to implement a chat input feature using the `st.chat_input` widget in Streamlit. It details the process of capturing user prompts, displaying them in a chat message container, and saving them to chat history, which allows for conversation continuity across app reruns.
+---
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/chat-response-feedback#add-chat-input)Add chat input
+  1. Accept the user's prompt from an `st.chat_input` widget, display it in a chat message container, and then save it to the chat history:
+`if prompt := st.chat_input("Say something"): with st.chat_message("user"):     st.write(prompt)   st.session_state.history.append({"role": "user", "content": prompt}) `
+The `st.chat_input` widget acts like a button. When a user enters a prompt and clicks the send icon, it triggers a rerun. During the rerun, the previous code displays the chat history. When this conditional block is executed, the user's new prompt is displayed and then added to the history. On the next rerun, this prompt will be displayed as part of the history.
+The `:=` notation is shorthand to assign a variable within an expression. The following code is equivalent to the previous code in this step:
+`prompt = st.chat_input("Say something") if prompt: with st.chat_message("user"):     st.write(prompt)   st.session_state.history.append({"role": "user", "content": prompt}) `
+  2. In another chat message container, process the prompt, display the response, add a feedback widget, and append the response to the chat history:
+` with st.chat_message("assistant"):     response = st.write_stream(chat_stream(prompt))     st.feedback( "thumbs",       key=f"feedback_{len(st.session_state.history)}",       on_change=save_feedback,       args=[len(st.session_state.history)], )   st.session_state.history.append({"role": "assistant", "content": response}) `
+This is the same pattern used for the user's prompt. Within the body of the conditional block, the response is displayed and then added to the history. On the next rerun, this response will be displayed as a part of the chat history.
+When Streamlit executes the `st.feedback` command, the response is not yet added to the chat history. Use an index equal to the length of the chat history because that is the index that the response will have when it's added to the chat history on the next line.
+  3. Save your file and go to your browser to try your new app.
+
+
+### [](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/chat-response-feedback#optional-change-the-feedback-behavior)Optional: Change the feedback behavior
+Your app currently allows users to rate any response once. They can submit their rating at any time, but can't change it.
+If you want users to rate only the _most recent_ response, you can remove the widgets from the chat history:
+` for i, message in enumerate(st.session_state.history):    with st.chat_message(message["role"]):      st.write(message["content"]) -     if message["role"] == "assistant": -       feedback = message.get("feedback", None) -       st.session_state[f"feedback_{i}"] = feedback -       st.feedback( -         "thumbs", -         key=f"feedback_{i}", -         disabled=feedback is not None, -         on_change=save_feedback, -         args=[i], -       ) `
+Or, if you want to allow users to change their responses, you can just remove the `disabled` parameter:
+` for i, message in enumerate(st.session_state.history):    with st.chat_message(message["role"]):      st.write(message["content"])      if message["role"] == "assistant":        feedback = message.get("feedback", None)        st.session_state[f"feedback_{i}"] = feedback        st.feedback(          "thumbs",          key=f"feedback_{i}", -         disabled=feedback is not None,          on_change=save_feedback,          args=[i],        ) `
+[Previous: Build an LLM app using LangChain](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/llm-quickstart)[Next: Validate and edit chat responses](https://docs.streamlit.io/develop/tutorials/chat-and-llm-apps/validate-and-edit-chat-responses) _forum_
+### Still have questions?
+Our [forums](https://discuss.streamlit.io) are full of helpful information and Streamlit experts.
+[Home](https://docs.streamlit.io/)Contact Us[Community](https://discuss.streamlit.io)[](https://github.com/streamlit "GitHub")[](https://www.youtube.com/channel/UC3LD42rjj-Owtxsa6PwGU5Q "YouTube")[](https://twitter.com/streamlit "Twitter")[](https://www.linkedin.com/company/streamlit "LinkedIn")[](https://info.snowflake.com/streamlit-newsletter-sign-up.html "Newsletter")
+© 2025 Snowflake Inc.Cookie policy
+ _forum_ Ask AI

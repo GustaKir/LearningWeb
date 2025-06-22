@@ -1,0 +1,89 @@
+Title: Enhancing Help Text with Meta-Variables in Optparse
+URL: https://docs.python.org/3/library/optparse.html
+Summary: The text explains the importance of using meta-variables, such as `FILE`, in help text to clarify options for users. It also describes how the `%default` placeholder can be used in help strings to display default values for options, enhancing the clarity and usefulness of the documentation.
+---
+
+```
+
+This is important for more than just saving space, though: the manually written help text uses the meta-variable `FILE` to clue the user in that there’s a connection between the semi-formal syntax `-f FILE` and the informal semantic description “write output to FILE”. This is a simple but effective way to make your help text a lot clearer and more useful for end users.
+  * options that have a default value can include `%default` in the help string—[`optparse`](https://docs.python.org/3/library/optparse.html#module-optparse "optparse: Command-line option parsing library.") will replace it with [`str()`](https://docs.python.org/3/library/stdtypes.html#str "str") of the option’s default value. If an option has no default value (or the default value is `None`), `%default` expands to `none`.
+
+
+#### Grouping Options[¶](https://docs.python.org/3/library/optparse.html#grouping-options "Link to this heading")
+When dealing with many options, it is convenient to group these options for better help output. An [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser") can contain several option groups, each of which can contain several options.
+An option group is obtained using the class [`OptionGroup`](https://docs.python.org/3/library/optparse.html#optparse.OptionGroup "optparse.OptionGroup"): 
+
+_class_ optparse.OptionGroup(_parser_ , _title_ , _description =None_)[¶](https://docs.python.org/3/library/optparse.html#optparse.OptionGroup "Link to this definition")
+    
+where
+  * parser is the [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser") instance the group will be inserted in to
+  * title is the group title
+  * description, optional, is a long description of the group
+
+
+[`OptionGroup`](https://docs.python.org/3/library/optparse.html#optparse.OptionGroup "optparse.OptionGroup") inherits from `OptionContainer` (like [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser")) and so the `add_option()` method can be used to add an option to the group.
+Once all the options are declared, using the [`OptionParser`](https://docs.python.org/3/library/optparse.html#optparse.OptionParser "optparse.OptionParser") method `add_option_group()` the group is added to the previously defined parser.
+Continuing with the parser defined in the previous section, adding an [`OptionGroup`](https://docs.python.org/3/library/optparse.html#optparse.OptionGroup "optparse.OptionGroup") to a parser is easy:
+```
+group = OptionGroup(parser, "Dangerous Options",
+          "Caution: use these options at your own risk. "
+          "It is believed that some of them bite.")
+group.add_option("-g", action="store_true", help="Group option.")
+parser.add_option_group(group)
+
+```
+
+This would result in the following help output:
+```
+Usage: <yourscript> [options] arg1 arg2
+Options:
+ -h, --help      show this help message and exit
+ -v, --verbose     make lots of noise [default]
+ -q, --quiet      be vewwy quiet (I'm hunting wabbits)
+ -f FILE, --filename=FILE
+            write output to FILE
+ -m MODE, --mode=MODE interaction mode: novice, intermediate, or
+            expert [default: intermediate]
+ Dangerous Options:
+  Caution: use these options at your own risk. It is believed that some
+  of them bite.
+  -g         Group option.
+
+```
+
+A bit more complete example might involve using more than one group: still extending the previous example:
+```
+group = OptionGroup(parser, "Dangerous Options",
+          "Caution: use these options at your own risk. "
+          "It is believed that some of them bite.")
+group.add_option("-g", action="store_true", help="Group option.")
+parser.add_option_group(group)
+group = OptionGroup(parser, "Debug Options")
+group.add_option("-d", "--debug", action="store_true",
+         help="Print debug information")
+group.add_option("-s", "--sql", action="store_true",
+         help="Print all SQL statements executed")
+group.add_option("-e", action="store_true", help="Print every action done")
+parser.add_option_group(group)
+
+```
+
+that results in the following output:
+```
+Usage: <yourscript> [options] arg1 arg2
+Options:
+ -h, --help      show this help message and exit
+ -v, --verbose     make lots of noise [default]
+ -q, --quiet      be vewwy quiet (I'm hunting wabbits)
+ -f FILE, --filename=FILE
+            write output to FILE
+ -m MODE, --mode=MODE interaction mode: novice, intermediate, or expert
+            [default: intermediate]
+ Dangerous Options:
+  Caution: use these options at your own risk. It is believed that some
+  of them bite.
+  -g         Group option.
+ Debug Options:
+  -d, --debug     Print debug information
+  -s, --sql      Print all SQL statements executed
+  -e         Print every action done

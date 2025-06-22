@@ -1,0 +1,36 @@
+Title: os.POSIX_SPAWN_CLOSEFROM Function
+URL: https://docs.python.org/3/library/os.html
+Summary: The `os.POSIX_SPAWN_CLOSEFROM` function performs `os.closerange(fd, INF)` and corresponds to multiple C library functions for configuring file actions before a `posix_spawn()` call. It also includes the option to set the child process's group ID and reset its user and group IDs based on the parent's attributes.
+---
+
+os.POSIX_SPAWN_CLOSEFROM[¶](https://docs.python.org/3/library/os.html#os.POSIX_SPAWN_CLOSEFROM "Link to this definition")
+    
+(`os.POSIX_SPAWN_CLOSEFROM`, _fd_)
+Performs `os.closerange(fd, INF)`.
+These tuples correspond to the C library `posix_spawn_file_actions_addopen()`, `posix_spawn_file_actions_addclose()`, `posix_spawn_file_actions_adddup2()`, and `posix_spawn_file_actions_addclosefrom_np()` API calls used to prepare for the `posix_spawn()` call itself.
+The _setpgroup_ argument will set the process group of the child to the value specified. If the value specified is 0, the child’s process group ID will be made the same as its process ID. If the value of _setpgroup_ is not set, the child will inherit the parent’s process group ID. This argument corresponds to the C library `POSIX_SPAWN_SETPGROUP` flag.
+If the _resetids_ argument is `True` it will reset the effective UID and GID of the child to the real UID and GID of the parent process. If the argument is `False`, then the child retains the effective UID and GID of the parent. In either case, if the set-user-ID and set-group-ID permission bits are enabled on the executable file, their effect will override the setting of the effective UID and GID. This argument corresponds to the C library `POSIX_SPAWN_RESETIDS` flag.
+If the _setsid_ argument is `True`, it will create a new session ID for `posix_spawn`. _setsid_ requires `POSIX_SPAWN_SETSID` or `POSIX_SPAWN_SETSID_NP` flag. Otherwise, [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError") is raised.
+The _setsigmask_ argument will set the signal mask to the signal set specified. If the parameter is not used, then the child inherits the parent’s signal mask. This argument corresponds to the C library `POSIX_SPAWN_SETSIGMASK` flag.
+The _sigdef_ argument will reset the disposition of all signals in the set specified. This argument corresponds to the C library `POSIX_SPAWN_SETSIGDEF` flag.
+The _scheduler_ argument must be a tuple containing the (optional) scheduler policy and an instance of [`sched_param`](https://docs.python.org/3/library/os.html#os.sched_param "os.sched_param") with the scheduler parameters. A value of `None` in the place of the scheduler policy indicates that is not being provided. This argument is a combination of the C library `POSIX_SPAWN_SETSCHEDPARAM` and `POSIX_SPAWN_SETSCHEDULER` flags.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `os.posix_spawn` with arguments `path`, `argv`, `env`.
+Added in version 3.8.
+Changed in version 3.13: _env_ parameter accepts `None`. `os.POSIX_SPAWN_CLOSEFROM` is available on platforms where `posix_spawn_file_actions_addclosefrom_np()` exists.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix, not WASI, not Android, not iOS. 
+
+os.posix_spawnp(_path_ , _argv_ , _env_ , _*_ , _file_actions =None_, _setpgroup =None_, _resetids =False_, _setsid =False_, _setsigmask =()_, _setsigdef =()_, _scheduler =None_)[¶](https://docs.python.org/3/library/os.html#os.posix_spawnp "Link to this definition")
+    
+Wraps the `posix_spawnp()` C library API for use from Python.
+Similar to [`posix_spawn()`](https://docs.python.org/3/library/os.html#os.posix_spawn "os.posix_spawn") except that the system searches for the _executable_ file in the list of directories specified by the `PATH` environment variable (in the same way as for `execvp(3)`).
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `os.posix_spawn` with arguments `path`, `argv`, `env`.
+Added in version 3.8.
+[Availability](https://docs.python.org/3/library/intro.html#availability): POSIX, not WASI, not Android, not iOS.
+See [`posix_spawn()`](https://docs.python.org/3/library/os.html#os.posix_spawn "os.posix_spawn") documentation. 
+
+os.register_at_fork(_*_ , _before =None_, _after_in_parent =None_, _after_in_child =None_)[¶](https://docs.python.org/3/library/os.html#os.register_at_fork "Link to this definition")
+    
+Register callables to be executed when a new child process is forked using [`os.fork()`](https://docs.python.org/3/library/os.html#os.fork "os.fork") or similar process cloning APIs. The parameters are optional and keyword-only. Each specifies a different call point.
+  * _before_ is a function called before forking a child process.
+  * _after_in_parent_ is a function called from the parent process after forking a child process.
+  * _after_in_child_ is a function called from the child process.

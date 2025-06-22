@@ -1,0 +1,36 @@
+Title: Buffer-related Functions in Python C API
+URL: https://docs.python.org/3/c-api/buffer.html
+Summary: This section describes buffer-related functions in the Python C API, specifically `PyObject_CheckBuffer()` which checks if a PyObject supports the buffer interface, and `PyObject_GetBuffer()` for retrieving buffer information. It highlights that while `PyObject_CheckBuffer()` indicates support, it does not guarantee success for `PyObject_GetBuffer()`, which always runs successfully.
+---
+
+```
+
+## Buffer-related functions[¶](https://docs.python.org/3/c-api/buffer.html#buffer-related-functions "Link to this heading") 
+
+intPyObject_CheckBuffer([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*obj)[¶](https://docs.python.org/3/c-api/buffer.html#c.PyObject_CheckBuffer "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.11._
+Return `1` if _obj_ supports the buffer interface otherwise `0`. When `1` is returned, it doesn’t guarantee that [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer") will succeed. This function always succeeds. 
+
+intPyObject_GetBuffer([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*exporter, [Py_buffer](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer")*view, intflags)[¶](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.11._
+Send a request to _exporter_ to fill in _view_ as specified by _flags_. If the exporter cannot provide a buffer of the exact type, it MUST raise [`BufferError`](https://docs.python.org/3/library/exceptions.html#BufferError "BufferError"), set `view->obj` to `NULL` and return `-1`.
+On success, fill in _view_ , set `view->obj` to a new reference to _exporter_ and return 0. In the case of chained buffer providers that redirect requests to a single object, `view->obj` MAY refer to this object instead of _exporter_ (See [Buffer Object Structures](https://docs.python.org/3/c-api/typeobj.html#buffer-structs)).
+Successful calls to [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer") must be paired with calls to [`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release"), similar to `malloc()` and `free()`. Thus, after the consumer is done with the buffer, [`PyBuffer_Release()`](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "PyBuffer_Release") must be called exactly once. 
+
+voidPyBuffer_Release([Py_buffer](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer")*view)[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_Release "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.11._
+Release the buffer _view_ and release the [strong reference](https://docs.python.org/3/glossary.html#term-strong-reference) (i.e. decrement the reference count) to the view’s supporting object, `view->obj`. This function MUST be called when the buffer is no longer being used, otherwise reference leaks may occur.
+It is an error to call this function on a buffer that was not obtained via [`PyObject_GetBuffer()`](https://docs.python.org/3/c-api/buffer.html#c.PyObject_GetBuffer "PyObject_GetBuffer"). 
+
+[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")PyBuffer_SizeFromFormat(constchar*format)[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_SizeFromFormat "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.11._
+Return the implied [`itemsize`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Py_buffer.itemsize") from [`format`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.format "Py_buffer.format"). On error, raise an exception and return -1.
+Added in version 3.9. 
+
+intPyBuffer_IsContiguous(const[Py_buffer](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer")*view, charorder)[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_IsContiguous "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.11._
+Return `1` if the memory defined by the _view_ is C-style (_order_ is `'C'`) or Fortran-style (_order_ is `'F'`) [contiguous](https://docs.python.org/3/glossary.html#term-contiguous) or either one (_order_ is `'A'`). Return `0` otherwise. This function always succeeds. 
+
+void*PyBuffer_GetPointer(const[Py_buffer](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer "Py_buffer")*view, const[Py_ssize_t](https://docs.python.org/3/c-api/intro.html#c.Py_ssize_t "Py_ssize_t")*indices)[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBuffer_GetPointer "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.11._
+Get the memory area pointed to by the _indices_ inside the given _view_. _indices_ must point to an array of `view->ndim` indices.

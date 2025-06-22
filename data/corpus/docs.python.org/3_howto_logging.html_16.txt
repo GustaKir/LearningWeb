@@ -1,0 +1,29 @@
+Title: Optimizing Logger Performance in Python
+URL: https://docs.python.org/3/howto/logging.html
+Summary: This section discusses performance optimizations when using Python's logging module, specifically regarding the use of the `isEnabledFor()` method, which may incur overhead in certain scenarios. It suggests caching its result to enhance performance, particularly in cases with deeply nested loggers.
+---
+
+```
+
+so that if the logger’s threshold is set above `DEBUG`, the calls to `expensive_func1` and `expensive_func2` are never made.
+Note
+In some cases, [`isEnabledFor()`](https://docs.python.org/3/library/logging.html#logging.Logger.isEnabledFor "logging.Logger.isEnabledFor") can itself be more expensive than you’d like (e.g. for deeply nested loggers where an explicit level is only set high up in the logger hierarchy). In such cases (or if you want to avoid calling a method in tight loops), you can cache the result of a call to [`isEnabledFor()`](https://docs.python.org/3/library/logging.html#logging.Logger.isEnabledFor "logging.Logger.isEnabledFor") in a local or instance variable, and use that instead of calling the method each time. Such a cached value would only need to be recomputed when the logging configuration changes dynamically while the application is running (which is not all that common).
+There are other optimizations which can be made for specific applications which need more precise control over what logging information is collected. Here’s a list of things you can do to avoid processing during logging which you don’t need:
+What you don’t want to collect | How to avoid collecting it  
+---|---  
+Information about where calls were made from. | Set `logging._srcfile` to `None`. This avoids calling [`sys._getframe()`](https://docs.python.org/3/library/sys.html#sys._getframe "sys._getframe"), which may help to speed up your code in environments like PyPy (which can’t speed up code that uses [`sys._getframe()`](https://docs.python.org/3/library/sys.html#sys._getframe "sys._getframe")).  
+Threading information. | Set `logging.logThreads` to `False`.  
+Current process ID ([`os.getpid()`](https://docs.python.org/3/library/os.html#os.getpid "os.getpid")) | Set `logging.logProcesses` to `False`.  
+Current process name when using `multiprocessing` to manage multiple processes. | Set `logging.logMultiprocessing` to `False`.  
+Current [`asyncio.Task`](https://docs.python.org/3/library/asyncio-task.html#asyncio.Task "asyncio.Task") name when using `asyncio`. | Set `logging.logAsyncioTasks` to `False`.  
+Also note that the core logging module only includes the basic handlers. If you don’t import [`logging.handlers`](https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers "logging.handlers: Handlers for the logging module.") and [`logging.config`](https://docs.python.org/3/library/logging.config.html#module-logging.config "logging.config: Configuration of the logging module."), they won’t take up any memory.
+## Other resources[¶](https://docs.python.org/3/howto/logging.html#other-resources "Link to this heading")
+See also 
+
+Module [`logging`](https://docs.python.org/3/library/logging.html#module-logging "logging: Flexible event logging system for applications.")
+    
+API reference for the logging module. 
+
+Module [`logging.config`](https://docs.python.org/3/library/logging.config.html#module-logging.config "logging.config: Configuration of the logging module.")
+    
+Configuration API for the logging module.

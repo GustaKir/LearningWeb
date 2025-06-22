@@ -1,0 +1,29 @@
+Title: The __await__ Method in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: __await__ must return an iterator for implementing awaitable objects, such as asyncio.Future, which is compatible with the await expression. The object class is not awaitable and does not provide this method. The language does not restrict the type or value of objects yielded by the iterator returned by __await__, as this is implementation-specific.
+---
+
+object.__await__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__await__ "Link to this definition")
+    
+Must return an [iterator](https://docs.python.org/3/glossary.html#term-iterator). Should be used to implement [awaitable](https://docs.python.org/3/glossary.html#term-awaitable) objects. For instance, [`asyncio.Future`](https://docs.python.org/3/library/asyncio-future.html#asyncio.Future "asyncio.Future") implements this method to be compatible with the [`await`](https://docs.python.org/3/reference/expressions.html#await) expression. The [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself is not awaitable and does not provide this method.
+Note
+The language doesn’t place any restriction on the type or value of the objects yielded by the iterator returned by `__await__`, as this is specific to the implementation of the asynchronous execution framework (e.g. [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.")) that will be managing the [awaitable](https://docs.python.org/3/glossary.html#term-awaitable) object.
+Added in version 3.5.
+See also
+[**PEP 492**](https://peps.python.org/pep-0492/) for additional information about awaitable objects.
+### 3.4.2. Coroutine Objects[¶](https://docs.python.org/3/reference/datamodel.html#coroutine-objects "Link to this heading")
+[Coroutine objects](https://docs.python.org/3/glossary.html#term-coroutine) are [awaitable](https://docs.python.org/3/glossary.html#term-awaitable) objects. A coroutine’s execution can be controlled by calling [`__await__()`](https://docs.python.org/3/reference/datamodel.html#object.__await__ "object.__await__") and iterating over the result. When the coroutine has finished executing and returns, the iterator raises [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"), and the exception’s [`value`](https://docs.python.org/3/library/exceptions.html#StopIteration.value "StopIteration.value") attribute holds the return value. If the coroutine raises an exception, it is propagated by the iterator. Coroutines should not directly raise unhandled [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration") exceptions.
+Coroutines also have the methods listed below, which are analogous to those of generators (see [Generator-iterator methods](https://docs.python.org/3/reference/expressions.html#generator-methods)). However, unlike generators, coroutines do not directly support iteration.
+Changed in version 3.5.2: It is a [`RuntimeError`](https://docs.python.org/3/library/exceptions.html#RuntimeError "RuntimeError") to await on a coroutine more than once. 
+
+coroutine.send(_value_)[¶](https://docs.python.org/3/reference/datamodel.html#coroutine.send "Link to this definition")
+    
+Starts or resumes execution of the coroutine. If _value_ is `None`, this is equivalent to advancing the iterator returned by [`__await__()`](https://docs.python.org/3/reference/datamodel.html#object.__await__ "object.__await__"). If _value_ is not `None`, this method delegates to the [`send()`](https://docs.python.org/3/reference/expressions.html#generator.send "generator.send") method of the iterator that caused the coroutine to suspend. The result (return value, [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"), or other exception) is the same as when iterating over the `__await__()` return value, described above. 
+
+coroutine.throw(_value_)[¶](https://docs.python.org/3/reference/datamodel.html#coroutine.throw "Link to this definition")
+
+
+coroutine.throw(_type_[, _value_[, _traceback_]])
+    
+Raises the specified exception in the coroutine. This method delegates to the [`throw()`](https://docs.python.org/3/reference/expressions.html#generator.throw "generator.throw") method of the iterator that caused the coroutine to suspend, if it has such a method. Otherwise, the exception is raised at the suspension point. The result (return value, [`StopIteration`](https://docs.python.org/3/library/exceptions.html#StopIteration "StopIteration"), or other exception) is the same as when iterating over the [`__await__()`](https://docs.python.org/3/reference/datamodel.html#object.__await__ "object.__await__") return value, described above. If the exception is not caught in the coroutine, it propagates back to the caller.
+Changed in version 3.12: The second signature (type[, value[, traceback]]) is deprecated and may be removed in a future version of Python.

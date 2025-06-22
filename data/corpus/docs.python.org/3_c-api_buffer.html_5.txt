@@ -1,0 +1,61 @@
+Title: Buffer Protocol and Complex Arrays in Python
+URL: https://docs.python.org/3/c-api/buffer.html
+Summary: This section details the characteristics of PyBUF_CONTIG_RO and outlines the structure of NumPy-style arrays through attributes like itemsize, ndim, shape, and strides. It specifies how to interpret memory locations for arrays based on their dimensionality.
+---
+
+PyBUF_CONTIG_RO[¶](https://docs.python.org/3/c-api/buffer.html#c.PyBUF_CONTIG_RO "Link to this definition")
+| yes | NULL | NULL | C | 1 or 0 | NULL  
+## Complex arrays[¶](https://docs.python.org/3/c-api/buffer.html#complex-arrays "Link to this heading")
+### NumPy-style: shape and strides[¶](https://docs.python.org/3/c-api/buffer.html#numpy-style-shape-and-strides "Link to this heading")
+The logical structure of NumPy-style arrays is defined by [`itemsize`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Py_buffer.itemsize"), [`ndim`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim "Py_buffer.ndim"), [`shape`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.shape "Py_buffer.shape") and [`strides`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.strides "Py_buffer.strides").
+If `ndim == 0`, the memory location pointed to by [`buf`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.buf "Py_buffer.buf") is interpreted as a scalar of size [`itemsize`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.itemsize "Py_buffer.itemsize"). In that case, both [`shape`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.shape "Py_buffer.shape") and [`strides`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.strides "Py_buffer.strides") are `NULL`.
+If [`strides`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.strides "Py_buffer.strides") is `NULL`, the array is interpreted as a standard n-dimensional C-array. Otherwise, the consumer must access an n-dimensional array as follows:
+```
+ptr=(char*)buf+indices[0]*strides[0]+...+indices[n-1]*strides[n-1];
+item=*((typeof(item)*)ptr);
+
+```
+
+As noted above, [`buf`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.buf "Py_buffer.buf") can point to any location within the actual memory block. An exporter can check the validity of a buffer with this function:
+```
+defverify_structure(memlen, itemsize, ndim, shape, strides, offset):
+"""Verify that the parameters represent a valid array within
+    the bounds of the allocated memory:
+      char *mem: start of the physical memory block
+      memlen: length of the physical memory block
+      offset: (char *)buf - mem
+  """
+  if offset % itemsize:
+    return False
+  if offset < 0 or offset+itemsize > memlen:
+    return False
+  if any(v % itemsize for v in strides):
+    return False
+  if ndim <= 0:
+    return ndim == 0 and not shape and not strides
+  if 0 in shape:
+    return True
+  imin = sum(strides[j]*(shape[j]-1) for j in range(ndim)
+        if strides[j] <= 0)
+  imax = sum(strides[j]*(shape[j]-1) for j in range(ndim)
+        if strides[j] > 0)
+  return 0 <= offset+imin and offset+imax+itemsize <= memlen
+
+```
+
+### PIL-style: shape, strides and suboffsets[¶](https://docs.python.org/3/c-api/buffer.html#pil-style-shape-strides-and-suboffsets "Link to this heading")
+In addition to the regular items, PIL-style arrays can contain pointers that must be followed in order to get to the next element in a dimension. For example, the regular three-dimensional C-array `char v[2][2][3]` can also be viewed as an array of 2 pointers to 2 two-dimensional arrays: `char (*v[2])[2][3]`. In suboffsets representation, those two pointers can be embedded at the start of [`buf`](https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.buf "Py_buffer.buf"), pointing to two `char x[2][3]` arrays that can be located anywhere in memory.
+Here is a function that returns a pointer to the element in an N-D array pointed to by an N-dimensional index when there are both non-`NULL` strides and suboffsets:
+```
+void*get_item_pointer(intndim,void*buf,Py_ssize_t*strides,
+Py_ssize_t*suboffsets,Py_ssize_t*indices){
+char*pointer=(char*)buf;
+inti;
+for(i=0;i<ndim;i++){
+pointer+=strides[i]*indices[i];
+if(suboffsets[i]>=0){
+pointer=*((char**)pointer)+suboffsets[i];
+}
+}
+return(void*)pointer;
+}

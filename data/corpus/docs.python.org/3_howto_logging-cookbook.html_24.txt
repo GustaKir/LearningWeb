@@ -1,0 +1,129 @@
+Title: Logging Output Example
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section illustrates the interleaved logging output from multiple sender processes, showcasing different log levels such as DEBUG, WARNING, INFO, and CRITICAL, along with their associated message numbers.
+---
+
+```
+$ pythonlistener.py
+Press Ctrl-C to stop.
+DEBUG     myapp  613 Message no.   1
+WARNING myapp.lib2  613 Message no.   2
+INFO   myapp.lib2  657 Message no.   1
+CRITICAL myapp.lib2  613 Message no.   3
+CRITICAL myapp.lib2  657 Message no.   2
+CRITICAL   myapp  657 Message no.   3
+WARNING myapp.lib2  613 Message no.   4
+CRITICAL myapp.lib1  613 Message no.   5
+CRITICAL myapp.lib1  657 Message no.   4
+INFO   myapp.lib1  657 Message no.   5
+DEBUG     myapp  613 Message no.   6
+WARNING myapp.lib2  657 Message no.   6
+CRITICAL   myapp  657 Message no.   7
+CRITICAL myapp.lib1  613 Message no.   7
+INFO   myapp.lib1  613 Message no.   8
+DEBUG  myapp.lib1  657 Message no.   8
+(and so on)
+
+```
+
+As you can see, the logging from the two sender processes is interleaved in the listener’s output.
+## An example dictionary-based configuration[¶](https://docs.python.org/3/howto/logging-cookbook.html#an-example-dictionary-based-configuration "Link to this heading")
+Below is an example of a logging configuration dictionary - it’s taken from the [documentation on the Django project](https://docs.djangoproject.com/en/stable/topics/logging/#configuring-logging). This dictionary is passed to [`dictConfig()`](https://docs.python.org/3/library/logging.config.html#logging.config.dictConfig "logging.config.dictConfig") to put the configuration into effect:
+```
+LOGGING = {
+  'version': 1,
+  'disable_existing_loggers': False,
+  'formatters': {
+    'verbose': {
+      'format': '{levelname}{asctime}{module}{process:d}{thread:d}{message}',
+      'style': '{',
+    },
+    'simple': {
+      'format': '{levelname}{message}',
+      'style': '{',
+    },
+  },
+  'filters': {
+    'special': {
+      '()': 'project.logging.SpecialFilter',
+      'foo': 'bar',
+    },
+  },
+  'handlers': {
+    'console': {
+      'level': 'INFO',
+      'class': 'logging.StreamHandler',
+      'formatter': 'simple',
+    },
+    'mail_admins': {
+      'level': 'ERROR',
+      'class': 'django.utils.log.AdminEmailHandler',
+      'filters': ['special']
+    }
+  },
+  'loggers': {
+    'django': {
+      'handlers': ['console'],
+      'propagate': True,
+    },
+    'django.request': {
+      'handlers': ['mail_admins'],
+      'level': 'ERROR',
+      'propagate': False,
+    },
+    'myproject.custom': {
+      'handlers': ['console', 'mail_admins'],
+      'level': 'INFO',
+      'filters': ['special']
+    }
+  }
+}
+
+```
+
+For more information about this configuration, you can see the [relevant section](https://docs.djangoproject.com/en/stable/topics/logging/#configuring-logging) of the Django documentation.
+## Using a rotator and namer to customize log rotation processing[¶](https://docs.python.org/3/howto/logging-cookbook.html#using-a-rotator-and-namer-to-customize-log-rotation-processing "Link to this heading")
+An example of how you can define a namer and rotator is given in the following runnable script, which shows gzip compression of the log file:
+```
+importgzip
+importlogging
+importlogging.handlers
+importos
+importshutil
+defnamer(name):
+  return name + ".gz"
+defrotator(source, dest):
+  with open(source, 'rb') as f_in:
+    with gzip.open(dest, 'wb') as f_out:
+      shutil.copyfileobj(f_in, f_out)
+  os.remove(source)
+
+rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=128, backupCount=5)
+rh.rotator = rotator
+rh.namer = namer
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+root.addHandler(rh)
+f = logging.Formatter('%(asctime)s%(message)s')
+rh.setFormatter(f)
+for i in range(1000):
+  root.info(f'Message no. {i+1}')
+
+```
+
+After running this, you will see six new files, five of which are compressed:
+```
+$ lsrotated.log*
+rotated.log    rotated.log.2.gz rotated.log.4.gz
+rotated.log.1.gz rotated.log.3.gz rotated.log.5.gz
+$ zcatrotated.log.1.gz
+2023-01-20 02:28:17,767 Message no. 996
+2023-01-20 02:28:17,767 Message no. 997
+2023-01-20 02:28:17,767 Message no. 998
+
+```
+
+## A more elaborate multiprocessing example[¶](https://docs.python.org/3/howto/logging-cookbook.html#a-more-elaborate-multiprocessing-example "Link to this heading")
+The following working example shows how logging can be used with multiprocessing using configuration files. The configurations are fairly simple, but serve to illustrate how more complex ones could be implemented in a real multiprocessing scenario.
+In the example, the main process spawns a listener process and some worker processes. Each of the main process, the listener and the workers have three separate configurations (the workers all share the same configuration). We can see logging in the main process, how the workers log to a QueueHandler and how the listener implements a QueueListener and a more complex logging configuration, and arranges to dispatch events received via the queue to the handlers specified in the configuration. Note that these configurations are purely illustrative, but you should be able to adapt this example to your own scenario.
+Here’s the script - the docstrings and the comments hopefully explain how it works:

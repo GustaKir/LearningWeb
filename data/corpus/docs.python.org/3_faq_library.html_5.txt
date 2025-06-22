@@ -1,0 +1,90 @@
+Title: Using Semaphore Mechanics in Threading
+URL: https://docs.python.org/3/faq/library.html
+Summary: This section discusses better practices for managing delays in threaded applications, suggesting the use of semaphores and the `queue` module to handle task completion notifications. It also highlights the `concurrent.futures` module for efficiently distributing work among multiple worker threads.
+---
+
+```
+
+Instead of trying to guess a good delay value for [`time.sleep()`](https://docs.python.org/3/library/time.html#time.sleep "time.sleep"), it’s better to use some kind of semaphore mechanism. One idea is to use the [`queue`](https://docs.python.org/3/library/queue.html#module-queue "queue: A synchronized queue class.") module to create a queue object, let each thread append a token to the queue when it finishes, and let the main thread read as many tokens from the queue as there are threads.
+### [How do I parcel out work among a bunch of worker threads?](https://docs.python.org/3/faq/library.html#id16)[¶](https://docs.python.org/3/faq/library.html#how-do-i-parcel-out-work-among-a-bunch-of-worker-threads "Link to this heading")
+The easiest way is to use the [`concurrent.futures`](https://docs.python.org/3/library/concurrent.futures.html#module-concurrent.futures "concurrent.futures: Execute computations concurrently using threads or processes.") module, especially the [`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor "concurrent.futures.ThreadPoolExecutor") class.
+Or, if you want fine control over the dispatching algorithm, you can write your own logic manually. Use the [`queue`](https://docs.python.org/3/library/queue.html#module-queue "queue: A synchronized queue class.") module to create a queue containing a list of jobs. The [`Queue`](https://docs.python.org/3/library/queue.html#queue.Queue "queue.Queue") class maintains a list of objects and has a `.put(obj)` method that adds items to the queue and a `.get()` method to return them. The class will take care of the locking necessary to ensure that each job is handed out exactly once.
+Here’s a trivial example:
+```
+importthreading,queue,time
+# The worker thread gets jobs off the queue. When the queue is empty, it
+# assumes there will be no more work and exits.
+# (Realistically workers will run until terminated.)
+defworker():
+  print('Running worker')
+  time.sleep(0.1)
+  while True:
+    try:
+      arg = q.get(block=False)
+    except queue.Empty:
+      print('Worker', threading.current_thread(), end=' ')
+      print('queue empty')
+      break
+    else:
+      print('Worker', threading.current_thread(), end=' ')
+      print('running with argument', arg)
+      time.sleep(0.5)
+# Create queue
+q = queue.Queue()
+# Start a pool of 5 workers
+for i in range(5):
+  t = threading.Thread(target=worker, name='worker %i' % (i+1))
+  t.start()
+# Begin adding work to the queue
+for i in range(50):
+  q.put(i)
+# Give threads time to run
+print('Main thread sleeping')
+time.sleep(5)
+
+```
+
+When run, this will produce the following output:
+```
+Running worker
+Running worker
+Running worker
+Running worker
+Running worker
+Main thread sleeping
+Worker <Thread(worker 1, started 130283832797456)> running with argument 0
+Worker <Thread(worker 2, started 130283824404752)> running with argument 1
+Worker <Thread(worker 3, started 130283816012048)> running with argument 2
+Worker <Thread(worker 4, started 130283807619344)> running with argument 3
+Worker <Thread(worker 5, started 130283799226640)> running with argument 4
+Worker <Thread(worker 1, started 130283832797456)> running with argument 5
+...
+
+```
+
+Consult the module’s documentation for more details; the [`Queue`](https://docs.python.org/3/library/queue.html#queue.Queue "queue.Queue") class provides a featureful interface.
+### [What kinds of global value mutation are thread-safe?](https://docs.python.org/3/faq/library.html#id17)[¶](https://docs.python.org/3/faq/library.html#what-kinds-of-global-value-mutation-are-thread-safe "Link to this heading")
+A [global interpreter lock](https://docs.python.org/3/glossary.html#term-global-interpreter-lock) (GIL) is used internally to ensure that only one thread runs in the Python VM at a time. In general, Python offers to switch among threads only between bytecode instructions; how frequently it switches can be set via [`sys.setswitchinterval()`](https://docs.python.org/3/library/sys.html#sys.setswitchinterval "sys.setswitchinterval"). Each bytecode instruction and therefore all the C implementation code reached from each instruction is therefore atomic from the point of view of a Python program.
+In theory, this means an exact accounting requires an exact understanding of the PVM bytecode implementation. In practice, it means that operations on shared variables of built-in data types (ints, lists, dicts, etc) that “look atomic” really are.
+For example, the following operations are all atomic (L, L1, L2 are lists, D, D1, D2 are dicts, x, y are objects, i, j are ints):
+```
+L.append(x)
+L1.extend(L2)
+x = L[i]
+x = L.pop()
+L1[i:j] = L2
+L.sort()
+x = y
+x.field = y
+D[x] = y
+D1.update(D2)
+D.keys()
+
+```
+
+These aren’t:
+```
+i = i+1
+L.append(L[-1])
+L[i] = L[j]
+D[x] = D[x] + 1

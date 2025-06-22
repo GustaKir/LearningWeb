@@ -1,0 +1,28 @@
+Title: Caching in Streamlit: TTL and Max Entries Parameters
+URL: https://docs.streamlit.io/develop/concepts/architecture/caching
+Summary: This section discusses the `ttl` (time-to-live) parameter for caching, which allows you to prevent stale data and control cache size by specifying how long to keep cached values. It also introduces the `max_entries` parameter to limit the number of entries in the cache, helping maintain optimal performance.
+---
+
+You can combat these problems with the `ttl` and `max_entries` parameters, which are available for both caching decorators.
+**The`ttl` (time-to-live) parameter**
+`ttl` sets a time to live on a cached function. If that time is up and you call the function again, the app will discard any old, cached values, and the function will be rerun. The newly computed value will then be stored in the cache. This behavior is useful for preventing stale data (problem 2) and the cache from growing too large (problem 1). Especially when pulling data from a database or API, you should always set a `ttl` so you are not using old data. Here's an example:
+`@st.cache_data(ttl=3600) # 👈 Cache data for 1 hour (=3600 seconds) def get_api_data():   data = api.get(...) return data `
+_star_
+#### Tip
+You can also set `ttl` values using `timedelta`, e.g., `ttl=datetime.timedelta(hours=1)`.
+**The`max_entries` parameter**
+`max_entries` sets the maximum number of entries in the cache. An upper bound on the number of cache entries is useful for limiting memory (problem 1), especially when caching large objects. The oldest entry will be removed when a new entry is added to a full cache. Here's an example:
+`@st.cache_data(max_entries=1000) # 👈 Maximum 1000 entries in the cache def get_large_array(seed):   np.random.seed(seed)   arr = np.random.rand(100000) return arr `
+### [](https://docs.streamlit.io/develop/concepts/architecture/caching#customizing-the-spinner)Customizing the spinner
+By default, Streamlit shows a small loading spinner in the app when a cached function is running. You can modify it easily with the `show_spinner` parameter, which is available for both caching decorators:
+`@st.cache_data(show_spinner=False) # 👈 Disable the spinner def get_api_data():   data = api.get(...) return data @st.cache_data(show_spinner="Fetching data from API...") # 👈 Use custom text for spinner def get_api_data():   data = api.get(...) return data `
+### [](https://docs.streamlit.io/develop/concepts/architecture/caching#excluding-input-parameters)Excluding input parameters
+In a cached function, all input parameters must be hashable. Let's quickly explain why and what it means. When the function is called, Streamlit looks at its parameter values to determine if it was cached before. Therefore, it needs a reliable way to compare the parameter values across function calls. Trivial for a string or int – but complex for arbitrary objects! Streamlit uses [hashing](https://en.wikipedia.org/wiki/Hash_function) to solve that. It converts the parameter to a stable key and stores that key. At the next function call, it hashes the parameter again and compares it with the stored hash key.
+Unfortunately, not all parameters are hashable! E.g., you might pass an unhashable database connection or ML model to your cached function. In this case, you can exclude input parameters from caching. Simply prepend the parameter name with an underscore (e.g., `_param1`), and it will not be used for caching. Even if it changes, Streamlit will return a cached result if all the other parameters match up.
+Here's an example:
+`@st.cache_data def fetch_data(_db_connection, num_rows): # 👈 Don't hash _db_connection   data = _db_connection.fetch(num_rows) return data connection = init_connection() fetch_data(connection, 10) `
+But what if you want to cache a function that takes an unhashable parameter? For example, you might want to cache a function that takes an ML model as input and returns the layer names of that model. Since the model is the only input parameter, you cannot exclude it from caching. In this case you can use the `hash_funcs` parameter to specify a custom hashing function for the model.
+### [](https://docs.streamlit.io/develop/concepts/architecture/caching#the-hash_funcs-parameter)The `hash_funcs` parameter
+As described above, Streamlit's caching decorators hash the input parameters and cached function's signature to determine whether the function has been run before and has a return value stored ("cache hit") or needs to be run ("cache miss"). Input parameters that are not hashable by Streamlit's hashing implementation can be ignored by prepending an underscore to their name. But there two rare cases where this is undesirable. i.e. where you want to hash the parameter that Streamlit is unable to hash:
+  1. When Streamlit's hashing mechanism fails to hash a parameter, resulting in a `UnhashableParamError` being raised.
+  2. When you want to override Streamlit's default hashing mechanism for a parameter.

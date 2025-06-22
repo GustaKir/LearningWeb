@@ -1,0 +1,39 @@
+Title: SocketHandler in Logging Module
+URL: https://docs.python.org/3/library/logging.handlers.html
+Summary: The `SocketHandler` class in the `logging.handlers` module allows for sending logging output to a network socket using a TCP connection. Additionally, the `getFilesToDelete` method in the `TimedRotatingFileHandler` class provides a list of filenames for backup log files that should be deleted during rollover.
+---
+
+getFilesToDelete()[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.TimedRotatingFileHandler.getFilesToDelete "Link to this definition")
+    
+Returns a list of filenames which should be deleted as part of rollover. These are the absolute paths of the oldest backup log files written by the handler.
+## SocketHandler[¶](https://docs.python.org/3/library/logging.handlers.html#sockethandler "Link to this heading")
+The [`SocketHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler "logging.handlers.SocketHandler") class, located in the [`logging.handlers`](https://docs.python.org/3/library/logging.handlers.html#module-logging.handlers "logging.handlers: Handlers for the logging module.") module, sends logging output to a network socket. The base class uses a TCP socket. 
+
+_class_ logging.handlers.SocketHandler(_host_ , _port_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler "Link to this definition")
+    
+Returns a new instance of the [`SocketHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler "logging.handlers.SocketHandler") class intended to communicate with a remote machine whose address is given by _host_ and _port_.
+Changed in version 3.4: If `port` is specified as `None`, a Unix domain socket is created using the value in `host` - otherwise, a TCP socket is created. 
+
+close()[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler.close "Link to this definition")
+    
+Closes the socket. 
+
+emit()[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler.emit "Link to this definition")
+    
+Pickles the record’s attribute dictionary and writes it to the socket in binary format. If there is an error with the socket, silently drops the packet. If the connection was previously lost, re-establishes the connection. To unpickle the record at the receiving end into a [`LogRecord`](https://docs.python.org/3/library/logging.html#logging.LogRecord "logging.LogRecord"), use the [`makeLogRecord()`](https://docs.python.org/3/library/logging.html#logging.makeLogRecord "logging.makeLogRecord") function. 
+
+handleError()[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler.handleError "Link to this definition")
+    
+Handles an error which has occurred during [`emit()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler.emit "logging.handlers.SocketHandler.emit"). The most likely cause is a lost connection. Closes the socket so that we can retry on the next event. 
+
+makeSocket()[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler.makeSocket "Link to this definition")
+    
+This is a factory method which allows subclasses to define the precise type of socket they want. The default implementation creates a TCP socket ([`socket.SOCK_STREAM`](https://docs.python.org/3/library/socket.html#socket.SOCK_STREAM "socket.SOCK_STREAM")). 
+
+makePickle(_record_)[¶](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler.makePickle "Link to this definition")
+    
+Pickles the record’s attribute dictionary in binary format with a length prefix, and returns it ready for transmission across the socket. The details of this operation are equivalent to:
+```
+data = pickle.dumps(record_attr_dict, 1)
+datalen = struct.pack('>L', len(data))
+return datalen + data

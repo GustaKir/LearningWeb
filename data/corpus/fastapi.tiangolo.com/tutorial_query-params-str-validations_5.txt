@@ -1,0 +1,66 @@
+Title: Query Parameters and String Validations in FastAPI
+URL: https://fastapi.tiangolo.com/tutorial/query-params-str-validations/
+Summary: This documentation covers how to add additional validations for query parameters in FastAPI using `Annotated` and `Query`. It explores importing necessary components, utilizing `Annotated` for parameter types, and adding validation via `Query`. Alternative approaches for setting default values and the advantages of using `Annotated` are also discussed.
+---
+
+Table of contents 
+  * [ Additional validation  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#additional-validation)
+    * [ Import `Query` and `Annotated` ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#import-query-and-annotated)
+  * [ Use `Annotated` in the type for the `q` parameter  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#use-annotated-in-the-type-for-the-q-parameter)
+  * [ Add `Query` to `Annotated` in the `q` parameter  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#add-query-to-annotated-in-the-q-parameter)
+  * [ Alternative (old): `Query` as the default value  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#alternative-old-query-as-the-default-value)
+    * [ `Query` as the default value or in `Annotated` ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-as-the-default-value-or-in-annotated)
+    * [ Advantages of `Annotated` ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#advantages-of-annotated)
+  * [ Add more validations  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#add-more-validations)
+  * [ Add regular expressions  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#add-regular-expressions)
+    * [ Pydantic v1 `regex` instead of `pattern` ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#pydantic-v1-regex-instead-of-pattern)
+  * [ Default values  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#default-values)
+  * [ Required parameters  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#required-parameters)
+    * [ Required, can be `None` ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#required-can-be-none)
+  * [ Query parameter list / multiple values  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values)
+    * [ Query parameter list / multiple values with defaults  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameter-list-multiple-values-with-defaults)
+      * [ Using just `list` ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#using-just-list)
+  * [ Declare more metadata  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#declare-more-metadata)
+  * [ Alias parameters  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#alias-parameters)
+  * [ Deprecating parameters  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#deprecating-parameters)
+  * [ Exclude parameters from OpenAPI  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#exclude-parameters-from-openapi)
+  * [ Custom Validation  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#custom-validation)
+    * [ Understand that Code  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#understand-that-code)
+      * [ String with `value.startswith()` ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#string-with-valuestartswith)
+      * [ A Random Item  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#a-random-item)
+  * [ Recap  ](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#recap)
+
+
+  1. [ FastAPI  ](https://fastapi.tiangolo.com/)
+  2. [ Learn  ](https://fastapi.tiangolo.com/learn/)
+  3. [ Tutorial - User Guide  ](https://fastapi.tiangolo.com/tutorial/)
+
+
+# Query Parameters and String Validations[¶](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#query-parameters-and-string-validations "Permanent link")
+**FastAPI** allows you to declare additional information and validation for your parameters.
+Let's take this application as example:
+[Python 3.10+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_1_1)
+```
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: str | None = None):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results
+
+```
+
+🤓 Other versions and variants
+[Python 3.8+](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#__tabbed_2_1)
+```
+fromtypingimport Union
+fromfastapiimport FastAPI
+app = FastAPI()
+@app.get("/items/")
+async defread_items(q: Union[str, None] = None):
+  results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+  if q:
+    results.update({"q": q})
+  return results

@@ -1,0 +1,81 @@
+Title: Sorting Techniques in Python
+URL: https://docs.python.org/3/howto/sorting.html
+Summary: This document provides an overview of various sorting techniques in Python, including sorting basics, key functions, operator module functions, and methods for sorting in ascending and descending order, along with considerations for sort stability and complex sorts.
+---
+
+[ ![Python logo](https://docs.python.org/3/_static/py.svg) ](https://www.python.org/) dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+Theme  Auto Light Dark
+### [Table of Contents](https://docs.python.org/3/contents.html)
+  * [Sorting Techniques](https://docs.python.org/3/howto/sorting.html)
+    * [Sorting Basics](https://docs.python.org/3/howto/sorting.html#sorting-basics)
+    * [Key Functions](https://docs.python.org/3/howto/sorting.html#key-functions)
+    * [Operator Module Functions and Partial Function Evaluation](https://docs.python.org/3/howto/sorting.html#operator-module-functions-and-partial-function-evaluation)
+    * [Ascending and Descending](https://docs.python.org/3/howto/sorting.html#ascending-and-descending)
+    * [Sort Stability and Complex Sorts](https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts)
+    * [Decorate-Sort-Undecorate](https://docs.python.org/3/howto/sorting.html#decorate-sort-undecorate)
+    * [Comparison Functions](https://docs.python.org/3/howto/sorting.html#comparison-functions)
+    * [Odds and Ends](https://docs.python.org/3/howto/sorting.html#odds-and-ends)
+    * [Partial Sorts](https://docs.python.org/3/howto/sorting.html#partial-sorts)
+
+
+#### Previous topic
+[Socket Programming HOWTO](https://docs.python.org/3/howto/sockets.html "previous chapter")
+#### Next topic
+[Unicode HOWTO](https://docs.python.org/3/howto/unicode.html "next chapter")
+### This Page
+  * [Report a Bug](https://docs.python.org/3/bugs.html)
+  * [Show Source ](https://github.com/python/cpython/blob/main/Doc/howto/sorting.rst)
+
+
+### Navigation
+  * [index](https://docs.python.org/3/genindex.html "General Index")
+  * [modules](https://docs.python.org/3/py-modindex.html "Python Module Index") |
+  * [next](https://docs.python.org/3/howto/unicode.html "Unicode HOWTO") |
+  * [previous](https://docs.python.org/3/howto/sockets.html "Socket Programming HOWTO") |
+  * ![Python logo](https://docs.python.org/3/_static/py.svg)
+  * [Python](https://www.python.org/) »
+  * EnglishSpanish | españolFrench | françaisItalian | italianoJapanese | 日本語Korean | 한국어Polish | polskiBrazilian Portuguese | Português brasileiroTurkish | TürkçeSimplified Chinese | 简体中文Traditional Chinese | 繁體中文
+dev (3.14)3.13.33.123.113.103.93.83.73.63.53.43.33.23.13.02.72.6
+  * [3.13.3 Documentation](https://docs.python.org/3/index.html) » 
+  * [Python HOWTOs](https://docs.python.org/3/howto/index.html) »
+  * [Sorting Techniques](https://docs.python.org/3/howto/sorting.html)
+  * | 
+  * Theme  Auto Light Dark |
+
+
+# Sorting Techniques[¶](https://docs.python.org/3/howto/sorting.html#sorting-techniques "Link to this heading") 
+
+Author:
+    
+Andrew Dalke and Raymond Hettinger
+Python lists have a built-in [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") method that modifies the list in-place. There is also a [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") built-in function that builds a new sorted list from an iterable.
+In this document, we explore the various techniques for sorting data using Python.
+## Sorting Basics[¶](https://docs.python.org/3/howto/sorting.html#sorting-basics "Link to this heading")
+A simple ascending sort is very easy: just call the [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") function. It returns a new sorted list:
+>>>```
+>>> sorted([5, 2, 3, 1, 4])
+[1, 2, 3, 4, 5]
+
+```
+
+You can also use the [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") method. It modifies the list in-place (and returns `None` to avoid confusion). Usually it’s less convenient than [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") - but if you don’t need the original list, it’s slightly more efficient.
+>>>```
+>>> a = [5, 2, 3, 1, 4]
+>>> a.sort()
+>>> a
+[1, 2, 3, 4, 5]
+
+```
+
+Another difference is that the [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") method is only defined for lists. In contrast, the [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") function accepts any iterable.
+>>>```
+>>> sorted({1: 'D', 2: 'B', 3: 'B', 4: 'E', 5: 'A'})
+[1, 2, 3, 4, 5]
+
+```
+
+## Key Functions[¶](https://docs.python.org/3/howto/sorting.html#key-functions "Link to this heading")
+Both [`list.sort()`](https://docs.python.org/3/library/stdtypes.html#list.sort "list.sort") and [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted") have a _key_ parameter to specify a function (or other callable) to be called on each list element prior to making comparisons.
+For example, here’s a case-insensitive string comparison:
+>>>

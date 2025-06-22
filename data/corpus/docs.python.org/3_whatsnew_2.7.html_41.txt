@@ -1,0 +1,26 @@
+Title: Changes to Standard Library in Python 2.7
+URL: https://docs.python.org/3/whatsnew/2.7.html
+Summary: The standard library updates include stricter error handling for `datetime` operations that previously did not raise `OverflowError` and a change in the default alignment of `Decimal` instances in string formatting from left to right. These adjustments may impact the behavior of existing programs.
+---
+
+In the standard library:
+  * Operations with [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") instances that resulted in a year falling outside the supported range didn’t always raise [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError"). Such errors are now checked more carefully and will now raise the exception. (Reported by Mark Leander, patch by Anand B. Pillai and Alexander Belopolsky; [bpo-7150](https://bugs.python.org/issue?@action=redirect&bpo=7150).)
+  * When using [`Decimal`](https://docs.python.org/3/library/decimal.html#decimal.Decimal "decimal.Decimal") instances with a string’s [`format()`](https://docs.python.org/3/library/functions.html#format "format") method, the default alignment was previously left-alignment. This has been changed to right-alignment, which might change the output of your programs. (Changed by Mark Dickinson; [bpo-6857](https://bugs.python.org/issue?@action=redirect&bpo=6857).)
+Comparisons involving a signaling NaN value (or `sNAN`) now signal [`InvalidOperation`](https://docs.python.org/3/library/decimal.html#decimal.InvalidOperation "decimal.InvalidOperation") instead of silently returning a true or false value depending on the comparison operator. Quiet NaN values (or `NaN`) are now hashable. (Fixed by Mark Dickinson; [bpo-7279](https://bugs.python.org/issue?@action=redirect&bpo=7279).)
+  * The [`xml.etree.ElementTree`](https://docs.python.org/3/library/xml.etree.elementtree.html#module-xml.etree.ElementTree "xml.etree.ElementTree: Implementation of the ElementTree API.") library no longer escapes ampersands and angle brackets when outputting an XML processing instruction (which looks like `<?xml-stylesheet href="#style1"?>`) or comment (which looks like `<!-- comment -->`). (Patch by Neil Muller; [bpo-2746](https://bugs.python.org/issue?@action=redirect&bpo=2746).)
+  * The `readline()` method of [`StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") objects now does nothing when a negative length is requested, as other file-like objects do. ([bpo-7348](https://bugs.python.org/issue?@action=redirect&bpo=7348)).
+  * The [`syslog`](https://docs.python.org/3/library/syslog.html#module-syslog "syslog: An interface to the Unix syslog library routines. \(Unix\)") module will now use the value of `sys.argv[0]` as the identifier instead of the previous default value of `'python'`. (Changed by Sean Reifschneider; [bpo-8451](https://bugs.python.org/issue?@action=redirect&bpo=8451).)
+  * The [`tarfile`](https://docs.python.org/3/library/tarfile.html#module-tarfile "tarfile: Read and write tar-format archive files.") module’s default error handling has changed, to no longer suppress fatal errors. The default error level was previously 0, which meant that errors would only result in a message being written to the debug log, but because the debug log is not activated by default, these errors go unnoticed. The default error level is now 1, which raises an exception if there’s an error. (Changed by Lars Gustäbel; [bpo-7357](https://bugs.python.org/issue?@action=redirect&bpo=7357).)
+  * The [`urlparse`](https://docs.python.org/3/library/urllib.parse.html#module-urllib.parse "urllib.parse: Parse URLs into or assemble them from components.") module’s [`urlsplit()`](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.urlsplit "urllib.parse.urlsplit") now handles unknown URL schemes in a fashion compliant with [**RFC 3986**](https://datatracker.ietf.org/doc/html/rfc3986.html): if the URL is of the form `"<something>://..."`, the text before the `://` is treated as the scheme, even if it’s a made-up scheme that the module doesn’t know about. This change may break code that worked around the old behaviour. For example, Python 2.6.4 or 2.5 will return the following:
+>>>```
+>>> importurlparse
+>>> urlparse.urlsplit('invented://host/filename?query')
+('invented', '', '//host/filename?query', '', '')
+
+```
+
+Python 2.7 (and Python 2.6.5) will return:
+>>>```
+>>> importurlparse
+>>> urlparse.urlsplit('invented://host/filename?query')
+('invented', 'host', '/filename?query', '', '')

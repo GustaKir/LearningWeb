@@ -1,0 +1,23 @@
+Title: Hashing and Randomization in Python
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: The default `__hash__()` method for str and bytes in Python provides salted hash values to mitigate denial-of-service attacks by preventing predictable hash collisions. Hash values remain consistent within a single Python process but can differ across sessions. This behavior also affects the iteration order of sets, which is not guaranteed to be stable. Hash randomization was introduced in Python 3.3.
+---
+
+call.
+Note
+By default, the [`__hash__()`](https://docs.python.org/3/reference/datamodel.html#object.__hash__ "object.__hash__") values of str and bytes objects are “salted” with an unpredictable random value. Although they remain constant within an individual Python process, they are not predictable between repeated invocations of Python.
+This is intended to provide protection against a denial-of-service caused by carefully chosen inputs that exploit the worst case performance of a dict insertion, _O_(_n_ 2) complexity. See <http://ocert.org/advisories/ocert-2011-003.html> for details.
+Changing hash values affects the iteration order of sets. Python has never made guarantees about this ordering (and it typically varies between 32-bit and 64-bit builds).
+See also [`PYTHONHASHSEED`](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHASHSEED).
+Changed in version 3.3: Hash randomization is enabled by default. 
+
+object.__bool__(_self_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__bool__ "Link to this definition")
+    
+Called to implement truth value testing and the built-in operation `bool()`; should return `False` or `True`. When this method is not defined, [`__len__()`](https://docs.python.org/3/reference/datamodel.html#object.__len__ "object.__len__") is called, if it is defined, and the object is considered true if its result is nonzero. If a class defines neither `__len__()` nor `__bool__()` (which is true of the [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself), all its instances are considered true.
+### 3.3.2. Customizing attribute access[¶](https://docs.python.org/3/reference/datamodel.html#customizing-attribute-access "Link to this heading")
+The following methods can be defined to customize the meaning of attribute access (use of, assignment to, or deletion of `x.name`) for class instances. 
+
+object.__getattr__(_self_ , _name_)[¶](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "Link to this definition")
+    
+Called when the default attribute access fails with an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") (either [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") raises an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") because _name_ is not an instance attribute or an attribute in the class tree for `self`; or [`__get__()`](https://docs.python.org/3/reference/datamodel.html#object.__get__ "object.__get__") of a _name_ property raises [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError")). This method should either return the (computed) attribute value or raise an [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError") exception. The [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself does not provide this method.
+Note that if the attribute is found through the normal mechanism, [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") is not called. (This is an intentional asymmetry between [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") and [`__setattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__setattr__ "object.__setattr__").) This is done both for efficiency reasons and because otherwise [`__getattr__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__ "object.__getattr__") would have no way to access other attributes of the instance. Note that at least for instance variables, you can take total control by not inserting any values in the instance attribute dictionary (but instead inserting them in another object). See the [`__getattribute__()`](https://docs.python.org/3/reference/datamodel.html#object.__getattribute__ "object.__getattribute__") method below for a way to actually get total control over attribute access.

@@ -1,0 +1,71 @@
+Title: Conditional Expressions in Python
+URL: https://docs.python.org/3/whatsnew/2.5.html
+Summary: This section discusses the usage of conditional expressions in Python. It emphasizes the importance of clarity when using these expressions, suggesting the use of parentheses to improve readability. The author provides examples to illustrate how parentheses can help prevent misinterpretation of the expression's intent.
+---
+
+```
+
+I read the above statement as meaning “here _contents_ is usually assigned a value of `doc+'\n'`; sometimes _doc_ is empty, in which special case an empty string is returned.” I doubt I will use conditional expressions very often where there isn’t a clear common and uncommon case.
+There was some discussion of whether the language should require surrounding conditional expressions with parentheses. The decision was made to _not_ require parentheses in the Python language’s grammar, but as a matter of style I think you should always use them. Consider these two statements:
+```
+# First version -- no parens
+level = 1 if logging else 0
+# Second version -- with parens
+level = (1 if logging else 0)
+
+```
+
+In the first version, I think a reader’s eye might group the statement into ‘level = 1’, ‘if logging’, ‘else 0’, and think that the condition decides whether the assignment to _level_ is performed. The second version reads better, in my opinion, because it makes it clear that the assignment is always performed and the choice is being made between two values.
+Another reason for including the brackets: a few odd combinations of list comprehensions and lambdas could look like incorrect conditional expressions. See [**PEP 308**](https://peps.python.org/pep-0308/) for some examples. If you put parentheses around your conditional expressions, you won’t run into this case.
+See also 
+
+[**PEP 308**](https://peps.python.org/pep-0308/) - Conditional Expressions
+    
+PEP written by Guido van Rossum and Raymond D. Hettinger; implemented by Thomas Wouters.
+## PEP 309: Partial Function Application[¶](https://docs.python.org/3/whatsnew/2.5.html#pep-309-partial-function-application "Link to this heading")
+The [`functools`](https://docs.python.org/3/library/functools.html#module-functools "functools: Higher-order functions and operations on callable objects.") module is intended to contain tools for functional-style programming.
+One useful tool in this module is the `partial()` function. For programs written in a functional style, you’ll sometimes want to construct variants of existing functions that have some of the parameters filled in. Consider a Python function `f(a, b, c)`; you could create a new function `g(b, c)` that was equivalent to `f(1, b, c)`. This is called “partial function application”.
+`partial()` takes the arguments `(function, arg1, arg2, ... kwarg1=value1, kwarg2=value2)`. The resulting object is callable, so you can just call it to invoke _function_ with the filled-in arguments.
+Here’s a small but realistic example:
+```
+importfunctools
+deflog (message, subsystem):
+  "Write the contents of 'message' to the specified subsystem."
+  print '%s: %s' % (subsystem, message)
+  ...
+server_log = functools.partial(log, subsystem='server')
+server_log('Unable to open socket')
+
+```
+
+Here’s another example, from a program that uses PyGTK. Here a context-sensitive pop-up menu is being constructed dynamically. The callback provided for the menu option is a partially applied version of the `open_item()` method, where the first argument has been provided.
+```
+...
+classApplication:
+  defopen_item(self, path):
+    ...
+  definit (self):
+    open_func = functools.partial(self.open_item, item_path)
+    popup_menu.append( ("Open", open_func, 1) )
+
+```
+
+Another function in the [`functools`](https://docs.python.org/3/library/functools.html#module-functools "functools: Higher-order functions and operations on callable objects.") module is the `update_wrapper(wrapper, wrapped)` function that helps you write well-behaved decorators. `update_wrapper()` copies the name, module, and docstring attribute to a wrapper function so that tracebacks inside the wrapped function are easier to understand. For example, you might write:
+```
+defmy_decorator(f):
+  defwrapper(*args, **kwds):
+    print 'Calling decorated function'
+    return f(*args, **kwds)
+  functools.update_wrapper(wrapper, f)
+  return wrapper
+
+```
+
+`wraps()` is a decorator that can be used inside your own decorators to copy the wrapped function’s information. An alternate version of the previous example would be:
+```
+defmy_decorator(f):
+  @functools.wraps(f)
+  defwrapper(*args, **kwds):
+    print 'Calling decorated function'
+    return f(*args, **kwds)
+  return wrapper

@@ -1,0 +1,33 @@
+Title: Loader Methods in importlib
+URL: https://docs.python.org/3/library/importlib.html
+Summary: This section details two key methods in the Loader class of Python's importlib module: `create_module()` and `exec_module()`. The `create_module()` method returns a module object or None for default creation, and became mandatory in version 3.6 when `exec_module()` is defined. The `exec_module()` method executes a module in its own namespace if it is already initialized during import or reload.
+---
+
+create_module(_spec_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "Link to this definition")
+    
+A method that returns the module object to use when importing a module. This method may return `None`, indicating that default module creation semantics should take place.
+Added in version 3.4.
+Changed in version 3.6: This method is no longer optional when [`exec_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "importlib.abc.Loader.exec_module") is defined. 
+
+exec_module(_module_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "Link to this definition")
+    
+An abstract method that executes the module in its own namespace when a module is imported or reloaded. The module should already be initialized when [`exec_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "importlib.abc.Loader.exec_module") is called. When this method exists, [`create_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "importlib.abc.Loader.create_module") must be defined.
+Added in version 3.4.
+Changed in version 3.6: [`create_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "importlib.abc.Loader.create_module") must also be defined. 
+
+load_module(_fullname_)[¶](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module "Link to this definition")
+    
+A legacy method for loading a module. If the module cannot be loaded, [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") is raised, otherwise the loaded module is returned.
+If the requested module already exists in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules"), that module should be used and reloaded. Otherwise the loader should create a new module and insert it into [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules") before any loading begins, to prevent recursion from the import. If the loader inserted a module and the load fails, it must be removed by the loader from [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules"); modules already in [`sys.modules`](https://docs.python.org/3/library/sys.html#sys.modules "sys.modules") before the loader began execution should be left alone.
+The loader should set several attributes on the module (note that some of these attributes can change when a module is reloaded):
+  * [`module.__name__`](https://docs.python.org/3/reference/datamodel.html#module.__name__ "module.__name__")
+  * [`module.__file__`](https://docs.python.org/3/reference/datamodel.html#module.__file__ "module.__file__")
+  * [`module.__cached__`](https://docs.python.org/3/reference/datamodel.html#module.__cached__ "module.__cached__") _(deprecated)_
+  * [`module.__path__`](https://docs.python.org/3/reference/datamodel.html#module.__path__ "module.__path__")
+  * [`module.__package__`](https://docs.python.org/3/reference/datamodel.html#module.__package__ "module.__package__") _(deprecated)_
+  * [`module.__loader__`](https://docs.python.org/3/reference/datamodel.html#module.__loader__ "module.__loader__") _(deprecated)_
+
+
+When [`exec_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "importlib.abc.Loader.exec_module") is available then backwards-compatible functionality is provided.
+Changed in version 3.4: Raise [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") when called instead of [`NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError "NotImplementedError"). Functionality provided when [`exec_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "importlib.abc.Loader.exec_module") is available.
+Deprecated since version 3.4, will be removed in version 3.15: The recommended API for loading a module is [`exec_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "importlib.abc.Loader.exec_module") (and [`create_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.create_module "importlib.abc.Loader.create_module")). Loaders should implement it instead of [`load_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module "importlib.abc.Loader.load_module"). The import machinery takes care of all the other responsibilities of [`load_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module "importlib.abc.Loader.load_module") when [`exec_module()`](https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.exec_module "importlib.abc.Loader.exec_module") is implemented.

@@ -1,0 +1,26 @@
+Title: Validating Input in Streamlit DataFrames
+URL: https://docs.streamlit.io/develop/concepts/design/dataframes
+Summary: This section outlines how to validate input in Streamlit DataFrames by setting column configurations such as data types, value restrictions, and required fields. It describes the use of parameters like `required`, `max_chars`, and validation through regular expressions for text columns, as well as `min_value` and `max_value` for numerical columns. Additionally, it explains how to configure selectbox options and the default data type for Number columns.
+---
+
+rames#validate-input)Validate input
+When specifying a column configuration, you can declare not only the data type of the column but also value restrictions. All column configuration elements allow you to make a column required with the keyword parameter `required=True`.
+For Text and Link columns, you can specify the maximum number of characters with `max_chars` or use regular expressions to validate entries through `validate`. Numerical columns, including Number, Date, Time, and Datetime have `min_value` and `max_value` parameters. Selectbox columns have a configurable list of `options`.
+The data type for Number columns is `float` by default. Passing a value of type `int` to any of `min_value`, `max_value`, `step`, or `default` will set the type for the column as `int`.
+### [](https://docs.streamlit.io/develop/concepts/design/dataframes#configure-an-empty-dataframe)Configure an empty dataframe
+You can use `st.data_editor` to collect tabular input from a user. When starting from an empty dataframe, default column types are text. Use column configuration to specify the data types you want to collect from users.
+`import streamlit as st import pandas as pd df = pd.DataFrame(columns=['name','age','color']) colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'] config = { 'name' : st.column_config.TextColumn('Full Name (required)', width='large', required=True), 'age' : st.column_config.NumberColumn('Age (years)', min_value=0, max_value=122), 'color' : st.column_config.SelectboxColumn('Favorite Color', options=colors) } result = st.data_editor(df, column_config = config, num_rows='dynamic') if st.button('Get results'):   st.write(result) `
+[Built with Streamlit 🎈](https://streamlit.io)
+[Fullscreen _open_in_new_](https://doc-column-config-empty.streamlit.app/?utm_medium=oembed)
+## [](https://docs.streamlit.io/develop/concepts/design/dataframes#additional-formatting-options)Additional formatting options
+In addition to column configuration, `st.dataframe` and `st.data_editor` have a few more parameters to customize the display of your dataframe.
+  * `hide_index` : Set to `True` to hide the dataframe's index.
+  * `column_order` : Pass a list of column labels to specify the order of display.
+  * `disabled` : Pass a list of column labels to disable them from editing. This let's you avoid disabling them individually.
+
+
+## [](https://docs.streamlit.io/develop/concepts/design/dataframes#handling-large-datasets)Handling large datasets
+`st.dataframe` and `st.data_editor` have been designed to theoretically handle tables with millions of rows thanks to their highly performant implementation using the glide-data-grid library and HTML canvas. However, the maximum amount of data that an app can realistically handle will depend on several other factors, including:
+  1. The maximum size of WebSocket messages: Streamlit's WebSocket messages are configurable via the `server.maxMessageSize` [config option](https://docs.streamlit.io/develop/concepts/configuration#view-all-configuration-options), which limits the amount of data that can be transferred via the WebSocket connection at once.
+  2. The server memory: The amount of data that your app can handle will also depend on the amount of memory available on your server. If the server's memory is exceeded, the app may become slow or unresponsive.
+  3. The user's browser memory: Since all the data needs to be transferred to the user's browser for rendering, the amount of memory available on the user's device can also affect the app's performance. If the browser's memory is exceeded, it may crash or become unresponsive.

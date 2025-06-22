@@ -1,0 +1,84 @@
+Title: Using difflib.get_close_matches Function
+URL: https://docs.python.org/3/library/difflib.html
+Summary: This document chunk provides examples of the `get_close_matches` function from the `difflib` library, demonstrating its ability to find closely matching strings from a list based on input. It also introduces the `ndiff` function, explaining its purpose in comparing two lists of strings and generating a Differ-style delta, along with optional parameters for junk filtering.
+---
+
+```
+>>> get_close_matches('appel', ['ape', 'apple', 'peach', 'puppy'])
+['apple', 'ape']
+>>> importkeyword
+>>> get_close_matches('wheel', keyword.kwlist)
+['while']
+>>> get_close_matches('pineapple', keyword.kwlist)
+[]
+>>> get_close_matches('accept', keyword.kwlist)
+['except']
+
+```
+
+
+difflib.ndiff(_a_ , _b_ , _linejunk =None_, _charjunk =IS_CHARACTER_JUNK_)[¶](https://docs.python.org/3/library/difflib.html#difflib.ndiff "Link to this definition")
+    
+Compare _a_ and _b_ (lists of strings); return a [`Differ`](https://docs.python.org/3/library/difflib.html#difflib.Differ "difflib.Differ")-style delta (a [generator](https://docs.python.org/3/glossary.html#term-generator) generating the delta lines).
+Optional keyword parameters _linejunk_ and _charjunk_ are filtering functions (or `None`):
+_linejunk_ : A function that accepts a single string argument, and returns true if the string is junk, or false if not. The default is `None`. There is also a module-level function [`IS_LINE_JUNK()`](https://docs.python.org/3/library/difflib.html#difflib.IS_LINE_JUNK "difflib.IS_LINE_JUNK"), which filters out lines without visible characters, except for at most one pound character (`'#'`) – however the underlying [`SequenceMatcher`](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher "difflib.SequenceMatcher") class does a dynamic analysis of which lines are so frequent as to constitute noise, and this usually works better than using this function.
+_charjunk_ : A function that accepts a character (a string of length 1), and returns if the character is junk, or false if not. The default is module-level function [`IS_CHARACTER_JUNK()`](https://docs.python.org/3/library/difflib.html#difflib.IS_CHARACTER_JUNK "difflib.IS_CHARACTER_JUNK"), which filters out whitespace characters (a blank or tab; it’s a bad idea to include newline in this!).
+>>>```
+>>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
+...        'ore\ntree\nemu\n'.splitlines(keepends=True))
+>>> print(''.join(diff), end="")
+- one
+? ^
++ ore
+? ^
+- two
+- three
+? -
++ tree
++ emu
+
+```
+
+
+difflib.restore(_sequence_ , _which_)[¶](https://docs.python.org/3/library/difflib.html#difflib.restore "Link to this definition")
+    
+Return one of the two sequences that generated a delta.
+Given a _sequence_ produced by [`Differ.compare()`](https://docs.python.org/3/library/difflib.html#difflib.Differ.compare "difflib.Differ.compare") or [`ndiff()`](https://docs.python.org/3/library/difflib.html#difflib.ndiff "difflib.ndiff"), extract lines originating from file 1 or 2 (parameter _which_), stripping off line prefixes.
+Example:
+>>>```
+>>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
+...        'ore\ntree\nemu\n'.splitlines(keepends=True))
+>>> diff = list(diff) # materialize the generated delta into a list
+>>> print(''.join(restore(diff, 1)), end="")
+one
+two
+three
+>>> print(''.join(restore(diff, 2)), end="")
+ore
+tree
+emu
+
+```
+
+
+difflib.unified_diff(_a_ , _b_ , _fromfile =''_, _tofile =''_, _fromfiledate =''_, _tofiledate =''_, _n =3_, _lineterm ='\n'_)[¶](https://docs.python.org/3/library/difflib.html#difflib.unified_diff "Link to this definition")
+    
+Compare _a_ and _b_ (lists of strings); return a delta (a [generator](https://docs.python.org/3/glossary.html#term-generator) generating the delta lines) in unified diff format.
+Unified diffs are a compact way of showing just the lines that have changed plus a few lines of context. The changes are shown in an inline style (instead of separate before/after blocks). The number of context lines is set by _n_ which defaults to three.
+By default, the diff control lines (those with `---`, `+++`, or `@@`) are created with a trailing newline. This is helpful so that inputs created from [`io.IOBase.readlines()`](https://docs.python.org/3/library/io.html#io.IOBase.readlines "io.IOBase.readlines") result in diffs that are suitable for use with [`io.IOBase.writelines()`](https://docs.python.org/3/library/io.html#io.IOBase.writelines "io.IOBase.writelines") since both the inputs and outputs have trailing newlines.
+For inputs that do not have trailing newlines, set the _lineterm_ argument to `""` so that the output will be uniformly newline free.
+The unified diff format normally has a header for filenames and modification times. Any or all of these may be specified using strings for _fromfile_ , _tofile_ , _fromfiledate_ , and _tofiledate_. The modification times are normally expressed in the ISO 8601 format. If not specified, the strings default to blanks.
+>>>```
+>>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
+>>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
+>>> sys.stdout.writelines(unified_diff(s1, s2, fromfile='before.py', tofile='after.py'))
+--- before.py
++++ after.py
+@@ -1,4 +1,4 @@
+-bacon
+-eggs
+-ham
++python
++eggy
++hamster
+ guido

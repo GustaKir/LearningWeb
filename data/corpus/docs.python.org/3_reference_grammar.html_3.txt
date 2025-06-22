@@ -1,0 +1,213 @@
+Title: Except and Match Statements in Python
+URL: https://docs.python.org/3/reference/grammar.html
+Summary: This document covers the syntax for handling exceptions and pattern matching in Python. The 'except' statement can include an expression and optional name binding, while the 'finally' block follows. The 'match' statement introduces a new way to handle cases through patterns, with various types of patterns defined for use in case statements.
+---
+
+# Except statement
+# ----------------
+except_block:
+  | 'except' expression ['as' NAME ] ':' block 
+  | 'except' ':' block 
+except_star_block:
+  | 'except' '*' expression ['as' NAME ] ':' block 
+finally_block:
+  | 'finally' ':' block 
+# Match statement
+# ---------------
+match_stmt:
+  | "match" subject_expr ':' NEWLINE INDENT case_block+ DEDENT 
+subject_expr:
+  | star_named_expression ',' star_named_expressions? 
+  | named_expression
+case_block:
+  | "case" patterns guard? ':' block 
+guard: 'if' named_expression 
+patterns:
+  | open_sequence_pattern 
+  | pattern
+pattern:
+  | as_pattern
+  | or_pattern
+as_pattern:
+  | or_pattern 'as' pattern_capture_target 
+or_pattern:
+  | '|'.closed_pattern+ 
+closed_pattern:
+  | literal_pattern
+  | capture_pattern
+  | wildcard_pattern
+  | value_pattern
+  | group_pattern
+  | sequence_pattern
+  | mapping_pattern
+  | class_pattern
+# Literal patterns are used for equality and identity constraints
+literal_pattern:
+  | signed_number !('+' | '-') 
+  | complex_number 
+  | strings 
+  | 'None' 
+  | 'True' 
+  | 'False' 
+# Literal expressions are used to restrict permitted mapping pattern keys
+literal_expr:
+  | signed_number !('+' | '-')
+  | complex_number
+  | strings
+  | 'None' 
+  | 'True' 
+  | 'False' 
+complex_number:
+  | signed_real_number '+' imaginary_number 
+  | signed_real_number '-' imaginary_number 
+signed_number:
+  | NUMBER
+  | '-' NUMBER 
+signed_real_number:
+  | real_number
+  | '-' real_number 
+real_number:
+  | NUMBER 
+imaginary_number:
+  | NUMBER 
+capture_pattern:
+  | pattern_capture_target 
+pattern_capture_target:
+  | !"_" NAME !('.' | '(' | '=') 
+wildcard_pattern:
+  | "_" 
+value_pattern:
+  | attr !('.' | '(' | '=') 
+attr:
+  | name_or_attr '.' NAME 
+name_or_attr:
+  | attr
+  | NAME
+group_pattern:
+  | '(' pattern ')' 
+sequence_pattern:
+  | '[' maybe_sequence_pattern? ']' 
+  | '(' open_sequence_pattern? ')' 
+open_sequence_pattern:
+  | maybe_star_pattern ',' maybe_sequence_pattern? 
+maybe_sequence_pattern:
+  | ','.maybe_star_pattern+ ','? 
+maybe_star_pattern:
+  | star_pattern
+  | pattern
+star_pattern:
+  | '*' pattern_capture_target 
+  | '*' wildcard_pattern 
+mapping_pattern:
+  | '{' '}' 
+  | '{' double_star_pattern ','? '}' 
+  | '{' items_pattern ',' double_star_pattern ','? '}' 
+  | '{' items_pattern ','? '}' 
+items_pattern:
+  | ','.key_value_pattern+
+key_value_pattern:
+  | (literal_expr | attr) ':' pattern 
+double_star_pattern:
+  | '**' pattern_capture_target 
+class_pattern:
+  | name_or_attr '(' ')' 
+  | name_or_attr '(' positional_patterns ','? ')' 
+  | name_or_attr '(' keyword_patterns ','? ')' 
+  | name_or_attr '(' positional_patterns ',' keyword_patterns ','? ')' 
+positional_patterns:
+  | ','.pattern+ 
+keyword_patterns:
+  | ','.keyword_pattern+
+keyword_pattern:
+  | NAME '=' pattern 
+# Type statement
+# ---------------
+type_alias:
+  | "type" NAME [type_params] '=' expression 
+# Type parameter declaration
+# --------------------------
+type_params: 
+  | invalid_type_params
+  | '[' type_param_seq ']' 
+type_param_seq: ','.type_param+ [','] 
+type_param:
+  | NAME [type_param_bound] [type_param_default] 
+  | '*' NAME [type_param_starred_default] 
+  | '**' NAME [type_param_default] 
+type_param_bound: ':' expression 
+type_param_default: '=' expression 
+type_param_starred_default: '=' star_expression 
+# EXPRESSIONS
+# -----------
+expressions:
+  | expression (',' expression )+ [','] 
+  | expression ',' 
+  | expression
+expression:
+  | disjunction 'if' disjunction 'else' expression 
+  | disjunction
+  | lambdef
+yield_expr:
+  | 'yield' 'from' expression 
+  | 'yield' [star_expressions] 
+star_expressions:
+  | star_expression (',' star_expression )+ [','] 
+  | star_expression ',' 
+  | star_expression
+star_expression:
+  | '*' bitwise_or 
+  | expression
+star_named_expressions: ','.star_named_expression+ [','] 
+star_named_expression:
+  | '*' bitwise_or 
+  | named_expression
+assignment_expression:
+  | NAME ':=' ~ expression 
+named_expression:
+  | assignment_expression
+  | expression !':='
+disjunction:
+  | conjunction ('or' conjunction )+ 
+  | conjunction
+conjunction:
+  | inversion ('and' inversion )+ 
+  | inversion
+inversion:
+  | 'not' inversion 
+  | comparison
+# Comparison operators
+# --------------------
+comparison:
+  | bitwise_or compare_op_bitwise_or_pair+ 
+  | bitwise_or
+compare_op_bitwise_or_pair:
+  | eq_bitwise_or
+  | noteq_bitwise_or
+  | lte_bitwise_or
+  | lt_bitwise_or
+  | gte_bitwise_or
+  | gt_bitwise_or
+  | notin_bitwise_or
+  | in_bitwise_or
+  | isnot_bitwise_or
+  | is_bitwise_or
+eq_bitwise_or: '==' bitwise_or 
+noteq_bitwise_or:
+  | ('!=' ) bitwise_or 
+lte_bitwise_or: '<=' bitwise_or 
+lt_bitwise_or: '<' bitwise_or 
+gte_bitwise_or: '>=' bitwise_or 
+gt_bitwise_or: '>' bitwise_or 
+notin_bitwise_or: 'not' 'in' bitwise_or 
+in_bitwise_or: 'in' bitwise_or 
+isnot_bitwise_or: 'is' 'not' bitwise_or 
+is_bitwise_or: 'is' bitwise_or 
+# Bitwise operators
+# -----------------
+bitwise_or:
+  | bitwise_or '|' bitwise_xor 
+  | bitwise_xor
+bitwise_xor:
+  | bitwise_xor '^' bitwise_and 
+  | bitwise_and
+bitwise

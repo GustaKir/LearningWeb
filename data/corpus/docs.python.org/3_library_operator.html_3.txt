@@ -1,0 +1,102 @@
+Title: Operator Module: General Functions
+URL: https://docs.python.org/3/library/operator.html
+Summary: This section covers various operator functions in Python, including setting an item at a specific index with `operator.__setitem__`, estimating the length of an object with `operator.length_hint`, and calling an object with arguments using `operator.call` and `operator.__call__`.
+---
+
+operator.__setitem__(_a_ , _b_ , _c_)[¶](https://docs.python.org/3/library/operator.html#operator.__setitem__ "Link to this definition")
+    
+Set the value of _a_ at index _b_ to _c_. 
+
+operator.length_hint(_obj_ , _default =0_)[¶](https://docs.python.org/3/library/operator.html#operator.length_hint "Link to this definition")
+    
+Return an estimated length for the object _obj_. First try to return its actual length, then an estimate using [`object.__length_hint__()`](https://docs.python.org/3/reference/datamodel.html#object.__length_hint__ "object.__length_hint__"), and finally return the default value.
+Added in version 3.4.
+The following operation works with callables: 
+
+operator.call(_obj_ , _/_ , _* args_, _** kwargs_)[¶](https://docs.python.org/3/library/operator.html#operator.call "Link to this definition")
+
+
+operator.__call__(_obj_ , _/_ , _* args_, _** kwargs_)[¶](https://docs.python.org/3/library/operator.html#operator.__call__ "Link to this definition")
+    
+Return `obj(*args, **kwargs)`.
+Added in version 3.11.
+The [`operator`](https://docs.python.org/3/library/operator.html#module-operator "operator: Functions corresponding to the standard operators.") module also defines tools for generalized attribute and item lookups. These are useful for making fast field extractors as arguments for [`map()`](https://docs.python.org/3/library/functions.html#map "map"), [`sorted()`](https://docs.python.org/3/library/functions.html#sorted "sorted"), [`itertools.groupby()`](https://docs.python.org/3/library/itertools.html#itertools.groupby "itertools.groupby"), or other functions that expect a function argument. 
+
+operator.attrgetter(_attr_)[¶](https://docs.python.org/3/library/operator.html#operator.attrgetter "Link to this definition")
+
+
+operator.attrgetter(_* attrs_)
+    
+Return a callable object that fetches _attr_ from its operand. If more than one attribute is requested, returns a tuple of attributes. The attribute names can also contain dots. For example:
+  * After `f = attrgetter('name')`, the call `f(b)` returns `b.name`.
+  * After `f = attrgetter('name', 'date')`, the call `f(b)` returns `(b.name, b.date)`.
+  * After `f = attrgetter('name.first', 'name.last')`, the call `f(b)` returns `(b.name.first, b.name.last)`.
+
+
+Equivalent to:
+```
+defattrgetter(*items):
+  if any(not isinstance(item, str) for item in items):
+    raise TypeError('attribute name must be a string')
+  if len(items) == 1:
+    attr = items[0]
+    defg(obj):
+      return resolve_attr(obj, attr)
+  else:
+    defg(obj):
+      return tuple(resolve_attr(obj, attr) for attr in items)
+  return g
+defresolve_attr(obj, attr):
+  for name in attr.split("."):
+    obj = getattr(obj, name)
+  return obj
+
+```
+
+
+operator.itemgetter(_item_)[¶](https://docs.python.org/3/library/operator.html#operator.itemgetter "Link to this definition")
+
+
+operator.itemgetter(_* items_)
+    
+Return a callable object that fetches _item_ from its operand using the operand’s [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") method. If multiple items are specified, returns a tuple of lookup values. For example:
+  * After `f = itemgetter(2)`, the call `f(r)` returns `r[2]`.
+  * After `g = itemgetter(2, 5, 3)`, the call `g(r)` returns `(r[2], r[5], r[3])`.
+
+
+Equivalent to:
+```
+defitemgetter(*items):
+  if len(items) == 1:
+    item = items[0]
+    defg(obj):
+      return obj[item]
+  else:
+    defg(obj):
+      return tuple(obj[item] for item in items)
+  return g
+
+```
+
+The items can be any type accepted by the operand’s [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__") method. Dictionaries accept any [hashable](https://docs.python.org/3/glossary.html#term-hashable) value. Lists, tuples, and strings accept an index or a slice:
+>>>```
+>>> itemgetter(1)('ABCDEFG')
+'B'
+>>> itemgetter(1, 3, 5)('ABCDEFG')
+('B', 'D', 'F')
+>>> itemgetter(slice(2, None))('ABCDEFG')
+'CDEFG'
+>>> soldier = dict(rank='captain', name='dotterbart')
+>>> itemgetter('rank')(soldier)
+'captain'
+
+```
+
+Example of using [`itemgetter()`](https://docs.python.org/3/library/operator.html#operator.itemgetter "operator.itemgetter") to retrieve specific fields from a tuple record:
+>>>```
+>>> inventory = [('apple', 3), ('banana', 2), ('pear', 5), ('orange', 1)]
+>>> getcount = itemgetter(1)
+>>> list(map(getcount, inventory))
+[3, 2, 5, 1]
+>>> sorted(inventory, key=getcount)
+[('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]

@@ -1,0 +1,33 @@
+Title: Accessing Annotations in Python Classes
+URL: https://docs.python.org/3/howto/annotations.html
+Summary: This section explains how to safely access the `__annotations__` attribute for classes and instances in Python 3.9 and earlier. It highlights the need to check if the object is a class, employing the `get()` method on the class's `__dict__` if annotations are present, and provides a sample code snippet for implementation.
+---
+
+```
+
+This will print the annotations dict from `Base`, not `Derived`.
+Your code will have to have a separate code path if the object you’re examining is a class (`isinstance(o, type)`). In that case, best practice relies on an implementation detail of Python 3.9 and before: if a class has annotations defined, they are stored in the class’s [`__dict__`](https://docs.python.org/3/reference/datamodel.html#type.__dict__ "type.__dict__") dictionary. Since the class may or may not have annotations defined, best practice is to call the [`get()`](https://docs.python.org/3/library/stdtypes.html#dict.get "dict.get") method on the class dict.
+To put it all together, here is some sample code that safely accesses the `__annotations__` attribute on an arbitrary object in Python 3.9 and before:
+```
+if isinstance(o, type):
+  ann = o.__dict__.get('__annotations__', None)
+else:
+  ann = getattr(o, '__annotations__', None)
+
+```
+
+After running this code, `ann` should be either a dictionary or `None`. You’re encouraged to double-check the type of `ann` using [`isinstance()`](https://docs.python.org/3/library/functions.html#isinstance "isinstance") before further examination.
+Note that some exotic or malformed type objects may not have a [`__dict__`](https://docs.python.org/3/reference/datamodel.html#type.__dict__ "type.__dict__") attribute, so for extra safety you may also wish to use [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") to access `__dict__`.
+## Manually Un-Stringizing Stringized Annotations[¶](https://docs.python.org/3/howto/annotations.html#manually-un-stringizing-stringized-annotations "Link to this heading")
+In situations where some annotations may be “stringized”, and you wish to evaluate those strings to produce the Python values they represent, it really is best to call [`inspect.get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations") to do this work for you.
+If you’re using Python 3.9 or older, or if for some reason you can’t use [`inspect.get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations"), you’ll need to duplicate its logic. You’re encouraged to examine the implementation of [`inspect.get_annotations()`](https://docs.python.org/3/library/inspect.html#inspect.get_annotations "inspect.get_annotations") in the current Python version and follow a similar approach.
+In a nutshell, if you wish to evaluate a stringized annotation on an arbitrary object `o`:
+  * If `o` is a module, use `o.__dict__` as the `globals` when calling [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval").
+  * If `o` is a class, use `sys.modules[o.__module__].__dict__` as the `globals`, and `dict(vars(o))` as the `locals`, when calling [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval").
+  * If `o` is a wrapped callable using [`functools.update_wrapper()`](https://docs.python.org/3/library/functools.html#functools.update_wrapper "functools.update_wrapper"), [`functools.wraps()`](https://docs.python.org/3/library/functools.html#functools.wraps "functools.wraps"), or [`functools.partial()`](https://docs.python.org/3/library/functools.html#functools.partial "functools.partial"), iteratively unwrap it by accessing either `o.__wrapped__` or `o.func` as appropriate, until you have found the root unwrapped function.
+  * If `o` is a callable (but not a class), use [`o.__globals__`](https://docs.python.org/3/reference/datamodel.html#function.__globals__ "function.__globals__") as the globals when calling [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval").
+
+
+However, not all string values used as annotations can be successfully turned into Python values by [`eval()`](https://docs.python.org/3/library/functions.html#eval "eval"). String values could theoretically contain any valid string, and in practice there are valid use cases for type hints that require annotating with string values that specifically _can’t_ be evaluated. For example:
+  * [**PEP 604**](https://peps.python.org/pep-0604/) union types using `|`, before support for this was added to Python 3.10.
+  * Definitions that aren’t needed at runtime, only imported when [`typing.TYPE_CHECKING`](https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING "typing.TYPE_CHECKING") is true.

@@ -1,0 +1,75 @@
+Title: Common Properties of Date and Time Types in Python
+URL: https://docs.python.org/3/library/datetime.html
+Summary: This section outlines the shared characteristics of the date, datetime, time, and timezone types in Python, highlighting their immutability, hashability, and support for efficient pickling.
+---
+
+```
+
+### Common Properties[¶](https://docs.python.org/3/library/datetime.html#common-properties "Link to this heading")
+The [`date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date"), [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime"), [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time"), and [`timezone`](https://docs.python.org/3/library/datetime.html#datetime.timezone "datetime.timezone") types share these common features:
+  * Objects of these types are immutable.
+  * Objects of these types are [hashable](https://docs.python.org/3/glossary.html#term-hashable), meaning that they can be used as dictionary keys.
+  * Objects of these types support efficient pickling via the [`pickle`](https://docs.python.org/3/library/pickle.html#module-pickle "pickle: Convert Python objects to streams of bytes and back.") module.
+
+
+### Determining if an Object is Aware or Naive[¶](https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive "Link to this heading")
+Objects of the [`date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date") type are always naive.
+An object of type [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") or [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") may be aware or naive.
+A [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") object `d` is aware if both of the following hold:
+  1. `d.tzinfo` is not `None`
+  2. `d.tzinfo.utcoffset(d)` does not return `None`
+
+
+Otherwise, `d` is naive.
+A [`time`](https://docs.python.org/3/library/datetime.html#datetime.time "datetime.time") object `t` is aware if both of the following hold:
+  1. `t.tzinfo` is not `None`
+  2. `t.tzinfo.utcoffset(None)` does not return `None`.
+
+
+Otherwise, `t` is naive.
+The distinction between aware and naive doesn’t apply to [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") objects.
+## [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") Objects[¶](https://docs.python.org/3/library/datetime.html#timedelta-objects "Link to this heading")
+A [`timedelta`](https://docs.python.org/3/library/datetime.html#datetime.timedelta "datetime.timedelta") object represents a duration, the difference between two [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime "datetime.datetime") or [`date`](https://docs.python.org/3/library/datetime.html#datetime.date "datetime.date") instances. 
+
+_class_ datetime.timedelta(_days =0_, _seconds =0_, _microseconds =0_, _milliseconds =0_, _minutes =0_, _hours =0_, _weeks =0_)[¶](https://docs.python.org/3/library/datetime.html#datetime.timedelta "Link to this definition")
+    
+All arguments are optional and default to 0. Arguments may be integers or floats, and may be positive or negative.
+Only _days_ , _seconds_ and _microseconds_ are stored internally. Arguments are converted to those units:
+  * A millisecond is converted to 1000 microseconds.
+  * A minute is converted to 60 seconds.
+  * An hour is converted to 3600 seconds.
+  * A week is converted to 7 days.
+
+
+and days, seconds and microseconds are then normalized so that the representation is unique, with
+  * `0 <= microseconds < 1000000`
+  * `0 <= seconds < 3600*24` (the number of seconds in one day)
+  * `-999999999 <= days <= 999999999`
+
+
+The following example illustrates how any arguments besides _days_ , _seconds_ and _microseconds_ are “merged” and normalized into those three resulting attributes:
+>>>```
+>>> fromdatetimeimport timedelta
+>>> delta = timedelta(
+...   days=50,
+...   seconds=27,
+...   microseconds=10,
+...   milliseconds=29000,
+...   minutes=5,
+...   hours=8,
+...   weeks=2
+... )
+>>> # Only days, seconds, and microseconds remain
+>>> delta
+datetime.timedelta(days=64, seconds=29156, microseconds=10)
+
+```
+
+If any argument is a float and there are fractional microseconds, the fractional microseconds left over from all arguments are combined and their sum is rounded to the nearest microsecond using round-half-to-even tiebreaker. If no argument is a float, the conversion and normalization processes are exact (no information is lost).
+If the normalized value of days lies outside the indicated range, [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") is raised.
+Note that normalization of negative values may be surprising at first. For example:
+>>>```
+>>> fromdatetimeimport timedelta
+>>> d = timedelta(microseconds=-1)
+>>> (d.days, d.seconds, d.microseconds)
+(-1, 86399, 999999)

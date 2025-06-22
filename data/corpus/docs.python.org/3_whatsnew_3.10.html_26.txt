@@ -1,0 +1,22 @@
+Title: Python 3.10 API Changes
+URL: https://docs.python.org/3/whatsnew/3.10.html
+Summary: This section details changes in the Python API for version 3.10, including the renaming of the _etype_ parameters to _exc_ in the traceback module functions such as format_exception, format_exception_only, and print_exception.
+---
+
+### Changes in the Python API[¶](https://docs.python.org/3/whatsnew/3.10.html#changes-in-the-python-api "Link to this heading")
+  * The _etype_ parameters of the [`format_exception()`](https://docs.python.org/3/library/traceback.html#traceback.format_exception "traceback.format_exception"), [`format_exception_only()`](https://docs.python.org/3/library/traceback.html#traceback.format_exception_only "traceback.format_exception_only"), and [`print_exception()`](https://docs.python.org/3/library/traceback.html#traceback.print_exception "traceback.print_exception") functions in the [`traceback`](https://docs.python.org/3/library/traceback.html#module-traceback "traceback: Print or retrieve a stack traceback.") module have been renamed to _exc_. (Contributed by Zackery Spytz and Matthias Bussonnier in [bpo-26389](https://bugs.python.org/issue?@action=redirect&bpo=26389).)
+  * [`atexit`](https://docs.python.org/3/library/atexit.html#module-atexit "atexit: Register and execute cleanup functions."): At Python exit, if a callback registered with [`atexit.register()`](https://docs.python.org/3/library/atexit.html#atexit.register "atexit.register") fails, its exception is now logged. Previously, only some exceptions were logged, and the last exception was always silently ignored. (Contributed by Victor Stinner in [bpo-42639](https://bugs.python.org/issue?@action=redirect&bpo=42639).)
+  * [`collections.abc.Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable "collections.abc.Callable") generic now flattens type parameters, similar to what [`typing.Callable`](https://docs.python.org/3/library/typing.html#typing.Callable "typing.Callable") currently does. This means that `collections.abc.Callable[[int, str], str]` will have `__args__` of `(int, str, str)`; previously this was `([int, str], str)`. Code which accesses the arguments via [`typing.get_args()`](https://docs.python.org/3/library/typing.html#typing.get_args "typing.get_args") or `__args__` need to account for this change. Furthermore, [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") may be raised for invalid forms of parameterizing [`collections.abc.Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable "collections.abc.Callable") which may have passed silently in Python 3.9. (Contributed by Ken Jin in [bpo-42195](https://bugs.python.org/issue?@action=redirect&bpo=42195).)
+  * [`socket.htons()`](https://docs.python.org/3/library/socket.html#socket.htons "socket.htons") and [`socket.ntohs()`](https://docs.python.org/3/library/socket.html#socket.ntohs "socket.ntohs") now raise [`OverflowError`](https://docs.python.org/3/library/exceptions.html#OverflowError "OverflowError") instead of [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") if the given parameter will not fit in a 16-bit unsigned integer. (Contributed by Erlend E. Aasland in [bpo-42393](https://bugs.python.org/issue?@action=redirect&bpo=42393).)
+  * The `loop` parameter has been removed from most of [`asyncio`](https://docs.python.org/3/library/asyncio.html#module-asyncio "asyncio: Asynchronous I/O.")‘s [high-level API](https://docs.python.org/3/library/asyncio-api-index.html) following deprecation in Python 3.8.
+A coroutine that currently looks like this:
+```
+async deffoo(loop):
+  await asyncio.sleep(1, loop=loop)
+
+```
+
+Should be replaced with this:
+```
+async deffoo():
+  await asyncio.sleep(1)

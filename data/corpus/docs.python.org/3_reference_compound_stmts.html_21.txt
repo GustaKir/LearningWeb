@@ -1,0 +1,54 @@
+Title: Generic Functions, Classes, and Type Aliases in Python
+URL: https://docs.python.org/3/reference/compound_stmts.html
+Summary: This section discusses the concept of generics in Python, explaining how functions, classes, and type aliases can utilize type parameters declared in square brackets. It highlights that these type parameters are limited to the scope of the generic object and are mainly used by static type checkers, with a reference to the model of their scope.
+---
+
+```
+
+Semantically, this indicates that the function, class, or type alias is generic over a type variable. This information is primarily used by static type checkers, and at runtime, generic objects behave much like their non-generic counterparts.
+Type parameters are declared in square brackets (`[]`) immediately after the name of the function, class, or type alias. The type parameters are accessible within the scope of the generic object, but not elsewhere. Thus, after a declaration `def func[T](): pass`, the name `T` is not available in the module scope. Below, the semantics of generic objects are described with more precision. The scope of type parameters is modeled with a special function (technically, an [annotation scope](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes)) that wraps the creation of the generic object.
+Generic functions, classes, and type aliases have a [`__type_params__`](https://docs.python.org/3/library/stdtypes.html#definition.__type_params__ "definition.__type_params__") attribute listing their type parameters.
+Type parameters come in three kinds:
+  * [`typing.TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar"), introduced by a plain name (e.g., `T`). Semantically, this represents a single type to a type checker.
+  * [`typing.TypeVarTuple`](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple "typing.TypeVarTuple"), introduced by a name prefixed with a single asterisk (e.g., `*Ts`). Semantically, this stands for a tuple of any number of types.
+  * [`typing.ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec"), introduced by a name prefixed with two asterisks (e.g., `**P`). Semantically, this stands for the parameters of a callable.
+
+
+[`typing.TypeVar`](https://docs.python.org/3/library/typing.html#typing.TypeVar "typing.TypeVar") declarations can define _bounds_ and _constraints_ with a colon (`:`) followed by an expression. A single expression after the colon indicates a bound (e.g. `T: int`). Semantically, this means that the `typing.TypeVar` can only represent types that are a subtype of this bound. A parenthesized tuple of expressions after the colon indicates a set of constraints (e.g. `T: (str, bytes)`). Each member of the tuple should be a type (again, this is not enforced at runtime). Constrained type variables can only take on one of the types in the list of constraints.
+For `typing.TypeVar`s declared using the type parameter list syntax, the bound and constraints are not evaluated when the generic object is created, but only when the value is explicitly accessed through the attributes `__bound__` and `__constraints__`. To accomplish this, the bounds or constraints are evaluated in a separate [annotation scope](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes).
+[`typing.TypeVarTuple`](https://docs.python.org/3/library/typing.html#typing.TypeVarTuple "typing.TypeVarTuple")s and [`typing.ParamSpec`](https://docs.python.org/3/library/typing.html#typing.ParamSpec "typing.ParamSpec")s cannot have bounds or constraints.
+All three flavors of type parameters can also have a _default value_ , which is used when the type parameter is not explicitly provided. This is added by appending a single equals sign (`=`) followed by an expression. Like the bounds and constraints of type variables, the default value is not evaluated when the object is created, but only when the type parameter’s `__default__` attribute is accessed. To this end, the default value is evaluated in a separate [annotation scope](https://docs.python.org/3/reference/executionmodel.html#annotation-scopes). If no default value is specified for a type parameter, the `__default__` attribute is set to the special sentinel object [`typing.NoDefault`](https://docs.python.org/3/library/typing.html#typing.NoDefault "typing.NoDefault").
+The following example indicates the full set of allowed type parameter declarations:
+```
+defoverly_generic[
+  SimpleTypeVar,
+  TypeVarWithDefault = int,
+  TypeVarWithBound: int,
+  TypeVarWithConstraints: (str, bytes),
+  *SimpleTypeVarTuple = (int, float),
+  **SimpleParamSpec = (str, bytearray),
+](
+  a: SimpleTypeVar,
+  b: TypeVarWithDefault,
+  c: TypeVarWithBound,
+  d: Callable[SimpleParamSpec, TypeVarWithConstraints],
+  *e: SimpleTypeVarTuple,
+): ...
+
+```
+
+### 8.10.1. Generic functions[¶](https://docs.python.org/3/reference/compound_stmts.html#generic-functions "Link to this heading")
+Generic functions are declared as follows:
+```
+deffunc[T](arg: T): ...
+
+```
+
+This syntax is equivalent to:
+```
+annotation-defTYPE_PARAMS_OF_func():
+  T = typing.TypeVar("T")
+  deffunc(arg: T): ...
+  func.__type_params__ = (T,)
+  return func
+func = TYPE_PARAMS_OF_func()

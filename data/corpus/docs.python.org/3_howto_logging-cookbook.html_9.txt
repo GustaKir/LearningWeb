@@ -1,0 +1,34 @@
+Title: Logging Socket Listener in Production
+URL: https://docs.python.org/3/howto/logging-cookbook.html
+Summary: This section discusses security concerns regarding the use of pickle for serialization in logging and suggests overriding the `makePickle()` method for alternative serialization. It also advises using a process-management tool like Supervisor to run a logging socket listener in production, providing a Gist with essential files for implementation.
+---
+
+```
+
+Note that there are some security issues with pickle in some scenarios. If these affect you, you can use an alternative serialization scheme by overriding the [`makePickle()`](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SocketHandler.makePickle "logging.handlers.SocketHandler.makePickle") method and implementing your alternative there, as well as adapting the above script to use your alternative serialization.
+### Running a logging socket listener in production[¶](https://docs.python.org/3/howto/logging-cookbook.html#running-a-logging-socket-listener-in-production "Link to this heading")
+To run a logging listener in production, you may need to use a process-management tool such as [Supervisor](http://supervisord.org/). [Here is a Gist](https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b) which provides the bare-bones files to run the above functionality using Supervisor. It consists of the following files:
+File | Purpose  
+---|---  
+`prepare.sh` | A Bash script to prepare the environment for testing  
+`supervisor.conf` | The Supervisor configuration file, which has entries for the listener and a multi-process web application  
+`ensure_app.sh` | A Bash script to ensure that Supervisor is running with the above configuration  
+`log_listener.py` | The socket listener program which receives log events and records them to a file  
+`main.py` | A simple web application which performs logging via a socket connected to the listener  
+`webapp.json` | A JSON configuration file for the web application  
+`client.py` | A Python script to exercise the web application  
+The web application uses [Gunicorn](https://gunicorn.org/), which is a popular web application server that starts multiple worker processes to handle requests. This example setup shows how the workers can write to the same log file without conflicting with one another — they all go through the socket listener.
+To test these files, do the following in a POSIX environment:
+  1. Download [the Gist](https://gist.github.com/vsajip/4b227eeec43817465ca835ca66f75e2b) as a ZIP archive using the Download ZIP button.
+  2. Unzip the above files from the archive into a scratch directory.
+  3. In the scratch directory, run `bash prepare.sh` to get things ready. This creates a `run` subdirectory to contain Supervisor-related and log files, and a `venv` subdirectory to contain a virtual environment into which `bottle`, `gunicorn` and `supervisor` are installed.
+  4. Run `bash ensure_app.sh` to ensure that Supervisor is running with the above configuration.
+  5. Run `venv/bin/python client.py` to exercise the web application, which will lead to records being written to the log.
+  6. Inspect the log files in the `run` subdirectory. You should see the most recent log lines in files matching the pattern `app.log*`. They won’t be in any particular order, since they have been handled concurrently by different worker processes in a non-deterministic way.
+  7. You can shut down the listener and the web application by running `venv/bin/supervisorctl -c supervisor.conf shutdown`.
+
+
+You may need to tweak the configuration files in the unlikely event that the configured ports clash with something else in your test environment.
+The default configuration uses a TCP socket on port 9020. You can use a Unix Domain socket instead of a TCP socket by doing the following:
+  1. In `listener.json`, add a `socket` key with the path to the domain socket you want to use. If this key is present, the listener listens on the corresponding domain socket and not on a TCP socket (the `port` key is ignored).
+  2. In `webapp.json`, change the socket handler configuration dictionary so that the `host` value is the path to the domain socket, and set the `port` value to `null`.

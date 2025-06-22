@@ -1,0 +1,67 @@
+Title: GzipFile Attributes
+URL: https://docs.python.org/3/library/gzip.html
+Summary: This section details the attributes of the GzipFile class, specifically the 'mtime' and 'name' attributes. 'mtime' indicates the last timestamp read from headers and is an integer representing seconds since the Unix epoch. 'name' stores the file path as a string or bytes, mirroring the output of os.fspath() without normalization.
+---
+
+mtime[¶](https://docs.python.org/3/library/gzip.html#gzip.GzipFile.mtime "Link to this definition")
+    
+When decompressing, this attribute is set to the last timestamp in the most recently read header. It is an integer, holding the number of seconds since the Unix epoch (00:00:00 UTC, January 1, 1970). The initial value before reading any headers is `None`. 
+
+name[¶](https://docs.python.org/3/library/gzip.html#gzip.GzipFile.name "Link to this definition")
+    
+The path to the gzip file on disk, as a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") or [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"). Equivalent to the output of [`os.fspath()`](https://docs.python.org/3/library/os.html#os.fspath "os.fspath") on the original input path, with no other normalization, resolution or expansion.
+Changed in version 3.1: Support for the [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement was added, along with the _mtime_ constructor argument and [`mtime`](https://docs.python.org/3/library/gzip.html#gzip.GzipFile.mtime "gzip.GzipFile.mtime") attribute.
+Changed in version 3.2: Support for zero-padded and unseekable files was added.
+Changed in version 3.3: The [`io.BufferedIOBase.read1()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.read1 "io.BufferedIOBase.read1") method is now implemented.
+Changed in version 3.4: Added support for the `'x'` and `'xb'` modes.
+Changed in version 3.5: Added support for writing arbitrary [bytes-like objects](https://docs.python.org/3/glossary.html#term-bytes-like-object). The [`read()`](https://docs.python.org/3/library/io.html#io.BufferedIOBase.read "io.BufferedIOBase.read") method now accepts an argument of `None`.
+Changed in version 3.6: Accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+Deprecated since version 3.9: Opening [`GzipFile`](https://docs.python.org/3/library/gzip.html#gzip.GzipFile "gzip.GzipFile") for writing without specifying the _mode_ argument is deprecated.
+Changed in version 3.12: Remove the `filename` attribute, use the [`name`](https://docs.python.org/3/library/gzip.html#gzip.GzipFile.name "gzip.GzipFile.name") attribute instead. 
+
+gzip.compress(_data_ , _compresslevel =9_, _*_ , _mtime =None_)[¶](https://docs.python.org/3/library/gzip.html#gzip.compress "Link to this definition")
+    
+Compress the _data_ , returning a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object containing the compressed data. _compresslevel_ and _mtime_ have the same meaning as in the [`GzipFile`](https://docs.python.org/3/library/gzip.html#gzip.GzipFile "gzip.GzipFile") constructor above.
+Added in version 3.2.
+Changed in version 3.8: Added the _mtime_ parameter for reproducible output.
+Changed in version 3.11: Speed is improved by compressing all data at once instead of in a streamed fashion. Calls with _mtime_ set to `0` are delegated to [`zlib.compress()`](https://docs.python.org/3/library/zlib.html#zlib.compress "zlib.compress") for better speed. In this situation the output may contain a gzip header “OS” byte value other than 255 “unknown” as supplied by the underlying zlib implementation.
+Changed in version 3.13: The gzip header OS byte is guaranteed to be set to 255 when this function is used as was the case in 3.10 and earlier. 
+
+gzip.decompress(_data_)[¶](https://docs.python.org/3/library/gzip.html#gzip.decompress "Link to this definition")
+    
+Decompress the _data_ , returning a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object containing the uncompressed data. This function is capable of decompressing multi-member gzip data (multiple gzip blocks concatenated together). When the data is certain to contain only one member the [`zlib.decompress()`](https://docs.python.org/3/library/zlib.html#zlib.decompress "zlib.decompress") function with _wbits_ set to 31 is faster.
+Added in version 3.2.
+Changed in version 3.11: Speed is improved by decompressing members at once in memory instead of in a streamed fashion.
+## Examples of usage[¶](https://docs.python.org/3/library/gzip.html#examples-of-usage "Link to this heading")
+Example of how to read a compressed file:
+```
+importgzip
+with gzip.open('/home/joe/file.txt.gz', 'rb') as f:
+  file_content = f.read()
+
+```
+
+Example of how to create a compressed GZIP file:
+```
+importgzip
+content = b"Lots of content here"
+with gzip.open('/home/joe/file.txt.gz', 'wb') as f:
+  f.write(content)
+
+```
+
+Example of how to GZIP compress an existing file:
+```
+importgzip
+importshutil
+with open('/home/joe/file.txt', 'rb') as f_in:
+  with gzip.open('/home/joe/file.txt.gz', 'wb') as f_out:
+    shutil.copyfileobj(f_in, f_out)
+
+```
+
+Example of how to GZIP compress a binary string:
+```
+importgzip
+s_in = b"Lots of content here"
+s_out = gzip.compress(s_in)

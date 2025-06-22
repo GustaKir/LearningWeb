@@ -1,0 +1,47 @@
+Title: Context Managers in test.support.os_helper
+URL: https://docs.python.org/3/library/test.html
+Summary: This section describes two context managers, `temp_cwd` and `temp_dir`. `temp_cwd` temporarily changes the current working directory by creating a new temporary directory, while `temp_dir` creates a temporary directory at a specified path. `temp_cwd` raises an error or warning based on the `_quiet` parameter if directory creation fails.
+---
+
+test.support.os_helper.temp_cwd(_name ='tempcwd'_, _quiet =False_)[¶](https://docs.python.org/3/library/test.html#test.support.os_helper.temp_cwd "Link to this definition")
+    
+A context manager that temporarily creates a new directory and changes the current working directory (CWD).
+The context manager creates a temporary directory in the current directory with name _name_ before temporarily changing the current working directory. If _name_ is `None`, the temporary directory is created using [`tempfile.mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp").
+If _quiet_ is `False` and it is not possible to create or change the CWD, an error is raised. Otherwise, only a warning is raised and the original CWD is used. 
+
+test.support.os_helper.temp_dir(_path =None_, _quiet =False_)[¶](https://docs.python.org/3/library/test.html#test.support.os_helper.temp_dir "Link to this definition")
+    
+A context manager that creates a temporary directory at _path_ and yields the directory.
+If _path_ is `None`, the temporary directory is created using [`tempfile.mkdtemp()`](https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp "tempfile.mkdtemp"). If _quiet_ is `False`, the context manager raises an exception on error. Otherwise, if _path_ is specified and cannot be created, only a warning is issued. 
+
+test.support.os_helper.temp_umask(_umask_)[¶](https://docs.python.org/3/library/test.html#test.support.os_helper.temp_umask "Link to this definition")
+    
+A context manager that temporarily sets the process umask. 
+
+test.support.os_helper.unlink(_filename_)[¶](https://docs.python.org/3/library/test.html#test.support.os_helper.unlink "Link to this definition")
+    
+Call [`os.unlink()`](https://docs.python.org/3/library/os.html#os.unlink "os.unlink") on _filename_. As with [`rmdir()`](https://docs.python.org/3/library/test.html#test.support.os_helper.rmdir "test.support.os_helper.rmdir"), on Windows platforms, this is wrapped with a wait loop that checks for the existence of the file.
+# [`test.support.import_helper`](https://docs.python.org/3/library/test.html#module-test.support.import_helper "test.support.import_helper: Support for import tests.") — Utilities for import tests[¶](https://docs.python.org/3/library/test.html#module-test.support.import_helper "Link to this heading")
+The [`test.support.import_helper`](https://docs.python.org/3/library/test.html#module-test.support.import_helper "test.support.import_helper: Support for import tests.") module provides support for import tests.
+Added in version 3.10. 
+
+test.support.import_helper.forget(_module_name_)[¶](https://docs.python.org/3/library/test.html#test.support.import_helper.forget "Link to this definition")
+    
+Remove the module named _module_name_ from `sys.modules` and delete any byte-compiled files of the module. 
+
+test.support.import_helper.import_fresh_module(_name_ , _fresh =()_, _blocked =()_, _deprecated =False_)[¶](https://docs.python.org/3/library/test.html#test.support.import_helper.import_fresh_module "Link to this definition")
+    
+This function imports and returns a fresh copy of the named Python module by removing the named module from `sys.modules` before doing the import. Note that unlike `reload()`, the original module is not affected by this operation.
+_fresh_ is an iterable of additional module names that are also removed from the `sys.modules` cache before doing the import.
+_blocked_ is an iterable of module names that are replaced with `None` in the module cache during the import to ensure that attempts to import them raise [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError").
+The named module and any modules named in the _fresh_ and _blocked_ parameters are saved before starting the import and then reinserted into `sys.modules` when the fresh import is complete.
+Module and package deprecation messages are suppressed during this import if _deprecated_ is `True`.
+This function will raise [`ImportError`](https://docs.python.org/3/library/exceptions.html#ImportError "ImportError") if the named module cannot be imported.
+Example use:
+```
+# Get copies of the warnings module for testing without affecting the
+# version being used by the rest of the test suite. One copy uses the
+# C implementation, the other is forced to use the pure Python fallback
+# implementation
+py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
+c_warnings = import_fresh_module('warnings', fresh=['_warnings'])

@@ -1,0 +1,32 @@
+Title: signal.pthread_kill Method
+URL: https://docs.python.org/3/library/signal.html
+Summary: The signal.pthread_kill method sends a specified signal to a thread identified by thread_id within the same process. If the target thread is executing Python code, the signal is handled by the main thread, and the primary use case for this method is to interrupt system calls in the target thread, resulting in an InterruptedError.
+---
+
+signal.pthread_kill(_thread_id_ , _signalnum_)[¶](https://docs.python.org/3/library/signal.html#signal.pthread_kill "Link to this definition")
+    
+Send the signal _signalnum_ to the thread _thread_id_ , another thread in the same process as the caller. The target thread can be executing any code (Python or not). However, if the target thread is executing the Python interpreter, the Python signal handlers will be [executed by the main thread of the main interpreter](https://docs.python.org/3/library/signal.html#signals-and-threads). Therefore, the only point of sending a signal to a particular Python thread would be to force a running system call to fail with [`InterruptedError`](https://docs.python.org/3/library/exceptions.html#InterruptedError "InterruptedError").
+Use [`threading.get_ident()`](https://docs.python.org/3/library/threading.html#threading.get_ident "threading.get_ident") or the [`ident`](https://docs.python.org/3/library/threading.html#threading.Thread.ident "threading.Thread.ident") attribute of [`threading.Thread`](https://docs.python.org/3/library/threading.html#threading.Thread "threading.Thread") objects to get a suitable value for _thread_id_.
+If _signalnum_ is 0, then no signal is sent, but error checking is still performed; this can be used to check if the target thread is still running.
+Raises an [auditing event](https://docs.python.org/3/library/sys.html#auditing) `signal.pthread_kill` with arguments `thread_id`, `signalnum`.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+See the man page _[pthread_kill(3)](https://manpages.debian.org/pthread_kill\(3\))_ for further information.
+See also [`os.kill()`](https://docs.python.org/3/library/os.html#os.kill "os.kill").
+Added in version 3.3. 
+
+signal.pthread_sigmask(_how_ , _mask_)[¶](https://docs.python.org/3/library/signal.html#signal.pthread_sigmask "Link to this definition")
+    
+Fetch and/or change the signal mask of the calling thread. The signal mask is the set of signals whose delivery is currently blocked for the caller. Return the old signal mask as a set of signals.
+The behavior of the call is dependent on the value of _how_ , as follows.
+  * [`SIG_BLOCK`](https://docs.python.org/3/library/signal.html#signal.SIG_BLOCK "signal.SIG_BLOCK"): The set of blocked signals is the union of the current set and the _mask_ argument.
+  * [`SIG_UNBLOCK`](https://docs.python.org/3/library/signal.html#signal.SIG_UNBLOCK "signal.SIG_UNBLOCK"): The signals in _mask_ are removed from the current set of blocked signals. It is permissible to attempt to unblock a signal which is not blocked.
+  * [`SIG_SETMASK`](https://docs.python.org/3/library/signal.html#signal.SIG_SETMASK "signal.SIG_SETMASK"): The set of blocked signals is set to the _mask_ argument.
+
+
+_mask_ is a set of signal numbers (e.g. {[`signal.SIGINT`](https://docs.python.org/3/library/signal.html#signal.SIGINT "signal.SIGINT"), [`signal.SIGTERM`](https://docs.python.org/3/library/signal.html#signal.SIGTERM "signal.SIGTERM")}). Use [`valid_signals()`](https://docs.python.org/3/library/signal.html#signal.valid_signals "signal.valid_signals") for a full mask including all signals.
+For example, `signal.pthread_sigmask(signal.SIG_BLOCK, [])` reads the signal mask of the calling thread.
+[`SIGKILL`](https://docs.python.org/3/library/signal.html#signal.SIGKILL "signal.SIGKILL") and `SIGSTOP` cannot be blocked.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+See the man page _[sigprocmask(2)](https://manpages.debian.org/sigprocmask\(2\))_ and _[pthread_sigmask(3)](https://manpages.debian.org/pthread_sigmask\(3\))_ for further information.
+See also [`pause()`](https://docs.python.org/3/library/signal.html#signal.pause "signal.pause"), [`sigpending()`](https://docs.python.org/3/library/signal.html#signal.sigpending "signal.sigpending") and [`sigwait()`](https://docs.python.org/3/library/signal.html#signal.sigwait "signal.sigwait").
+Added in version 3.3.

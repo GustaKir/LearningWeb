@@ -1,0 +1,97 @@
+Title: Option Value Syntax in argparse
+URL: https://docs.python.org/3/library/argparse.html
+Summary: The `parse_args()` method in the argparse library allows for multiple ways to specify option values. Options can be passed separately or together with '=' for long options. For short options, values can be concatenated with the option character.
+---
+
+### Option value syntax[¶](https://docs.python.org/3/library/argparse.html#option-value-syntax "Link to this heading")
+The [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") method supports several ways of specifying the value of an option (if it takes one). In the simplest case, the option and its value are passed as two separate arguments:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('-x')
+>>> parser.add_argument('--foo')
+>>> parser.parse_args(['-x', 'X'])
+Namespace(foo=None, x='X')
+>>> parser.parse_args(['--foo', 'FOO'])
+Namespace(foo='FOO', x=None)
+
+```
+
+For long options (options with names longer than a single character), the option and value can also be passed as a single command-line argument, using `=` to separate them:
+>>>```
+>>> parser.parse_args(['--foo=FOO'])
+Namespace(foo='FOO', x=None)
+
+```
+
+For short options (options only one character long), the option and its value can be concatenated:
+>>>```
+>>> parser.parse_args(['-xX'])
+Namespace(foo=None, x='X')
+
+```
+
+Several short options can be joined together, using only a single `-` prefix, as long as only the last option (or none of them) requires a value:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('-x', action='store_true')
+>>> parser.add_argument('-y', action='store_true')
+>>> parser.add_argument('-z')
+>>> parser.parse_args(['-xyzZ'])
+Namespace(x=True, y=True, z='Z')
+
+```
+
+### Invalid arguments[¶](https://docs.python.org/3/library/argparse.html#invalid-arguments "Link to this heading")
+While parsing the command line, [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") checks for a variety of errors, including ambiguous options, invalid types, invalid options, wrong number of positional arguments, etc. When it encounters such an error, it exits and prints the error along with a usage message:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('--foo', type=int)
+>>> parser.add_argument('bar', nargs='?')
+>>> # invalid type
+>>> parser.parse_args(['--foo', 'spam'])
+usage: PROG [-h] [--foo FOO] [bar]
+PROG: error: argument --foo: invalid int value: 'spam'
+>>> # invalid option
+>>> parser.parse_args(['--bar'])
+usage: PROG [-h] [--foo FOO] [bar]
+PROG: error: no such option: --bar
+>>> # wrong number of arguments
+>>> parser.parse_args(['spam', 'badger'])
+usage: PROG [-h] [--foo FOO] [bar]
+PROG: error: extra arguments found: badger
+
+```
+
+### Arguments containing `-`[¶](https://docs.python.org/3/library/argparse.html#arguments-containing "Link to this heading")
+The [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") method attempts to give errors whenever the user has clearly made a mistake, but some situations are inherently ambiguous. For example, the command-line argument `-1` could either be an attempt to specify an option or an attempt to provide a positional argument. The [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") method is cautious here: positional arguments may only begin with `-` if they look like negative numbers and there are no options in the parser that look like negative numbers:
+>>>```
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('-x')
+>>> parser.add_argument('foo', nargs='?')
+>>> # no negative number options, so -1 is a positional argument
+>>> parser.parse_args(['-x', '-1'])
+Namespace(foo=None, x='-1')
+>>> # no negative number options, so -1 and -5 are positional arguments
+>>> parser.parse_args(['-x', '-1', '-5'])
+Namespace(foo='-5', x='-1')
+>>> parser = argparse.ArgumentParser(prog='PROG')
+>>> parser.add_argument('-1', dest='one')
+>>> parser.add_argument('foo', nargs='?')
+>>> # negative number options present, so -1 is an option
+>>> parser.parse_args(['-1', 'X'])
+Namespace(foo=None, one='X')
+>>> # negative number options present, so -2 is an option
+>>> parser.parse_args(['-2'])
+usage: PROG [-h] [-1 ONE] [foo]
+PROG: error: no such option: -2
+>>> # negative number options present, so both -1s are options
+>>> parser.parse_args(['-1', '-1'])
+usage: PROG [-h] [-1 ONE] [foo]
+PROG: error: argument -1: expected one argument
+
+```
+
+If you have positional arguments that must begin with `-` and don’t look like negative numbers, you can insert the pseudo-argument `'--'` which tells [`parse_args()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.parse_args "argparse.ArgumentParser.parse_args") that everything after that is a positional argument:
+>>>```
+>>> parser.parse_args(['--', '-f'])
+Namespace(foo='-f', one=None)

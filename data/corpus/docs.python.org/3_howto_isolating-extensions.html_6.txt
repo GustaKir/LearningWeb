@@ -1,0 +1,80 @@
+Title: Memory Management for Python Extensions
+URL: https://docs.python.org/3/howto/isolating-extensions.html
+Summary: This section discusses replacing the use of `PyObject_NewVar` with `PyObject_GC_New` or `PyObject_GC_NewVar` for memory allocation in Python extension modules. It also covers how to access module state from classes defined with `PyType_FromModuleAndSpec` using functions like `PyType_GetModule` and `PyModule_GetState`.
+---
+
+```
+
+Replace `o = PyObject_NewVar(TYPE, typeobj, size)` with the same, but use size instead of the 0.
+  * If the above is not possible (e.g. inside a custom `tp_alloc`), call [`PyObject_GC_New()`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_New "PyObject_GC_New") or [`PyObject_GC_NewVar()`](https://docs.python.org/3/c-api/gcsupport.html#c.PyObject_GC_NewVar "PyObject_GC_NewVar"):
+```
+TYPE*o=PyObject_GC_New(TYPE,typeobj);
+TYPE*o=PyObject_GC_NewVar(TYPE,typeobj,size);
+
+```
+
+
+
+### Module State Access from Classes[¶](https://docs.python.org/3/howto/isolating-extensions.html#module-state-access-from-classes "Link to this heading")
+If you have a type object defined with [`PyType_FromModuleAndSpec()`](https://docs.python.org/3/c-api/type.html#c.PyType_FromModuleAndSpec "PyType_FromModuleAndSpec"), you can call [`PyType_GetModule()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetModule "PyType_GetModule") to get the associated module, and then [`PyModule_GetState()`](https://docs.python.org/3/c-api/module.html#c.PyModule_GetState "PyModule_GetState") to get the module’s state.
+To save a some tedious error-handling boilerplate code, you can combine these two steps with [`PyType_GetModuleState()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetModuleState "PyType_GetModuleState"), resulting in:
+```
+my_struct*state=(my_struct*)PyType_GetModuleState(type);
+if(state==NULL){
+returnNULL;
+}
+
+```
+
+### Module State Access from Regular Methods[¶](https://docs.python.org/3/howto/isolating-extensions.html#module-state-access-from-regular-methods "Link to this heading")
+Accessing the module-level state from methods of a class is somewhat more complicated, but is possible thanks to API introduced in Python 3.9. To get the state, you need to first get the _defining class_ , and then get the module state from it.
+The largest roadblock is getting _the class a method was defined in_ , or that method’s “defining class” for short. The defining class can have a reference to the module it is part of.
+Do not confuse the defining class with `Py_TYPE(self)`. If the method is called on a _subclass_ of your type, `Py_TYPE(self)` will refer to that subclass, which may be defined in different module than yours.
+Note
+The following Python code can illustrate the concept. `Base.get_defining_class` returns `Base` even if `type(self) == Sub`:
+```
+classBase:
+  defget_type_of_self(self):
+    return type(self)
+  defget_defining_class(self):
+    return __class__
+classSub(Base):
+  pass
+
+```
+
+For a method to get its “defining class”, it must use the [METH_METHOD | METH_FASTCALL | METH_KEYWORDS](https://docs.python.org/3/c-api/structures.html#meth-method-meth-fastcall-meth-keywords) [`calling convention`](https://docs.python.org/3/c-api/structures.html#c.PyMethodDef "PyMethodDef") and the corresponding [`PyCMethod`](https://docs.python.org/3/c-api/structures.html#c.PyCMethod "PyCMethod") signature:
+```
+PyObject*PyCMethod(
+PyObject*self,// object the method was called on
+PyTypeObject*defining_class,// defining class
+PyObject*const*args,// C array of arguments
+Py_ssize_tnargs,// length of "args"
+PyObject*kwnames)// NULL, or dict of keyword arguments
+
+```
+
+Once you have the defining class, call [`PyType_GetModuleState()`](https://docs.python.org/3/c-api/type.html#c.PyType_GetModuleState "PyType_GetModuleState") to get the state of its associated module.
+For example:
+```
+staticPyObject*
+example_method(PyObject*self,
+PyTypeObject*defining_class,
+PyObject*const*args,
+Py_ssize_tnargs,
+PyObject*kwnames)
+{
+my_struct*state=(my_struct*)PyType_GetModuleState(defining_class);
+if(state==NULL){
+returnNULL;
+}
+...// rest of logic
+}
+PyDoc_STRVAR(example_method_doc,"...");
+staticPyMethodDefmy_methods[]={
+{"example_method",
+(PyCFunction)(void(*)(void))example_method,
+METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
+example_method_doc}
+{NULL},
+}

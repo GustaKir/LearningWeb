@@ -1,0 +1,109 @@
+Title: Streamlit Login Configuration
+URL: https://docs.streamlit.io/develop/api-reference/user/st.login
+Summary: This document section outlines the configuration for user authentication in a Streamlit app. It details how to set up redirect URI, cookie secrets, and client credentials in the '[auth]' section of a configuration file. Additionally, it provides an example code snippet showing how to implement login/logout functionality in the app, and describes how to configure a named identity provider by organizing settings in a secrets file.
+---
+
+```
+[auth]
+redirect_uri = "http://localhost:8501/oauth2callback"
+cookie_secret = "xxx"
+client_id = "xxx"
+client_secret = "xxx"
+server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration" # fmt: skip
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+if not st.experimental_user.is_logged_in:
+  if st.button("Log in"):
+    st.login()
+else:
+  if st.button("Log out"):
+    st.logout()
+  st.write(f"Hello, {st.experimental_user.name}!")
+```
+
+Copy
+**Example 2: Use a named identity provider**
+If you specify a name for your provider, save the shared settings in the `[auth]` dictionary of your `secrets.toml` file, and save the other settings in an `[auth.{provider}]` dictionary, where `{provider}` is the name of your provider. The following example configures Microsoft as the provider. The example uses `provider="microsoft"`, but you can use any name. This name is internal to Streamlit and is used to match the login command to its configuration. For information about using OIDC with Microsoft, see [Microsoft Entra ID](https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings). To configure your `{tenant}` value in `server_metadata_url`, see [Microsoft identity platform](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc#find-your-apps-openid-configuration-document-uri).
+`.streamlit/secrets.toml`:
+```
+[auth]
+redirect_uri = "http://localhost:8501/oauth2callback"
+cookie_secret = "xxx"
+[auth.microsoft]
+client_id = "xxx"
+client_secret = "xxx"
+server_metadata_url = "https://login.microsoftonline.com/{tenant}/v2.0/.well-known/openid-configuration"
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+if not st.experimental_user.is_logged_in:
+  st.login("microsoft")
+else:
+  st.write(f"Hello, {st.experimental_user.name}!")
+```
+
+Copy
+**Example 3: Use multiple, named providers**
+If you want to give your users a choice of authentication methods, configure multiple providers and give them each a unique name. The following example lets users choose between Okta and Microsoft to log in. Always check with your identity provider to understand the structure of their identity tokens because the returned fields may differ. Remember to set `{tenant}` and `{subdomain}` in `server_metadata_url` for Microsoft and Okta, respectively.
+```
+[auth]
+redirect_uri = "http://localhost:8501/oauth2callback"
+cookie_secret = "xxx"
+[auth.microsoft]
+client_id = "xxx"
+client_secret = "xxx"
+server_metadata_url = "https://login.microsoftonline.com/{tenant}/v2.0/.well-known/openid-configuration"
+[auth.okta]
+client_id = "xxx"
+client_secret = "xxx"
+server_metadata_url = "https://{subdomain}.okta.com/.well-known/openid-configuration" # fmt: skip
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+if not st.experimental_user.is_logged_in:
+  st.header("Log in:")
+  if st.button("Microsoft"):
+    st.login("microsoft")
+  if st.button("Okta"):
+    st.login("okta")
+else:
+  if st.button("Log out"):
+    st.logout()
+  st.write(f"Hello, {st.experimental_user.name}!")
+```
+
+Copy
+**Example 4: Change the default connection settings**
+`prompt="select_account"` may be treated differently by some providers when a user is already logged into their account. If a user is logged into their Google or Microsoft account from a previous session, the provider will prompt them to select the account they want to use, even if it's the only one. However, if the user is logged into their Okta or Auth0 account from a previous session, the account will automatically be selected. `st.logout()` does not clear a user's related cookies. To force users to log in every time, use `prompt="login"` as described in Auth0's [Customize Signup and Login Prompts](https://auth0.com/docs/customize/login-pages/universal-login/customize-signup-and-login-prompts).
+`.streamlit/secrets.toml`:
+```
+[auth]
+redirect_uri = "http://localhost:8501/oauth2callback"
+cookie_secret = "xxx"
+[auth.auth0]
+client_id = "xxx"
+client_secret = "xxx"
+server_metadata_url = "https://{account}.{region}.auth0.com/.well-known/openid-configuration" # fmt: skip
+client_kwargs = { "prompt" = "login" }
+```
+
+Copy
+Your app code:
+```
+import streamlit as st
+if st.button("Log in"):
+  st.login("auth0")
+if st.experimental_user.is_logged_in:
+  if st.button("Log out"):
+    st.logout()
+  st.write(f"Hello, {st.experimental_user.name}!)

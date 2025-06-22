@@ -1,0 +1,29 @@
+Title: Py_EncodeLocale Function
+URL: https://docs.python.org/3/c-api/sys.html
+Summary: The `Py_EncodeLocale` function encodes a wide character string to the filesystem encoding. It handles surrogate characters using the surrogateescape error handler and returns a pointer to a newly allocated byte string. If an encoding or memory allocation error occurs, it returns `NULL` and can set the `error_pos` to indicate the index of the invalid character.
+---
+
+char*Py_EncodeLocale(constwchar_t*text, size_t*error_pos)[¶](https://docs.python.org/3/c-api/sys.html#c.Py_EncodeLocale "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) since version 3.7._
+Encode a wide character string to the [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler). If the error handler is [surrogateescape error handler](https://docs.python.org/3/library/codecs.html#surrogateescape), surrogate characters in the range U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
+Return a pointer to a newly allocated byte string, use [`PyMem_Free()`](https://docs.python.org/3/c-api/memory.html#c.PyMem_Free "PyMem_Free") to free the memory. Return `NULL` on encoding error or memory allocation error.
+If error_pos is not `NULL`, `*error_pos` is set to `(size_t)-1` on success, or set to the index of the invalid character on encoding error.
+The [filesystem encoding and error handler](https://docs.python.org/3/glossary.html#term-filesystem-encoding-and-error-handler) are selected by [`PyConfig_Read()`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig_Read "PyConfig_Read"): see [`filesystem_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.filesystem_encoding "PyConfig.filesystem_encoding") and [`filesystem_errors`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig.filesystem_errors "PyConfig.filesystem_errors") members of [`PyConfig`](https://docs.python.org/3/c-api/init_config.html#c.PyConfig "PyConfig").
+Use the [`Py_DecodeLocale()`](https://docs.python.org/3/c-api/sys.html#c.Py_DecodeLocale "Py_DecodeLocale") function to decode the bytes string back to a wide character string.
+Warning
+This function must not be called before [Python is preinitialized](https://docs.python.org/3/c-api/init_config.html#c-preinit) and so that the LC_CTYPE locale is properly configured: see the [`Py_PreInitialize()`](https://docs.python.org/3/c-api/init_config.html#c.Py_PreInitialize "Py_PreInitialize") function.
+See also
+The [`PyUnicode_EncodeFSDefault()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_EncodeFSDefault "PyUnicode_EncodeFSDefault") and [`PyUnicode_EncodeLocale()`](https://docs.python.org/3/c-api/unicode.html#c.PyUnicode_EncodeLocale "PyUnicode_EncodeLocale") functions.
+Added in version 3.5.
+Changed in version 3.7: The function now uses the UTF-8 encoding in the [Python UTF-8 Mode](https://docs.python.org/3/library/os.html#utf8-mode).
+Changed in version 3.8: The function now uses the UTF-8 encoding on Windows if [`PyPreConfig.legacy_windows_fs_encoding`](https://docs.python.org/3/c-api/init_config.html#c.PyPreConfig.legacy_windows_fs_encoding "PyPreConfig.legacy_windows_fs_encoding") is zero.
+# System Functions[¶](https://docs.python.org/3/c-api/sys.html#system-functions "Link to this heading")
+These are utility functions that make functionality from the [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module accessible to C code. They all work with the current interpreter thread’s [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module’s dict, which is contained in the internal thread state structure. 
+
+[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*PySys_GetObject(constchar*name)[¶](https://docs.python.org/3/c-api/sys.html#c.PySys_GetObject "Link to this definition")
+    _Return value: Borrowed reference.__Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Return the object _name_ from the [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module or `NULL` if it does not exist, without setting an exception. 
+
+intPySys_SetObject(constchar*name, [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*v)[¶](https://docs.python.org/3/c-api/sys.html#c.PySys_SetObject "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+Set _name_ in the [`sys`](https://docs.python.org/3/library/sys.html#module-sys "sys: Access system-specific parameters and functions.") module to _v_ unless _v_ is `NULL`, in which case _name_ is deleted from the sys module. Returns `0` on success, `-1` on error.

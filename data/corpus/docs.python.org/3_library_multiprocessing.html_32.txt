@@ -1,0 +1,25 @@
+Title: multiprocessing.pool.Pool Class
+URL: https://docs.python.org/3/library/multiprocessing.html
+Summary: The multiprocessing.pool.Pool class manages a pool of worker processes for job submission, supporting asynchronous results, timeouts, and callbacks. It allows configuration of worker process count, initialization functions, and task limits per process.
+---
+
+_class_ multiprocessing.pool.Pool([_processes_[, _initializer_[, _initargs_[, _maxtasksperchild_[, _context_]]]]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "Link to this definition")
+    
+A process pool object which controls a pool of worker processes to which jobs can be submitted. It supports asynchronous results with timeouts and callbacks and has a parallel map implementation.
+_processes_ is the number of worker processes to use. If _processes_ is `None` then the number returned by [`os.process_cpu_count()`](https://docs.python.org/3/library/os.html#os.process_cpu_count "os.process_cpu_count") is used.
+If _initializer_ is not `None` then each worker process will call `initializer(*initargs)` when it starts.
+_maxtasksperchild_ is the number of tasks a worker process can complete before it will exit and be replaced with a fresh worker process, to enable unused resources to be freed. The default _maxtasksperchild_ is `None`, which means worker processes will live as long as the pool.
+_context_ can be used to specify the context used for starting the worker processes. Usually a pool is created using the function `multiprocessing.Pool()` or the [`Pool()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "multiprocessing.pool.Pool") method of a context object. In both cases _context_ is set appropriately.
+Note that the methods of the pool object should only be called by the process which created the pool.
+Warning
+[`multiprocessing.pool`](https://docs.python.org/3/library/multiprocessing.html#module-multiprocessing.pool "multiprocessing.pool: Create pools of processes.") objects have internal resources that need to be properly managed (like any other resource) by using the pool as a context manager or by calling [`close()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool.close "multiprocessing.pool.Pool.close") and [`terminate()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool.terminate "multiprocessing.pool.Pool.terminate") manually. Failure to do this can lead to the process hanging on finalization.
+Note that it is **not correct** to rely on the garbage collector to destroy the pool as CPython does not assure that the finalizer of the pool will be called (see [`object.__del__()`](https://docs.python.org/3/reference/datamodel.html#object.__del__ "object.__del__") for more information).
+Changed in version 3.2: Added the _maxtasksperchild_ parameter.
+Changed in version 3.4: Added the _context_ parameter.
+Changed in version 3.13: _processes_ uses [`os.process_cpu_count()`](https://docs.python.org/3/library/os.html#os.process_cpu_count "os.process_cpu_count") by default, instead of [`os.cpu_count()`](https://docs.python.org/3/library/os.html#os.cpu_count "os.cpu_count").
+Note
+Worker processes within a [`Pool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "multiprocessing.pool.Pool") typically live for the complete duration of the Pool’s work queue. A frequent pattern found in other systems (such as Apache, mod_wsgi, etc) to free resources held by workers is to allow a worker within a pool to complete only a set amount of work before being exiting, being cleaned up and a new process spawned to replace the old one. The _maxtasksperchild_ argument to the [`Pool`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool "multiprocessing.pool.Pool") exposes this ability to the end user. 
+
+apply(_func_[, _args_[, _kwds_]])[¶](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool.apply "Link to this definition")
+    
+Call _func_ with arguments _args_ and keyword arguments _kwds_. It blocks until the result is ready. Given this blocks, [`apply_async()`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool.apply_async "multiprocessing.pool.Pool.apply_async") is better suited for performing work in parallel. Additionally, _func_ is only executed in one of the workers of the pool.

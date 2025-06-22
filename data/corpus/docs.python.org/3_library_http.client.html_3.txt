@@ -1,0 +1,37 @@
+Title: HTTP Client Module
+URL: https://docs.python.org/3/library/http.client.html
+Summary: This section covers the default ports for HTTP (80) and HTTPS (443) protocols, and the mapping of HTTP 1.1 status codes to their W3C names in a dictionary format. It includes an example of accessing a status description and references the available HTTP status codes.
+---
+
+http.client.HTTP_PORT[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTP_PORT "Link to this definition")
+    
+The default port for the HTTP protocol (always `80`). 
+
+http.client.HTTPS_PORT[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPS_PORT "Link to this definition")
+    
+The default port for the HTTPS protocol (always `443`). 
+
+http.client.responses[¶](https://docs.python.org/3/library/http.client.html#http.client.responses "Link to this definition")
+    
+This dictionary maps the HTTP 1.1 status codes to the W3C names.
+Example: `http.client.responses[http.client.NOT_FOUND]` is `'Not Found'`.
+See [HTTP status codes](https://docs.python.org/3/library/http.html#http-status-codes) for a list of HTTP status codes that are available in this module as constants.
+## HTTPConnection Objects[¶](https://docs.python.org/3/library/http.client.html#httpconnection-objects "Link to this heading")
+[`HTTPConnection`](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection "http.client.HTTPConnection") instances have the following methods: 
+
+HTTPConnection.request(_method_ , _url_ , _body =None_, _headers ={}_, _*_ , _encode_chunked =False_)[¶](https://docs.python.org/3/library/http.client.html#http.client.HTTPConnection.request "Link to this definition")
+    
+This will send a request to the server using the HTTP request method _method_ and the request URI _url_. The provided _url_ must be an absolute path to conform with [**RFC 2616 §5.1.2**](https://datatracker.ietf.org/doc/html/rfc2616.html#section-5.1.2) (unless connecting to an HTTP proxy server or using the `OPTIONS` or `CONNECT` methods).
+If _body_ is specified, the specified data is sent after the headers are finished. It may be a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), a [bytes-like object](https://docs.python.org/3/glossary.html#term-bytes-like-object), an open [file object](https://docs.python.org/3/glossary.html#term-file-object), or an iterable of [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"). If _body_ is a string, it is encoded as ISO-8859-1, the default for HTTP. If it is a bytes-like object, the bytes are sent as is. If it is a [file object](https://docs.python.org/3/glossary.html#term-file-object), the contents of the file is sent; this file object should support at least the `read()` method. If the file object is an instance of [`io.TextIOBase`](https://docs.python.org/3/library/io.html#io.TextIOBase "io.TextIOBase"), the data returned by the `read()` method will be encoded as ISO-8859-1, otherwise the data returned by `read()` is sent as is. If _body_ is an iterable, the elements of the iterable are sent as is until the iterable is exhausted.
+The _headers_ argument should be a mapping of extra HTTP headers to send with the request. A [**Host header**](https://datatracker.ietf.org/doc/html/rfc2616.html#section-14.23) must be provided to conform with [**RFC 2616 §5.1.2**](https://datatracker.ietf.org/doc/html/rfc2616.html#section-5.1.2) (unless connecting to an HTTP proxy server or using the `OPTIONS` or `CONNECT` methods).
+If _headers_ contains neither Content-Length nor Transfer-Encoding, but there is a request body, one of those header fields will be added automatically. If _body_ is `None`, the Content-Length header is set to `0` for methods that expect a body (`PUT`, `POST`, and `PATCH`). If _body_ is a string or a bytes-like object that is not also a [file](https://docs.python.org/3/glossary.html#term-file-object), the Content-Length header is set to its length. Any other type of _body_ (files and iterables in general) will be chunk-encoded, and the Transfer-Encoding header will automatically be set instead of Content-Length.
+The _encode_chunked_ argument is only relevant if Transfer-Encoding is specified in _headers_. If _encode_chunked_ is `False`, the HTTPConnection object assumes that all encoding is handled by the calling code. If it is `True`, the body will be chunk-encoded.
+For example, to perform a `GET` request to `https://docs.python.org/3/`:
+>>>```
+>>> importhttp.client
+>>> host = "docs.python.org"
+>>> conn = http.client.HTTPSConnection(host)
+>>> conn.request("GET", "/3/", headers={"Host": host})
+>>> response = conn.getresponse()
+>>> print(response.status, response.reason)
+200 OK

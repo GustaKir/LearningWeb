@@ -1,0 +1,117 @@
+Title: Creating Higher Order Functions in Python
+URL: https://docs.python.org/3/faq/programming.html
+Summary: This section explains how to create higher order functions in Python using two main techniques: nested scopes and callable objects. It provides an example of defining a linear function that computes a value based on given coefficients, demonstrating both approaches with code snippets.
+---
+
+```
+
+There’s almost never a good reason to get this complicated.
+
+
+Your best choice is to return a tuple containing the multiple results.
+### [How do you make a higher order function in Python?](https://docs.python.org/3/faq/programming.html#id19)[¶](https://docs.python.org/3/faq/programming.html#how-do-you-make-a-higher-order-function-in-python "Link to this heading")
+You have two choices: you can use nested scopes or you can use callable objects. For example, suppose you wanted to define `linear(a,b)` which returns a function `f(x)` that computes the value `a*x+b`. Using nested scopes:
+```
+deflinear(a, b):
+  defresult(x):
+    return a * x + b
+  return result
+
+```
+
+Or using a callable object:
+```
+classlinear:
+  def__init__(self, a, b):
+    self.a, self.b = a, b
+  def__call__(self, x):
+    return self.a * x + self.b
+
+```
+
+In both cases,
+```
+taxes = linear(0.3, 2)
+
+```
+
+gives a callable object where `taxes(10e6) == 0.3 * 10e6 + 2`.
+The callable object approach has the disadvantage that it is a bit slower and results in slightly longer code. However, note that a collection of callables can share their signature via inheritance:
+```
+classexponential(linear):
+  # __init__ inherited
+  def__call__(self, x):
+    return self.a * (x ** self.b)
+
+```
+
+Object can encapsulate state for several methods:
+```
+classcounter:
+  value = 0
+  defset(self, x):
+    self.value = x
+  defup(self):
+    self.value = self.value + 1
+  defdown(self):
+    self.value = self.value - 1
+count = counter()
+inc, dec, reset = count.up, count.down, count.set
+
+```
+
+Here `inc()`, `dec()` and `reset()` act like functions which share the same counting variable.
+### [How do I copy an object in Python?](https://docs.python.org/3/faq/programming.html#id20)[¶](https://docs.python.org/3/faq/programming.html#how-do-i-copy-an-object-in-python "Link to this heading")
+In general, try [`copy.copy()`](https://docs.python.org/3/library/copy.html#copy.copy "copy.copy") or [`copy.deepcopy()`](https://docs.python.org/3/library/copy.html#copy.deepcopy "copy.deepcopy") for the general case. Not all objects can be copied, but most can.
+Some objects can be copied more easily. Dictionaries have a [`copy()`](https://docs.python.org/3/library/stdtypes.html#dict.copy "dict.copy") method:
+```
+newdict = olddict.copy()
+
+```
+
+Sequences can be copied by slicing:
+```
+new_l = l[:]
+
+```
+
+### [How can I find the methods or attributes of an object?](https://docs.python.org/3/faq/programming.html#id21)[¶](https://docs.python.org/3/faq/programming.html#how-can-i-find-the-methods-or-attributes-of-an-object "Link to this heading")
+For an instance `x` of a user-defined class, [`dir(x)`](https://docs.python.org/3/library/functions.html#dir "dir") returns an alphabetized list of the names containing the instance attributes and methods and attributes defined by its class.
+### [How can my code discover the name of an object?](https://docs.python.org/3/faq/programming.html#id22)[¶](https://docs.python.org/3/faq/programming.html#how-can-my-code-discover-the-name-of-an-object "Link to this heading")
+Generally speaking, it can’t, because objects don’t really have names. Essentially, assignment always binds a name to a value; the same is true of `def` and `class` statements, but in that case the value is a callable. Consider the following code:
+>>>```
+>>> classA:
+...   pass
+...
+>>> B = A
+>>> a = B()
+>>> b = a
+>>> print(b)
+<__main__.A object at 0x16D07CC>
+>>> print(a)
+<__main__.A object at 0x16D07CC>
+
+```
+
+Arguably the class has a name: even though it is bound to two names and invoked through the name `B` the created instance is still reported as an instance of class `A`. However, it is impossible to say whether the instance’s name is `a` or `b`, since both names are bound to the same value.
+Generally speaking it should not be necessary for your code to “know the names” of particular values. Unless you are deliberately writing introspective programs, this is usually an indication that a change of approach might be beneficial.
+In comp.lang.python, Fredrik Lundh once gave an excellent analogy in answer to this question:
+> The same way as you get the name of that cat you found on your porch: the cat (object) itself cannot tell you its name, and it doesn’t really care – so the only way to find out what it’s called is to ask all your neighbours (namespaces) if it’s their cat (object)…
+> ….and don’t be surprised if you’ll find that it’s known by many names, or no name at all!
+### [What’s up with the comma operator’s precedence?](https://docs.python.org/3/faq/programming.html#id23)[¶](https://docs.python.org/3/faq/programming.html#what-s-up-with-the-comma-operator-s-precedence "Link to this heading")
+Comma is not an operator in Python. Consider this session:
+>>>```
+>>> "a" in "b", "a"
+(False, 'a')
+
+```
+
+Since the comma is not an operator, but a separator between expressions the above is evaluated as if you had entered:
+```
+("a" in "b"), "a"
+
+```
+
+not:
+```
+"a" in ("b", "a")

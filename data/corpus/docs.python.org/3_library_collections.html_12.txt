@@ -1,0 +1,108 @@
+Title: Named Tuples in Python Collections
+URL: https://docs.python.org/3/library/collections.html
+Summary: Named tuples enhance regular tuples with additional methods and attributes, prefixed by an underscore to avoid field name conflicts. The `_make()` class method allows for the creation of a new named tuple instance from an iterable, while `_asdict()` converts a named tuple instance into a dictionary mapping field names to values.
+---
+
+```
+
+In addition to the methods inherited from tuples, named tuples support three additional methods and two attributes. To prevent conflicts with field names, the method and attribute names start with an underscore. 
+
+_classmethod_ somenamedtuple._make(_iterable_)[¶](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._make "Link to this definition")
+    
+Class method that makes a new instance from an existing sequence or iterable.
+>>>```
+>>> t = [11, 22]
+>>> Point._make(t)
+Point(x=11, y=22)
+
+```
+
+
+somenamedtuple._asdict()[¶](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._asdict "Link to this definition")
+    
+Return a new [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") which maps field names to their corresponding values:
+>>>```
+>>> p = Point(x=11, y=22)
+>>> p._asdict()
+{'x': 11, 'y': 22}
+
+```
+
+Changed in version 3.1: Returns an [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") instead of a regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict").
+Changed in version 3.8: Returns a regular [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict") instead of an [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict"). As of Python 3.7, regular dicts are guaranteed to be ordered. If the extra features of [`OrderedDict`](https://docs.python.org/3/library/collections.html#collections.OrderedDict "collections.OrderedDict") are required, the suggested remediation is to cast the result to the desired type: `OrderedDict(nt._asdict())`. 
+
+somenamedtuple._replace(_** kwargs_)[¶](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._replace "Link to this definition")
+    
+Return a new instance of the named tuple replacing specified fields with new values:
+>>>```
+>>> p = Point(x=11, y=22)
+>>> p._replace(x=33)
+Point(x=33, y=22)
+>>> for partnum, record in inventory.items():
+...   inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
+
+```
+
+Named tuples are also supported by generic function [`copy.replace()`](https://docs.python.org/3/library/copy.html#copy.replace "copy.replace").
+Changed in version 3.13: Raise [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") instead of [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError") for invalid keyword arguments. 
+
+somenamedtuple._fields[¶](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._fields "Link to this definition")
+    
+Tuple of strings listing the field names. Useful for introspection and for creating new named tuple types from existing named tuples.
+>>>```
+>>> p._fields      # view the field names
+('x', 'y')
+>>> Color = namedtuple('Color', 'red green blue')
+>>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
+>>> Pixel(11, 22, 128, 255, 0)
+Pixel(x=11, y=22, red=128, green=255, blue=0)
+
+```
+
+
+somenamedtuple._field_defaults[¶](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._field_defaults "Link to this definition")
+    
+Dictionary mapping field names to default values.
+>>>```
+>>> Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
+>>> Account._field_defaults
+{'balance': 0}
+>>> Account('premium')
+Account(type='premium', balance=0)
+
+```
+
+To retrieve a field whose name is stored in a string, use the [`getattr()`](https://docs.python.org/3/library/functions.html#getattr "getattr") function:
+>>>```
+>>> getattr(p, 'x')
+11
+
+```
+
+To convert a dictionary to a named tuple, use the double-star-operator (as described in [Unpacking Argument Lists](https://docs.python.org/3/tutorial/controlflow.html#tut-unpacking-arguments)):
+>>>```
+>>> d = {'x': 11, 'y': 22}
+>>> Point(**d)
+Point(x=11, y=22)
+
+```
+
+Since a named tuple is a regular Python class, it is easy to add or change functionality with a subclass. Here is how to add a calculated field and a fixed-width print format:
+>>>```
+>>> classPoint(namedtuple('Point', ['x', 'y'])):
+...   __slots__ = ()
+...   @property
+...   defhypot(self):
+...     return (self.x ** 2 + self.y ** 2) ** 0.5
+...   def__str__(self):
+...     return 'Point: x=%6.3f y=%6.3f hypot=%6.3f' % (self.x, self.y, self.hypot)
+>>> for p in Point(3, 4), Point(14, 5/7):
+...   print(p)
+Point: x= 3.000 y= 4.000 hypot= 5.000
+Point: x=14.000 y= 0.714 hypot=14.018
+
+```
+
+The subclass shown above sets `__slots__` to an empty tuple. This helps keep memory requirements low by preventing the creation of instance dictionaries.
+Subclassing is not useful for adding new, stored fields. Instead, simply create a new named tuple type from the [`_fields`](https://docs.python.org/3/library/collections.html#collections.somenamedtuple._fields "collections.somenamedtuple._fields") attribute:
+>>>

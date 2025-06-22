@@ -1,0 +1,69 @@
+Title: Using urllib for HTTP Requests
+URL: https://docs.python.org/3/howto/urllib2.html
+Summary: This section illustrates how to use Python's `urllib` module to make a POST request with encoded data. It details importing necessary modules, encoding values, and sending a request to a specified URL. Additionally, it mentions that without data, `urllib` defaults to a GET request, and highlights the distinction between GET and POST requests in terms of their effects on the system.
+---
+
+```
+importurllib.parse
+importurllib.request
+url = 'http://www.someserver.com/cgi-bin/register.cgi'
+values = {'name' : 'Michael Foord',
+     'location' : 'Northampton',
+     'language' : 'Python' }
+data = urllib.parse.urlencode(values)
+data = data.encode('ascii') # data should be bytes
+req = urllib.request.Request(url, data)
+with urllib.request.urlopen(req) as response:
+  the_page = response.read()
+
+```
+
+Note that other encodings are sometimes required (e.g. for file upload from HTML forms - see [HTML Specification, Form Submission](https://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13) for more details).
+If you do not pass the `data` argument, urllib uses a **GET** request. One way in which GET and POST requests differ is that POST requests often have “side-effects”: they change the state of the system in some way (for example by placing an order with the website for a hundredweight of tinned spam to be delivered to your door). Though the HTTP standard makes it clear that POSTs are intended to _always_ cause side-effects, and GET requests _never_ to cause side-effects, nothing prevents a GET request from having side-effects, nor a POST requests from having no side-effects. Data can also be passed in an HTTP GET request by encoding it in the URL itself.
+This is done as follows:
+>>>```
+>>> importurllib.request
+>>> importurllib.parse
+>>> data = {}
+>>> data['name'] = 'Somebody Here'
+>>> data['location'] = 'Northampton'
+>>> data['language'] = 'Python'
+>>> url_values = urllib.parse.urlencode(data)
+>>> print(url_values) # The order may differ from below.
+name=Somebody+Here&language=Python&location=Northampton
+>>> url = 'http://www.example.com/example.cgi'
+>>> full_url = url + '?' + url_values
+>>> data = urllib.request.urlopen(full_url)
+
+```
+
+Notice that the full URL is created by adding a `?` to the URL, followed by the encoded values.
+### Headers[¶](https://docs.python.org/3/howto/urllib2.html#headers "Link to this heading")
+We’ll discuss here one particular HTTP header, to illustrate how to add headers to your HTTP request.
+Some websites [[1]](https://docs.python.org/3/howto/urllib2.html#id8) dislike being browsed by programs, or send different versions to different browsers [[2]](https://docs.python.org/3/howto/urllib2.html#id9). By default urllib identifies itself as `Python-urllib/x.y` (where `x` and `y` are the major and minor version numbers of the Python release, e.g. `Python-urllib/2.5`), which may confuse the site, or just plain not work. The way a browser identifies itself is through the `User-Agent` header [[3]](https://docs.python.org/3/howto/urllib2.html#id10). When you create a Request object you can pass a dictionary of headers in. The following example makes the same request as above, but identifies itself as a version of Internet Explorer [[4]](https://docs.python.org/3/howto/urllib2.html#id11).
+```
+importurllib.parse
+importurllib.request
+url = 'http://www.someserver.com/cgi-bin/register.cgi'
+user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
+values = {'name': 'Michael Foord',
+     'location': 'Northampton',
+     'language': 'Python' }
+headers = {'User-Agent': user_agent}
+data = urllib.parse.urlencode(values)
+data = data.encode('ascii')
+req = urllib.request.Request(url, data, headers)
+with urllib.request.urlopen(req) as response:
+  the_page = response.read()
+
+```
+
+The response also has two useful methods. See the section on [info and geturl](https://docs.python.org/3/howto/urllib2.html#info-and-geturl) which comes after we have a look at what happens when things go wrong.
+## Handling Exceptions[¶](https://docs.python.org/3/howto/urllib2.html#handling-exceptions "Link to this heading")
+_urlopen_ raises [`URLError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.URLError "urllib.error.URLError") when it cannot handle a response (though as usual with Python APIs, built-in exceptions such as [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError "ValueError"), [`TypeError`](https://docs.python.org/3/library/exceptions.html#TypeError "TypeError") etc. may also be raised).
+[`HTTPError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.HTTPError "urllib.error.HTTPError") is the subclass of [`URLError`](https://docs.python.org/3/library/urllib.error.html#urllib.error.URLError "urllib.error.URLError") raised in the specific case of HTTP URLs.
+The exception classes are exported from the [`urllib.error`](https://docs.python.org/3/library/urllib.error.html#module-urllib.error "urllib.error: Exception classes raised by urllib.request.") module.
+### URLError[¶](https://docs.python.org/3/howto/urllib2.html#urlerror "Link to this heading")
+Often, URLError is raised because there is no network connection (no route to the specified server), or the specified server doesn’t exist. In this case, the exception raised will have a ‘reason’ attribute, which is a tuple containing an error code and a text error message.
+e.g.
+>>>

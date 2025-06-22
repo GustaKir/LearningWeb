@@ -1,0 +1,19 @@
+Title: Traceback Positions in Python's Inspect Module
+URL: https://docs.python.org/3/library/inspect.html
+Summary: The `Traceback.positions` provides a `dis.Positions` object detailing the start and end line numbers and column offsets related to the current instruction being executed. In Python 3.11, `Traceback` is now a class instance, which is backward compatible. It is noted that retaining references to frame objects can lead to reference cycles, extending the lifespan of related objects.
+---
+
+positions[¶](https://docs.python.org/3/library/inspect.html#inspect.Traceback.positions "Link to this definition")
+    
+A [`dis.Positions`](https://docs.python.org/3/library/dis.html#dis.Positions "dis.Positions") object containing the start line number, end line number, start column offset, and end column offset associated with the instruction being executed by the frame this traceback corresponds to.
+Changed in version 3.11: `Traceback` is now a class instance (that is backwards compatible with the previous [named tuple](https://docs.python.org/3/glossary.html#term-named-tuple)).
+Note
+Keeping references to frame objects, as found in the first element of the frame records these functions return, can cause your program to create reference cycles. Once a reference cycle has been created, the lifespan of all objects which can be accessed from the objects which form the cycle can become much longer even if Python’s optional cycle detector is enabled. If such cycles must be created, it is important to ensure they are explicitly broken to avoid the delayed destruction of objects and increased memory consumption which occurs.
+Though the cycle detector will catch these, destruction of the frames (and local variables) can be made deterministic by removing the cycle in a [`finally`](https://docs.python.org/3/reference/compound_stmts.html#finally) clause. This is also important if the cycle detector was disabled when Python was compiled or using [`gc.disable()`](https://docs.python.org/3/library/gc.html#gc.disable "gc.disable"). For example:
+```
+defhandle_stackframe_without_leak():
+  frame = inspect.currentframe()
+  try:
+    # do something with the frame
+  finally:
+    del frame

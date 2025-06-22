@@ -1,0 +1,39 @@
+Title: Regular Expression Syntax and Features
+URL: https://docs.python.org/3/library/re.html
+Summary: This section outlines changes in Python 3.12 regarding byte patterns in named groups, explains various syntax elements for regular expressions such as backreferences, comments, lookahead, negative lookahead, and lookbehind assertions.
+---
+
+Changed in version 3.12: In [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") patterns, group _name_ can only contain bytes in the ASCII range (`b'\x00'`-`b'\x7f'`). 
+
+`(?P=name)`
+    
+A backreference to a named group; it matches whatever text was matched by the earlier group named _name_. 
+
+`(?#...)`
+    
+A comment; the contents of the parentheses are simply ignored. 
+
+`(?=...)`
+    
+Matches if `...` matches next, but doesn’t consume any of the string. This is called a _lookahead assertion_. For example, `Isaac (?=Asimov)` will match `'Isaac '` only if it’s followed by `'Asimov'`. 
+
+`(?!...)`
+    
+Matches if `...` doesn’t match next. This is a _negative lookahead assertion_. For example, `Isaac (?!Asimov)` will match `'Isaac '` only if it’s _not_ followed by `'Asimov'`. 
+
+`(?<=...)`
+    
+Matches if the current position in the string is preceded by a match for `...` that ends at the current position. This is called a _positive lookbehind assertion_. `(?<=abc)def` will find a match in `'abcdef'`, since the lookbehind will back up 3 characters and check if the contained pattern matches. The contained pattern must only match strings of some fixed length, meaning that `abc` or `a|b` are allowed, but `a*` and `a{3,4}` are not. Note that patterns which start with positive lookbehind assertions will not match at the beginning of the string being searched; you will most likely want to use the [`search()`](https://docs.python.org/3/library/re.html#re.search "re.search") function rather than the [`match()`](https://docs.python.org/3/library/re.html#re.match "re.match") function:
+>>>```
+>>> importre
+>>> m = re.search('(?<=abc)def', 'abcdef')
+>>> m.group(0)
+'def'
+
+```
+
+This example looks for a word following a hyphen:
+>>>```
+>>> m = re.search(r'(?<=-)\w+', 'spam-egg')
+>>> m.group(0)
+'egg'

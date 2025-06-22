@@ -1,0 +1,58 @@
+Title: Differences Between SSL Objects and SSLSocket
+URL: https://docs.python.org/3/library/ssl.html
+Summary: This section outlines the limitations of the SSL object compared to `SSLSocket`, highlighting the absence of network IO methods, the requirement for manual handshake initiation, lack of certain EOF handling, and a difference in the `unwrap()` method's return behavior.
+---
+
+When compared to [`SSLSocket`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket "ssl.SSLSocket"), this object lacks the following features:
+  * Any form of network IO; `recv()` and `send()` read and write only to the underlying [`MemoryBIO`](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO "ssl.MemoryBIO") buffers.
+  * There is no _do_handshake_on_connect_ machinery. You must always manually call [`do_handshake()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.do_handshake "ssl.SSLSocket.do_handshake") to start the handshake.
+  * There is no handling of _suppress_ragged_eofs_. All end-of-file conditions that are in violation of the protocol are reported via the [`SSLEOFError`](https://docs.python.org/3/library/ssl.html#ssl.SSLEOFError "ssl.SSLEOFError") exception.
+  * The method [`unwrap()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.unwrap "ssl.SSLSocket.unwrap") call does not return anything, unlike for an SSL socket where it returns the underlying socket.
+  * The _server_name_callback_ callback passed to [`SSLContext.set_servername_callback()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.set_servername_callback "ssl.SSLContext.set_servername_callback") will get an [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject") instance instead of a [`SSLSocket`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket "ssl.SSLSocket") instance as its first parameter.
+
+
+Some notes related to the use of [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject"):
+  * All IO on an [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject") is [non-blocking](https://docs.python.org/3/library/ssl.html#ssl-nonblocking). This means that for example [`read()`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.read "ssl.SSLSocket.read") will raise an [`SSLWantReadError`](https://docs.python.org/3/library/ssl.html#ssl.SSLWantReadError "ssl.SSLWantReadError") if it needs more data than the incoming BIO has available.
+
+
+Changed in version 3.7: [`SSLObject`](https://docs.python.org/3/library/ssl.html#ssl.SSLObject "ssl.SSLObject") instances must be created with [`wrap_bio()`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext.wrap_bio "ssl.SSLContext.wrap_bio"). In earlier versions, it was possible to create instances directly. This was never documented or officially supported.
+An SSLObject communicates with the outside world using memory buffers. The class [`MemoryBIO`](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO "ssl.MemoryBIO") provides a memory buffer that can be used for this purpose. It wraps an OpenSSL memory BIO (Basic IO) object: 
+
+_class_ ssl.MemoryBIO[¶](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO "Link to this definition")
+    
+A memory buffer that can be used to pass data between Python and an SSL protocol instance. 
+
+pending[¶](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO.pending "Link to this definition")
+    
+Return the number of bytes currently in the memory buffer. 
+
+eof[¶](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO.eof "Link to this definition")
+    
+A boolean indicating whether the memory BIO is current at the end-of-file position. 
+
+read(_n =-1_)[¶](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO.read "Link to this definition")
+    
+Read up to _n_ bytes from the memory buffer. If _n_ is not specified or negative, all bytes are returned. 
+
+write(_buf_)[¶](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO.write "Link to this definition")
+    
+Write the bytes from _buf_ to the memory BIO. The _buf_ argument must be an object supporting the buffer protocol.
+The return value is the number of bytes written, which is always equal to the length of _buf_. 
+
+write_eof()[¶](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO.write_eof "Link to this definition")
+    
+Write an EOF marker to the memory BIO. After this method has been called, it is illegal to call [`write()`](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO.write "ssl.MemoryBIO.write"). The attribute [`eof`](https://docs.python.org/3/library/ssl.html#ssl.MemoryBIO.eof "ssl.MemoryBIO.eof") will become true after all data currently in the buffer has been read.
+## SSL session[¶](https://docs.python.org/3/library/ssl.html#ssl-session "Link to this heading")
+Added in version 3.6. 
+
+_class_ ssl.SSLSession[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLSession "Link to this definition")
+    
+Session object used by [`session`](https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.session "ssl.SSLSocket.session"). 
+
+id[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLSession.id "Link to this definition")
+
+
+time[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLSession.time "Link to this definition")
+
+
+timeout[¶](https://docs.python.org/3/library/ssl.html#ssl.SSLSession.timeout "Link to this definition")

@@ -1,0 +1,51 @@
+Title: SQLite3 Command-Line Input and Callback Tracebacks
+URL: https://docs.python.org/3/library/sqlite3.html
+Summary: This section discusses a function that helps determine if an entered SQL statement is complete before execution. It also introduces `sqlite3.enable_callback_tracebacks`, which allows enabling or disabling tracebacks for debugging user-defined functions and callbacks.
+---
+
+```
+
+This function may be useful during command-line input to determine if the entered text seems to form a complete SQL statement, or if additional input is needed before calling [`execute()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.execute "sqlite3.Cursor.execute").
+See `runsource()` in [Lib/sqlite3/__main__.py](https://github.com/python/cpython/tree/3.13/Lib/sqlite3/__main__.py) for real-world use. 
+
+sqlite3.enable_callback_tracebacks(_flag_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.enable_callback_tracebacks "Link to this definition")
+    
+Enable or disable callback tracebacks. By default you will not get any tracebacks in user-defined functions, aggregates, converters, authorizer callbacks etc. If you want to debug them, you can call this function with _flag_ set to `True`. Afterwards, you will get tracebacks from callbacks on [`sys.stderr`](https://docs.python.org/3/library/sys.html#sys.stderr "sys.stderr"). Use `False` to disable the feature again.
+Note
+Errors in user-defined function callbacks are logged as unraisable exceptions. Use an [`unraisable hook handler`](https://docs.python.org/3/library/sys.html#sys.unraisablehook "sys.unraisablehook") for introspection of the failed callback. 
+
+sqlite3.register_adapter(_type_ , _adapter_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.register_adapter "Link to this definition")
+    
+Register an _adapter_ [callable](https://docs.python.org/3/glossary.html#term-callable) to adapt the Python type _type_ into an SQLite type. The adapter is called with a Python object of type _type_ as its sole argument, and must return a value of a [type that SQLite natively understands](https://docs.python.org/3/library/sqlite3.html#sqlite3-types). 
+
+sqlite3.register_converter(_typename_ , _converter_ , _/_)[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.register_converter "Link to this definition")
+    
+Register the _converter_ [callable](https://docs.python.org/3/glossary.html#term-callable) to convert SQLite objects of type _typename_ into a Python object of a specific type. The converter is invoked for all SQLite values of type _typename_ ; it is passed a [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes") object and should return an object of the desired Python type. Consult the parameter _detect_types_ of [`connect()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.connect "sqlite3.connect") for information regarding how type detection works.
+Note: _typename_ and the name of the type in your query are matched case-insensitively.
+### Module constants[¶](https://docs.python.org/3/library/sqlite3.html#module-constants "Link to this heading") 
+
+sqlite3.LEGACY_TRANSACTION_CONTROL[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.LEGACY_TRANSACTION_CONTROL "Link to this definition")
+    
+Set [`autocommit`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Connection.autocommit "sqlite3.Connection.autocommit") to this constant to select old style (pre-Python 3.12) transaction control behaviour. See [Transaction control via the isolation_level attribute](https://docs.python.org/3/library/sqlite3.html#sqlite3-transaction-control-isolation-level) for more information. 
+
+sqlite3.PARSE_DECLTYPES[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.PARSE_DECLTYPES "Link to this definition")
+    
+Pass this flag value to the _detect_types_ parameter of [`connect()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.connect "sqlite3.connect") to look up a converter function using the declared types for each column. The types are declared when the database table is created. `sqlite3` will look up a converter function using the first word of the declared type as the converter dictionary key. For example:
+```
+CREATETABLEtest(
+iintegerprimarykey,!willlookupaconverternamed"integer"
+ppoint,!willlookupaconverternamed"point"
+nnumber(10)!willlookupaconverternamed"number"
+)
+
+```
+
+This flag may be combined with [`PARSE_COLNAMES`](https://docs.python.org/3/library/sqlite3.html#sqlite3.PARSE_COLNAMES "sqlite3.PARSE_COLNAMES") using the `|` (bitwise or) operator.
+Note
+Generated fields (for example `MAX(p)`) are returned as [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"). Use `PARSE_COLNAMES` to enforce types for such queries. 
+
+sqlite3.PARSE_COLNAMES[¶](https://docs.python.org/3/library/sqlite3.html#sqlite3.PARSE_COLNAMES "Link to this definition")
+    
+Pass this flag value to the _detect_types_ parameter of [`connect()`](https://docs.python.org/3/library/sqlite3.html#sqlite3.connect "sqlite3.connect") to look up a converter function by using the type name, parsed from the query column name, as the converter dictionary key. The query column name must be wrapped in double quotes (`"`) and the type name must be wrapped in square brackets (`[]`).
+```
+SELECTMAX(p)as"p [point]"FROMtest;!willlookupconverter"point"

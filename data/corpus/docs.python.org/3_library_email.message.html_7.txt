@@ -1,0 +1,63 @@
+Title: Email Message Charset Handling
+URL: https://docs.python.org/3/library/email.message.html
+Summary: This section describes two methods for handling character sets in email messages: `get_content_charset`, which returns the charset from the Content-Type header or a fallback value, and `get_charsets`, which returns a list of charset names for each subpart of a multipart message.
+---
+
+get_content_charset(_failobj =None_)[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.get_content_charset "Link to this definition")
+    
+Return the `charset` parameter of the _Content-Type_ header, coerced to lower case. If there is no _Content-Type_ header, or if that header has no `charset` parameter, _failobj_ is returned. 
+
+get_charsets(_failobj =None_)[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.get_charsets "Link to this definition")
+    
+Return a list containing the character set names in the message. If the message is a _multipart_ , then the list will contain one element for each subpart in the payload, otherwise, it will be a list of length 1.
+Each item in the list will be a string which is the value of the `charset` parameter in the _Content-Type_ header for the represented subpart. If the subpart has no _Content-Type_ header, no `charset` parameter, or is not of the _text_ main MIME type, then that item in the returned list will be _failobj_. 
+
+is_attachment()[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.is_attachment "Link to this definition")
+    
+Return `True` if there is a _Content-Disposition_ header and its (case insensitive) value is `attachment`, `False` otherwise.
+Changed in version 3.4.2: is_attachment is now a method instead of a property, for consistency with [`is_multipart()`](https://docs.python.org/3/library/email.compat32-message.html#email.message.Message.is_multipart "email.message.Message.is_multipart"). 
+
+get_content_disposition()[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.get_content_disposition "Link to this definition")
+    
+Return the lowercased value (without parameters) of the message’s _Content-Disposition_ header if it has one, or `None`. The possible values for this method are _inline_ , _attachment_ or `None` if the message follows [**RFC 2183**](https://datatracker.ietf.org/doc/html/rfc2183.html).
+Added in version 3.5.
+The following methods relate to interrogating and manipulating the content (payload) of the message. 
+
+walk()[¶](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.walk "Link to this definition")
+    
+The [`walk()`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.walk "email.message.EmailMessage.walk") method is an all-purpose generator which can be used to iterate over all the parts and subparts of a message object tree, in depth-first traversal order. You will typically use [`walk()`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.walk "email.message.EmailMessage.walk") as the iterator in a `for` loop; each iteration returns the next subpart.
+Here’s an example that prints the MIME type of every part of a multipart message structure:
+>>>```
+>>> for part in msg.walk():
+...   print(part.get_content_type())
+multipart/report
+text/plain
+message/delivery-status
+text/plain
+text/plain
+message/rfc822
+text/plain
+
+```
+
+`walk` iterates over the subparts of any part where [`is_multipart()`](https://docs.python.org/3/library/email.message.html#email.message.EmailMessage.is_multipart "email.message.EmailMessage.is_multipart") returns `True`, even though `msg.get_content_maintype() == 'multipart'` may return `False`. We can see this in our example by making use of the `_structure` debug helper function:
+>>>```
+>>> fromemail.iteratorsimport _structure
+>>> for part in msg.walk():
+...   print(part.get_content_maintype() == 'multipart',
+...      part.is_multipart())
+True True
+False False
+False True
+False False
+False False
+False True
+False False
+>>> _structure(msg)
+multipart/report
+  text/plain
+  message/delivery-status
+    text/plain
+    text/plain
+  message/rfc822
+    text/plain

@@ -1,0 +1,40 @@
+Title: Custom Metaclass Behavior in Python Classes
+URL: https://docs.python.org/3/reference/datamodel.html
+Summary: This section discusses how a class with a custom metaclass, such as Enum, can alter the behavior of subscription (using __getitem__). It provides an example with an Enum class, showing that the custom metaclass defines __getitem__, resulting in different outcomes compared to standard classes.
+---
+
+```
+
+However, if a class has a custom metaclass that defines [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__"), subscribing the class may result in different behaviour. An example of this can be found in the [`enum`](https://docs.python.org/3/library/enum.html#module-enum "enum: Implementation of an enumeration class.") module:
+>>>```
+>>> fromenumimport Enum
+>>> classMenu(Enum):
+... """A breakfast menu"""
+...   SPAM = 'spam'
+...   BACON = 'bacon'
+...
+>>> # Enum classes have a custom metaclass:
+>>> type(Menu)
+<class 'enum.EnumMeta'>
+>>> # EnumMeta defines __getitem__,
+>>> # so __class_getitem__ is not called,
+>>> # and the result is not a GenericAlias object:
+>>> Menu['SPAM']
+<Menu.SPAM: 'spam'>
+>>> type(Menu['SPAM'])
+<enum 'Menu'>
+
+```
+
+See also 
+
+[**PEP 560**](https://peps.python.org/pep-0560/) - Core Support for typing module and generic types
+    
+Introducing [`__class_getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__class_getitem__ "object.__class_getitem__"), and outlining when a [subscription](https://docs.python.org/3/reference/expressions.html#subscriptions) results in `__class_getitem__()` being called instead of [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__")
+### 3.3.6. Emulating callable objects[¶](https://docs.python.org/3/reference/datamodel.html#emulating-callable-objects "Link to this heading") 
+
+object.__call__(_self_[, _args..._])[¶](https://docs.python.org/3/reference/datamodel.html#object.__call__ "Link to this definition")
+    
+Called when the instance is “called” as a function; if this method is defined, `x(arg1, arg2, ...)` roughly translates to `type(x).__call__(x, arg1, ...)`. The [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself does not provide this method.
+### 3.3.7. Emulating container types[¶](https://docs.python.org/3/reference/datamodel.html#emulating-container-types "Link to this heading")
+The following methods can be defined to implement container objects. None of them are provided by the [`object`](https://docs.python.org/3/library/functions.html#object "object") class itself. Containers usually are [sequences](https://docs.python.org/3/glossary.html#term-sequence) (such as [`lists`](https://docs.python.org/3/library/stdtypes.html#list "list") or [`tuples`](https://docs.python.org/3/library/stdtypes.html#tuple "tuple")) or [mappings](https://docs.python.org/3/glossary.html#term-mapping) (like [dictionaries](https://docs.python.org/3/glossary.html#term-dictionary)), but can represent other containers as well. The first set of methods is used either to emulate a sequence or to emulate a mapping; the difference is that for a sequence, the allowable keys should be the integers _k_ for which `0 <= k < N` where _N_ is the length of the sequence, or [`slice`](https://docs.python.org/3/library/functions.html#slice "slice") objects, which define a range of items. It is also recommended that mappings provide the methods `keys()`, `values()`, `items()`, `get()`, `clear()`, `setdefault()`, `pop()`, `popitem()`, `copy()`, and `update()` behaving similar to those for Python’s standard [`dictionary`](https://docs.python.org/3/library/stdtypes.html#dict "dict") objects. The [`collections.abc`](https://docs.python.org/3/library/collections.abc.html#module-collections.abc "collections.abc: Abstract base classes for containers") module provides a [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping "collections.abc.MutableMapping") [abstract base class](https://docs.python.org/3/glossary.html#term-abstract-base-class) to help create those methods from a base set of [`__getitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__ "object.__getitem__"), [`__setitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__setitem__ "object.__setitem__"), [`__delitem__()`](https://docs.python.org/3/reference/datamodel.html#object.__delitem__ "object.__delitem__"), and `keys()`. Mutable sequences should provide methods `append()`, `count()`, `index()`, `extend()`, `insert()`, `pop()`, `remove()`, `reverse()` and `sort()`, like Python standard [`list`](https://docs.python.org/3/library/stdtypes.html#list "list") objects. Finally, sequence types should implement addition (meaning concatenation) and multiplication (meaning repetition) by defining the methods [`__add__()`](https://docs.python.org/3/reference/datamodel.html#object.__add__ "object.__add__"), [`__radd__()`](https://docs.python.org/3/reference/datamodel.html#object.__radd__ "object.__radd__"), [`__iadd__()`](https://docs.python.org/3/reference/datamodel.html#object.__iadd__ "object.__iadd__"), [`__mul__()`](https://docs.python.org/3/reference/datamodel.html#object.__mul__ "object.__mul__"), [`__rmul__()`](https://docs.python.org/3/reference/datamodel.html#object.__rmul__ "

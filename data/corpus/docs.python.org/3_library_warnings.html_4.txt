@@ -1,0 +1,67 @@
+Title: Default Warning Filters in Debug Build
+URL: https://docs.python.org/3/library/warnings.html
+Summary: In a debug build, the default warning filters are empty. Changes in Python versions 3.2 and 3.7 are noted, including the default behavior of `DeprecationWarning` and `BytesWarning` in relation to warning filters and configurations.
+---
+
+```
+
+In a [debug build](https://docs.python.org/3/using/configure.html#debug-build), the list of default warning filters is empty.
+Changed in version 3.2: [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") is now ignored by default in addition to [`PendingDeprecationWarning`](https://docs.python.org/3/library/exceptions.html#PendingDeprecationWarning "PendingDeprecationWarning").
+Changed in version 3.7: [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") is once again shown by default when triggered directly by code in `__main__`.
+Changed in version 3.7: [`BytesWarning`](https://docs.python.org/3/library/exceptions.html#BytesWarning "BytesWarning") no longer appears in the default filter list and is instead configured via [`sys.warnoptions`](https://docs.python.org/3/library/sys.html#sys.warnoptions "sys.warnoptions") when [`-b`](https://docs.python.org/3/using/cmdline.html#cmdoption-b) is specified twice.
+### Overriding the default filter[¶](https://docs.python.org/3/library/warnings.html#overriding-the-default-filter "Link to this heading")
+Developers of applications written in Python may wish to hide _all_ Python level warnings from their users by default, and only display them when running tests or otherwise working on the application. The [`sys.warnoptions`](https://docs.python.org/3/library/sys.html#sys.warnoptions "sys.warnoptions") attribute used to pass filter configurations to the interpreter can be used as a marker to indicate whether or not warnings should be disabled:
+```
+importsys
+if not sys.warnoptions:
+  importwarnings
+  warnings.simplefilter("ignore")
+
+```
+
+Developers of test runners for Python code are advised to instead ensure that _all_ warnings are displayed by default for the code under test, using code like:
+```
+importsys
+if not sys.warnoptions:
+  importos,warnings
+  warnings.simplefilter("default") # Change the filter in this process
+  os.environ["PYTHONWARNINGS"] = "default" # Also affect subprocesses
+
+```
+
+Finally, developers of interactive shells that run user code in a namespace other than `__main__` are advised to ensure that [`DeprecationWarning`](https://docs.python.org/3/library/exceptions.html#DeprecationWarning "DeprecationWarning") messages are made visible by default, using code like the following (where `user_ns` is the module used to execute code entered interactively):
+```
+importwarnings
+warnings.filterwarnings("default", category=DeprecationWarning,
+                  module=user_ns.get("__name__"))
+
+```
+
+## Temporarily Suppressing Warnings[¶](https://docs.python.org/3/library/warnings.html#temporarily-suppressing-warnings "Link to this heading")
+If you are using code that you know will raise a warning, such as a deprecated function, but do not want to see the warning (even when warnings have been explicitly configured via the command line), then it is possible to suppress the warning using the [`catch_warnings`](https://docs.python.org/3/library/warnings.html#warnings.catch_warnings "warnings.catch_warnings") context manager:
+```
+importwarnings
+deffxn():
+  warnings.warn("deprecated", DeprecationWarning)
+with warnings.catch_warnings():
+  warnings.simplefilter("ignore")
+  fxn()
+
+```
+
+While within the context manager all warnings will simply be ignored. This allows you to use known-deprecated code without having to see the warning while not suppressing the warning for other code that might not be aware of its use of deprecated code. Note: this can only be guaranteed in a single-threaded application. If two or more threads use the [`catch_warnings`](https://docs.python.org/3/library/warnings.html#warnings.catch_warnings "warnings.catch_warnings") context manager at the same time, the behavior is undefined.
+## Testing Warnings[¶](https://docs.python.org/3/library/warnings.html#testing-warnings "Link to this heading")
+To test warnings raised by code, use the [`catch_warnings`](https://docs.python.org/3/library/warnings.html#warnings.catch_warnings "warnings.catch_warnings") context manager. With it you can temporarily mutate the warnings filter to facilitate your testing. For instance, do the following to capture all raised warnings to check:
+```
+importwarnings
+deffxn():
+  warnings.warn("deprecated", DeprecationWarning)
+with warnings.catch_warnings(record=True) as w:
+  # Cause all warnings to always be triggered.
+  warnings.simplefilter("always")
+  # Trigger a warning.
+  fxn()
+  # Verify some things
+  assert len(w) == 1
+  assert issubclass(w[-1].category, DeprecationWarning)
+  assert "deprecated" in str(w[-1].message)

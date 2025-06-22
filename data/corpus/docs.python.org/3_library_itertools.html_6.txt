@@ -1,0 +1,117 @@
+Title: itertools.product: Cartesian Product of Iterables
+URL: https://docs.python.org/3/library/itertools.html
+Summary: The itertools.product function computes the Cartesian product of input iterables, functioning like nested for-loops in a generator expression. It supports an optional 'repeat' argument to specify repetitions of the iterable, producing tuples in lexicographic order.
+---
+
+```
+
+
+itertools.product(_* iterables_, _repeat =1_)[¶](https://docs.python.org/3/library/itertools.html#itertools.product "Link to this definition")
+    
+[Cartesian product](https://en.wikipedia.org/wiki/Cartesian_product) of the input iterables.
+Roughly equivalent to nested for-loops in a generator expression. For example, `product(A, B)` returns the same as `((x,y) for x in A for y in B)`.
+The nested loops cycle like an odometer with the rightmost element advancing on every iteration. This pattern creates a lexicographic ordering so that if the input’s iterables are sorted, the product tuples are emitted in sorted order.
+To compute the product of an iterable with itself, specify the number of repetitions with the optional _repeat_ keyword argument. For example, `product(A, repeat=4)` means the same as `product(A, A, A, A)`.
+This function is roughly equivalent to the following code, except that the actual implementation does not build up intermediate results in memory:
+```
+defproduct(*iterables, repeat=1):
+  # product('ABCD', 'xy') → Ax Ay Bx By Cx Cy Dx Dy
+  # product(range(2), repeat=3) → 000 001 010 011 100 101 110 111
+  if repeat < 0:
+    raise ValueError('repeat argument cannot be negative')
+  pools = [tuple(pool) for pool in iterables] * repeat
+  result = [[]]
+  for pool in pools:
+    result = [x+[y] for x in result for y in pool]
+  for prod in result:
+    yield tuple(prod)
+
+```
+
+Before [`product()`](https://docs.python.org/3/library/itertools.html#itertools.product "itertools.product") runs, it completely consumes the input iterables, keeping pools of values in memory to generate the products. Accordingly, it is only useful with finite inputs. 
+
+itertools.repeat(_object_[, _times_])[¶](https://docs.python.org/3/library/itertools.html#itertools.repeat "Link to this definition")
+    
+Make an iterator that returns _object_ over and over again. Runs indefinitely unless the _times_ argument is specified.
+Roughly equivalent to:
+```
+defrepeat(object, times=None):
+  # repeat(10, 3) → 10 10 10
+  if times is None:
+    while True:
+      yield object
+  else:
+    for i in range(times):
+      yield object
+
+```
+
+A common use for _repeat_ is to supply a stream of constant values to _map_ or _zip_ :
+>>>```
+>>> list(map(pow, range(10), repeat(2)))
+[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+```
+
+
+itertools.starmap(_function_ , _iterable_)[¶](https://docs.python.org/3/library/itertools.html#itertools.starmap "Link to this definition")
+    
+Make an iterator that computes the _function_ using arguments obtained from the _iterable_. Used instead of [`map()`](https://docs.python.org/3/library/functions.html#map "map") when argument parameters have already been “pre-zipped” into tuples.
+The difference between [`map()`](https://docs.python.org/3/library/functions.html#map "map") and [`starmap()`](https://docs.python.org/3/library/itertools.html#itertools.starmap "itertools.starmap") parallels the distinction between `function(a,b)` and `function(*c)`. Roughly equivalent to:
+```
+defstarmap(function, iterable):
+  # starmap(pow, [(2,5), (3,2), (10,3)]) → 32 9 1000
+  for args in iterable:
+    yield function(*args)
+
+```
+
+
+itertools.takewhile(_predicate_ , _iterable_)[¶](https://docs.python.org/3/library/itertools.html#itertools.takewhile "Link to this definition")
+    
+Make an iterator that returns elements from the _iterable_ as long as the _predicate_ is true. Roughly equivalent to:
+```
+deftakewhile(predicate, iterable):
+  # takewhile(lambda x: x<5, [1,4,6,3,8]) → 1 4
+  for x in iterable:
+    if not predicate(x):
+      break
+    yield x
+
+```
+
+Note, the element that first fails the predicate condition is consumed from the input iterator and there is no way to access it. This could be an issue if an application wants to further consume the input iterator after _takewhile_ has been run to exhaustion. To work around this problem, consider using [more-itertools before_and_after()](https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after) instead. 
+
+itertools.tee(_iterable_ , _n =2_)[¶](https://docs.python.org/3/library/itertools.html#itertools.tee "Link to this definition")
+    
+Return _n_ independent iterators from a single iterable.
+Roughly equivalent to:
+```
+deftee(iterable, n=2):
+  if n < 0:
+    raise ValueError
+  if n == 0:
+    return ()
+  iterator = _tee(iterable)
+  result = [iterator]
+  for _ in range(n - 1):
+    result.append(_tee(iterator))
+  return tuple(result)
+class_tee:
+  def__init__(self, iterable):
+    it = iter(iterable)
+    if isinstance(it, _tee):
+      self.iterator = it.iterator
+      self.link = it.link
+    else:
+      self.iterator = it
+      self.link = [None, None]
+  def__iter__(self):
+    return self
+  def__next__(self):
+    link = self.link
+    if link[1] is None:
+      link[0] = next(self.iterator)
+      link[1] = [None, None]
+    value, self.link = link
+    return value

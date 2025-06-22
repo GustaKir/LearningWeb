@@ -1,0 +1,43 @@
+Title: Handlers for CDATA Sections in pyexpat
+URL: https://docs.python.org/3/library/pyexpat.html
+Summary: The `StartCdataSectionHandler` and `EndCdataSectionHandler` are defined to identify the beginning and end of CDATA sections in XML parsing. Additionally, the `DefaultHandler` manages characters without a specified handler in the XML document.
+---
+
+xmlparser.StartCdataSectionHandler()[¶](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.StartCdataSectionHandler "Link to this definition")
+    
+Called at the start of a CDATA section. This and [`EndCdataSectionHandler`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.EndCdataSectionHandler "xml.parsers.expat.xmlparser.EndCdataSectionHandler") are needed to be able to identify the syntactical start and end for CDATA sections. 
+
+xmlparser.EndCdataSectionHandler()[¶](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.EndCdataSectionHandler "Link to this definition")
+    
+Called at the end of a CDATA section. 
+
+xmlparser.DefaultHandler(_data_)[¶](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.DefaultHandler "Link to this definition")
+    
+Called for any characters in the XML document for which no applicable handler has been specified. This means characters that are part of a construct which could be reported, but for which no handler has been supplied. 
+
+xmlparser.DefaultHandlerExpand(_data_)[¶](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.DefaultHandlerExpand "Link to this definition")
+    
+This is the same as the [`DefaultHandler()`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.DefaultHandler "xml.parsers.expat.xmlparser.DefaultHandler"), but doesn’t inhibit expansion of internal entities. The entity reference will not be passed to the default handler. 
+
+xmlparser.NotStandaloneHandler()[¶](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.NotStandaloneHandler "Link to this definition")
+    
+Called if the XML document hasn’t been declared as being a standalone document. This happens when there is an external subset or a reference to a parameter entity, but the XML declaration does not set standalone to `yes` in an XML declaration. If this handler returns `0`, then the parser will raise an `XML_ERROR_NOT_STANDALONE` error. If this handler is not set, no exception is raised by the parser for this condition. 
+
+xmlparser.ExternalEntityRefHandler(_context_ , _base_ , _systemId_ , _publicId_)[¶](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.ExternalEntityRefHandler "Link to this definition")
+    
+Called for references to external entities. _base_ is the current base, as set by a previous call to [`SetBase()`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.SetBase "xml.parsers.expat.xmlparser.SetBase"). The public and system identifiers, _systemId_ and _publicId_ , are strings if given; if the public identifier is not given, _publicId_ will be `None`. The _context_ value is opaque and should only be used as described below.
+For external entities to be parsed, this handler must be implemented. It is responsible for creating the sub-parser using `ExternalEntityParserCreate(context)`, initializing it with the appropriate callbacks, and parsing the entity. This handler should return an integer; if it returns `0`, the parser will raise an `XML_ERROR_EXTERNAL_ENTITY_HANDLING` error, otherwise parsing will continue.
+If this handler is not provided, external entities are reported by the [`DefaultHandler`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.xmlparser.DefaultHandler "xml.parsers.expat.xmlparser.DefaultHandler") callback, if provided.
+## ExpatError Exceptions[¶](https://docs.python.org/3/library/pyexpat.html#expaterror-exceptions "Link to this heading")
+[`ExpatError`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.ExpatError "xml.parsers.expat.ExpatError") exceptions have a number of interesting attributes: 
+
+ExpatError.code[¶](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.ExpatError.code "Link to this definition")
+    
+Expat’s internal error number for the specific error. The [`errors.messages`](https://docs.python.org/3/library/pyexpat.html#xml.parsers.expat.errors.messages "xml.parsers.expat.errors.messages") dictionary maps these error numbers to Expat’s error messages. For example:
+```
+fromxml.parsers.expatimport ParserCreate, ExpatError, errors
+p = ParserCreate()
+try:
+  p.Parse(some_xml_document)
+except ExpatError as err:
+  print("Error:", errors.messages[err.code])

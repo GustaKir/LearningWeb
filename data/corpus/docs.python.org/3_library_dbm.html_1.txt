@@ -1,0 +1,59 @@
+Title: dbm.whichdb Function
+URL: https://docs.python.org/3/library/dbm.html
+Summary: The `dbm.whichdb` function determines which simple database module (e.g., `dbm.sqlite3`, `dbm.gnu`, `dbm.ndbm`, or `dbm.dumb`) is appropriate for opening a specified file. It returns `None` for unreadable or non-existent files, an empty string for unidentifiable formats, or the name of the suitable module.
+---
+
+dbm.whichdb(_filename_)[¶](https://docs.python.org/3/library/dbm.html#dbm.whichdb "Link to this definition")
+    
+This function attempts to guess which of the several simple database modules available — [`dbm.sqlite3`](https://docs.python.org/3/library/dbm.html#module-dbm.sqlite3 "dbm.sqlite3: SQLite backend for dbm \(All\)"), [`dbm.gnu`](https://docs.python.org/3/library/dbm.html#module-dbm.gnu "dbm.gnu: GNU database manager \(Unix\)"), [`dbm.ndbm`](https://docs.python.org/3/library/dbm.html#module-dbm.ndbm "dbm.ndbm: The New Database Manager \(Unix\)"), or [`dbm.dumb`](https://docs.python.org/3/library/dbm.html#module-dbm.dumb "dbm.dumb: Portable implementation of the simple DBM interface.") — should be used to open a given file.
+Return one of the following values:
+  * `None` if the file can’t be opened because it’s unreadable or doesn’t exist
+  * the empty string (`''`) if the file’s format can’t be guessed
+  * a string containing the required module name, such as `'dbm.ndbm'` or `'dbm.gnu'`
+
+
+Changed in version 3.11: _filename_ accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object). 
+
+dbm.open(_file_ , _flag ='r'_, _mode =0o666_)[¶](https://docs.python.org/3/library/dbm.html#dbm.open "Link to this definition")
+    
+Open a database and return the corresponding database object. 
+
+Parameters:
+    
+  * **file** ([path-like object](https://docs.python.org/3/glossary.html#term-path-like-object)) – 
+The database file to open.
+If the database file already exists, the [`whichdb()`](https://docs.python.org/3/library/dbm.html#dbm.whichdb "dbm.whichdb") function is used to determine its type and the appropriate module is used; if it does not exist, the first submodule listed above that can be imported is used.
+  * **flag** ([_str_](https://docs.python.org/3/library/stdtypes.html#str "str")) – 
+    * `'r'` (default): Open existing database for reading only.
+    * `'w'`: Open existing database for reading and writing.
+    * `'c'`: Open database for reading and writing, creating it if it doesn’t exist.
+    * `'n'`: Always create a new, empty database, open for reading and writing.
+  * **mode** ([_int_](https://docs.python.org/3/library/functions.html#int "int")) – The Unix file access mode of the file (default: octal `0o666`), used only when the database has to be created.
+
+
+Changed in version 3.11: _file_ accepts a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
+The object returned by [`open()`](https://docs.python.org/3/library/dbm.html#dbm.open "dbm.open") supports the same basic functionality as a [`dict`](https://docs.python.org/3/library/stdtypes.html#dict "dict"); keys and their corresponding values can be stored, retrieved, and deleted, and the [`in`](https://docs.python.org/3/reference/expressions.html#in) operator and the `keys()` method are available, as well as `get()` and `setdefault()` methods.
+Key and values are always stored as [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"). This means that when strings are used they are implicitly converted to the default encoding before being stored.
+These objects also support being used in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement, which will automatically close them when done.
+Changed in version 3.2: `get()` and `setdefault()` methods are now available for all [`dbm`](https://docs.python.org/3/library/dbm.html#module-dbm "dbm: Interfaces to various Unix "database" formats.") backends.
+Changed in version 3.4: Added native support for the context management protocol to the objects returned by [`open()`](https://docs.python.org/3/library/dbm.html#dbm.open "dbm.open").
+Changed in version 3.8: Deleting a key from a read-only database raises a database module specific exception instead of [`KeyError`](https://docs.python.org/3/library/exceptions.html#KeyError "KeyError").
+The following example records some hostnames and a corresponding title, and then prints out the contents of the database:
+```
+importdbm
+# Open database, creating it if necessary.
+with dbm.open('cache', 'c') as db:
+  # Record some values
+  db[b'hello'] = b'there'
+  db['www.python.org'] = 'Python Website'
+  db['www.cnn.com'] = 'Cable News Network'
+  # Note that the keys are considered bytes now.
+  assert db[b'www.python.org'] == b'Python Website'
+  # Notice how the value is now in bytes.
+  assert db['www.cnn.com'] == b'Cable News Network'
+  # Often-used methods of the dict interface work too.
+  print(db.get('python.org', b'not present'))
+  # Storing a non-string key or value will raise an exception (most
+  # likely a TypeError).
+  db['www.yahoo.com'] = 4
+# db is automatically closed when leaving the with statement.

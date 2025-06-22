@@ -1,0 +1,74 @@
+Title: Python Disassembly Library: Key Instructions Overview
+URL: https://docs.python.org/3/library/dis.html
+Summary: This chunk discusses several important instructions in the Python disassembly library, including their functionality, version changes, and stack behavior. It highlights the use of `SET_ADD`, `LIST_APPEND`, and `MAP_ADD` in dict comprehensions, their stack interactions, as well as the `RETURN_VALUE` and `RETURN_CONST` instructions, noting key changes in version 3.1 and 3.12.
+---
+
+```
+
+Used to implement dict comprehensions.
+Added in version 3.1.
+Changed in version 3.8: Map value is `STACK[-1]` and map key is `STACK[-2]`. Before, those were reversed.
+For all of the [`SET_ADD`](https://docs.python.org/3/library/dis.html#opcode-SET_ADD), [`LIST_APPEND`](https://docs.python.org/3/library/dis.html#opcode-LIST_APPEND) and [`MAP_ADD`](https://docs.python.org/3/library/dis.html#opcode-MAP_ADD) instructions, while the added value or key/value pair is popped off, the container object remains on the stack so that it is available for further iterations of the loop. 
+
+RETURN_VALUE[¶](https://docs.python.org/3/library/dis.html#opcode-RETURN_VALUE "Link to this definition")
+    
+Returns with `STACK[-1]` to the caller of the function. 
+
+RETURN_CONST(_consti_)[¶](https://docs.python.org/3/library/dis.html#opcode-RETURN_CONST "Link to this definition")
+    
+Returns with `co_consts[consti]` to the caller of the function.
+Added in version 3.12. 
+
+YIELD_VALUE[¶](https://docs.python.org/3/library/dis.html#opcode-YIELD_VALUE "Link to this definition")
+    
+Yields `STACK.pop()` from a [generator](https://docs.python.org/3/glossary.html#term-generator).
+Changed in version 3.11: oparg set to be the stack depth.
+Changed in version 3.12: oparg set to be the exception block depth, for efficient closing of generators.
+Changed in version 3.13: oparg is `1` if this instruction is part of a yield-from or await, and `0` otherwise. 
+
+SETUP_ANNOTATIONS[¶](https://docs.python.org/3/library/dis.html#opcode-SETUP_ANNOTATIONS "Link to this definition")
+    
+Checks whether `__annotations__` is defined in `locals()`, if not it is set up to an empty `dict`. This opcode is only emitted if a class or module body contains [variable annotations](https://docs.python.org/3/glossary.html#term-variable-annotation) statically.
+Added in version 3.6. 
+
+POP_EXCEPT[¶](https://docs.python.org/3/library/dis.html#opcode-POP_EXCEPT "Link to this definition")
+    
+Pops a value from the stack, which is used to restore the exception state.
+Changed in version 3.11: Exception representation on the stack now consist of one, not three, items. 
+
+RERAISE[¶](https://docs.python.org/3/library/dis.html#opcode-RERAISE "Link to this definition")
+    
+Re-raises the exception currently on top of the stack. If oparg is non-zero, pops an additional value from the stack which is used to set [`f_lasti`](https://docs.python.org/3/reference/datamodel.html#frame.f_lasti "frame.f_lasti") of the current frame.
+Added in version 3.9.
+Changed in version 3.11: Exception representation on the stack now consist of one, not three, items. 
+
+PUSH_EXC_INFO[¶](https://docs.python.org/3/library/dis.html#opcode-PUSH_EXC_INFO "Link to this definition")
+    
+Pops a value from the stack. Pushes the current exception to the top of the stack. Pushes the value originally popped back to the stack. Used in exception handlers.
+Added in version 3.11. 
+
+CHECK_EXC_MATCH[¶](https://docs.python.org/3/library/dis.html#opcode-CHECK_EXC_MATCH "Link to this definition")
+    
+Performs exception matching for `except`. Tests whether the `STACK[-2]` is an exception matching `STACK[-1]`. Pops `STACK[-1]` and pushes the boolean result of the test.
+Added in version 3.11. 
+
+CHECK_EG_MATCH[¶](https://docs.python.org/3/library/dis.html#opcode-CHECK_EG_MATCH "Link to this definition")
+    
+Performs exception matching for `except*`. Applies `split(STACK[-1])` on the exception group representing `STACK[-2]`.
+In case of a match, pops two items from the stack and pushes the non-matching subgroup (`None` in case of full match) followed by the matching subgroup. When there is no match, pops one item (the match type) and pushes `None`.
+Added in version 3.11. 
+
+WITH_EXCEPT_START[¶](https://docs.python.org/3/library/dis.html#opcode-WITH_EXCEPT_START "Link to this definition")
+    
+Calls the function in position 4 on the stack with arguments (type, val, tb) representing the exception at the top of the stack. Used to implement the call `context_manager.__exit__(*exc_info())` when an exception has occurred in a [`with`](https://docs.python.org/3/reference/compound_stmts.html#with) statement.
+Added in version 3.9.
+Changed in version 3.11: The `__exit__` function is in position 4 of the stack rather than 7. Exception representation on the stack now consist of one, not three, items. 
+
+LOAD_ASSERTION_ERROR[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_ASSERTION_ERROR "Link to this definition")
+    
+Pushes [`AssertionError`](https://docs.python.org/3/library/exceptions.html#AssertionError "AssertionError") onto the stack. Used by the [`assert`](https://docs.python.org/3/reference/simple_stmts.html#assert) statement.
+Added in version 3.9. 
+
+LOAD_BUILD_CLASS[¶](https://docs.python.org/3/library/dis.html#opcode-LOAD_BUILD_CLASS "Link to this definition")
+    
+Pushes `builtins.__build_class__()` onto the stack. It is later called to construct a class.

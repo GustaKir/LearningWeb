@@ -1,0 +1,55 @@
+Title: TextIOWrapper: Reconfigure and Seek Methods
+URL: https://docs.python.org/3/library/io.html
+Summary: The reconfigure method updates the text stream settings such as encoding, errors, newline, line_buffering, and write_through, with certain restrictions regarding data already read or written. It performs an implicit flush before applying new settings and introduced encoding='locale' in version 3.11. The seek method sets the stream position based on the specified cookie and whence, allowing for repositioning within the stream.
+---
+
+reconfigure(_*_ , _encoding =None_, _errors =None_, _newline =None_, _line_buffering =None_, _write_through =None_)[¶](https://docs.python.org/3/library/io.html#io.TextIOWrapper.reconfigure "Link to this definition")
+    
+Reconfigure this text stream using new settings for _encoding_ , _errors_ , _newline_ , _line_buffering_ and _write_through_.
+Parameters not specified keep current settings, except `errors='strict'` is used when _encoding_ is specified but _errors_ is not specified.
+It is not possible to change the encoding or newline if some data has already been read from the stream. On the other hand, changing encoding after write is possible.
+This method does an implicit stream flush before setting the new parameters.
+Added in version 3.7.
+Changed in version 3.11: The method supports `encoding="locale"` option. 
+
+seek(_cookie_ , _whence =os.SEEK_SET_, _/_)[¶](https://docs.python.org/3/library/io.html#io.TextIOWrapper.seek "Link to this definition")
+    
+Set the stream position. Return the new stream position as an [`int`](https://docs.python.org/3/library/functions.html#int "int").
+Four operations are supported, given by the following argument combinations:
+  * `seek(0, SEEK_SET)`: Rewind to the start of the stream.
+  * `seek(cookie, SEEK_SET)`: Restore a previous position; _cookie_ **must be** a number returned by [`tell()`](https://docs.python.org/3/library/io.html#io.TextIOWrapper.tell "io.TextIOWrapper.tell").
+  * `seek(0, SEEK_END)`: Fast-forward to the end of the stream.
+  * `seek(0, SEEK_CUR)`: Leave the current stream position unchanged.
+
+
+Any other argument combinations are invalid, and may raise exceptions.
+See also
+[`os.SEEK_SET`](https://docs.python.org/3/library/os.html#os.SEEK_SET "os.SEEK_SET"), [`os.SEEK_CUR`](https://docs.python.org/3/library/os.html#os.SEEK_CUR "os.SEEK_CUR"), and [`os.SEEK_END`](https://docs.python.org/3/library/os.html#os.SEEK_END "os.SEEK_END"). 
+
+tell()[¶](https://docs.python.org/3/library/io.html#io.TextIOWrapper.tell "Link to this definition")
+    
+Return the stream position as an opaque number. The return value of `tell()` can be given as input to [`seek()`](https://docs.python.org/3/library/io.html#io.TextIOWrapper.seek "io.TextIOWrapper.seek"), to restore a previous stream position. 
+
+_class_ io.StringIO(_initial_value =''_, _newline ='\n'_)[¶](https://docs.python.org/3/library/io.html#io.StringIO "Link to this definition")
+    
+A text stream using an in-memory text buffer. It inherits from [`TextIOBase`](https://docs.python.org/3/library/io.html#io.TextIOBase "io.TextIOBase").
+The text buffer is discarded when the [`close()`](https://docs.python.org/3/library/io.html#io.IOBase.close "io.IOBase.close") method is called.
+The initial value of the buffer can be set by providing _initial_value_. If newline translation is enabled, newlines will be encoded as if by [`write()`](https://docs.python.org/3/library/io.html#io.TextIOBase.write "io.TextIOBase.write"). The stream is positioned at the start of the buffer which emulates opening an existing file in a `w+` mode, making it ready for an immediate write from the beginning or for a write that would overwrite the initial value. To emulate opening a file in an `a+` mode ready for appending, use `f.seek(0, io.SEEK_END)` to reposition the stream at the end of the buffer.
+The _newline_ argument works like that of [`TextIOWrapper`](https://docs.python.org/3/library/io.html#io.TextIOWrapper "io.TextIOWrapper"), except that when writing output to the stream, if _newline_ is `None`, newlines are written as `\n` on all platforms.
+[`StringIO`](https://docs.python.org/3/library/io.html#io.StringIO "io.StringIO") provides this method in addition to those from [`TextIOBase`](https://docs.python.org/3/library/io.html#io.TextIOBase "io.TextIOBase") and [`IOBase`](https://docs.python.org/3/library/io.html#io.IOBase "io.IOBase"): 
+
+getvalue()[¶](https://docs.python.org/3/library/io.html#io.StringIO.getvalue "Link to this definition")
+    
+Return a [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") containing the entire contents of the buffer. Newlines are decoded as if by [`read()`](https://docs.python.org/3/library/io.html#io.TextIOBase.read "io.TextIOBase.read"), although the stream position is not changed.
+Example usage:
+```
+importio
+output = io.StringIO()
+output.write('First line.\n')
+print('Second line.', file=output)
+# Retrieve file contents -- this will be
+# 'First line.\nSecond line.\n'
+contents = output.getvalue()
+# Close object and discard memory buffer --
+# .getvalue() will now raise an exception.
+output.close()

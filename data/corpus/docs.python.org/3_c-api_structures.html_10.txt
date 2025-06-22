@@ -1,0 +1,68 @@
+Title: Python C API Data Type Constants
+URL: https://docs.python.org/3/c-api/structures.html
+Summary: This section lists constants used in the Python C API representing different data types such as float, double, boolean, and strings, indicating their C representations and corresponding Python types.
+---
+
+Py_T_FLOAT[¶](https://docs.python.org/3/c-api/structures.html#c.Py_T_FLOAT "Link to this definition")
+| float | [`float`](https://docs.python.org/3/library/functions.html#float "float") 
+
+Py_T_DOUBLE[¶](https://docs.python.org/3/c-api/structures.html#c.Py_T_DOUBLE "Link to this definition")
+| double | [`float`](https://docs.python.org/3/library/functions.html#float "float") 
+
+Py_T_BOOL[¶](https://docs.python.org/3/c-api/structures.html#c.Py_T_BOOL "Link to this definition")
+| char (written as 0 or 1) | [`bool`](https://docs.python.org/3/library/functions.html#bool "bool") 
+
+Py_T_STRING[¶](https://docs.python.org/3/c-api/structures.html#c.Py_T_STRING "Link to this definition")
+| constchar* (*) | [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") (RO) 
+
+Py_T_STRING_INPLACE[¶](https://docs.python.org/3/c-api/structures.html#c.Py_T_STRING_INPLACE "Link to this definition")
+| constchar[] (*) | [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") (RO) 
+
+Py_T_CHAR[¶](https://docs.python.org/3/c-api/structures.html#c.Py_T_CHAR "Link to this definition")
+| char (0-127) | [`str`](https://docs.python.org/3/library/stdtypes.html#str "str") (**) 
+
+Py_T_OBJECT_EX[¶](https://docs.python.org/3/c-api/structures.html#c.Py_T_OBJECT_EX "Link to this definition")
+| [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* | [`object`](https://docs.python.org/3/library/functions.html#object "object") (D)  
+> (*): Zero-terminated, UTF8-encoded C string. With `Py_T_STRING` the C representation is a pointer; with `Py_T_STRING_INPLACE` the string is stored directly in the structure.
+> (**): String of length 1. Only ASCII is accepted.
+> (RO): Implies [`Py_READONLY`](https://docs.python.org/3/c-api/structures.html#c.Py_READONLY "Py_READONLY").
+> (D): Can be deleted, in which case the pointer is set to `NULL`. Reading a `NULL` pointer raises [`AttributeError`](https://docs.python.org/3/library/exceptions.html#AttributeError "AttributeError").
+Added in version 3.12: In previous versions, the macros were only available with `#include "structmember.h"` and were named without the `Py_` prefix (e.g. as `T_INT`). The header is still available and contains the old names, along with the following deprecated types: 
+
+T_OBJECT[¶](https://docs.python.org/3/c-api/structures.html#c.T_OBJECT "Link to this definition")
+    
+Like `Py_T_OBJECT_EX`, but `NULL` is converted to `None`. This results in surprising behavior in Python: deleting the attribute effectively sets it to `None`. 
+
+T_NONE[¶](https://docs.python.org/3/c-api/structures.html#c.T_NONE "Link to this definition")
+    
+Always `None`. Must be used with [`Py_READONLY`](https://docs.python.org/3/c-api/structures.html#c.Py_READONLY "Py_READONLY").
+### Defining Getters and Setters[¶](https://docs.python.org/3/c-api/structures.html#defining-getters-and-setters "Link to this heading") 
+
+typePyGetSetDef[¶](https://docs.python.org/3/c-api/structures.html#c.PyGetSetDef "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable) (including all members)._
+Structure to define property-like access for a type. See also description of the [`PyTypeObject.tp_getset`](https://docs.python.org/3/c-api/typeobj.html#c.PyTypeObject.tp_getset "PyTypeObject.tp_getset") slot. 
+
+constchar*name[¶](https://docs.python.org/3/c-api/structures.html#c.PyGetSetDef.name "Link to this definition")
+    
+attribute name 
+
+[getter](https://docs.python.org/3/c-api/structures.html#c.getter "getter")get[¶](https://docs.python.org/3/c-api/structures.html#c.PyGetSetDef.get "Link to this definition")
+    
+C function to get the attribute. 
+
+[setter](https://docs.python.org/3/c-api/structures.html#c.setter "setter")set[¶](https://docs.python.org/3/c-api/structures.html#c.PyGetSetDef.set "Link to this definition")
+    
+Optional C function to set or delete the attribute. If `NULL`, the attribute is read-only. 
+
+constchar*doc[¶](https://docs.python.org/3/c-api/structures.html#c.PyGetSetDef.doc "Link to this definition")
+    
+optional docstring 
+
+void*closure[¶](https://docs.python.org/3/c-api/structures.html#c.PyGetSetDef.closure "Link to this definition")
+    
+Optional user data pointer, providing additional data for getter and setter. 
+
+typedef[PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*(*getter)([PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")*,void*)[¶](https://docs.python.org/3/c-api/structures.html#c.getter "Link to this definition")
+    _Part of the[ Stable ABI](https://docs.python.org/3/c-api/stable.html#stable)._
+The `get` function takes one [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject "PyObject")* parameter (the instance) and a user data pointer (the associated `closure`):
+It should return a new reference on success or `NULL` with a set exception on failure.

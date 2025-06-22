@@ -1,0 +1,42 @@
+Title: Changes to ProactorEventLoop in asyncio
+URL: https://docs.python.org/3/library/asyncio-eventloop.html
+Summary: This section outlines the changes made to the ProactorEventLoop in Python's asyncio library across various versions, including SSL/TLS support in version 3.5, enhancements in 3.5.1 and 3.6, as well as updates in version 3.11. It highlights new parameters and default socket options established for TCP connections.
+---
+
+Changed in version 3.5: Added support for SSL/TLS in [`ProactorEventLoop`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.ProactorEventLoop "asyncio.ProactorEventLoop").
+Changed in version 3.5.1: The _host_ parameter can be a sequence of strings.
+Changed in version 3.6: Added _ssl_handshake_timeout_ and _start_serving_ parameters. The socket option [socket.TCP_NODELAY](https://docs.python.org/3/library/socket.html#socket-unix-constants) is set by default for all TCP connections.
+Changed in version 3.11: Added the _ssl_shutdown_timeout_ parameter.
+See also
+The [`start_server()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.start_server "asyncio.start_server") function is a higher-level alternative API that returns a pair of [`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader "asyncio.StreamReader") and [`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter "asyncio.StreamWriter") that can be used in an async/await code. 
+
+_async_ loop.create_unix_server(_protocol_factory_ , _path =None_, _*_ , _sock =None_, _backlog =100_, _ssl =None_, _ssl_handshake_timeout =None_, _ssl_shutdown_timeout =None_, _start_serving =True_, _cleanup_socket =True_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_unix_server "Link to this definition")
+    
+Similar to [`loop.create_server()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server "asyncio.loop.create_server") but works with the [`AF_UNIX`](https://docs.python.org/3/library/socket.html#socket.AF_UNIX "socket.AF_UNIX") socket family.
+_path_ is the name of a Unix domain socket, and is required, unless a _sock_ argument is provided. Abstract Unix sockets, [`str`](https://docs.python.org/3/library/stdtypes.html#str "str"), [`bytes`](https://docs.python.org/3/library/stdtypes.html#bytes "bytes"), and [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") paths are supported.
+If _cleanup_socket_ is true then the Unix socket will automatically be removed from the filesystem when the server is closed, unless the socket has been replaced after the server has been created.
+See the documentation of the [`loop.create_server()`](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server "asyncio.loop.create_server") method for information about arguments to this method.
+[Availability](https://docs.python.org/3/library/intro.html#availability): Unix.
+Changed in version 3.7: Added the _ssl_handshake_timeout_ and _start_serving_ parameters. The _path_ parameter can now be a [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path "pathlib.Path") object.
+Changed in version 3.11: Added the _ssl_shutdown_timeout_ parameter.
+Changed in version 3.13: Added the _cleanup_socket_ parameter. 
+
+_async_ loop.connect_accepted_socket(_protocol_factory_ , _sock_ , _*_ , _ssl =None_, _ssl_handshake_timeout =None_, _ssl_shutdown_timeout =None_)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.connect_accepted_socket "Link to this definition")
+    
+Wrap an already accepted connection into a transport/protocol pair.
+This method can be used by servers that accept connections outside of asyncio but that use asyncio to handle them.
+Parameters:
+  * _protocol_factory_ must be a callable returning a [protocol](https://docs.python.org/3/library/asyncio-protocol.html#asyncio-protocol) implementation.
+  * _sock_ is a preexisting socket object returned from [`socket.accept`](https://docs.python.org/3/library/socket.html#socket.socket.accept "socket.socket.accept").
+Note
+The _sock_ argument transfers ownership of the socket to the transport created. To close the socket, call the transport’s [`close()`](https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.close "asyncio.BaseTransport.close") method.
+  * _ssl_ can be set to an [`SSLContext`](https://docs.python.org/3/library/ssl.html#ssl.SSLContext "ssl.SSLContext") to enable SSL over the accepted connections.
+  * _ssl_handshake_timeout_ is (for an SSL connection) the time in seconds to wait for the SSL handshake to complete before aborting the connection. `60.0` seconds if `None` (default).
+  * _ssl_shutdown_timeout_ is the time in seconds to wait for the SSL shutdown to complete before aborting the connection. `30.0` seconds if `None` (default).
+
+
+Returns a `(transport, protocol)` pair.
+Added in version 3.5.3.
+Changed in version 3.7: Added the _ssl_handshake_timeout_ parameter.
+Changed in version 3.11: Added the _ssl_shutdown_timeout_ parameter.
+### [Transferring files](https://docs.python.org/3/library/asyncio-eventloop.html#id7)[¶](https://docs.python.org/3/library/asyncio-eventloop.html#transferring-files "Link to this heading")
